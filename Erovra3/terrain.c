@@ -1,3 +1,7 @@
+/*
+terrain.c
+*/
+
 #pragma once
 #include <SDL.h>
 #include <stdlib.h>

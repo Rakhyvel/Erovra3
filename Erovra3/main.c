@@ -1,3 +1,7 @@
+/*
+main.c
+*/
+
 #include <SDL.h>
 #include <stdio.h>
 #ifdef __cplusplus 
