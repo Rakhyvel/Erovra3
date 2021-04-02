@@ -4,10 +4,11 @@ game.c
 #pragma once
 #include "game.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 struct game* game_init() {
-	struct game* retval = (struct game*)malloc(sizeof(struct game*));
-	if (!retval) {
+	g = (struct game*)malloc(sizeof(struct game*));
+	if (!g) {
 		exit(1);
 	}
 
@@ -18,35 +19,35 @@ struct game* game_init() {
 	}
 
 	// Create Window
-	retval->window = SDL_CreateWindow("Erovra 3.0.2", SDL_WINDOWPOS_CENTERED,
+	g->window = SDL_CreateWindow("Erovra 3.0.2", SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED, 925, 510,
 		SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
-	if (retval->window == NULL) {
+	if (g->window == NULL) {
 		printf("Error: Creating SDL window: %s\n", SDL_GetError());
 		exit(1);
 	}
 
 	// Create Renderer
-	retval->rend = SDL_CreateRenderer(retval->window, -1, SDL_RENDERER_ACCELERATED);
-	if (retval->rend == NULL) {
+	g->rend = SDL_CreateRenderer(g->window, -1, SDL_RENDERER_ACCELERATED);
+	if (g->rend == NULL) {
 		printf("Error: Creating SDL renderer: %s\n", SDL_GetError());
 		exit(1);
 	}
-	SDL_SetRenderDrawBlendMode(retval->rend, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
-	return retval;
+	g->up = g->down = g->left = g->right = g->ctrl = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
 }
 
-void game_beginDraw(struct game* g) {
+void game_beginDraw() {
 	SDL_SetRenderDrawColor(g->rend, 49, 46, 43, 255);
 	SDL_RenderClear(g->rend);
 }
 
-void game_endDraw(struct game* g) {
+void game_endDraw() {
 	SDL_RenderPresent(g->rend);
 }
 
-void game_pollInput(struct game* g) {
+void game_pollInput() {
 	// PRE INPUT
 	g->mouseLeftUp = false;
 	g->mouseRightUp = false;
@@ -56,6 +57,8 @@ void game_pollInput(struct game* g) {
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_QUIT:
+			SDL_DestroyRenderer(g->rend);
+			SDL_DestroyWindow(g->window);
 			exit(0);
 			break;
 		case SDL_WINDOWEVENT:

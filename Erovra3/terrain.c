@@ -8,43 +8,90 @@ terrain.c
 #include <limits.h>
 #include <float.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "game.h"
 #include "terrain.h"
 #include "vector.h"
 
-float* map;
-float* ore;
-int size;
-bool mouseDown = false;
-struct vector offset = { 0, 0 };
-struct vector oldOffset = { 0, 0 };
-float terrain_zoom = 1;
-int oldWheel = 0;
+static bool mouseDown = false;
+static struct vector offset = { 0, 0 };
+static struct vector oldOffset = { 0, 0 };
+static float terrain_zoom = 1;
+static int oldWheel = 0;
 
-struct terrain* terrain_create(int mapSize, struct game* g) {
+void polygon_render(float polyX[], float polyY[], int nPoints, float minY, float maxY) {
+	int nodes, pixelX, pixelY, i, j, swap;
+	float nodeX[256];
+	for (float pixelY = (int)minY; pixelY < maxY + 1; pixelY++) {
+		nodes = 0;
+		j = nPoints - 1;
+		// Build list of the x coords for each intersection
+		for (i = 0; i < nPoints; i++) {
+			if (polyY[i] < (float)pixelY && polyY[j] >= (float)pixelY
+				|| polyY[j] < (float)pixelY && polyY[i] >= (float)pixelY) {
+				nodeX[nodes++] = (polyX[i] + (pixelY - polyY[i]) / (polyY[j] - polyY[i]) * (polyX[j] - polyX[i]));
+			}
+			j = i;
+		}
+
+		// Bubble sort x coords, so that you can run through and draw scanlines
+		i = 0;
+		while (i < nodes - 1) {
+			if (nodeX[i] > nodeX[i + 1]) {
+				swap = nodeX[i]; nodeX[i] = nodeX[i + 1]; nodeX[i + 1] = swap; if (i) i--;
+			}
+			else {
+				i++;
+			}
+		}
+
+		// Draw scanlines
+		for (i = 0; i < nodes; i += 2) {
+			if (nodeX[i] >= g->width) break;
+			if (nodeX[i + 1] > 0) {
+				if (nodeX[i] < 0) nodeX[i] = 0;
+				if (nodeX[i + 1] > g->width) nodeX[i + 1] = g->width;
+				SDL_RenderDrawLineF(g->rend, (int)nodeX[i], pixelY, (int)(nodeX[i + 1] + 0.5f), pixelY);
+			}
+		}
+	}
+}
+
+/*
+	Creates the terrain struct, with the height map, ore map, and terrain 
+	texture. */
+struct terrain* terrain_create(int mapSize) {
 	struct terrain* retval = malloc(sizeof(struct terrain));
-	size = mapSize;
-	map = terrain_perlin(size, size / 2);
-	ore = terrain_perlin(size / 64, size / 128);
-	terrain_normalize(map, size);
-	for (int y = 0; y < size; y++) {
-		for (int x = 0; x < size; x++) {
-			map[x + y * size] = map[x + y * size] * 0.7f + 0.15;
+	if (!retval) {
+		fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
+		exit(1);
+	}
+	retval->size = mapSize;
+	retval->map = terrain_perlin(retval->size, retval->size / 2);
+	retval->ore = terrain_perlin(retval->size / 64, retval->size / 128);
+	terrain_normalize(retval->map, retval->size);
+	for (int y = 0; y < retval->size; y++) {
+		for (int x = 0; x < retval->size; x++) {
+			retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.7f + 0.15;
 		}
 	}
 	paintMap(retval, g);
 	return retval;
 }
 
-void paintMap(struct terrain* terrain, struct game* g) {
-	terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, size, size);
-	terrain->pixels = malloc(size * size * 4);
-	for (int x = 0; x < size; x++) {
-		for (int y = 0; y < size; y++) {
-			const unsigned int offset = (size * 4 * y) + x * 4;
+void paintMap(struct terrain* terrain) {
+	terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, terrain->size, terrain->size);
+	terrain->pixels = malloc(terrain->size * terrain->size * 4);
+	if (!terrain->pixels) {
+		fprintf(stderr, "Memory error paintMap() creating pixels\n");
+		exit(1);
+	}
+	for (int x = 0; x < terrain->size; x++) {
+		for (int y = 0; y < terrain->size; y++) {
+			const unsigned int offset = (terrain->size * 4 * y) + x * 4;
 			SDL_Color terrainColor;
-			float i = terrain_getHeight(x, y);
+			float i = terrain_getHeight(terrain, x, y);
 			i = i * 2 - 0.5f;
 			if (i < 0.5) {
 				// water
@@ -57,7 +104,7 @@ void paintMap(struct terrain* terrain, struct game* g) {
 				i = sqrt(i);
 				terrainColor = terrain_HSVtoRGB(30.0f + 100.0f * i, (i * 0.1f) + 0.25f, 0.7f - i * 0.35f);
 			}
-			if (terrain_isBorder(map, size, size, x, y, 0.5f, 1)) {
+			if (terrain_isBorder(terrain->map, terrain->size, terrain->size, x, y, 0.5f, 1)) {
 				terrainColor = (SDL_Color){ 255, 255, 255 };
 			}
 
@@ -67,31 +114,73 @@ void paintMap(struct terrain* terrain, struct game* g) {
 			terrain->pixels[offset + 3] = SDL_ALPHA_OPAQUE;
 		}
 	}
-	SDL_UpdateTexture(terrain->texture, NULL, terrain->pixels, size * 4);
+	SDL_UpdateTexture(terrain->texture, NULL, terrain->pixels, terrain->size * 4);
 }
 
-void terrain_render(struct terrain* terrain, struct game* g) {
-	SDL_Rect rect = { 0, 0 };
-	rect.w = rect.h = (int)(terrain_zoom * size);
+void terrain_update(struct terrain* terrain) {
+	terrain_zoom *= (float)pow(1.1, g->mouseWheelY - oldWheel);
+	oldWheel = g->mouseWheelY;
+	if (terrain_zoom < 0.75 * g->height / terrain->size) {
+		terrain_zoom = 0.75f * g->height / terrain->size;
+	}
+	if (terrain_zoom > 8.0f * g->height / terrain->size) {
+		terrain_zoom = 8.0f * g->height / terrain->size;
+	}
+
+	if (g->left) {
+		offset.x += 10;
+	}
+	if (g->right) {
+		offset.x -= 10;
+	}
+	if (g->up) {
+		offset.y += 10;
+	}
+	if (g->down) {
+		offset.y -= 10;
+	}
+	if (g->mouseLeftDown && !mouseDown) {
+		mouseDown = true;
+	}
+	if (!g->mouseLeftDown && mouseDown) {
+		mouseDown = false;
+		oldOffset.x = offset.x;
+		oldOffset.y = offset.y;
+	}
+	if (g->mouseDrag) {
+		offset.x = (g->mouseX - g->mouseInitX) / terrain_zoom + oldOffset.x;
+		offset.y = (g->mouseY - g->mouseInitY) / terrain_zoom + oldOffset.y;
+	}
+}
+
+void terrain_render(struct terrain* terrain) {
+	SDL_Rect rect = (SDL_Rect){ 0, 0, 0, 0 };
+	terrain_translate(&rect, 0, 0, 0, 0);
+	rect.w = rect.h = (int)(terrain_zoom * terrain->size);
 	SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
 
 	SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 50);
 	SDL_FPoint gridLineStart = { 32, 32 };
-	SDL_Rect gridLineRect = { 0, 0 };
-	for (int x = 0; x <= size / 64; x++) {
+	SDL_Rect gridLineRect = { 0, 0, 0, 0 };
+	terrain_translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
+	for (int x = 0; x <= terrain->size / 64; x++) {
 		SDL_RenderDrawLine(g->rend,
 			(int)(gridLineRect.x + x * 64.0 * terrain_zoom),
 			gridLineRect.y,
 			(int)(gridLineRect.x + x * 64.0 * terrain_zoom),
-			(int)(gridLineRect.y + (size * terrain_zoom)));
+			(int)(gridLineRect.y + (terrain->size * terrain_zoom)));
 	}
-	for (int y = 0; y <= size / 64; y++) {
+	for (int y = 0; y <= terrain->size / 64; y++) {
 		SDL_RenderDrawLine(g->rend,
 			gridLineRect.x,
 			(int)(gridLineRect.y + y * 64.0 * terrain_zoom),
-			(int)(gridLineRect.x + (size * terrain_zoom)),
+			(int)(gridLineRect.x + (terrain->size * terrain_zoom)),
 			(int)(gridLineRect.y + y * 64.0 * terrain_zoom));
 	}
+	
+	float testX[] = { 10, 900, 900, 10 }; 
+	float testY[] = {10, 10, 900, 900};
+	polygon_render(testX, testY, 4, 0, 900);
 }
 
 /*
@@ -293,12 +382,15 @@ void terrain_normalize(float* map, int mapSize) {
 	}
 }
 
-float terrain_getHeight(int x, int y) {
-	return map[y * size + x];
+float terrain_getHeight(struct terrain* terrain, int x, int y) {
+	return terrain->map[y * terrain->size + x];
 }
 
-float terrain_getZoom() {
-	return terrain_zoom;
+void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height) {
+	newPos->x = (int)((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
+	newPos->y = (int)((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
+	newPos->w = (int)(width * terrain_zoom);
+	newPos->h = (int)(height * terrain_zoom);
 }
 
 /*

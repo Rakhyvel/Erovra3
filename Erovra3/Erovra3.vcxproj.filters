@@ -35,5 +35,13 @@
     <ClInclude Include="vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="polygon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="todo.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

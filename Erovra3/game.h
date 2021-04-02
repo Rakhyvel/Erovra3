@@ -14,7 +14,9 @@ struct game {
 	bool up, down, left, right, ctrl, mouseLeftDown, mouseRightDown, mouseLeftUp, mouseRightUp, mouseDrag, mouseDragged;
 };
 
+struct game* g;
+
 struct game* game_init();
-void game_pollInput(struct game*);
-void game_beginDraw(struct game*);
-void game_endDraw(struct game*);
+void game_pollInput();
+void game_beginDraw();
+void game_endDraw();

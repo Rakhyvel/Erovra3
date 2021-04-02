@@ -12,8 +12,8 @@ main.c
 #include "terrain.h"
 
 int main(int argc, char** argv) {
-	struct game* game = game_init();
-	struct terrain* terrain = terrain_create(5*64, game);
+	game_init();
+	struct terrain* terrain = terrain_create(5*64, g);
 
 	long previous = clock();
 	long lag = 0;
@@ -35,16 +35,17 @@ int main(int argc, char** argv) {
 		elapsedFrames += lag;
 
 		while (lag >= dt) {
-			game_pollInput(game);
+			game_pollInput();
 			// update entities
+			terrain_update(terrain);
 			lag -= dt;
 		}
 		if (elapsedFrames > 32) {
-			game_beginDraw(game);
+			game_beginDraw();
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 			elapsedFrames = 0;
-			terrain_render(terrain, game);
-			game_endDraw(game);
+			terrain_render(terrain);
+			game_endDraw();
 		}
 		frames++;
 		const Uint64 end = SDL_GetPerformanceCounter();

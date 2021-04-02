@@ -1,0 +1,3 @@
+x remove most global variables from terrain.h, place into terrain struct
+x can move terrain around with mouse
+- vector graphics for terrain
