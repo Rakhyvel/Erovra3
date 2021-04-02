@@ -11,7 +11,7 @@ struct game {
 	SDL_Renderer* rend;
 
 	int mouseX, mouseY, mouseWheelX, mouseWheelY, mouseInitX, mouseInitY, width, height;
-	bool up, down, left, right, ctrl, mouseLeftDown, mouseRightDown, mouseLeftUp, mouseRightUp, mouseDrag, mouseDragged;
+	bool running, up, down, left, right, ctrl, mouseLeftDown, mouseRightDown, mouseLeftUp, mouseRightUp, mouseDrag, mouseDragged;
 };
 
 struct game* g;

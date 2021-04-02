@@ -20,7 +20,11 @@ static struct vector oldOffset = { 0, 0 };
 static float terrain_zoom = 1;
 static int oldWheel = 0;
 
-void polygon_render(float polyX[], float polyY[], int nPoints, float minY, float maxY) {
+SDL_Texture *polygon_render(float polyX[], float polyY[], int nPoints, float minY, float maxY) {
+	SDL_Texture* lol = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, maxY - minY, maxY - minY);
+	SDL_SetRenderTarget(g->rend, lol);
+	SDL_SetRenderDrawColor(g->rend, 49, 46, 43, 0);
+	SDL_RenderClear(g->rend);
 	int nodes, pixelX, pixelY, i, j, swap;
 	float nodeX[256];
 	for (float pixelY = (int)minY; pixelY < maxY + 1; pixelY++) {
@@ -52,17 +56,20 @@ void polygon_render(float polyX[], float polyY[], int nPoints, float minY, float
 			if (nodeX[i + 1] > 0) {
 				if (nodeX[i] < 0) nodeX[i] = 0;
 				if (nodeX[i + 1] > g->width) nodeX[i + 1] = g->width;
-				SDL_RenderDrawLineF(g->rend, (int)nodeX[i], pixelY, (int)(nodeX[i + 1] + 0.5f), pixelY);
+				SDL_SetRenderDrawColor(g->rend, 255, 255, 45, 255);
+				SDL_RenderDrawLine(g->rend, nodeX[i], pixelY, nodeX[i + 1], pixelY);
 			}
 		}
 	}
+	SDL_SetRenderTarget(g->rend, NULL);
+	return lol;
 }
 
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
 	texture. */
 struct terrain* terrain_create(int mapSize) {
-	struct terrain* retval = malloc(sizeof(struct terrain));
+	struct terrain* retval = calloc(1, sizeof(struct terrain));
 	if (!retval) {
 		fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
 		exit(1);
@@ -165,22 +172,18 @@ void terrain_render(struct terrain* terrain) {
 	terrain_translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
 	for (int x = 0; x <= terrain->size / 64; x++) {
 		SDL_RenderDrawLine(g->rend,
-			(int)(gridLineRect.x + x * 64.0 * terrain_zoom),
+			max((int)(gridLineRect.x + x * 64.0 * terrain_zoom), 0),
 			gridLineRect.y,
 			(int)(gridLineRect.x + x * 64.0 * terrain_zoom),
 			(int)(gridLineRect.y + (terrain->size * terrain_zoom)));
 	}
 	for (int y = 0; y <= terrain->size / 64; y++) {
 		SDL_RenderDrawLine(g->rend,
-			gridLineRect.x,
+			max(gridLineRect.x, 0),
 			(int)(gridLineRect.y + y * 64.0 * terrain_zoom),
 			(int)(gridLineRect.x + (terrain->size * terrain_zoom)),
 			(int)(gridLineRect.y + y * 64.0 * terrain_zoom));
 	}
-	
-	float testX[] = { 10, 900, 900, 10 }; 
-	float testY[] = {10, 10, 900, 900};
-	polygon_render(testX, testY, 4, 0, 900);
 }
 
 /*
@@ -382,7 +385,7 @@ void terrain_normalize(float* map, int mapSize) {
 	}
 }
 
-float terrain_getHeight(struct terrain* terrain, int x, int y) {
+inline float terrain_getHeight(struct terrain* terrain, int x, int y) {
 	return terrain->map[y * terrain->size + x];
 }
 

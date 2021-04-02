@@ -1,5 +1,24 @@
 /*
 main.c
+
+starting state: A capital, and a unit that you can use to expand
+themes: resource management, production management, strategic planning and logistics
+goals:		(1) destroy enemy capital	(2) protect own capital
+obstacles:	(1) enemy defenses			(2) enemy offense
+
+Resources:
+	Ore is scarce. You need ore to build units, which you need to attack/protect capitals. 
+	Population is also scarce. Should be able to train/retrain people for different skills. Used up when unit is purchased
+
+Production management:
+	Different units have different trade offs
+	Should be anti air, heavy light and medium tanks, different classes of boats, and airplanes
+	Factories should be able to build things like bombs, wings, guns; intermediate products for units
+
+Strategy and logistics:
+	Can set up "task forces" or another better name. Can then assign task forces of task forces to manipulate on the field
+	Set up and plan invasions
+	Maybe a supply line that you'd have to maintain? That'd be hard tho
 */
 
 #include <SDL.h>
@@ -13,7 +32,7 @@ main.c
 
 int main(int argc, char** argv) {
 	game_init();
-	struct terrain* terrain = terrain_create(5*64, g);
+	struct terrain* terrain = terrain_create(12*64, g);
 
 	long previous = clock();
 	long lag = 0;
@@ -25,7 +44,7 @@ int main(int argc, char** argv) {
 	unsigned int frames = 0;
 	Uint64 start = SDL_GetPerformanceCounter();
 
-	while (1) {
+	while (g->running) {
 		current = clock();
 		elapsed = current - previous;
 
@@ -58,6 +77,8 @@ int main(int argc, char** argv) {
 			frames = 0;
 		}
 	}
+	SDL_DestroyRenderer(g->rend);
+	SDL_DestroyWindow(g->window);
 
 	return 0;
 }

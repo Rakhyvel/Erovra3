@@ -13,9 +13,7 @@ struct terrain {
 	float* ore;
 	int size;
 	SDL_Texture* texture;
-	Uint8* pixels;
-	float contourX0[1000];
-	float contourY0[1000];
+	Uint8* pixels; 
 };
 
 struct terrain* terrain_create(int);

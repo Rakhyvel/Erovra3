@@ -35,6 +35,7 @@ struct game* game_init() {
 	}
 	SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
+	g->running = 1;
 	g->up = g->down = g->left = g->right = g->ctrl = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
 }
 
@@ -57,9 +58,7 @@ void game_pollInput() {
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_QUIT:
-			SDL_DestroyRenderer(g->rend);
-			SDL_DestroyWindow(g->window);
-			exit(0);
+			g->running = 0;
 			break;
 		case SDL_WINDOWEVENT:
 			SDL_GetWindowSize(g->window, &g->width, &g->height);

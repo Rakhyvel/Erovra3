@@ -1,3 +1,24 @@
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
-- vector graphics for terrain
+- Set up framework for ECS
+- Add city entities
+- Add nations, with resources like coins, population
+- Add infantry entities
+- Add unit selection API
+- Add arrow when moving a unit
+- Add bullet projectiles
+- Add health to units, death
+- Add UI
+- Infantry can build buildings
+- Add sound
+- Add ore
+- Add factories
+- Able to build units in factories
+- Add cavalry, artillery with different shades
+- Add airplanes
+- Add airfields
+- Add task forces
+- Add ports
+- Add ships
+- Add main menu
+- Multiplayer
