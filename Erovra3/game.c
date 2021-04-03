@@ -20,7 +20,7 @@ struct game* game_init() {
 
 	// Create Window
 	g->window = SDL_CreateWindow("Erovra 3.0.2", SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED, 925, 510,
+		SDL_WINDOWPOS_CENTERED, 800, 600,
 		SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 	if (g->window == NULL) {
 		printf("Error: Creating SDL window: %s\n", SDL_GetError());

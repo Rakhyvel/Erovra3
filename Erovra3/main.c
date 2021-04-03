@@ -32,7 +32,7 @@ Strategy and logistics:
 
 int main(int argc, char** argv) {
 	game_init();
-	struct terrain* terrain = terrain_create(12*64, g);
+	struct terrain* terrain = terrain_create(2*64, g);
 
 	long previous = clock();
 	long lag = 0;
@@ -72,7 +72,8 @@ int main(int argc, char** argv) {
 		const double seconds = (end - start) / (float)(freq);
 		if (seconds > 2.0)
 		{
-			printf("%d frames in %f seconds = %f FPS(%f ms/frame)\n", frames, seconds, frames/seconds, (seconds * 1000.0) / frames);
+			// MUST be under 16,000 micro seconds
+			printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames/seconds, (seconds * 1000000.0) / frames);
 			start = end;
 			frames = 0;
 		}

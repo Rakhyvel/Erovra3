@@ -22,3 +22,4 @@ x can move terrain around with mouse
 - Add ships
 - Add main menu
 - Multiplayer
+- terrain should be vectorized
