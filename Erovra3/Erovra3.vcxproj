@@ -149,6 +149,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arraylist.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="debug.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="entity.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="game.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="terrain.c">
@@ -157,6 +169,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arraylist.h" />
+    <ClInclude Include="debug.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="polygon.h" />

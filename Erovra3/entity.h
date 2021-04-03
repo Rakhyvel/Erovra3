@@ -1,9 +1,9 @@
 #pragma once
 #include <stdlib.h>
+#include "arraylist.h"
 
 typedef unsigned long long EntityID;
-typedef char* ComponentPool;
-#define MAX_COMPS 32
+#define MAX_COMPS sizeof(int) // because mask is an int
 
 struct entity {
 	EntityID id;
@@ -24,17 +24,15 @@ struct entity {
 	|---|   |   | 
 	|   |   |   |
 */
-ComponentPool components[MAX_COMPS];
-/* The size of components at a certain component index */
-size_t componentSizes[MAX_COMPS];
+struct arraylist* components[MAX_COMPS];
 /* List of all entities in scene */
-EntityID* entities;
+struct arraylist* entities;
 /* The size of the entities list */
 int numEntities;
 /* List of purged entities. To be cleared removed later */
-EntityID* purged;
+struct arraylist* purgedEntities;
 /* List of free spaces that can be allocated to */
-EntityID* free;
+struct arraylist* freedEntities;
 
 
 /*

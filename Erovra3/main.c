@@ -8,7 +8,7 @@ obstacles:	(1) enemy defenses			(2) enemy offense
 
 Resources:
 	Ore is scarce. You need ore to build units, which you need to attack/protect capitals. 
-	Population is also scarce. Should be able to train/retrain people for different skills. Used up when unit is purchased
+	Population is also scarce. Should be able to train/retrain people for different skills. Used up when unit is purchase
 
 Production management:
 	Different units have different trade offs
@@ -23,14 +23,13 @@ Strategy and logistics:
 
 #include <SDL.h>
 #include <stdio.h>
-#ifdef __cplusplus 
-#undef __cplusplus 
-#endif
 
+#include "entity.h"
 #include "game.h"
 #include "terrain.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
 	game_init();
 	struct terrain* terrain = terrain_create(2*64, g);
 
@@ -44,7 +43,33 @@ int main(int argc, char** argv) {
 	unsigned int frames = 0;
 	Uint64 start = SDL_GetPerformanceCounter();
 
-	while (g->running) {
+	// ECS TEST //
+	ECS_Init();
+
+	struct testComp {
+		struct vector pos;
+		struct vector vel;
+	};
+	ECS_RegisterComponent(0, sizeof(struct testComp));
+
+	EntityID test = ECS_NewID();
+	struct testComp testData = 
+	{
+		(struct vector) 
+		{
+			3, 4
+		},
+		(struct vector) 
+		{
+			3, 5
+		}
+	};
+	ECS_Assign(test, 0, &testData);
+	printf("%f\n", ((struct testComp*)ECS_GetComponent(test, 0))->pos.x);
+	// END ECS //
+
+	while (g->running) 
+	{
 		current = clock();
 		elapsed = current - previous;
 
@@ -61,7 +86,6 @@ int main(int argc, char** argv) {
 		}
 		if (elapsedFrames > 32) {
 			game_beginDraw();
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 			elapsedFrames = 0;
 			terrain_render(terrain);
 			game_endDraw();
@@ -78,8 +102,6 @@ int main(int argc, char** argv) {
 			frames = 0;
 		}
 	}
-	SDL_DestroyRenderer(g->rend);
-	SDL_DestroyWindow(g->window);
 
 	return 0;
 }

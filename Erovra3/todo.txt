@@ -1,6 +1,7 @@
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
 - Set up framework for ECS
+- Make the project xenophobic (de-globalize)
 - Add city entities
 - Add nations, with resources like coins, population
 - Add infantry entities
