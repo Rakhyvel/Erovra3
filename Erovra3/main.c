@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 	};
 	ECS_RegisterComponent(0, sizeof(struct testComp));
 
-	EntityID test = ECS_NewID();
+	unsigned long long test = ECS_NewID();
 	struct testComp testData = 
 	{
 		(struct vector) 
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 		}
 	};
 	ECS_Assign(test, 0, &testData);
-	printf("%f\n", ((struct testComp*)ECS_GetComponent(test, 0))->pos.x);
+	printf("%f\n", GET_COMPONENT(test, 0, struct testComp)->pos.x);
 	// END ECS //
 
 	while (g->running) 

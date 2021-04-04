@@ -1,6 +1,13 @@
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
-- Set up framework for ECS
+x Set up framework for ECS
+	x Arraylist
+	x Assign, New, Get
+	x Purge, removePurged
+	x Add in type defs
+	x macro in entity for getting component struct
+	x cant create new component if entities exist
+- Fix reasonable warnings
 - Make the project xenophobic (de-globalize)
 - Add city entities
 - Add nations, with resources like coins, population

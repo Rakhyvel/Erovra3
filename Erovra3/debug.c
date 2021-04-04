@@ -15,4 +15,5 @@ void debug_panic(const char* file, int line, const char* function,
     vprintf(message, args);
     printf("\n");
     va_end(args);
+    while (1);
 }
