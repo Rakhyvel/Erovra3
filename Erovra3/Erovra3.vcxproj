@@ -157,11 +157,11 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="entity.c">
+    <ClCompile Include="scene.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="game.c" />
+    <ClCompile Include="gameState.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="terrain.c">
       <SubType>
@@ -170,9 +170,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arraylist.h" />
+    <ClInclude Include="components.h" />
     <ClInclude Include="debug.h" />
-    <ClInclude Include="entity.h" />
-    <ClInclude Include="game.h" />
+    <ClInclude Include="scene.h" />
+    <ClInclude Include="gameState.h" />
     <ClInclude Include="polygon.h" />
     <ClInclude Include="terrain.h" />
     <ClInclude Include="vector.h" />

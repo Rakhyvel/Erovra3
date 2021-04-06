@@ -19,18 +19,21 @@
     <Filter Include="Source Files\util">
       <UniqueIdentifier>{f43bb1b6-e92f-47aa-8cf8-bc4b60444a46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\components">
+      <UniqueIdentifier>{89b8746d-486d-4619-8592-2ee0558eac58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game.c">
+    <ClCompile Include="gameState.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="terrain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entity.c">
+    <ClCompile Include="scene.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="debug.c">
@@ -41,7 +44,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="game.h">
+    <ClInclude Include="gameState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="terrain.h">
@@ -53,7 +56,7 @@
     <ClInclude Include="polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="entity.h">
+    <ClInclude Include="scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="debug.h">
@@ -61,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="arraylist.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="components.h">
+      <Filter>Header Files\components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

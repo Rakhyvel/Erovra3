@@ -10,7 +10,8 @@ terrain.c
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "game.h"
+#include "debug.h"
+#include "gameState.h"
 #include "terrain.h"
 #include "vector.h"
 
@@ -80,17 +81,17 @@ struct terrain* terrain_create(int mapSize) {
 	terrain_normalize(retval->map, retval->size);
 	for (int y = 0; y < retval->size; y++) {
 		for (int x = 0; x < retval->size; x++) {
-			retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.7f + 0.15;
+			retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.7f + 0.15f;
 		}
 	}
-	paintMap(retval, g);
+	paintMap(retval);
 	return retval;
 }
 
 void paintMap(struct terrain* terrain) {
 	terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, terrain->size, terrain->size);
-	terrain->pixels = malloc(terrain->size * terrain->size * 4);
-	if (!terrain->pixels) {
+	Uint8* pixels = malloc(terrain->size * terrain->size * 4);
+	if (!pixels) {
 		fprintf(stderr, "Memory error paintMap() creating pixels\n");
 		exit(1);
 	}
@@ -108,20 +109,21 @@ void paintMap(struct terrain* terrain) {
 			}
 			else {
 				i = (i - 0.5f) * 2;
-				i = sqrt(i);
+				i = sqrtf(i);
 				terrainColor = terrain_HSVtoRGB(30.0f + 100.0f * i, (i * 0.1f) + 0.25f, 0.7f - i * 0.35f);
 			}
 			if (terrain_isBorder(terrain->map, terrain->size, terrain->size, x, y, 0.5f, 1)) {
 				terrainColor = (SDL_Color){ 255, 255, 255 };
 			}
 
-			terrain->pixels[offset + 0] = terrainColor.b;
-			terrain->pixels[offset + 1] = terrainColor.g;
-			terrain->pixels[offset + 2] = terrainColor.r;
-			terrain->pixels[offset + 3] = SDL_ALPHA_OPAQUE;
+			pixels[offset + 0] = terrainColor.b;
+			pixels[offset + 1] = terrainColor.g;
+			pixels[offset + 2] = terrainColor.r;
+			pixels[offset + 3] = SDL_ALPHA_OPAQUE;
 		}
 	}
-	SDL_UpdateTexture(terrain->texture, NULL, terrain->pixels, terrain->size * 4);
+	SDL_UpdateTexture(terrain->texture, NULL, pixels, terrain->size * 4);
+	free(pixels);
 }
 
 void terrain_update(struct terrain* terrain) {
@@ -294,6 +296,10 @@ Returns: A pointer to the begining of the map. Map is row major ordered as an ar
 float* terrain_generate(int mapSize, int cellSize, float amplitude) {
 	// Allocate map
 	float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
+	if (!retval)
+	{
+		PANIC("Memory error");
+	}
 
 	// Sparsely fill with random values according to cell size
 	for (int y = 0; y < mapSize; y += cellSize) {

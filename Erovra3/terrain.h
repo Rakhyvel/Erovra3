@@ -8,13 +8,12 @@ terrain.h
 
 #include "vector.h"
 
-struct terrain {
+typedef struct terrain {
 	float* map;
 	float* ore;
 	int size;
 	SDL_Texture* texture;
-	Uint8* pixels; 
-};
+} Terrain;
 
 struct terrain* terrain_create(int);
 void paintMap(struct terrain* terrain);

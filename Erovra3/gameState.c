@@ -2,7 +2,7 @@
 game.c
 */
 #pragma once
-#include "game.h"
+#include "gameState.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -19,7 +19,7 @@ struct game* game_init() {
 	}
 
 	// Create Window
-	g->window = SDL_CreateWindow("Erovra 3.0.2", SDL_WINDOWPOS_CENTERED,
+	g->window = SDL_CreateWindow("Erovra 3.0.0", SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED, 800, 600,
 		SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 	if (g->window == NULL) {

@@ -22,16 +22,26 @@ Strategy and logistics:
 */
 
 #include <SDL.h>
+#include <time.h>
 #include <stdio.h>
 
-#include "entity.h"
-#include "game.h"
+#include "components.h"
+#include "scene.h"
+#include "gameState.h"
 #include "terrain.h"
 
 int main(int argc, char** argv) 
 {
 	game_init();
-	struct terrain* terrain = terrain_create(2*64, g);
+	Terrain* terrain = terrain_create(2*64);
+	Scene* match = Scene_Create();
+	Scene_RegisterComponent(match, transformID, sizeof(Transform));
+	Scene_RegisterComponent(match, simpleRenderableID, sizeof(SimpleRenderable));
+	Scene_RegisterComponent(match, healthID, sizeof(Health));
+	Scene_RegisterComponent(match, unitTypeID, sizeof(UnitType));
+	Scene_RegisterComponent(match, cityID, sizeof(City));
+
+	printf("%d\n", Scene_CreateMask(5, transformID, simpleRenderableID, healthID, unitTypeID, cityID));
 
 	long previous = clock();
 	long lag = 0;
@@ -42,31 +52,6 @@ int main(int argc, char** argv)
 
 	unsigned int frames = 0;
 	Uint64 start = SDL_GetPerformanceCounter();
-
-	// ECS TEST //
-	ECS_Init();
-
-	struct testComp {
-		struct vector pos;
-		struct vector vel;
-	};
-	ECS_RegisterComponent(0, sizeof(struct testComp));
-
-	unsigned long long test = ECS_NewID();
-	struct testComp testData = 
-	{
-		(struct vector) 
-		{
-			3, 4
-		},
-		(struct vector) 
-		{
-			3, 5
-		}
-	};
-	ECS_Assign(test, 0, &testData);
-	printf("%f\n", GET_COMPONENT(test, 0, struct testComp)->pos.x);
-	// END ECS //
 
 	while (g->running) 
 	{

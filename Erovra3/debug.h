@@ -18,7 +18,4 @@
 void debug_panic(const char* file, int line, const char* function,
     const char* message, ...);
 
-void debug_log(const char* file, int line, const char* function,
-    const char* message, ...);
-
 #endif

@@ -7,9 +7,9 @@ x Set up framework for ECS
 	x Add in type defs
 	x macro in entity for getting component struct
 	x cant create new component if entities exist
-- Fix reasonable warnings
-- Make the project xenophobic (de-globalize)
+x Make the project xenophobic (de-globalize)
 - Add city entities
+- See if I can make keeping track of components and their IDs, and registering them simpler
 - Add nations, with resources like coins, population
 - Add infantry entities
 - Add unit selection API
