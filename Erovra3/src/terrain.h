@@ -46,3 +46,5 @@ struct vector terrain_translateVector(float x, float y);
 // Some color mod. functions
 bool terrain_isBorder(float* terrain, int width, int height, int x, int y, float z, int i);
 SDL_Color terrain_HSVtoRGB(float hue, float sat, float val);
+
+struct vector findBestLocation(struct terrain* terrain, struct vector start);

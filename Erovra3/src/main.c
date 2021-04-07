@@ -22,101 +22,73 @@ Strategy and logistics:
 */
 
 #include <SDL.h>
-#include <time.h>
 #include <stdio.h>
+#include <time.h>
 
-#include "textures.h"
+#include "./components/city.h"
 #include "./components/components.h"
+#include "./engine/gameState.h"
 #include "./engine/scene.h"
 #include "./systems/systems.h"
-#include "./engine/gameState.h"
 #include "terrain.h"
+#include "textures.h"
 
 #include "./util/arraylist.h"
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
-	game_init();
-	Textures_Init();
-	Terrain* terrain = terrain_create(8*64);
-	Scene* match = Scene_Create(Components_Init);	
+    game_init();
+    Textures_Init();
+    Terrain* terrain = terrain_create(5 * 64);
+    Scene* match = Scene_Create(Components_Init);
 
-	SimpleRenderable rend = {
-		CITY_TEXTURE_ID,
-		CITY_OUTLINE_TEXTURE_ID,
-		false
-	};
-	
-	for (int i = 0; i < 1000; i++)
-	{
-		Transform testTransform = {
-		(struct vector) {
-			0.0f, 0.0f
-		},
-		0.0f,
-		(struct vector) {
-			0.0f, 0.0f
-		},
-		(struct vector) {
-			0.0f, 0.0f
-		},
-		(struct vector) {
-			(float)rand() / (float)RAND_MAX * 16 * 64, (float)rand() / (float)RAND_MAX * 16 * 64
-		},
-		0.0f
-		};
-		EntityID test = Scene_NewEntity(match);
-		Scene_Assign(match, test, TRANSFORM_COMPONENT_ID, &testTransform);
-		Scene_Assign(match, test, SIMPLE_RENDERABLE_COMPONENT_ID, &rend);
-	}
+    City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), true);
+    City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), true);
 
+    long previous = clock();
+    long lag = 0;
+    long current = clock();
+    long elapsed = 0;
+    long dt = 16;
+    int elapsedFrames = 0;
 
-	long previous = clock();
-	long lag = 0;
-	long current = clock();
-	long elapsed = 0;
-	long dt = 16;
-	int elapsedFrames = 0;
+    unsigned int frames = 0;
 
-	unsigned int frames = 0;
+    Uint64 start = SDL_GetPerformanceCounter();
+    while (g->running) {
+        current = clock();
+        elapsed = current - previous;
 
-	Uint64 start = SDL_GetPerformanceCounter();
-	while (g->running) 
-	{
-		current = clock();
-		elapsed = current - previous;
+        previous = current;
+        lag += elapsed;
 
-		previous = current;
-		lag += elapsed;
+        elapsedFrames += elapsed;
 
-		elapsedFrames += lag;
+        while (lag >= dt) {
+            game_pollInput();
+            // update entities
+            terrain_update(terrain);
+            System_Transform(match);
+            lag -= dt;
+        }
+        if (elapsedFrames > 32) {
+            game_beginDraw();
+            elapsedFrames = 0;
+            terrain_render(terrain);
+            System_Render(match);
+            game_endDraw();
+        }
+        frames++;
+        const Uint64 end = SDL_GetPerformanceCounter();
+        Uint64 freq = SDL_GetPerformanceFrequency();
+        const double seconds = (end - start) / (float)(freq);
+        if (seconds > 5.0) {
+            // MUST be under 16,000 micro seconds
+            printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames / seconds, (seconds * 1000000.0) / frames);
+            start = end;
+            frames = 0;
+        }
+    }
 
-		while (lag >= dt) {
-			game_pollInput();
-			// update entities
-			System_Transform(match);
-			terrain_update(terrain);
-			lag -= dt;
-		}
-		if (elapsedFrames > 32) {
-			game_beginDraw();
-			elapsedFrames = 0;
-			terrain_render(terrain);
-			System_Render(match);
-			game_endDraw();
-		}
-		frames++;
-		const Uint64 end = SDL_GetPerformanceCounter();
-		Uint64 freq = SDL_GetPerformanceFrequency();
-		const double seconds = (end - start) / (float)(freq);
-		if (seconds > 5.0)
-		{
-			// MUST be under 16,000 micro seconds
-			printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames/seconds, (seconds * 1000000.0) / frames);
-			start = end;
-			frames = 0;
-		}
-	}
-
-	return 0;
+    return 0;
 }

@@ -13,7 +13,8 @@ x Make the project xenophobic (de-globalize)
 	x See if I can make keeping track of components and their IDs, and registering them simpler
 	x texture manager in scene
 	x organzie into folders
-	- find suitable squares, place capitals cities
+	x find suitable squares, place capitals cities
+	- make capitals
 - Add nations
 - Add infantry entities
 

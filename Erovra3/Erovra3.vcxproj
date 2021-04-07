@@ -149,6 +149,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\city.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\util\arraylist.c">
       <SubType>
       </SubType>
@@ -183,8 +187,13 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\util\vector.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\city.h" />
     <ClInclude Include="src\util\arraylist.h" />
     <ClInclude Include="src\components\components.h" />
     <ClInclude Include="src\util\debug.h" />

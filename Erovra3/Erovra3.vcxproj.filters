@@ -57,6 +57,12 @@
     <ClCompile Include="src\textures.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\city.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\vector.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -90,6 +96,9 @@
       <Filter>Header Files\util</Filter>
     </ClInclude>
     <ClInclude Include="src\textures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\city.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
