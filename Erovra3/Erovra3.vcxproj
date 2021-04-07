@@ -175,7 +175,11 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="texture.c">
+    <ClCompile Include="textureManager.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="textures.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -189,7 +193,8 @@
     <ClInclude Include="polygon.h" />
     <ClInclude Include="systems.h" />
     <ClInclude Include="terrain.h" />
-    <ClInclude Include="texture.h" />
+    <ClInclude Include="textureManager.h" />
+    <ClInclude Include="textures.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>
   <ItemGroup>

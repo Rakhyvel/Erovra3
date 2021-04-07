@@ -50,8 +50,9 @@ typedef struct scene {
 	struct arraylist* purgedEntities;
 	/* List of free indices that can be overwritten */
 	struct arraylist* freeIndices;
-	/* Number of entities in existance */
+	/* Number of entities in scene */
 	int numEntities;
+	/* Number of components in scene */
 	int numComponents;
 } Scene;
 

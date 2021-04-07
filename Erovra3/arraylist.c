@@ -67,7 +67,6 @@ void arraylist_add(struct arraylist* list, void* data)
 	if (list->size >= list->capacity) 
 	{
 		void* res = realloc(list->data, 2 * list->size * list->typeSize);
-		printf("Prev ptr: %p new ptr: %p\n", list->data, res);
 		if (res != NULL && res != list->data)
 		{
 			list->data = res;

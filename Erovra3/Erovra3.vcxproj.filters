@@ -48,11 +48,14 @@
     <ClCompile Include="systems.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
-    <ClCompile Include="texture.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="components.c">
       <Filter>Source Files\components</Filter>
+    </ClCompile>
+    <ClCompile Include="textureManager.c">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="textures.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -60,9 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="terrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="polygon.h">
@@ -83,7 +83,13 @@
     <ClInclude Include="systems.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h">
+    <ClInclude Include="textureManager.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="vector.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="textures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

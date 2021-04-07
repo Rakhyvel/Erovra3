@@ -77,7 +77,7 @@ struct terrain* terrain_create(int mapSize) {
 	}
 	retval->size = mapSize;
 	retval->map = terrain_perlin(retval->size, retval->size / 2);
-	retval->ore = terrain_perlin(retval->size / 64, retval->size / 128);
+	//retval->ore = terrain_perlin(retval->size / 64, retval->size / 128);
 	terrain_normalize(retval->map, retval->size);
 	for (int y = 0; y < retval->size; y++) {
 		for (int x = 0; x < retval->size; x++) {
@@ -163,14 +163,15 @@ void terrain_update(struct terrain* terrain) {
 }
 
 void terrain_render(struct terrain* terrain) {
-	SDL_Rect rect = (SDL_Rect){ 0, 0, 0, 0 };
-	terrain_translate(&rect, 0, 0, 0, 0);
-	rect.w = rect.h = (int)(terrain_zoom * terrain->size);
+	SDL_FRect frect = (SDL_FRect){ 0, 0, 0, 0 };
+	terrain_translate(&frect, 0, 0, 0, 0);
+	frect.w = frect.h = (int)(terrain_zoom * terrain->size);
+	SDL_Rect rect = (SDL_Rect){ frect.x, frect.y, frect.w, frect.h };
 	SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
 
 	SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 50);
 	SDL_FPoint gridLineStart = { 32, 32 };
-	SDL_Rect gridLineRect = { 0, 0, 0, 0 };
+	SDL_FRect gridLineRect = { 0, 0, 0, 0 };
 	terrain_translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
 	for (int x = 0; x <= terrain->size / 64; x++) {
 		SDL_RenderDrawLine(g->rend,
@@ -395,11 +396,11 @@ inline float terrain_getHeight(struct terrain* terrain, int x, int y) {
 	return terrain->map[y * terrain->size + x];
 }
 
-void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height) {
-	newPos->x = (int)((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
-	newPos->y = (int)((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
-	newPos->w = (int)(width * terrain_zoom);
-	newPos->h = (int)(height * terrain_zoom);
+void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height) {
+	newPos->x = ((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
+	newPos->y = ((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
+	newPos->w = (width * terrain_zoom);
+	newPos->h = (height * terrain_zoom);
 }
 
 /*

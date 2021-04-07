@@ -117,7 +117,6 @@ EntityID Scene_NewEntity(struct scene* scene)
 	{
 		EntityIndex index = (EntityIndex)(scene->entities->size);
 		struct entity newEntity = { ((EntityID)index << 16), 0 };
-		printf("Index: %u\n", index);
 		arraylist_add(scene->entities, &newEntity);
 		return newEntity.id;
 	}

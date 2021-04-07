@@ -25,6 +25,7 @@ Strategy and logistics:
 #include <time.h>
 #include <stdio.h>
 
+#include "textures.h"
 #include "components.h"
 #include "scene.h"
 #include "systems.h"
@@ -36,10 +37,19 @@ Strategy and logistics:
 int main(int argc, char** argv) 
 {
 	game_init();
-	Terrain* terrain = terrain_create(16*64);
-	Scene* match = Scene_Create(Components_Init);
+	Textures_Init();
+	Terrain* terrain = terrain_create(8*64);
+	Scene* match = Scene_Create(Components_Init);	
 
-	Transform testTransform = {
+	SimpleRenderable rend = {
+		CITY_TEXTURE_ID,
+		CITY_OUTLINE_TEXTURE_ID,
+		false
+	};
+	
+	for (int i = 0; i < 1000; i++)
+	{
+		Transform testTransform = {
 		(struct vector) {
 			0.0f, 0.0f
 		},
@@ -51,22 +61,13 @@ int main(int argc, char** argv)
 			0.0f, 0.0f
 		},
 		(struct vector) {
-			0.0f, 0.0f
+			(float)rand() / (float)RAND_MAX * 16 * 64, (float)rand() / (float)RAND_MAX * 16 * 64
 		},
 		0.0f
-	};
-
-	SimpleRenderable rend = {
-		NULL,
-		NULL,
-		false
-	};
-	
-	for (int i = 0; i < 1000; i++)
-	{
+		};
 		EntityID test = Scene_NewEntity(match);
-		Scene_Assign(match, test, TRANSFORM_ID, &testTransform);
-		Scene_Assign(match, test, SIMPLE_RENDERABLE_ID, &rend);
+		Scene_Assign(match, test, TRANSFORM_COMPONENT_ID, &testTransform);
+		Scene_Assign(match, test, SIMPLE_RENDERABLE_COMPONENT_ID, &rend);
 	}
 
 

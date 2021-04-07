@@ -10,7 +10,9 @@ x Set up framework for ECS
 	x cant create new component if entities exist
 x Make the project xenophobic (de-globalize)
 - Add city entities
-	- See if I can make keeping track of components and their IDs, and registering them simpler
+	x See if I can make keeping track of components and their IDs, and registering them simpler
+	x texture manager in scene
+	- organzie into folders
 - Add nations
 - Add infantry entities
 
