@@ -78,8 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\lib\SDL2-2.0.14\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\lib\SDL2-2.0.14\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\lib\SDL2-2.0.14\include;C:\lib\SDL2_image-2.0.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\lib\SDL2-2.0.14\lib\x64;C:\lib\SDL2_image-2.0.5\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -129,7 +129,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -163,7 +163,15 @@
     </ClCompile>
     <ClCompile Include="gameState.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="systems.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="terrain.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="texture.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -175,7 +183,9 @@
     <ClInclude Include="scene.h" />
     <ClInclude Include="gameState.h" />
     <ClInclude Include="polygon.h" />
+    <ClInclude Include="systems.h" />
     <ClInclude Include="terrain.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>
   <ItemGroup>

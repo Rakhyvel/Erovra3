@@ -11,11 +11,11 @@ typedef struct transform {
 	struct vector pos;
 	float z;
 	struct vector lookat;
-	struct vector velocity;
-	struct vector target;
+	struct vector vel;
+	struct vector tar;
 	double angle;
 } Transform;
-const ComponentID transformID = 0;
+#define TRANSFORM_ID 0
 
 /*
 	Contains data for rendering an entity to the screen, like it's sprite, the 
@@ -25,7 +25,7 @@ typedef struct simpleRenderable {
 	SDL_Texture* spriteOutline;
 	bool showOutline;
 } SimpleRenderable;
-const ComponentID simpleRenderableID = 1;
+#define SIMPLE_RENDERABLE_ID 1
 
 /*
 	Contains data used for determining the health of a unit, how long the unit
@@ -35,18 +35,18 @@ typedef struct health {
 	int aliveTicks;
 	int deathTicks;
 } Health;
-const ComponentID healthID = 2;
+#define HEALTH_ID 2
 
 typedef struct unitType {
 	float attack;
 	float speed;
 	float defense;
 } UnitType;
-const ComponentID unitTypeID = 3;
+#define UNIT_TYPE_ID 3
 
 typedef struct city {
 	char name[20];
 	bool isCapital;
 	float oreMined;
 } City;
-const ComponentID cityID = 4;
+#define CITY_ID 4

@@ -19,7 +19,7 @@ struct arraylist {
 	int capacity;
 };
 
-struct arraylist* arraylist_create(size_t typeSize);
+struct arraylist* arraylist_create(int initSize, size_t typeSize);
 
 void arraylist_add(struct arraylist* list, void* data);
 void arraylist_put(struct arraylist* list, int index, void* data);

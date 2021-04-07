@@ -27,21 +27,52 @@ Strategy and logistics:
 
 #include "components.h"
 #include "scene.h"
+#include "systems.h"
 #include "gameState.h"
 #include "terrain.h"
+
+#include "arraylist.h"
 
 int main(int argc, char** argv) 
 {
 	game_init();
-	Terrain* terrain = terrain_create(2*64);
+	Terrain* terrain = terrain_create(16*64);
 	Scene* match = Scene_Create();
-	Scene_RegisterComponent(match, transformID, sizeof(Transform));
-	Scene_RegisterComponent(match, simpleRenderableID, sizeof(SimpleRenderable));
-	Scene_RegisterComponent(match, healthID, sizeof(Health));
-	Scene_RegisterComponent(match, unitTypeID, sizeof(UnitType));
-	Scene_RegisterComponent(match, cityID, sizeof(City));
+	Scene_RegisterComponent(match, TRANSFORM_ID, sizeof(Transform));
+	Scene_RegisterComponent(match, SIMPLE_RENDERABLE_ID, sizeof(SimpleRenderable));
+	Scene_RegisterComponent(match, HEALTH_ID, sizeof(Health));
+	Scene_RegisterComponent(match, UNIT_TYPE_ID, sizeof(UnitType));
+	Scene_RegisterComponent(match, CITY_ID, sizeof(City));
+	Transform testTransform = {
+		(struct vector) {
+			10.0f, 10.0f
+		},
+		0.0f,
+		(struct vector) {
+			0.0f, 0.0f
+		},
+		(struct vector) {
+			0.0f, 0.0f
+		},
+		(struct vector) {
+			0.0f, 0.0f
+		},
+		0.0f
+	};
 
-	printf("%d\n", Scene_CreateMask(5, transformID, simpleRenderableID, healthID, unitTypeID, cityID));
+	SimpleRenderable rend = {
+		NULL,
+		NULL,
+		false
+	};
+	
+	for (int i = 0; i < 1000; i++)
+	{
+		EntityID test = Scene_NewEntity(match);
+		Scene_Assign(match, test, TRANSFORM_ID, &testTransform);
+		Scene_Assign(match, test, SIMPLE_RENDERABLE_ID, &rend);
+	}
+
 
 	long previous = clock();
 	long lag = 0;
@@ -51,8 +82,8 @@ int main(int argc, char** argv)
 	int elapsedFrames = 0;
 
 	unsigned int frames = 0;
-	Uint64 start = SDL_GetPerformanceCounter();
 
+	Uint64 start = SDL_GetPerformanceCounter();
 	while (g->running) 
 	{
 		current = clock();
@@ -66,6 +97,7 @@ int main(int argc, char** argv)
 		while (lag >= dt) {
 			game_pollInput();
 			// update entities
+			System_Transform(match);
 			terrain_update(terrain);
 			lag -= dt;
 		}
@@ -73,13 +105,14 @@ int main(int argc, char** argv)
 			game_beginDraw();
 			elapsedFrames = 0;
 			terrain_render(terrain);
+			System_Render(match);
 			game_endDraw();
 		}
 		frames++;
 		const Uint64 end = SDL_GetPerformanceCounter();
 		Uint64 freq = SDL_GetPerformanceFrequency();
 		const double seconds = (end - start) / (float)(freq);
-		if (seconds > 2.0)
+		if (seconds > 5.0)
 		{
 			// MUST be under 16,000 micro seconds
 			printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames/seconds, (seconds * 1000000.0) / frames);

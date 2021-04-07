@@ -5,17 +5,19 @@
 */
 #pragma once
 #include <SDL.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "arraylist.h"
 
 typedef Uint8 ComponentID;
 typedef Uint64 ComponentMask;
-typedef Uint32 EntityIndex;
-typedef Uint32 EntityVersion;
-typedef Uint64 EntityID; // EntitiyIndex << 32 | EntityVersion
+typedef Uint16 EntityIndex;
+typedef Uint16 EntityVersion;
+typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
 
 #define MAX_COMPS sizeof(ComponentMask) * 8
 #define INVALID_ENTITY_INDEX ((EntityID)-1)
+#define MAX_ENTITIES 1000
 
 #define GET_COMPONENT(id, componentid, type) ((type*)ECS_GetComponent(id, componentid))
 
@@ -76,4 +78,6 @@ void Scene_Purge(struct scene*);
 
 ComponentMask Scene_CreateMask(int, ComponentID, ...);
 // give it a current index, a mask, and it will return the next index. will be -1 at end
-EntityIndex Scene_Iterate(EntityIndex, ComponentMask);
+EntityID Scene_Begin(struct scene* scene, ComponentMask mask);
+bool Scene_End(struct scene* scene, EntityID id);
+EntityID Scene_Next(struct scene* scene, EntityID prev, ComponentMask mask);

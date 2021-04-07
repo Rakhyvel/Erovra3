@@ -12,6 +12,7 @@
 */
 
 #pragma once
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -32,9 +33,9 @@ struct scene* Scene_Create()
 		PANIC("Memory error");
 	}
 
-	retval->entities = arraylist_create(sizeof(struct entity));
-	retval->purgedEntities = arraylist_create(sizeof(EntityIndex));
-	retval->freeIndices = arraylist_create(sizeof(EntityIndex));
+	retval->entities = arraylist_create(10, sizeof(struct entity));
+	retval->purgedEntities = arraylist_create(10, sizeof(EntityIndex));
+	retval->freeIndices = arraylist_create(10, sizeof(EntityIndex));
 
 	return retval;
 }
@@ -55,7 +56,7 @@ void Scene_RegisterComponent(struct scene* scene, ComponentID componentID, size_
 	}
 	else
 	{
-		scene->components[componentID] = arraylist_create(componentSize);
+		scene->components[componentID] = arraylist_create(MAX_ENTITIES, componentSize);
 	}
 }
 
@@ -94,17 +95,24 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
 EntityID Scene_NewEntity(struct scene* scene)
 {
 	scene->numEntities++;
+	if (scene->numEntities > MAX_ENTITIES)
+	{
+		fprintf(stderr, "Entity overflow");
+		exit(1);
+	}
+
 	if (scene->freeIndices->size != 0)
 	{
 		EntityIndex index = ARRAYLIST_POP_DEREF(scene->freeIndices, EntityIndex);
 		struct entity* entity = ARRAYLIST_GET(scene->entities, index, struct entity);
-		entity->id = ((EntityID)index << 32) | getVersion(entity->id);
+		entity->id = ((EntityID)index << sizeof(EntityVersion)) | getVersion(entity->id);
 		return entity->id;
 	}
 	else
 	{
 		EntityIndex index = (EntityIndex)(scene->entities->size);
-		struct entity newEntity = { ((EntityID)index << 32), 0 };
+		struct entity newEntity = { ((EntityID)index << 16), 0 };
+		printf("Index: %u\n", index);
 		arraylist_add(scene->entities, &newEntity);
 		return newEntity.id;
 	}
@@ -121,7 +129,7 @@ EntityID Scene_NewEntity(struct scene* scene)
 	memory pool. */
 void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, void* componentData)
 {
-	if (getIndex(id) == INVALID_ENTITY_INDEX) 
+	if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) 
 	{
 		PANIC("Invalid entity index");
 	}
@@ -140,19 +148,6 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 	else
 	{
 		getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
-		if (scene->components[componentID]->size < getIndex(id))
-		{
-			void* res = realloc(scene->components[componentID], getIndex(id)+1);
-			if (!res)
-			{
-				free(scene->components[componentID]);
-				PANIC("Memory error");
-			}
-			else
-			{
-				scene->components[componentID] = res;
-			}
-		}
 		arraylist_put(scene->components[componentID], getIndex(id), componentData);
 	}
 }
@@ -178,13 +173,15 @@ void Scene_Purge(struct scene* scene)
 		EntityIndex index = getIndex(id);
 		EntityVersion version = getVersion(id);
 		struct entity* purgedEntity = ARRAYLIST_GET(scene->entities, index, struct entity);
-		purgedEntity->id = (INVALID_ENTITY_INDEX << 32) | ++version;
+		purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | ++version;
 		purgedEntity->mask = 0;
 		arraylist_add(scene->freeIndices, &index);
 		scene->numEntities--;
 	}
 }
 
+/*
+	Creates a component bit mask based on given a list of component ids */
 ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 {
 	ComponentID component = components;
@@ -194,7 +191,6 @@ ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 
 	for (int i = 0; i < number; i++)
 	{
-		printf("%d\n", component);
 		retval |= ((ComponentMask)1 << (ComponentMask)component);
 		component = va_arg(args, ComponentID);
 	}
@@ -204,20 +200,51 @@ ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 	return retval;
 }
 
+/*
+	Finds and returns first index of a mask matching an entity */
+EntityID Scene_Begin(struct scene* scene, ComponentMask mask)
+{
+	return Scene_Next(scene, -1, mask);
+}
+
+/*
+	Checks to see if the entity id is the last entity */
+bool Scene_End(struct scene* scene, EntityID id)
+{
+	return getIndex(id) != scene->numEntities;
+}
+
+/*
+	Returns the next entity id given a previous entity id, and a component mask */
+EntityID Scene_Next(struct scene* scene, EntityID prev, ComponentMask mask)
+{
+	EntityIndex index;
+	for (index = getIndex(prev) + 1; index < scene->entities->size; index++)
+	{
+		struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
+		if (entt->id != INVALID_ENTITY_INDEX &&
+			(entt->mask & mask))
+		{
+			return entt->id;
+		}
+	}
+	return (EntityID)(scene->entities->size) << 16;
+}
+
 // returns the index portion of an id
 EntityIndex getIndex(EntityID id)
 {
-	return (id >> 32);
+	return (id >> 16);
 }
 
 // returns the version portion of an id
 EntityVersion getVersion(EntityID id)
 {
-	return id & 0xFFFFFFFF;
+	return id & 0xFFFF;
 }
 
 // returns the entity structure for a given EntityID
 struct entity* getEntityStruct(struct scene* scene, EntityID id)
 {
-	return ((struct entity*)(scene->entities->data + getIndex(id)));
+	return ARRAYLIST_GET(scene->entities, getIndex(id), struct entity);
 }

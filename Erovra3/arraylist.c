@@ -19,7 +19,7 @@
 
 /*
 	Creates an arraylist with a given type size */
-struct arraylist* arraylist_create(size_t typeSize)
+struct arraylist* arraylist_create(int initSize, size_t typeSize)
 {
 	struct arraylist* retval = malloc(sizeof(struct arraylist));
 	if (!retval) 
@@ -29,7 +29,7 @@ struct arraylist* arraylist_create(size_t typeSize)
 	}
 	retval->typeSize = typeSize;
 	retval->size = 0;
-	retval->capacity = 10;
+	retval->capacity = initSize;
 	retval->data = calloc(retval->capacity * retval->typeSize, sizeof(char));
 	return retval;
 }

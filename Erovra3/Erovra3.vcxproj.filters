@@ -22,6 +22,9 @@
     <Filter Include="Header Files\components">
       <UniqueIdentifier>{89b8746d-486d-4619-8592-2ee0558eac58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\components">
+      <UniqueIdentifier>{f68b1bf3-c690-48f5-b3b5-59bed6707e69}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
@@ -41,6 +44,12 @@
     </ClCompile>
     <ClCompile Include="arraylist.c">
       <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="systems.c">
+      <Filter>Source Files\components</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +76,12 @@
     </ClInclude>
     <ClInclude Include="components.h">
       <Filter>Header Files\components</Filter>
+    </ClInclude>
+    <ClInclude Include="systems.h">
+      <Filter>Header Files\components</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

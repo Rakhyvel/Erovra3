@@ -1,3 +1,4 @@
+3.0.0
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
 x Set up framework for ECS
@@ -9,25 +10,49 @@ x Set up framework for ECS
 	x cant create new component if entities exist
 x Make the project xenophobic (de-globalize)
 - Add city entities
-- See if I can make keeping track of components and their IDs, and registering them simpler
-- Add nations, with resources like coins, population
+	- See if I can make keeping track of components and their IDs, and registering them simpler
+- Add nations
 - Add infantry entities
+
+3.0.1- Selection API
 - Add unit selection API
 - Add arrow when moving a unit
+- Add task forces
+
+3.0.2- Combat
 - Add bullet projectiles
 - Add health to units, death
-- Add UI
+
+3.0.3- UI system
+- Add UI system
+- Add game menu
+- Add scene stack
+
+3.0.4- Buildings, resources
 - Infantry can build buildings
-- Add sound
-- Add ore
 - Add factories
 - Able to build units in factories
 - Add cavalry, artillery with different shades
+- Add ore, population
+
+3.0.5- Prettify
+- Add sound
+- Add particles
+- Add animations
+
+3.0.6- Airplanes
 - Add airplanes
 - Add airfields
-- Add task forces
+
+3.0.7- Boats
 - Add ports
 - Add ships
-- Add main menu
+
+3.1.0- Milestone 1
+- polish
+
+3.2.0- Multiplayer
 - Multiplayer
+
+misc.
 - terrain should be vectorized
