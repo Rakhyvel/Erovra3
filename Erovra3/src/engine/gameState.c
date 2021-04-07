@@ -36,7 +36,8 @@ struct game* game_init() {
 	SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
 	g->running = 1;
-	g->up = g->down = g->left = g->right = g->ctrl = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
+	g->up = g->down = g->left = g->right = g->ctrl = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
+
 }
 
 void game_beginDraw() {
@@ -52,6 +53,14 @@ void game_pollInput() {
 	// PRE INPUT
 	g->mouseLeftUp = false;
 	g->mouseRightUp = false;
+
+	if (g->scrolling) {
+		if (g->scroll_acceleration > 0) g->scroll_acceleration -= g->scroll_friction;
+		if (g->scroll_acceleration < 0) g->scroll_acceleration += g->scroll_friction;
+		if (abs(g->scroll_acceleration) < 0.0005) g->scroll_acceleration = 0;
+		g->scroll_Y += g->scroll_sensitivity * g->scroll_acceleration;
+		// Here you have to set your scrolling bounds i.e. if(scroll_Y < 0) scroll_Y = 0;
+	}
 
 	// DIRECT INPUT
 	SDL_Event event;
@@ -101,6 +110,26 @@ void game_pollInput() {
 				break;
 			}
 			break;
+		case SDL_MULTIGESTURE: {
+			printf("Hello");
+			if (event.mgesture.numFingers == 2) {
+				if (g->scrolling == 0) {
+					g->scrolling = 1;
+					g->scroll_prev_pos = event.mgesture.y;
+				}
+				else {
+					double dy = event.mgesture.y - g->scroll_prev_pos;
+					g->scroll_acceleration = dy * 40;
+					g->scroll_prev_pos = event.mgesture.y;
+					g->scrolling = 1;
+				}
+			}
+			break;
+		}
+		case SDL_FINGERDOWN: {
+			printf("Hello");
+			break;
+		}
 		case SDL_MOUSEMOTION:
 			SDL_GetMouseState(&(g->mouseX), &(g->mouseY));
 			if (event.button.button == SDL_BUTTON_LEFT) {

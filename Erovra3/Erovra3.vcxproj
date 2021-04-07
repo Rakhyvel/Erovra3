@@ -149,53 +149,53 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="arraylist.c">
+    <ClCompile Include="src\util\arraylist.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="components.c">
+    <ClCompile Include="src\components\components.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="debug.c">
+    <ClCompile Include="src\util\debug.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="scene.c">
+    <ClCompile Include="src\engine\scene.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="gameState.c" />
-    <ClCompile Include="main.c" />
-    <ClCompile Include="systems.c">
+    <ClCompile Include="src\engine\gameState.c" />
+    <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\systems\systems.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="terrain.c">
+    <ClCompile Include="src\terrain.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="textureManager.c">
+    <ClCompile Include="src\engine\textureManager.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="textures.c">
+    <ClCompile Include="src\textures.c">
       <SubType>
       </SubType>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="arraylist.h" />
-    <ClInclude Include="components.h" />
-    <ClInclude Include="debug.h" />
-    <ClInclude Include="scene.h" />
-    <ClInclude Include="gameState.h" />
-    <ClInclude Include="polygon.h" />
-    <ClInclude Include="systems.h" />
-    <ClInclude Include="terrain.h" />
-    <ClInclude Include="textureManager.h" />
-    <ClInclude Include="textures.h" />
-    <ClInclude Include="vector.h" />
+    <ClInclude Include="src\util\arraylist.h" />
+    <ClInclude Include="src\components\components.h" />
+    <ClInclude Include="src\util\debug.h" />
+    <ClInclude Include="src\engine\scene.h" />
+    <ClInclude Include="src\engine\gameState.h" />
+    <ClInclude Include="src\util\polygon.h" />
+    <ClInclude Include="src\systems\systems.h" />
+    <ClInclude Include="src\terrain.h" />
+    <ClInclude Include="src\engine\textureManager.h" />
+    <ClInclude Include="src\textures.h" />
+    <ClInclude Include="src\util\vector.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />

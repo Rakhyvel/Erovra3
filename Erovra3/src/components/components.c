@@ -1,6 +1,6 @@
 #pragma once
-#include "scene.h"
-#include "components.h"
+#include "../engine/scene.h"
+#include "../components/components.h"
 
 void Components_Init(struct scene* scene) {
 	TRANSFORM_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Transform));

@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "scene.h"
-#include "debug.h"
+#include "../util/debug.h"
 
 static EntityIndex getIndex(EntityID);
 static EntityVersion getVersion(EntityID);

@@ -6,7 +6,7 @@ terrain.h
 #include <SDL.h>
 #include <stdbool.h>
 
-#include "vector.h"
+#include "./util/vector.h"
 
 typedef struct terrain {
 	float* map;

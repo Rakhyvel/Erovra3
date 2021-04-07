@@ -1,10 +1,10 @@
 #pragma once
-#include "scene.h"
-#include "components.h"
 #include "systems.h"
-#include "gameState.h"
-#include "terrain.h"
-#include "textureManager.h"
+#include "../terrain.h"
+#include "../components/components.h"
+#include "../engine/gameState.h"
+#include "../engine/scene.h"
+#include "../engine/textureManager.h"
 
 void System_Transform(struct scene* scene)
 {

@@ -10,14 +10,15 @@ terrain.c
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "debug.h"
-#include "gameState.h"
+#include "./util/debug.h"
+#include "./engine/gameState.h"
 #include "terrain.h"
-#include "vector.h"
+#include "./util/vector.h"
 
 static bool mouseDown = false;
 static struct vector offset = { 0, 0 };
 static struct vector oldOffset = { 0, 0 };
+static float terrain_zoom_target = 1;
 static float terrain_zoom = 1;
 static int oldWheel = 0;
 
@@ -129,10 +130,12 @@ void paintMap(struct terrain* terrain) {
 void terrain_update(struct terrain* terrain) {
 	terrain_zoom *= (float)pow(1.1, g->mouseWheelY - oldWheel);
 	oldWheel = g->mouseWheelY;
-	if (terrain_zoom < 0.75 * g->height / terrain->size) {
+	if (terrain_zoom < 0.75 * g->height / terrain->size) 
+	{
 		terrain_zoom = 0.75f * g->height / terrain->size;
 	}
-	if (terrain_zoom > 8.0f * g->height / terrain->size) {
+	if (terrain_zoom > 8.0f * g->height / terrain->size) 
+	{
 		terrain_zoom = 8.0f * g->height / terrain->size;
 	}
 

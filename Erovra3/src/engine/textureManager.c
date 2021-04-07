@@ -3,7 +3,7 @@
 #include <SDL_image.h>
 #include <stdio.h>
 
-#include "debug.h"
+#include "../util/debug.h"
 #include "gameState.h"
 #include "textureManager.h"
 

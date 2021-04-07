@@ -27,69 +27,69 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.c">
+    <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gameState.c">
+    <ClCompile Include="src\engine\gameState.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="terrain.c">
+    <ClCompile Include="src\terrain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scene.c">
+    <ClCompile Include="src\engine\scene.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="debug.c">
+    <ClCompile Include="src\util\debug.c">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="arraylist.c">
+    <ClCompile Include="src\util\arraylist.c">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="systems.c">
+    <ClCompile Include="src\systems\systems.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
-    <ClCompile Include="components.c">
+    <ClCompile Include="src\components\components.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
-    <ClCompile Include="textureManager.c">
+    <ClCompile Include="src\engine\textureManager.c">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="textures.c">
+    <ClCompile Include="src\textures.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gameState.h">
+    <ClInclude Include="src\engine\gameState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="terrain.h">
+    <ClInclude Include="src\terrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="polygon.h">
+    <ClInclude Include="src\util\polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="scene.h">
+    <ClInclude Include="src\engine\scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="debug.h">
+    <ClInclude Include="src\util\debug.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="arraylist.h">
+    <ClInclude Include="src\util\arraylist.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="components.h">
+    <ClInclude Include="src\components\components.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
-    <ClInclude Include="systems.h">
+    <ClInclude Include="src\systems\systems.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
-    <ClInclude Include="textureManager.h">
+    <ClInclude Include="src\engine\textureManager.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="vector.h">
+    <ClInclude Include="src\util\vector.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="textures.h">
+    <ClInclude Include="src\textures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,7 +7,7 @@
 #include <SDL.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "arraylist.h"
+#include "../util/arraylist.h"
 
 typedef Uint8 ComponentID;
 typedef Uint64 ComponentMask;

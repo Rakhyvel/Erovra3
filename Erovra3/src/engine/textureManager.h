@@ -1,6 +1,6 @@
 #pragma once
 #include <SDL.h>
-#include "arraylist.h"
+#include "../util/arraylist.h"
 
 #define MAX_TEXTURES 255
 

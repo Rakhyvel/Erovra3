@@ -26,13 +26,13 @@ Strategy and logistics:
 #include <stdio.h>
 
 #include "textures.h"
-#include "components.h"
-#include "scene.h"
-#include "systems.h"
-#include "gameState.h"
+#include "./components/components.h"
+#include "./engine/scene.h"
+#include "./systems/systems.h"
+#include "./engine/gameState.h"
 #include "terrain.h"
 
-#include "arraylist.h"
+#include "./util/arraylist.h"
 
 int main(int argc, char** argv) 
 {

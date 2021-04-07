@@ -1,9 +1,9 @@
 #pragma once
 #include <SDL.h>
 #include <stdbool.h>
-#include "vector.h"
-#include "scene.h"
-#include "textureManager.h"
+#include "../util/vector.h"
+#include "../engine/scene.h"
+#include "../engine/textureManager.h"
 
 void Components_Init(struct scene*);
 
