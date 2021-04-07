@@ -37,15 +37,11 @@ int main(int argc, char** argv)
 {
 	game_init();
 	Terrain* terrain = terrain_create(16*64);
-	Scene* match = Scene_Create();
-	Scene_RegisterComponent(match, TRANSFORM_ID, sizeof(Transform));
-	Scene_RegisterComponent(match, SIMPLE_RENDERABLE_ID, sizeof(SimpleRenderable));
-	Scene_RegisterComponent(match, HEALTH_ID, sizeof(Health));
-	Scene_RegisterComponent(match, UNIT_TYPE_ID, sizeof(UnitType));
-	Scene_RegisterComponent(match, CITY_ID, sizeof(City));
+	Scene* match = Scene_Create(Components_Init);
+
 	Transform testTransform = {
 		(struct vector) {
-			10.0f, 10.0f
+			0.0f, 0.0f
 		},
 		0.0f,
 		(struct vector) {

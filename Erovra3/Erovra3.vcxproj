@@ -153,6 +153,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="components.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="debug.c">
       <SubType>
       </SubType>

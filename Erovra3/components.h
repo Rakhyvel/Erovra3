@@ -4,6 +4,8 @@
 #include "vector.h"
 #include "scene.h"
 
+void Components_Init(struct scene*);
+
 /*
 	Contains basic data for positioning an entity in the world space, as well as 
 	moving the entity with a target and velocity */
@@ -15,7 +17,7 @@ typedef struct transform {
 	struct vector tar;
 	double angle;
 } Transform;
-#define TRANSFORM_ID 0
+ComponentID TRANSFORM_ID;
 
 /*
 	Contains data for rendering an entity to the screen, like it's sprite, the 
@@ -25,7 +27,7 @@ typedef struct simpleRenderable {
 	SDL_Texture* spriteOutline;
 	bool showOutline;
 } SimpleRenderable;
-#define SIMPLE_RENDERABLE_ID 1
+ComponentID SIMPLE_RENDERABLE_ID;
 
 /*
 	Contains data used for determining the health of a unit, how long the unit
@@ -35,18 +37,18 @@ typedef struct health {
 	int aliveTicks;
 	int deathTicks;
 } Health;
-#define HEALTH_ID 2
+ComponentID HEALTH_ID;
 
 typedef struct unitType {
 	float attack;
 	float speed;
 	float defense;
 } UnitType;
-#define UNIT_TYPE_ID 3
+ComponentID UNIT_TYPE_ID;
 
 typedef struct city {
 	char name[20];
 	bool isCapital;
 	float oreMined;
 } City;
-#define CITY_ID 4
+ComponentID CITY_ID;

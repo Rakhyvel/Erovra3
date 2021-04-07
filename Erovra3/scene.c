@@ -25,7 +25,7 @@ static struct entity* getEntityStruct(struct scene*, EntityID);
 
 /*
 	Initializes the memory pools for a scene */
-struct scene* Scene_Create()
+struct scene* Scene_Create(void (initComponents)(struct Scene*))
 {
 	struct scene* retval = calloc(1, sizeof(struct scene));
 	if (!retval)
@@ -37,6 +37,8 @@ struct scene* Scene_Create()
 	retval->purgedEntities = arraylist_create(10, sizeof(EntityIndex));
 	retval->freeIndices = arraylist_create(10, sizeof(EntityIndex));
 
+	initComponents(retval);
+
 	return retval;
 }
 
@@ -44,11 +46,12 @@ struct scene* Scene_Create()
 	Assigns a size to a component, allocates memory pool for component data.
 	
 	Cannot register on same componentID more than once. */
-void Scene_RegisterComponent(struct scene* scene, ComponentID componentID, size_t componentSize)
+const ComponentID Scene_RegisterComponent(struct scene* scene, size_t componentSize)
 {
-	if (scene->components[componentID] != NULL)
+	const ComponentID componentID = scene->numComponents + 1;
+	if (scene->numComponents > MAX_COMPONENTS)
 	{
-		PANIC("Component %d already registered", componentID);
+		PANIC("Component overflow");
 	}
 	else if (scene->numEntities > 0)
 	{
@@ -57,7 +60,9 @@ void Scene_RegisterComponent(struct scene* scene, ComponentID componentID, size_
 	else
 	{
 		scene->components[componentID] = arraylist_create(MAX_ENTITIES, componentSize);
+		scene->numComponents++;
 	}
+	return componentID;
 }
 
 /*
@@ -70,7 +75,7 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
 	{
 		PANIC("Invalid entity index");
 	}
-	else if (componentID >= MAX_COMPS || componentID < 0)
+	else if (componentID >= MAX_COMPONENTS || componentID < 0)
 	{
 		PANIC("Invalid entity index");
 	}
@@ -133,7 +138,7 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 	{
 		PANIC("Invalid entity index");
 	}
-	else if (componentID >= MAX_COMPS || componentID < 0)
+	else if (componentID >= MAX_COMPONENTS || componentID < 0)
 	{
 		PANIC("Invalid entity index");
 	}

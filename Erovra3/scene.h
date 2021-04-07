@@ -15,7 +15,7 @@ typedef Uint16 EntityIndex;
 typedef Uint16 EntityVersion;
 typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
 
-#define MAX_COMPS sizeof(ComponentMask) * 8
+#define MAX_COMPONENTS sizeof(ComponentMask) * 8
 #define INVALID_ENTITY_INDEX ((EntityID)-1)
 #define MAX_ENTITIES 1000
 
@@ -43,7 +43,7 @@ typedef struct scene {
 		|---|   |   |
 		|   |   |   |
 	*/
-	struct arraylist* components[MAX_COMPS];
+	struct arraylist* components[MAX_COMPONENTS];
 	/* List of all entities in scene */
 	struct arraylist* entities;
 	/* List of purged entity indices To be cleared removed later */
@@ -52,15 +52,16 @@ typedef struct scene {
 	struct arraylist* freeIndices;
 	/* Number of entities in existance */
 	int numEntities;
+	int numComponents;
 } Scene;
 
 /*
 	Initializes the components table, entities list, and purged list */
-struct scene* Scene_Create();
+struct scene* Scene_Create(void (initComponents)(struct Scene*));
 
 /* 
 	Sets the component size for a componentID */
-void Scene_RegisterComponent(struct scene*, ComponentID, size_t);
+const ComponentID Scene_RegisterComponent(struct scene*, size_t);
 /*
 	Returns a pointer to the begining of an entities component*/
 void* Scene_GetComponent(struct scene*, EntityID, ComponentID);
