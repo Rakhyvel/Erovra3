@@ -14,10 +14,10 @@ static int numTextures = 0;
 
 /*
 	Changes the ColorMod of a texture given a texture id. */
-void Texture_ColorMod(TextureID textureID, Uint8 r, Uint8 g, Uint8 b) 
+void Texture_ColorMod(TextureID textureID, SDL_Color color) 
 {
 	SDL_Texture* texture = textures[textureID];
-	SDL_SetTextureColorMod(texture, r, g, b);
+	SDL_SetTextureColorMod(texture, color.r, color.g, color.b);
 }
 
 /*

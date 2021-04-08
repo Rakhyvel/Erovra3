@@ -416,6 +416,14 @@ inline float terrain_getHeight(struct terrain* terrain, int x, int y)
     return terrain->map[y * terrain->size + x];
 }
 
+void terrain_setOffset(struct vector vector)
+{
+    offset.x = -vector.x;
+    offset.y = -vector.y;
+    oldOffset.x = offset.x;
+    oldOffset.y = offset.y;
+}
+
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height)
 {
     newPos->x = ((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);

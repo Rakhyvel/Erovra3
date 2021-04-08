@@ -27,6 +27,7 @@ Strategy and logistics:
 
 #include "./components/city.h"
 #include "./components/components.h"
+#include "./components/nation.h"
 #include "./engine/gameState.h"
 #include "./engine/scene.h"
 #include "./systems/systems.h"
@@ -40,10 +41,22 @@ int main(int argc, char** argv)
     game_init();
     Textures_Init();
     Terrain* terrain = terrain_create(5 * 64);
+
     Scene* match = Scene_Create(Components_Init);
 
-    City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), true);
-    City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), true);
+    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 });
+    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 });
+
+    EntityID homeCapital = City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), homeNation, true);
+    EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
+
+    terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos));
+	// Set enemy nations to each other
+    SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
+    SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+	// Set nations capitals
+    SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, capital, homeCapital);
+    SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, capital, enemyCapital);
 
     long previous = clock();
     long lag = 0;

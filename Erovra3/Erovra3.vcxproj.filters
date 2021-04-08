@@ -63,6 +63,9 @@
     <ClCompile Include="src\util\vector.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\nation.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\city.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\nation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

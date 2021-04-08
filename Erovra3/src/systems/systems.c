@@ -36,7 +36,7 @@ void System_Render(struct scene* scene)
 
         SDL_FRect rect = { 0, 0, 0, 0 };
         terrain_translate(&rect, transform->pos.x, transform->pos.y, 32.0, 32.0);
-        Texture_ColorMod(simpleRenderable->sprite, 250, 100, 80);
+        Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
         Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, rect.w / 32.0, rect.h / 32.0);
     }
 }

@@ -7,6 +7,7 @@ void Components_Init(struct scene* scene)
     TRANSFORM_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Transform));
 	SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
-    UNIT_TYPE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(UnitType));
+    UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
+    NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
 }
