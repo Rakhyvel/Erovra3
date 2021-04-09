@@ -13,11 +13,11 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     EntityID cityID = Scene_NewEntity(scene);
     Transform transform = {
         pos,
-        0.0f,
+        0.5f,
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
         pos,
-        0.0f
+        0
     };
     Scene_Assign(scene, cityID, TRANSFORM_COMPONENT_ID, &transform);
 
@@ -27,7 +27,9 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         false,
         nation,
         32,
-        32
+        32,
+		36,
+		36
     };
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 

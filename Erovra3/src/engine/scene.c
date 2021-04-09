@@ -227,7 +227,7 @@ EntityID Scene_Next(struct scene* scene, EntityID prev, ComponentMask mask)
 	{
 		struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
 		if (entt->id != INVALID_ENTITY_INDEX &&
-			(entt->mask & mask))
+			(entt->mask & mask) == mask)
 		{
 			return entt->id;
 		}

@@ -12,4 +12,5 @@ void Components_Init(struct scene* scene)
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
+    SELECTABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Selectable));
 }

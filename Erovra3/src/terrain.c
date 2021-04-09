@@ -18,6 +18,7 @@ terrain.c
 static bool mouseDown = false;
 static struct vector offset = { 0, 0 };
 static struct vector oldOffset = { 0, 0 };
+static struct vector mousePos = { 0, 0 };
 static float terrain_zoom_target = 1;
 static float terrain_zoom = 2;
 static int oldWheel = 0;
@@ -118,6 +119,10 @@ void terrain_update(struct terrain* terrain)
         mouseDown = false;
         oldOffset.x = offset.x;
         oldOffset.y = offset.y;
+    }
+    if (g->mouseMoved) {
+        mousePos.x = (g->mouseX - g->width / 2) / terrain_zoom - offset.x;
+        mousePos.y = (g->mouseY - g->height / 2) / terrain_zoom - offset.y;
     }
     if (g->mouseDrag) {
         offset.x = (g->mouseX - g->mouseInitX) / terrain_zoom + oldOffset.x;
@@ -402,6 +407,18 @@ void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float h
     newPos->y = ((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
     newPos->w = (width * terrain_zoom);
     newPos->h = (height * terrain_zoom);
+}
+struct vector Terrain_MousePos()
+{
+    return mousePos;
+}
+
+SDL_Point terrain_inverseTranslate(int x, int y)
+{
+    SDL_Point newPos;
+    newPos.x = (x - g->width / 2) / terrain_zoom - offset.x;
+    newPos.y = (y - g->height / 2) / terrain_zoom - offset.y;
+    return newPos;
 }
 
 /*

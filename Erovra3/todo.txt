@@ -15,16 +15,28 @@ x Add city entities
 	x find suitable squares, place capitals cities
 	x make capitals
 x Add nations
-- Add infantry entities
+x Add infantry entities
 	x Add polygon drawing to textures
 	x Add polygon file format and reader
-	- Start match function
+	x Start match function
 x Create release zip (copy any .dll and .exe, and everything in /res)
 
 3.0.1- Selection API
 - Add unit selection API
+	x select units by clicking on them
+	x selected units change target
+	x units cannot go out of bounds, into water
+	x units spin if they are not pointing at their lookat
+	x units spin THE RIGHT WAY if they are not pointing at their lookat
+	- transform gets speed?
+- Fancy selection methods
+	x Regular click selects 1
+	x Ctrl click to select more than one unit
+	- Shift click to select box
 - Add arrow when moving a unit
 - Add task forces
+	- Pressing numbers makes selected units a task force
+	- Ctrl+Shift click selects entire task force
 
 3.0.2- Combat
 - Add bullet projectiles

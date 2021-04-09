@@ -11,7 +11,7 @@ game.c
 	variable g by creaating an SDL window and renderer. */
 void Game_Init(char* windowName, int width, int height)
 {
-    g = (struct game*)malloc(sizeof(struct game));
+    g = (struct game*)calloc(1, sizeof(struct game));
     if (!g) {
         exit(1);
     }
@@ -34,6 +34,10 @@ void Game_Init(char* windowName, int width, int height)
     if (SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl") == SDL_FALSE) {
         printf("Warning: opengl not set as driver\n");
     }
+	if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == SDL_FALSE)
+	{
+        printf("Didnt work");
+	}
 
     // Create Renderer
     g->rend = SDL_CreateRenderer(g->window, -1, SDL_RENDERER_SOFTWARE);
@@ -44,7 +48,7 @@ void Game_Init(char* windowName, int width, int height)
     SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
     g->running = 1;
-    g->up = g->down = g->left = g->right = g->ctrl = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
+    g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
 }
 
 void Game_BeginDraw()
@@ -63,17 +67,7 @@ void Game_PollInput()
     // PRE INPUT
     g->mouseLeftUp = false;
     g->mouseRightUp = false;
-
-    if (g->scrolling) {
-        if (g->scroll_acceleration > 0)
-            g->scroll_acceleration -= g->scroll_friction;
-        if (g->scroll_acceleration < 0)
-            g->scroll_acceleration += g->scroll_friction;
-        if (abs(g->scroll_acceleration) < 0.0005)
-            g->scroll_acceleration = 0;
-        g->scroll_Y += g->scroll_sensitivity * g->scroll_acceleration;
-        // Here you have to set your scrolling bounds i.e. if(scroll_Y < 0) scroll_Y = 0;
-    }
+    g->mouseMoved = false;
 
     // DIRECT INPUT
     SDL_Event event;
@@ -102,7 +96,11 @@ void Game_PollInput()
             case SDL_SCANCODE_LCTRL:
                 g->ctrl = 1;
                 break;
+            case SDL_SCANCODE_LSHIFT:
+                g->shift = 1;
+                break;
             }
+            g->keys[event.key.keysym.scancode] = 1;
             break;
         case SDL_KEYUP:
             switch (event.key.keysym.scancode) {
@@ -121,28 +119,14 @@ void Game_PollInput()
             case SDL_SCANCODE_LCTRL:
                 g->ctrl = 0;
                 break;
+            case SDL_SCANCODE_LSHIFT:
+                g->shift = 0;
+                break;
             }
+            g->keys[event.key.keysym.scancode] = 0;
             break;
-        case SDL_MULTIGESTURE: {
-            printf("Hello");
-            if (event.mgesture.numFingers == 2) {
-                if (g->scrolling == 0) {
-                    g->scrolling = 1;
-                    g->scroll_prev_pos = event.mgesture.y;
-                } else {
-                    double dy = event.mgesture.y - g->scroll_prev_pos;
-                    g->scroll_acceleration = dy * 40;
-                    g->scroll_prev_pos = event.mgesture.y;
-                    g->scrolling = 1;
-                }
-            }
-            break;
-        }
-        case SDL_FINGERDOWN: {
-            printf("Hello");
-            break;
-        }
         case SDL_MOUSEMOTION:
+            g->mouseMoved = true;
             SDL_GetMouseState(&(g->mouseX), &(g->mouseY));
             if (event.button.button == SDL_BUTTON_LEFT) {
                 g->mouseDrag = true;

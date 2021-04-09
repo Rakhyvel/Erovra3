@@ -31,6 +31,8 @@ typedef struct simpleRenderable {
     EntityID nation;
     int width;
     int height;
+    int outlineWidth;
+    int outlineHeight;
 } SimpleRenderable;
 ComponentID SIMPLE_RENDERABLE_COMPONENT_ID;
 
@@ -64,3 +66,12 @@ typedef struct city {
     float oreMined;
 } City;
 ComponentID CITY_COMPONENT_ID;
+
+typedef struct selectable {
+    bool isHovered;
+    bool selected;
+    int taskForce;
+} Selectable;
+ComponentID SELECTABLE_COMPONENT_ID;
+
+ComponentID GROUND_COMPONENT_ID;

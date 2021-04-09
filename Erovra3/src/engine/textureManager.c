@@ -127,6 +127,11 @@ SDL_Texture* loadTexture(char* filename)
     // Create a new texture that can be rendered on
     SDL_Rect rect = { 0, 0, 0, 0 };
     SDL_QueryTexture(imgTexture, 0, 0, &rect.w, &rect.h);
+    if (rect.h > 32) {
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    } else {
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+    }
     SDL_Texture* accessibleTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rect.w, rect.h);
 
     // Copy IMG texture to drawible texture

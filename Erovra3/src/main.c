@@ -50,6 +50,7 @@ Scene* startMatch(Terrain* terrain)
     EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
 
     EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos), homeNation);
+    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos), homeNation);
 
     terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos));
     // Set enemy nations to each other
@@ -94,7 +95,10 @@ int main(int argc, char** argv)
             Game_PollInput();
             // update entities
             terrain_update(terrain);
-            System_Transform(match);
+            System_Transform(terrain, match);
+            System_ChangeTaskForce(match);
+            System_SetTarget(match);
+            System_Select(match);
             lag -= dt;
         }
         if (elapsedFrames > 16) {

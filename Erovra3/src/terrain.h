@@ -40,7 +40,7 @@ float terrain_getZoom();
 
 // Map affine transformations
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height);
-SDL_Rect terrain_inverseTranslate(float x, float y, int width, int height);
+struct vector Terrain_MousePos();
 struct vector terrain_translateVector(float x, float y);
 
 // Some color mod. functions

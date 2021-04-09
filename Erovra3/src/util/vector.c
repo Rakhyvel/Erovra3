@@ -2,9 +2,38 @@
 #include "vector.h"
 #include <math.h>
 
+void Vector_Copy(struct vector* a, struct vector* b)
+{
+    a->x = b->x;
+    a->y = b->y;
+}
+
+struct vector Vector_Add(struct vector* a, struct vector* b)
+{
+    return (struct vector) { a->x + b->x, a->y + b->y };
+}
+
+struct vector Vector_Sub(struct vector* a, struct vector* b)
+{
+    return (struct vector){ a->x - b->x, a->y - b->y };
+}
+
 /*
 	Finds the euclidian distance between two vectors */
 float Vector_Dist(struct vector* a, struct vector* b)
 {
     return sqrtf((a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y));
+}
+
+float Vector_Angle(struct vector* a)
+{
+    if (a->y != 0) {
+        return -atan2(a->x, a->y);
+    } else if (a->x == 0) {
+        return 0;
+    } else if (a->x > 0) {
+        return -1.5707963267948965;
+    } else if (a->x < 0) {
+        return 1.5707963267948965;
+    }
 }

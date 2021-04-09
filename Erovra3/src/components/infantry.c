@@ -12,21 +12,23 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     EntityID infantryID = Scene_NewEntity(scene);
     Transform transform = {
         pos,
-        0.0f,
+        0.5f,
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
-        pos,
-        0.0f
+        (struct vector) { 0.0f, 0.0f },
+        0
     };
     Scene_Assign(scene, infantryID, TRANSFORM_COMPONENT_ID, &transform);
 
     SimpleRenderable render = {
         INFANTRY_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        GROUND_OUTLINE_TEXTURE_ID,
         false,
         nation,
 		32,
-		16
+		16,
+		36,
+		20
     };
     Scene_Assign(scene, infantryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
@@ -43,4 +45,13 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         0
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
+
+	Selectable selectable = {
+        false,
+        false,
+		0
+    };
+    Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
+
+	Scene_Assign(scene, infantryID, GROUND_COMPONENT_ID, NULL);
 }
