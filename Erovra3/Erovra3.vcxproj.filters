@@ -66,15 +66,18 @@
     <ClCompile Include="src\components\nation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\infantry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\polygon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\terrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\util\polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\scene.h">
@@ -105,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\nation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\infantry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

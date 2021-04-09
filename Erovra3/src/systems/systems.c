@@ -6,6 +6,9 @@
 #include "../engine/textureManager.h"
 #include "../terrain.h"
 
+const float polyX[] = { 0, 100, 100, 0, 0 };
+const float polyY[] = { 0, 0, 100, 100, 0 };
+
 void System_Transform(struct scene* scene)
 {
     const ComponentMask transformMask = Scene_CreateMask(1, TRANSFORM_COMPONENT_ID);
@@ -23,6 +26,7 @@ void System_Transform(struct scene* scene)
 
         transform->pos.x += transform->vel.x;
         transform->pos.y += transform->vel.y;
+        transform->angle += 0.001;
     }
 }
 
@@ -35,8 +39,8 @@ void System_Render(struct scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
 
         SDL_FRect rect = { 0, 0, 0, 0 };
-        terrain_translate(&rect, transform->pos.x, transform->pos.y, 32.0, 32.0);
+        terrain_translate(&rect, transform->pos.x, transform->pos.y, simpleRenderable->width, simpleRenderable->height);
         Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
-        Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, rect.w / 32.0, rect.h / 32.0);
+        Texture_Draw(simpleRenderable->sprite, (int)rect.x, (int)rect.y, rect.w, rect.h, transform->angle);
     }
 }

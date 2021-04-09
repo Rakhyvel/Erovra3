@@ -22,57 +22,6 @@ static float terrain_zoom_target = 1;
 static float terrain_zoom = 1;
 static int oldWheel = 0;
 
-SDL_Texture* polygon_render(float polyX[], float polyY[], int nPoints, float minY, float maxY)
-{
-    SDL_Texture* lol = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, maxY - minY, maxY - minY);
-    SDL_SetRenderTarget(g->rend, lol);
-    SDL_SetRenderDrawColor(g->rend, 49, 46, 43, 0);
-    SDL_RenderClear(g->rend);
-    int nodes, pixelX, pixelY, i, j, swap;
-    float nodeX[256];
-    for (float pixelY = (int)minY; pixelY < maxY + 1; pixelY++) {
-        nodes = 0;
-        j = nPoints - 1;
-        // Build list of the x coords for each intersection
-        for (i = 0; i < nPoints; i++) {
-            if (polyY[i] < (float)pixelY && polyY[j] >= (float)pixelY
-                || polyY[j] < (float)pixelY && polyY[i] >= (float)pixelY) {
-                nodeX[nodes++] = (polyX[i] + (pixelY - polyY[i]) / (polyY[j] - polyY[i]) * (polyX[j] - polyX[i]));
-            }
-            j = i;
-        }
-
-        // Bubble sort x coords, so that you can run through and draw scanlines
-        i = 0;
-        while (i < nodes - 1) {
-            if (nodeX[i] > nodeX[i + 1]) {
-                swap = nodeX[i];
-                nodeX[i] = nodeX[i + 1];
-                nodeX[i + 1] = swap;
-                if (i)
-                    i--;
-            } else {
-                i++;
-            }
-        }
-
-        // Draw scanlines
-        for (i = 0; i < nodes; i += 2) {
-            if (nodeX[i] >= g->width)
-                break;
-            if (nodeX[i + 1] > 0) {
-                if (nodeX[i] < 0)
-                    nodeX[i] = 0;
-                if (nodeX[i + 1] > g->width)
-                    nodeX[i + 1] = g->width;
-                SDL_SetRenderDrawColor(g->rend, 255, 255, 45, 255);
-                SDL_RenderDrawLine(g->rend, nodeX[i], pixelY, nodeX[i + 1], pixelY);
-            }
-        }
-    }
-    SDL_SetRenderTarget(g->rend, NULL);
-    return lol;
-}
 
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
@@ -99,7 +48,7 @@ struct terrain* terrain_create(int mapSize)
 
 void paintMap(struct terrain* terrain)
 {
-    terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, terrain->size, terrain->size);
+    terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, terrain->size, terrain->size);
     Uint8* pixels = malloc(terrain->size * terrain->size * 4);
     if (!pixels) {
         fprintf(stderr, "Memory error paintMap() creating pixels\n");
@@ -422,6 +371,11 @@ void terrain_setOffset(struct vector vector)
     offset.y = -vector.y;
     oldOffset.x = offset.x;
     oldOffset.y = offset.y;
+}
+
+float terrain_getZoom()
+{
+    return terrain_zoom;
 }
 
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height)

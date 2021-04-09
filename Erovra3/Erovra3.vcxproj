@@ -153,6 +153,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\infantry.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\nation.c">
       <SubType>
       </SubType>
@@ -191,6 +195,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\util\polygon.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\util\vector.c">
       <SubType>
       </SubType>
@@ -198,17 +206,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\city.h" />
+    <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\nation.h" />
     <ClInclude Include="src\util\arraylist.h" />
     <ClInclude Include="src\components\components.h" />
     <ClInclude Include="src\util\debug.h" />
     <ClInclude Include="src\engine\scene.h" />
     <ClInclude Include="src\engine\gameState.h" />
-    <ClInclude Include="src\util\polygon.h" />
     <ClInclude Include="src\systems\systems.h" />
     <ClInclude Include="src\terrain.h" />
     <ClInclude Include="src\engine\textureManager.h" />
     <ClInclude Include="src\textures.h" />
+    <ClInclude Include="src\util\polygon.h" />
     <ClInclude Include="src\util\vector.h" />
   </ItemGroup>
   <ItemGroup>

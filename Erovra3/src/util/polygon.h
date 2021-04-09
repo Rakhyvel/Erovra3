@@ -1,3 +1,11 @@
 #pragma once
 
-void polygon_render(float offsetX, float offsetY, float angle);
+#define MAX_VERTICES 16
+
+typedef struct polygon_t {
+    float vertexX[MAX_VERTICES];
+    float vertexY[MAX_VERTICES];
+    int numVertices;
+} Polygon;
+
+struct polygon_t Polygon_Create(char* filename);

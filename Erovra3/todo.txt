@@ -8,15 +8,16 @@ x Set up framework for ECS
 	x Add in type defs
 	x macro in entity for getting component struct
 	x cant create new component if entities exist
-x Make the project xenophobic (de-globalize)
-- Add city entities
+x Add city entities
 	x See if I can make keeping track of components and their IDs, and registering them simpler
 	x texture manager in scene
 	x organzie into folders
 	x find suitable squares, place capitals cities
-	- make capitals
-- Add nations
+	x make capitals
+x Add nations
 - Add infantry entities
+	x Add polygon drawing to textures
+	- Add polygon file format and reader
 
 3.0.1- Selection API
 - Add unit selection API

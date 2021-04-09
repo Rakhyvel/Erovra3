@@ -9,10 +9,10 @@ terrain.h
 #include "./util/vector.h"
 
 typedef struct terrain {
-	float* map;
-	float* ore;
-	int size;
-	SDL_Texture* texture;
+    float* map;
+    float* ore;
+    int size;
+    SDL_Texture* texture;
 } Terrain;
 
 struct terrain* terrain_create(int);
@@ -39,7 +39,7 @@ void terrain_setOffset(struct vector);
 float terrain_getZoom();
 
 // Map affine transformations
-void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height);
+void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height);
 SDL_Rect terrain_inverseTranslate(float x, float y, int width, int height);
 struct vector terrain_translateVector(float x, float y);
 

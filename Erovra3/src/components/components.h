@@ -29,6 +29,8 @@ typedef struct simpleRenderable {
     TextureID spriteOutline;
     bool showOutline;
     EntityID nation;
+    int width;
+    int height;
 } SimpleRenderable;
 ComponentID SIMPLE_RENDERABLE_COMPONENT_ID;
 

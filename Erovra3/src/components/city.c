@@ -20,8 +20,10 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-        isCapital,
-        nation
+        false,
+        nation,
+		32,
+		32
     };
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
