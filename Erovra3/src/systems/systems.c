@@ -29,21 +29,21 @@ void System_Transform(struct terrain* terrain, struct scene* scene)
 		}
         float diff = fabs(transform->angle - tempAngle);
 
-        if (diff > 0.01) {
+        if (diff > transform->speed / 18.0f) {
             // Not looking in direction, turn
             if (transform->angle > tempAngle) {
-                transform->angle -= 0.01;
+                transform->angle -= transform->speed / 18.0f;
             } else {
-                transform->angle += 0.01;
+                transform->angle += transform->speed / 18.0f;
             }
-        } else if (Vector_Dist(&transform->tar, &transform->pos) > 0.2) {
+        } else if (Vector_Dist(&transform->tar, &transform->pos) > transform->speed) {
             // Looking in direction, not at target, move
             transform->vel.x = (transform->tar.x - transform->pos.x);
             transform->vel.y = (transform->tar.y - transform->pos.y);
             float mag = sqrtf((transform->vel.x * transform->vel.x) + (transform->vel.y * transform->vel.y));
             if (mag > 0.1) {
-                transform->vel.x /= mag / 0.2;
-                transform->vel.y /= mag / 0.2;
+                transform->vel.x /= mag / transform->speed;
+                transform->vel.y /= mag / transform->speed;
             }
 
             displacement = Vector_Add(&(transform->pos), &(transform->vel));

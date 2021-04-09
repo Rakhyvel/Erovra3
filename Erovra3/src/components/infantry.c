@@ -16,7 +16,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
-        0
+        0,
+		0.6f
     };
     Scene_Assign(scene, infantryID, TRANSFORM_COMPONENT_ID, &transform);
 
@@ -40,7 +41,6 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        0,
         0,
         0
     };

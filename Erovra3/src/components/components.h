@@ -17,7 +17,8 @@ typedef struct transform {
     struct vector lookat;
     struct vector vel;
     struct vector tar;
-    double angle;
+    float angle;
+    float speed;
 } Transform;
 ComponentID TRANSFORM_COMPONENT_ID;
 
@@ -48,7 +49,6 @@ ComponentID HEALTH_COMPONENT_ID;
 
 typedef struct unit {
     const float attack;
-    const float speed;
     const float defense;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;

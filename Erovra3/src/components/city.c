@@ -17,7 +17,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
         pos,
-        0
+        0,
+		0
     };
     Scene_Assign(scene, cityID, TRANSFORM_COMPONENT_ID, &transform);
 
@@ -41,7 +42,6 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Scene_Assign(scene, cityID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        0,
         0,
         0
     };
