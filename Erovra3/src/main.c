@@ -26,8 +26,8 @@ Strategy and logistics:
 #include <time.h>
 
 #include "./components/city.h"
-#include "./components/infantry.h"
 #include "./components/components.h"
+#include "./components/infantry.h"
 #include "./components/nation.h"
 #include "./engine/gameState.h"
 #include "./engine/scene.h"
@@ -37,12 +37,10 @@ Strategy and logistics:
 
 #include "./util/arraylist.h"
 
-int main(int argc, char** argv)
+/*
+	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
+Scene* startMatch(Terrain* terrain)
 {
-    game_init();
-    Textures_Init();
-    Terrain* terrain = terrain_create(16 * 64);
-
     Scene* match = Scene_Create(Components_Init);
 
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 });
@@ -54,12 +52,24 @@ int main(int argc, char** argv)
     EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos), homeNation);
 
     terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos));
-	// Set enemy nations to each other
+    // Set enemy nations to each other
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
-	// Set nations capitals
+    // Set nations capitals
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, capital, homeCapital);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, capital, enemyCapital);
+
+	return match;
+}
+
+/*
+	Inits the game, then starts the game loop */
+int main(int argc, char** argv)
+{
+    Game_Init("Erovra", 1166, 640);
+    Textures_Init();
+    Terrain* terrain = terrain_create(16 * 64);
+    Scene* match = startMatch(terrain);
 
     long previous = clock();
     long lag = 0;
@@ -81,18 +91,18 @@ int main(int argc, char** argv)
         elapsedFrames += elapsed;
 
         while (lag >= dt) {
-            game_pollInput();
+            Game_PollInput();
             // update entities
             terrain_update(terrain);
             System_Transform(match);
             lag -= dt;
         }
         if (elapsedFrames > 16) {
-            game_beginDraw();
+            Game_BeginDraw();
             elapsedFrames = 0;
             terrain_render(terrain);
             System_Render(match);
-            game_endDraw();
+            Game_EndDraw();
         }
         frames++;
         const Uint64 end = SDL_GetPerformanceCounter();

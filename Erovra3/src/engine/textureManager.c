@@ -39,6 +39,10 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
     }
 }
 
+/*
+	Takes in the ID of a texture, and a polygon struct and color. Draws the 
+	polygon onto the texture with the given color. Texture must be created with
+	target access. */
 void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 {
     int nodes, pixelX, pixelY, i, j, swap;

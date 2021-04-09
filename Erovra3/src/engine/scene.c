@@ -33,9 +33,9 @@ struct scene* Scene_Create(void (initComponents)(struct Scene*))
 		PANIC("Memory error");
 	}
 
-	retval->entities = arraylist_create(10, sizeof(struct entity));
-	retval->purgedEntities = arraylist_create(10, sizeof(EntityIndex));
-	retval->freeIndices = arraylist_create(10, sizeof(EntityIndex));
+	retval->entities = Arraylist_Create(10, sizeof(struct entity));
+	retval->purgedEntities = Arraylist_Create(10, sizeof(EntityIndex));
+	retval->freeIndices = Arraylist_Create(10, sizeof(EntityIndex));
 
 	initComponents(retval);
 
@@ -59,7 +59,7 @@ const ComponentID Scene_RegisterComponent(struct scene* scene, size_t componentS
 	}
 	else
 	{
-		scene->components[componentID] = arraylist_create(MAX_ENTITIES, componentSize);
+		scene->components[componentID] = Arraylist_Create(MAX_ENTITIES, componentSize);
 		scene->numComponents++;
 	}
 	return componentID;
@@ -85,7 +85,7 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
 	}
 	else
 	{
-		return arraylist_get(scene->components[componentID], getIndex(id));
+		return Arraylist_Get(scene->components[componentID], getIndex(id));
 	}
 }
 
@@ -117,7 +117,7 @@ EntityID Scene_NewEntity(struct scene* scene)
 	{
 		EntityIndex index = (EntityIndex)(scene->entities->size);
 		struct entity newEntity = { ((EntityID)index << 16), 0 };
-		arraylist_add(scene->entities, &newEntity);
+		Arraylist_Add(scene->entities, &newEntity);
 		return newEntity.id;
 	}
 }
@@ -152,7 +152,7 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 	else
 	{
 		getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
-		arraylist_put(scene->components[componentID], getIndex(id), componentData);
+		Arraylist_Put(scene->components[componentID], getIndex(id), componentData);
 	}
 }
 
@@ -161,7 +161,7 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 	function is called */
 void Scene_MarkPurged(struct scene* scene, EntityID id)
 {
-	arraylist_add(scene->purgedEntities, &id);
+	Arraylist_Add(scene->purgedEntities, &id);
 }
 
 /*
@@ -179,7 +179,7 @@ void Scene_Purge(struct scene* scene)
 		struct entity* purgedEntity = ARRAYLIST_GET(scene->entities, index, struct entity);
 		purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | ++version;
 		purgedEntity->mask = 0;
-		arraylist_add(scene->freeIndices, &index);
+		Arraylist_Add(scene->freeIndices, &index);
 		scene->numEntities--;
 	}
 }

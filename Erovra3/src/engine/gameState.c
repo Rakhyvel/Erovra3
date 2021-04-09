@@ -6,7 +6,10 @@ game.c
 #include <stdio.h>
 #include <stdlib.h>
 
-struct game* game_init()
+/*
+	Takes in a window title, width, and height. Initializes the global game struct
+	variable g by creaating an SDL window and renderer. */
+void Game_Init(char* windowName, int width, int height)
 {
     g = (struct game*)malloc(sizeof(struct game));
     if (!g) {
@@ -20,9 +23,9 @@ struct game* game_init()
     }
 
     // Create Window
-    g->width = 800;
-    g->height = 600;
-    g->window = SDL_CreateWindow("Erovra 3.0.0", SDL_WINDOWPOS_CENTERED,
+    g->width = width;
+    g->height = height;
+    g->window = SDL_CreateWindow(windowName, SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, g->width, g->height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
     if (g->window == NULL) {
         printf("Error: Creating SDL window: %s\n", SDL_GetError());
@@ -44,18 +47,18 @@ struct game* game_init()
     g->up = g->down = g->left = g->right = g->ctrl = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
 }
 
-void game_beginDraw()
+void Game_BeginDraw()
 {
     SDL_SetRenderDrawColor(g->rend, 49, 46, 43, 255);
     SDL_RenderClear(g->rend);
 }
 
-void game_endDraw()
+void Game_EndDraw()
 {
     SDL_RenderPresent(g->rend);
 }
 
-void game_pollInput()
+void Game_PollInput()
 {
     // PRE INPUT
     g->mouseLeftUp = false;

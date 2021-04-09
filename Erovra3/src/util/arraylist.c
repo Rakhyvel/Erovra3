@@ -19,7 +19,7 @@
 
 /*
 	Creates an arraylist with a given type size */
-struct arraylist* arraylist_create(int initSize, size_t typeSize)
+struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
 {
 	struct arraylist* retval = malloc(sizeof(struct arraylist));
 	if (!retval) 
@@ -36,7 +36,7 @@ struct arraylist* arraylist_create(int initSize, size_t typeSize)
 
 /*
 	Returns a pointer to within the arraylist at a given index */
-void* arraylist_get(struct arraylist* list, int index)
+void* Arraylist_Get(struct arraylist* list, int index)
 {
 	return list->data + (index * list->typeSize);
 }
@@ -45,7 +45,7 @@ void* arraylist_get(struct arraylist* list, int index)
 	Returns a pointer to last element in arraylist, decrements size
 	
 	Doesn't reduce memory pool size on purpose */
-void* arraylist_pop(struct arraylist* list)
+void* Arraylist_Pop(struct arraylist* list)
 {
 	if (list->size == 0)
 	{
@@ -59,10 +59,9 @@ void* arraylist_pop(struct arraylist* list)
 }
 
 /* 
-	copies the data at the pointer to a new spot 
-	also functions as a push method
-*/
-void arraylist_add(struct arraylist* list, void* data)
+	copies the data at the pointer to the end of an arraylist
+	also functions as a push method */
+void Arraylist_Add(struct arraylist* list, void* data)
 {
 	if (list->size >= list->capacity) 
 	{
@@ -73,13 +72,13 @@ void arraylist_add(struct arraylist* list, void* data)
 		}
 		list->capacity = list->size * 2;
 	}
-	arraylist_put(list, list->size, data);
+	Arraylist_Put(list, list->size, data);
 	list->size++;
 }
 
 /*
 	Copies data to an index */
-void arraylist_put(struct arraylist* list, int index, void* data)
+void Arraylist_Put(struct arraylist* list, int index, void* data)
 {
 	memcpy(list->data + index * list->typeSize, data, list->typeSize);
 }

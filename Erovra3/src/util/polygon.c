@@ -3,6 +3,15 @@
 #include "debug.h"
 #include <stdio.h>
 
+/*
+	Takes in a filename to a .gon file. The file should have vertices on each new 
+	line, with floats separated by whitespace for the coordinates. For example:
+		0.0		0.0
+		100.0	0.0
+		100.0	100.0
+		0.0		100.0
+	
+	Returns a Polygon struct that contains the data of the polygon */
 struct polygon_t Polygon_Create(char* filename)
 {
     FILE* gonFile;

@@ -3,6 +3,10 @@
 #include "components.h"
 #include "infantry.h"
 
+/*
+	Takes in a scene and some information relevant to infantry entities, registers
+	a new entity, assigns components to that infantry entity. Returns the EntityID
+	of the infantry */
 EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID infantryID = Scene_NewEntity(scene);

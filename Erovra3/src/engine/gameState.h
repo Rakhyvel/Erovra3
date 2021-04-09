@@ -23,7 +23,7 @@ struct game {
 
 struct game* g;
 
-struct game* game_init();
-void game_pollInput();
-void game_beginDraw();
-void game_endDraw();
+void Game_Init(char* windowName, int width, int height);
+void Game_PollInput();
+void Game_BeginDraw();
+void Game_EndDraw();

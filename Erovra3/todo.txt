@@ -17,7 +17,9 @@ x Add city entities
 x Add nations
 - Add infantry entities
 	x Add polygon drawing to textures
-	- Add polygon file format and reader
+	x Add polygon file format and reader
+	- Start match function
+x Create release zip (copy any .dll and .exe, and everything in /res)
 
 3.0.1- Selection API
 - Add unit selection API
@@ -34,6 +36,7 @@ x Add nations
 - Add scene stack
 
 3.0.4- Buildings, resources
+- Cities produce infantry
 - Infantry can build buildings
 - Add factories
 - Able to build units in factories

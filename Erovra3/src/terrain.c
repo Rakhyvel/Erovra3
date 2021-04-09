@@ -19,9 +19,8 @@ static bool mouseDown = false;
 static struct vector offset = { 0, 0 };
 static struct vector oldOffset = { 0, 0 };
 static float terrain_zoom_target = 1;
-static float terrain_zoom = 1;
+static float terrain_zoom = 2;
 static int oldWheel = 0;
-
 
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
@@ -46,6 +45,9 @@ struct terrain* terrain_create(int mapSize)
     return retval;
 }
 
+/*
+	Takes in a terrain struct, initializes the texture for it, and sets the pixels
+	based on the heightmap and a color function */
 void paintMap(struct terrain* terrain)
 {
     terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, terrain->size, terrain->size);
@@ -84,6 +86,8 @@ void paintMap(struct terrain* terrain)
     free(pixels);
 }
 
+/*
+	Sets the terrain offset and zoom depending on the game state's input */
 void terrain_update(struct terrain* terrain)
 {
     terrain_zoom *= (float)pow(1.1, g->mouseWheelY - oldWheel);
@@ -121,6 +125,8 @@ void terrain_update(struct terrain* terrain)
     }
 }
 
+/*
+	Renders the terrain's texture to the screen, and some grid lines */
 void terrain_render(struct terrain* terrain)
 {
     SDL_FRect frect = (SDL_FRect) { 0, 0, 0, 0 };
@@ -223,6 +229,8 @@ double fastCos(double x)
     return 1.0 - x2 * fact2 + x4 * fact4 - x6 * fact6 + x8 * fact8 - x10 * fact10;
 }
 
+/*
+	Cosine interpolation for x, given (x0, y0) and (x1, y1) */
 float terrain_cosineInterpolation(int x0, float y0, int x1, float y1, float x)
 {
     double xDiff = (double)(x1 - x0);
@@ -231,6 +239,8 @@ float terrain_cosineInterpolation(int x0, float y0, int x1, float y1, float x)
     return (float)retval;
 }
 
+/*
+	Cosine interpolation for (x2, y2) given a cell starting at (x0, y0) and a map */
 float terrain_bicosineInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2)
 {
     int x1 = x0 + cellSize;
@@ -280,7 +290,7 @@ float* terrain_generate(int mapSize, int cellSize, float amplitude)
         int y1 = (int)((y / cellSize) * cellSize); // y coord of point's cell
 
         if (x != x1 || y != y1) {
-            retval[x + y * mapSize] = terrain_bicosineInterpolation(x1, y1, cellSize, retval, mapSize, (float)x, (float)y);
+            retval[x + y * mapSize] = terrain_bilinearInterpolation(x1, y1, cellSize, retval, mapSize, (float)x, (float)y);
         }
     }
     return retval;
@@ -357,7 +367,10 @@ void terrain_normalize(float* map, int mapSize)
     }
 }
 
-inline float terrain_getHeight(struct terrain* terrain, int x, int y)
+/*
+	Returns the height at a given point (x, y). If point is outside bounds, 
+	returns -1 */
+float terrain_getHeight(struct terrain* terrain, int x, int y)
 {
     if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
         return -1;
@@ -365,6 +378,8 @@ inline float terrain_getHeight(struct terrain* terrain, int x, int y)
     return terrain->map[y * terrain->size + x];
 }
 
+/*
+	Sets the offset */
 void terrain_setOffset(struct vector vector)
 {
     offset.x = -vector.x;
@@ -373,11 +388,14 @@ void terrain_setOffset(struct vector vector)
     oldOffset.y = offset.y;
 }
 
-float terrain_getZoom()
+inline float terrain_getZoom()
 {
     return terrain_zoom;
 }
 
+/*
+	Takes in a pointer to an FRect struct, the position and size of a sprite. 
+	Translates and scales the rect based on the offset and zoom */
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height)
 {
     newPos->x = ((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
@@ -457,6 +475,9 @@ SDL_Color terrain_HSVtoRGB(float hue, float saturation, float value)
     return color;
 }
 
+/*
+	Takes in a seed starting location. Searches the entire map for the location 
+	that is closest to the starting point, and is above sea level */
 struct vector findBestLocation(struct terrain* terrain, struct vector start)
 {
     // Search for closest unvisited tile

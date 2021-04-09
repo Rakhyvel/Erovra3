@@ -2,6 +2,8 @@
 #include "../components/components.h"
 #include "../engine/scene.h"
 
+/*
+	Takes in a scene, registers components used in the game for that scene */
 void Components_Init(struct scene* scene)
 {
     TRANSFORM_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Transform));

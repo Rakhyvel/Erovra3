@@ -4,15 +4,19 @@
 #include "../components/components.h"
 #include "../textures.h"
 
+/*
+	Takes in a scene, and some information for a city entity. Registers a new 
+	entity, assigns components to that entity based on the given information. 
+	Returns EntityID of the created city */
 EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
     Transform transform = {
-		pos,
+        pos,
         0.0f,
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
-		pos,
+        pos,
         0.0f
     };
     Scene_Assign(scene, cityID, TRANSFORM_COMPONENT_ID, &transform);
@@ -22,8 +26,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         BUILDING_OUTLINE_TEXTURE_ID,
         false,
         nation,
-		32,
-		32
+        32,
+        32
     };
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
@@ -49,5 +53,5 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
 
-	return cityID;
+    return cityID;
 }

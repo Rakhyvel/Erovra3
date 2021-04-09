@@ -9,6 +9,10 @@
 const float polyX[] = { 0, 100, 100, 0, 0 };
 const float polyY[] = { 0, 0, 100, 100, 0 };
 
+/*
+	Takes in a scene, iterates through all entities that have a transform 
+	component. Updates the velocity based on target and position, and postion
+	based on target. */
 void System_Transform(struct scene* scene)
 {
     const ComponentMask transformMask = Scene_CreateMask(1, TRANSFORM_COMPONENT_ID);
@@ -30,6 +34,10 @@ void System_Transform(struct scene* scene)
     }
 }
 
+/*
+	Takes in a scene, iterates through all entities with SimpleRenderable and 
+	Transform components. Translates texture based on Terrain's offset and zoom,
+	colorizes based on the nation color, and renders texture to screen. */
 void System_Render(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(2, TRANSFORM_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
