@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 {
     Game_Init("Erovra", 1166, 640);
     Textures_Init();
-    Terrain* terrain = terrain_create(16 * 64);
+    Terrain* terrain = terrain_create(32 * 64);
     Scene* match = startMatch(terrain);
 
     long previous = clock();
@@ -96,8 +96,6 @@ int main(int argc, char** argv)
             // update entities
             terrain_update(terrain);
             System_Transform(terrain, match);
-            System_ChangeTaskForce(match);
-            System_SetTarget(match);
             System_Select(match);
             lag -= dt;
         }

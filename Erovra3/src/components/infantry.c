@@ -17,7 +17,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         (struct vector) { 0.0f, 0.0f },
         (struct vector) { 0.0f, 0.0f },
         0,
-		0.6f
+		0.2f
     };
     Scene_Assign(scene, infantryID, TRANSFORM_COMPONENT_ID, &transform);
 

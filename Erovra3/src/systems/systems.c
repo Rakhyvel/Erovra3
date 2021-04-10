@@ -4,12 +4,14 @@
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
+#include "../textures.h"
 #include "../terrain.h"
 
 /*
 	Takes in a scene, iterates through all entities that have a transform
-	component. Updates the velocity based on target and position, and postion
-	based on target. */
+	component. First checks the rotation, if rotation is off, will correct 
+	angle before moving. Otherwise, updates the velocity based on target 
+	and position, and postion based on target. */
 void System_Transform(struct terrain* terrain, struct scene* scene)
 {
     const ComponentMask transformMask = Scene_CreateMask(1, TRANSFORM_COMPONENT_ID);
@@ -26,7 +28,7 @@ void System_Transform(struct terrain* terrain, struct scene* scene)
             transform->angle += 2 * 3.1415926;
         } else if (transform->angle > tempAngle) {
             transform->angle -= 2 * 3.1415926;
-		}
+        }
         float diff = fabs(transform->angle - tempAngle);
 
         if (diff > transform->speed / 18.0f) {
@@ -55,87 +57,104 @@ void System_Transform(struct terrain* terrain, struct scene* scene)
     }
 }
 
-static bool targeted = false;
-static int taskForce = -1;
-void System_ChangeTaskForce(struct scene* scene)
+/*
+	 Iterates through entities that are selectable. Determines if a unit is 
+	 hovered, selected, if a whole task force is selected, and if and where to 
+	 set units' targets. */
+void System_Select(struct scene* scene)
 {
+    bool targeted = false;
+    int taskForce = -1;
     int newTaskForce = -1;
+
+    // If escape is pressed, go through all entities, make them not selected
+    if (g->keys[SDL_SCANCODE_ESCAPE]) {
+        const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            selectable->selected = false;
+        }
+    }
+
+    // Check to see if a number is being pressed
     for (int i = 0; i < 10; i++) {
         if (g->keys[i + SDL_SCANCODE_1]) {
             newTaskForce = i;
         }
     }
-    if (newTaskForce == -1) {
-        return;
+
+    // If a number was pressed, go through selected entities, update task force
+    if (newTaskForce != -1) {
+        const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            if (selectable->selected) {
+                selectable->taskForce = newTaskForce;
+            }
+        }
     }
+
+    // If ctrl is not clicked, go through entities, if they are selected, set their target
+    if (!g->ctrl) {
+        const ComponentMask transformMask = Scene_CreateMask(2, SELECTABLE_COMPONENT_ID, TRANSFORM_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+            Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
+            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            if (g->mouseLeftUp && selectable->selected) {
+                Vector mouse = Terrain_MousePos();
+                Vector_Copy(&transform->tar, &mouse);
+                Vector_Copy(&transform->lookat, &mouse);
+                Vector displacement = Vector_Sub(&transform->tar, &transform->pos);
+                selectable->selected = false;
+                targeted = true;
+            }
+        }
+    }
+
+    // If no unit targets were set previously, go thru entities, check to see if they are now hovered and selected
+    if (!targeted) {
+        const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, TRANSFORM_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+            Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
+            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+
+            Vector mouse = Terrain_MousePos();
+            float dx = transform->pos.x - mouse.x;
+            float dy = mouse.y - transform->pos.y;
+
+            float sin = sinf(transform->angle);
+            float cos = cosf(transform->angle);
+
+            bool checkLR = fabs(cos * dx + sin * dy) <= simpleRenderable->width / 2;
+            bool checkTB = fabs(sin * dx - cos * dy) <= simpleRenderable->height / 2;
+
+            selectable->isHovered = checkLR && checkTB;
+
+            simpleRenderable->showOutline = selectable->isHovered || selectable->selected;
+            if (g->mouseLeftUp && selectable->isHovered && !selectable->selected) {
+                selectable->selected = true;
+                if (g->ctrl && g->shift) {
+                    taskForce = selectable->taskForce;
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Go thru entities, if their taskforce is selected, entity is selected
     const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-        selectable->taskForce = newTaskForce;
-    }
-}
-
-void System_SetTarget(struct scene* scene)
-{
-    if (g->ctrl) {
-        return;
-    }
-    const ComponentMask transformMask = Scene_CreateMask(2, SELECTABLE_COMPONENT_ID, TRANSFORM_COMPONENT_ID);
-    EntityID id;
-    targeted = false;
-    for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
-        Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-        if (g->mouseLeftUp && selectable->selected) {
-            Vector mouse = Terrain_MousePos();
-            Vector_Copy(&transform->tar, &mouse);
-            Vector_Copy(&transform->lookat, &mouse);
-            Vector displacement = Vector_Sub(&transform->tar, &transform->pos);
-            selectable->selected = false;
-            targeted = true;
-        }
-    }
-}
-
-/*
-	 Iterates through all entities with selectable, transform, and simple 
-	 renderable components. Detects if they are hovered, then if they should
-	 become selected, or if they should have their targets updated. */
-void System_Select(struct scene* scene)
-{
-    if (targeted) {
-        return;
-    }
-    const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, TRANSFORM_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
-    EntityID id;
-    taskForce = -1;
-    for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
-        Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-
-        Vector mouse = Terrain_MousePos();
-        float dx = transform->pos.x - mouse.x;
-        float dy = mouse.y - transform->pos.y;
-
-        float sin = sinf(transform->angle);
-        float cos = cosf(transform->angle);
-
-        bool checkLR = fabs(cos * dx + sin * dy) <= simpleRenderable->width / 2;
-        bool checkTB = fabs(sin * dx - cos * dy) <= simpleRenderable->height / 2;
-
-        selectable->isHovered = checkLR && checkTB;
-
-        simpleRenderable->showOutline = selectable->isHovered || selectable->selected;
-        if (g->mouseLeftUp && selectable->isHovered && !selectable->selected || (selectable->taskForce == taskForce)) {
+        if (selectable->taskForce == taskForce) {
             selectable->selected = true;
-            if (g->ctrl && g->shift) {
-                taskForce = selectable->taskForce;
-                continue;
-            } else {
-                return;
-            }
         }
     }
 }
@@ -153,12 +172,15 @@ void System_Render(struct scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         SDL_FRect rect = { 0, 0, 0, 0 };
 
+        terrain_translate(&rect, transform->pos.x, transform->pos.y, simpleRenderable->width, simpleRenderable->height);
+        Texture_Draw(GROUND_SHADOW_TEXTURE_ID, (int)rect.x, (int)rect.y, rect.w, rect.h, transform->angle);
+
         if (simpleRenderable->showOutline) {
-            terrain_translate(&rect, transform->pos.x, transform->pos.y, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
+            terrain_translate(&rect, transform->pos.x, transform->pos.y - 2, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
             Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, transform->angle);
         }
 
-        terrain_translate(&rect, transform->pos.x, transform->pos.y, simpleRenderable->width, simpleRenderable->height);
+        terrain_translate(&rect, transform->pos.x, transform->pos.y - 2, simpleRenderable->width, simpleRenderable->height);
         Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
         Texture_Draw(simpleRenderable->sprite, (int)rect.x, (int)rect.y, rect.w, rect.h, transform->angle);
     }

@@ -1,4 +1,4 @@
-3.0.0
+3.0.x
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
 x Set up framework for ECS
@@ -21,58 +21,67 @@ x Add infantry entities
 	x Start match function
 x Create release zip (copy any .dll and .exe, and everything in /res)
 
-3.0.1- Selection API
-- Add unit selection API
+
+3.1.x- Selection API april
+x Add unit selection API
 	x select units by clicking on them
 	x selected units change target
 	x units cannot go out of bounds, into water
 	x units spin if they are not pointing at their lookat
 	x units spin THE RIGHT WAY if they are not pointing at their lookat
-	- transform gets speed?
-- Fancy selection methods
+	x transform gets speed?
+x Fancy selection methods
 	x Regular click selects 1
 	x Ctrl click to select more than one unit
-	- Shift click to select box
-- Add arrow when moving a unit
 - Add task forces
-	- Pressing numbers makes selected units a task force
-	- Ctrl+Shift click selects entire task force
+	x Pressing numbers makes selected units a task force
+	x Ctrl+Shift click selects entire task force
+	- when ctrl+shifted a task force, move based on task force center of mass
 
-3.0.2- Combat
+
+3.2.x- Combat
 - Add bullet projectiles
 - Add health to units, death
 
-3.0.3- UI system
+
+3.3.x- UI system
 - Add UI system
 - Add game menu
 - Add scene stack
 
-3.0.4- Buildings, resources
-- Cities produce infantry
+
+3.4.x- Buildings, resources
 - Infantry can build buildings
 - Add factories
 - Able to build units in factories
 - Add cavalry, artillery with different shades
 - Add ore, population
 
-3.0.5- Prettify
+
+3.5.x- Prettify
 - Add sound
 - Add particles
 - Add animations
+- Add arrow when moving a unit
 
-3.0.6- Airplanes
+
+3.6.x- Airplanes
 - Add airplanes
 - Add airfields
 
-3.0.7- Boats
+
+3.7.x- Boats
 - Add ports
 - Add ships
 
-3.1.0- Milestone 1
+
+3.8.x- Milestone 1
 - polish
 
-3.2.0- Multiplayer
+
+3.9.x- Multiplayer
 - Multiplayer
+
 
 misc.
 - terrain should be vectorized
