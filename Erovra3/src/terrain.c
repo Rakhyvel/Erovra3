@@ -100,18 +100,6 @@ void terrain_update(struct terrain* terrain)
         terrain_zoom = 8.0f * g->height / terrain->size;
     }
 
-    if (g->left) {
-        offset.x += 10;
-    }
-    if (g->right) {
-        offset.x -= 10;
-    }
-    if (g->up) {
-        offset.y += 10;
-    }
-    if (g->down) {
-        offset.y -= 10;
-    }
     if (g->mouseLeftDown && !mouseDown) {
         mouseDown = true;
     }

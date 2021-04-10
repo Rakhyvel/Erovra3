@@ -33,10 +33,8 @@ x Add unit selection API
 x Fancy selection methods
 	x Regular click selects 1
 	x Ctrl click to select more than one unit
-- Add task forces
-	x Pressing numbers makes selected units a task force
-	x Ctrl+Shift click selects entire task force
-	- when ctrl+shifted a task force, move based on task force center of mass
+	x Hold shift to target based on center of mass
+	- Ctrl a selected unit should deselect it
 
 
 3.2.x- Combat

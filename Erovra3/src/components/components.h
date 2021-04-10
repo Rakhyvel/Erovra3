@@ -70,7 +70,6 @@ ComponentID CITY_COMPONENT_ID;
 typedef struct selectable {
     bool isHovered;
     bool selected;
-    int taskForce;
 } Selectable;
 ComponentID SELECTABLE_COMPONENT_ID;
 

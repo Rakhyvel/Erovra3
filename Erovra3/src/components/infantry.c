@@ -48,8 +48,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
 	Selectable selectable = {
         false,
-        false,
-		0
+        false
     };
     Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
 

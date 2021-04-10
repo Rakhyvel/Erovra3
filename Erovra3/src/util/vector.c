@@ -18,6 +18,11 @@ struct vector Vector_Sub(struct vector* a, struct vector* b)
     return (struct vector){ a->x - b->x, a->y - b->y };
 }
 
+struct vector Vector_Scalar(struct vector* a, float scalar)
+{
+    return (struct vector) { a->x * scalar, a->y * scalar };
+}
+
 /*
 	Finds the euclidian distance between two vectors */
 float Vector_Dist(struct vector* a, struct vector* b)

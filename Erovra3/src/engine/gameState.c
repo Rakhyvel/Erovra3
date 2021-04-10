@@ -51,17 +51,24 @@ void Game_Init(char* windowName, int width, int height)
     g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
 }
 
+/*
+	Clears the screen, draws a gray background */
 void Game_BeginDraw()
 {
-    SDL_SetRenderDrawColor(g->rend, 49, 46, 43, 255);
+    SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
     SDL_RenderClear(g->rend);
 }
 
+/*
+	Presents the renderer to the screen. Should be called after rendering frame
+	is done */
 void Game_EndDraw()
 {
     SDL_RenderPresent(g->rend);
 }
 
+/*
+	Polls and handles input from SDL event queue */
 void Game_PollInput()
 {
     // PRE INPUT

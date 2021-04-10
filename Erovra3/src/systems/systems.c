@@ -4,8 +4,8 @@
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
-#include "../textures.h"
 #include "../terrain.h"
+#include "../textures.h"
 
 /*
 	Takes in a scene, iterates through all entities that have a transform
@@ -64,8 +64,6 @@ void System_Transform(struct terrain* terrain, struct scene* scene)
 void System_Select(struct scene* scene)
 {
     bool targeted = false;
-    int taskForce = -1;
-    int newTaskForce = -1;
 
     // If escape is pressed, go through all entities, make them not selected
     if (g->keys[SDL_SCANCODE_ESCAPE]) {
@@ -77,38 +75,40 @@ void System_Select(struct scene* scene)
         }
     }
 
-    // Check to see if a number is being pressed
-    for (int i = 0; i < 10; i++) {
-        if (g->keys[i + SDL_SCANCODE_1]) {
-            newTaskForce = i;
-        }
-    }
-
-    // If a number was pressed, go through selected entities, update task force
-    if (newTaskForce != -1) {
-        const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
-        EntityID id;
-        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
-            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-            if (selectable->selected) {
-                selectable->taskForce = newTaskForce;
-            }
-        }
-    }
-
     // If ctrl is not clicked, go through entities, if they are selected, set their target
-    if (!g->ctrl) {
+    if (!g->ctrl && g->mouseLeftUp && !g->mouseDragged) {
         const ComponentMask transformMask = Scene_CreateMask(2, SELECTABLE_COMPONENT_ID, TRANSFORM_COMPONENT_ID);
         EntityID id;
+        Vector centerOfMass = { 0, 0 };
+		// If shift is held down, find center of mass of selected units
+        if (g->shift) {
+            int numSelected = 0;
+            for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+                Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
+                Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+                if (selectable->selected) {
+                    centerOfMass = Vector_Add(&centerOfMass, &transform->pos);
+                }
+                numSelected++;
+            }
+            if (numSelected != 0) {
+                centerOfMass = Vector_Scalar(&centerOfMass, 1.0f / numSelected);
+            }
+        }
         for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
             Transform* transform = (Transform*)Scene_GetComponent(scene, id, TRANSFORM_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-            if (g->mouseLeftUp && selectable->selected) {
+            if (selectable->selected) {
                 Vector mouse = Terrain_MousePos();
+                if (g->shift) { // Offset by center of mass, calculated earlier
+                    Vector distToCenter = Vector_Sub(&transform->pos, &centerOfMass);
+                    mouse = Vector_Add(&mouse, &distToCenter);
+                }
                 Vector_Copy(&transform->tar, &mouse);
                 Vector_Copy(&transform->lookat, &mouse);
-                Vector displacement = Vector_Sub(&transform->tar, &transform->pos);
-                selectable->selected = false;
+				if (!g->keys[SDL_SCANCODE_S]) { // Check if should (s)tandby for more orders
+                    selectable->selected = false;
+				}
                 targeted = true;
             }
         }
@@ -136,25 +136,10 @@ void System_Select(struct scene* scene)
             selectable->isHovered = checkLR && checkTB;
 
             simpleRenderable->showOutline = selectable->isHovered || selectable->selected;
-            if (g->mouseLeftUp && selectable->isHovered && !selectable->selected) {
-                selectable->selected = true;
-                if (g->ctrl && g->shift) {
-                    taskForce = selectable->taskForce;
-                    continue;
-                } else {
-                    break;
-                }
+            if (g->mouseLeftUp && selectable->isHovered) {
+                selectable->selected = !selectable->selected;
+                break;
             }
-        }
-    }
-
-    // Go thru entities, if their taskforce is selected, entity is selected
-    const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-        if (selectable->taskForce == taskForce) {
-            selectable->selected = true;
         }
     }
 }

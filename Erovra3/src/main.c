@@ -110,7 +110,7 @@ int main(int argc, char** argv)
         const Uint64 end = SDL_GetPerformanceCounter();
         Uint64 freq = SDL_GetPerformanceFrequency();
         const double seconds = (end - start) / (float)(freq);
-        if (seconds > 5.0) {
+        if (seconds > 1.0) {
             // MUST be under 16,000 micro seconds
             printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames / seconds, (seconds * 1000000.0) / frames);
             start = end;
