@@ -45,6 +45,9 @@ void System_DetectHit(struct scene* scene)
     }
 }
 
+/*
+	Takes in a scene, iterates through all entites that have a motion component. 
+	Their position is then incremented by their velocity. */
 void System_Motion(struct terrain* terrain, struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(1, MOTION_COMPONENT_ID);
@@ -60,10 +63,9 @@ void System_Motion(struct terrain* terrain, struct scene* scene)
 }
 
 /*
-	Takes in a scene, iterates through all entities that have a transform
-	component. First checks the rotation, if rotation is off, will correct 
-	angle before moving. Otherwise, updates the velocity based on target 
-	and position, and postion based on target. */
+	Takes in a scene, iterates through all entities that have a target component.
+	First checks that the angle is correct, and then sets the velocity according
+	to the target vector accordingly */
 void System_Target(struct terrain* terrain, struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID);

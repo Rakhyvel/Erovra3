@@ -14,6 +14,8 @@ SDL_Texture* loadTexture(char* filename);
 static SDL_Texture* textures[MAX_TEXTURES];
 static int numTextures = 0;
 
+/*
+	Changes the AlphaMod of a texture given a texture id. */
 void Texture_AlphaMod(TextureID textureID, Uint8 alpha)
 {
     SDL_Texture* texture = textures[textureID];

@@ -4,6 +4,9 @@
 #include "../textures.h"
 #include "components.h"
 
+/*
+	Creates a bullet entity, that starts at a given position, moves towards 
+	another, has a given attack damage value, and belongs to a nation */
 EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
 {
     EntityID bulletID = Scene_NewEntity(scene);
