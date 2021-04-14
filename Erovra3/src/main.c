@@ -45,16 +45,14 @@ Scene* startMatch(Terrain* terrain)
 {
     Scene* match = Scene_Create(Components_Init);
 
-    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 });
-    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 });
+    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);
+    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
 
     EntityID homeCapital = City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), homeNation, true);
     EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
 
     EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    EntityID homeInfantry3 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    EntityID homeInfantry4 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
 
     terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos));
     // Set enemy nations to each other
@@ -102,6 +100,7 @@ int main(int argc, char** argv)
             System_Target(terrain, match);
             System_Motion(terrain, match);
             System_Select(match);
+            System_Attack(match);
             Scene_Purge(match);
             lag -= dt;
             ticks++;

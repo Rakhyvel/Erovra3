@@ -1,5 +1,4 @@
 #pragma once
-#include <stdio.h>
 #include "systems.h"
 #include "../components/bullet.h"
 #include "../components/components.h"
@@ -9,6 +8,7 @@
 #include "../main.h"
 #include "../terrain.h"
 #include "../textures.h"
+#include <stdio.h>
 
 void System_Motion(struct terrain* terrain, struct scene* scene)
 {
@@ -73,11 +73,11 @@ void System_Target(struct terrain* terrain, struct scene* scene)
             if (height < motion->z || height > motion->z + 0.5f) {
                 motion->vel.x = 0;
                 motion->vel.y = 0;
-			}
+            }
         } else {
             motion->vel.x = 0;
             motion->vel.y = 0;
-		}
+        }
     }
 }
 
@@ -166,9 +166,58 @@ void System_Select(struct scene* scene)
                 selectable->selected = !selectable->selected;
                 break;
             }
-            if (selectable->isHovered && ticks % 60 == 0) {
-                Bullet_Create(scene, motion->pos, (Vector) { 0, 0 }, simpleRenderable->nation);
+        }
+    }
+}
+
+void System_Attack(struct scene* scene)
+{
+    const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+
+        ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
+
+        // Find closest enemy ground unit
+        float closestDist = 68;
+        EntityID closest = INVALID_ENTITY_INDEX;
+        Vector closestPos = { -1, -1 };
+        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, GROUND_UNIT_FLAG_COMPONENT_ID);
+        EntityID otherID;
+        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            float dist = Vector_Dist(&otherMotion->pos, &motion->pos);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closest = otherID;
+                closestPos = otherMotion->pos;
             }
+        }
+
+        // If no enemy units were found, stuckin and engaged are false, skip
+        if (closest == INVALID_ENTITY_INDEX) {
+            unit->stuckIn = false;
+            unit->engaged = false;
+            continue;
+        }
+        // If enemies were within 48, tar = pos, stuck in
+        if (closestDist < 48) {
+            target->tar = motion->pos;
+            target->lookat = closestPos;
+            unit->stuckIn = true;
+        }
+        // engaged = true, engagedTicks = whatever
+        unit->engaged = true;
+
+        // Shoot enemy units if found
+		Vector displacement = Vector_Sub(&motion->pos, &closestPos);
+        float deflection = Vector_Angle(&displacement);
+        if (ticks % 60 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
+            Bullet_Create(scene, motion->pos, closestPos, simpleRenderable->nation);
         }
     }
 }

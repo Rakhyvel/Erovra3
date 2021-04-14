@@ -56,15 +56,22 @@ ComponentID HEALTH_COMPONENT_ID;
 typedef struct unit {
     const float attack;
     const float defense;
+    bool stuckIn;
+    bool engaged;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;
+ComponentID GROUND_UNIT_FLAG_COMPONENT_ID;
 
 typedef struct nation {
     SDL_Color color;
+    ComponentID ownNationFlag;
+    ComponentID enemyNationFlag;
     EntityID capital;
     EntityID enemyNation;
 } Nation;
 ComponentID NATION_COMPONENT_ID;
+ComponentID HOME_NATION_FLAG_COMPONENT_ID;
+ComponentID ENEMY_NATION_FLAG_COMPONENT_ID;
 
 typedef struct city {
     char name[20];
@@ -78,5 +85,3 @@ typedef struct selectable {
     bool selected;
 } Selectable;
 ComponentID SELECTABLE_COMPONENT_ID;
-
-ComponentID GROUND_COMPONENT_ID;
