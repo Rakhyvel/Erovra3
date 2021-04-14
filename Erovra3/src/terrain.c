@@ -497,7 +497,7 @@ struct vector findBestLocation(struct terrain* terrain, struct vector start)
             // Gotta start with the goods
             //if (terrain_getOre(point) <= 0.66)
             //    continue;
-            double score = Vector_Dist(&start, &point);
+            double score = Vector_Dist(start, point);
 
             // Must have direct line of sight to tile center
             if (score < tempDist) {

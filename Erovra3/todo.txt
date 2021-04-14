@@ -43,12 +43,13 @@ x Add bullet projectiles
 x Add attack system
 	x Add nation component flags
 	x Add land unit flag
-- Add detect hit system
+x Add detect hit system
 	x Add projectile flag
 	x Add nation flags to bullets
-	- Add health to units
+	x Add health to units
 - Make vector functions make sense
-- Add health to units, death
+- Add hit highlight
+- Add death animation
 
 
 3.3.x- UI system

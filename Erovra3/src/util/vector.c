@@ -2,58 +2,52 @@
 #include "vector.h"
 #include <math.h>
 
-void Vector_Normalize(struct vector* a)
+struct vector Vector_Normalize(struct vector a)
 {
     float mag = Vector_Magnitude(a);
     if (mag == 0) {
         return;
     } else {
-        *a = Vector_Scalar(a, 1.0f / mag);
+        return Vector_Scalar(a, 1.0f / mag);
     }
 }
 
-void Vector_Copy(struct vector* a, struct vector* b)
+struct vector Vector_Add(struct vector a, struct vector b)
 {
-    a->x = b->x;
-    a->y = b->y;
+    return (struct vector) { a.x + b.x, a.y + b.y };
 }
 
-struct vector Vector_Add(struct vector* a, struct vector* b)
+struct vector Vector_Sub(struct vector a, struct vector b)
 {
-    return (struct vector) { a->x + b->x, a->y + b->y };
+    return (struct vector) { a.x - b.x, a.y - b.y };
 }
 
-struct vector Vector_Sub(struct vector* a, struct vector* b)
+struct vector Vector_Scalar(struct vector a, float scalar)
 {
-    return (struct vector) { a->x - b->x, a->y - b->y };
-}
-
-struct vector Vector_Scalar(struct vector* a, float scalar)
-{
-    return (struct vector) { a->x * scalar, a->y * scalar };
+    return (struct vector) { a.x * scalar, a.y * scalar };
 }
 
 /*
 	Finds the euclidian distance between two vectors */
-float Vector_Dist(struct vector* a, struct vector* b)
+float Vector_Dist(struct vector a, struct vector b)
 {
-    return sqrtf((a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y));
+    return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-float Vector_Magnitude(struct vector* a)
+float Vector_Magnitude(struct vector a)
 {
-    return sqrtf(a->x * a->x + a->y * a->y);
+    return sqrtf(a.x * a.x + a.y * a.y);
 }
 
-float Vector_Angle(struct vector* a)
+float Vector_Angle(struct vector a)
 {
-    if (a->y != 0) {
-        return -atan2(a->x, a->y);
-    } else if (a->x == 0) {
+    if (a.y != 0) {
+        return -atan2(a.x, a.y);
+    } else if (a.x == 0) {
         return 0;
-    } else if (a->x > 0) {
+    } else if (a.x > 0) {
         return -1.5707963267948965;
-    } else if (a->x < 0) {
+    } else if (a.x < 0) {
         return 1.5707963267948965;
     }
 }

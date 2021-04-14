@@ -8,10 +8,10 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
 {
     EntityID bulletID = Scene_NewEntity(scene);
 
-    Vector vel = Vector_Sub(&tar, &pos);
-    Vector_Normalize(&vel);
-    vel = Vector_Scalar(&vel, 4);
-    float angle = Vector_Angle(&vel);
+    Vector vel = Vector_Sub(tar, pos);
+    Vector_Normalize(vel);
+    vel = Vector_Scalar(vel, 4);
+    float angle = Vector_Angle(vel);
     angle += 3.141592f / 2.0f;
     Motion motion = {
         pos,

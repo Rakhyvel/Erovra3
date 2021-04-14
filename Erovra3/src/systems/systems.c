@@ -28,10 +28,9 @@ void System_DetectHit(struct scene* scene)
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
-            float dist = Vector_Dist(&motion->pos, &otherMotion->pos);
+            float dist = Vector_Dist(motion->pos, otherMotion->pos);
             if (dist < 8) {
                 health->health -= projectile->attack / unit->defense;
-                printf("%f\n", health->health);
                 Scene_MarkPurged(scene, otherID);
                 if (health->health <= 0) {
                     Scene_MarkPurged(scene, id);
@@ -47,7 +46,7 @@ void System_Motion(struct terrain* terrain, struct scene* scene)
     EntityID id;
     for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        motion->pos = Vector_Add(&motion->pos, &motion->vel);
+        motion->pos = Vector_Add(motion->pos, motion->vel);
         float height = terrain_getHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
         if (height == -1) {
             Scene_MarkPurged(scene, id);
@@ -69,8 +68,8 @@ void System_Target(struct terrain* terrain, struct scene* scene)
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
         // Calculate if pointing in direction of lookat vector
-        Vector displacement = Vector_Sub(&motion->pos, &target->lookat);
-        float tempAngle = Vector_Angle(&displacement); // atan2
+        Vector displacement = Vector_Sub(motion->pos, target->lookat);
+        float tempAngle = Vector_Angle(displacement); // atan2
         if (fabs(motion->angle - tempAngle) < 3.1415926) {
             // Can be compared directly
         } else if (motion->angle < tempAngle) {
@@ -89,7 +88,7 @@ void System_Target(struct terrain* terrain, struct scene* scene)
             }
             motion->vel.x = 0;
             motion->vel.y = 0;
-        } else if (Vector_Dist(&target->tar, &motion->pos) > motion->speed) {
+        } else if (Vector_Dist(target->tar, motion->pos) > motion->speed) {
             // Looking in direction, not at target, move
             motion->vel.x = (target->tar.x - motion->pos.x);
             motion->vel.y = (target->tar.y - motion->pos.y);
@@ -99,7 +98,7 @@ void System_Target(struct terrain* terrain, struct scene* scene)
                 motion->vel.y /= mag / motion->speed;
             }
 
-            displacement = Vector_Add(&(motion->pos), &(motion->vel));
+            displacement = Vector_Add((motion->pos), (motion->vel));
             float height = terrain_getHeight(terrain, (int)displacement.x, (int)displacement.y);
             if (height < motion->z || height > motion->z + 0.5f) {
                 motion->vel.x = 0;
@@ -142,12 +141,12 @@ void System_Select(struct scene* scene)
                 Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
                 Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
                 if (selectable->selected) {
-                    centerOfMass = Vector_Add(&centerOfMass, &motion->pos);
+                    centerOfMass = Vector_Add(centerOfMass, motion->pos);
                 }
                 numSelected++;
             }
             if (numSelected != 0) {
-                centerOfMass = Vector_Scalar(&centerOfMass, 1.0f / numSelected);
+                centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
             }
         }
         for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
@@ -157,11 +156,11 @@ void System_Select(struct scene* scene)
             if (selectable->selected) {
                 Vector mouse = Terrain_MousePos();
                 if (g->shift) { // Offset by center of mass, calculated earlier
-                    Vector distToCenter = Vector_Sub(&motion->pos, &centerOfMass);
-                    mouse = Vector_Add(&mouse, &distToCenter);
+                    Vector distToCenter = Vector_Sub(motion->pos, centerOfMass);
+                    mouse = Vector_Add(mouse, distToCenter);
                 }
-                Vector_Copy(&target->tar, &mouse);
-                Vector_Copy(&target->lookat, &mouse);
+                target->tar = mouse;
+                target->lookat = mouse;
                 if (!g->keys[SDL_SCANCODE_S]) { // Check if should (s)tandby for more orders
                     selectable->selected = false;
                 }
@@ -224,7 +223,7 @@ void System_Attack(struct scene* scene)
         EntityID otherID;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
-            float dist = Vector_Dist(&otherMotion->pos, &motion->pos);
+            float dist = Vector_Dist(otherMotion->pos, motion->pos);
             if (dist < closestDist) {
                 closestDist = dist;
                 closest = otherID;
@@ -248,8 +247,8 @@ void System_Attack(struct scene* scene)
         unit->engaged = true;
 
         // Shoot enemy units if found
-        Vector displacement = Vector_Sub(&motion->pos, &closestPos);
-        float deflection = Vector_Angle(&displacement);
+        Vector displacement = Vector_Sub(motion->pos, closestPos);
+        float deflection = Vector_Angle(displacement);
         if (ticks % 60 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
             Bullet_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
         }
