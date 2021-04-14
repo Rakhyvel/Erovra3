@@ -9,6 +9,7 @@
 
 typedef Uint8 TextureID;
 
+void Texture_AlphaMod(TextureID textureID, Uint8 alpha);
 void Texture_ColorMod(TextureID textureID, SDL_Color color);
 void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color);
 void Texture_Draw(TextureID texture, int x, int y, float w, float h, float angle);

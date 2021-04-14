@@ -14,6 +14,12 @@ SDL_Texture* loadTexture(char* filename);
 static SDL_Texture* textures[MAX_TEXTURES];
 static int numTextures = 0;
 
+void Texture_AlphaMod(TextureID textureID, Uint8 alpha)
+{
+    SDL_Texture* texture = textures[textureID];
+    SDL_SetTextureAlphaMod(texture, alpha);
+}
+
 /*
 	Changes the ColorMod of a texture given a texture id. */
 void Texture_ColorMod(TextureID textureID, SDL_Color color)

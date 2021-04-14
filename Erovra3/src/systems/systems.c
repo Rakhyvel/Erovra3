@@ -20,6 +20,10 @@ void System_DetectHit(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Health* health = (Unit*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
+        if (simpleRenderable->hitTicks > 0) {
+            simpleRenderable->hitTicks--;
+        }
+
         ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
 
         // Find closest enemy projectile
@@ -31,6 +35,7 @@ void System_DetectHit(struct scene* scene)
             float dist = Vector_Dist(motion->pos, otherMotion->pos);
             if (dist < 8) {
                 health->health -= projectile->attack / unit->defense;
+                simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
                 if (health->health <= 0) {
                     Scene_MarkPurged(scene, id);
@@ -272,6 +277,11 @@ void System_Render(struct scene* scene)
         Texture_Draw(simpleRenderable->shadow, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
 
         if (simpleRenderable->showOutline) {
+            Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)255);
+            terrain_translate(&rect, motion->pos.x, motion->pos.y - 2, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
+            Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
+        } else if (simpleRenderable->hitTicks > 0) {
+            Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
             terrain_translate(&rect, motion->pos.x, motion->pos.y - 2, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
             Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
         }

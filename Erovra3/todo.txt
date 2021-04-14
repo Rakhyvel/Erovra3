@@ -47,15 +47,15 @@ x Add detect hit system
 	x Add projectile flag
 	x Add nation flags to bullets
 	x Add health to units
-- Make vector functions make sense
-- Add hit highlight
-- Add death animation
+x Make vector functions make sense
+x Add hit highlight
 
 
 3.3.x- UI system
 - Add UI system
-- Add game menu
 - Add scene stack
+- Add game menu
+- Add main menu
 
 
 3.4.x- Buildings, resources
@@ -66,28 +66,25 @@ x Add detect hit system
 - Add ore, population
 
 
-3.5.x- Prettify
-- Add sound
-- Add particles
-- Add animations
-- Add arrow when moving a unit
-
-
-3.6.x- Airplanes
+3.5.x- Airplanes
 - Add airplanes
 - Add airfields
 
 
-3.7.x- Boats
+3.6.x- Boats
 - Add ports
 - Add ships
 
 
-3.8.x- Milestone 1
-- polish
+3.7.x- Prettify
+- Add sound
+- Add particles
+- Add animations
+- Add arrow when moving a unit
+- Add death animation
 
 
-3.9.x- Multiplayer
+3.8.x- Multiplayer
 - Multiplayer
 
 

@@ -40,6 +40,7 @@ typedef struct simpleRenderable {
     int height;
     int outlineWidth;
     int outlineHeight;
+    int hitTicks;
 } SimpleRenderable;
 ComponentID SIMPLE_RENDERABLE_COMPONENT_ID;
 
