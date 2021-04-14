@@ -60,6 +60,7 @@ typedef struct unit {
     bool engaged;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;
+ComponentID LAND_UNIT_FLAG_COMPONENT_ID;
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID;
 
 typedef struct nation {

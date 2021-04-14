@@ -60,6 +60,9 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         0
     };
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
+	
+    Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, cityID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
 
     return cityID;
 }

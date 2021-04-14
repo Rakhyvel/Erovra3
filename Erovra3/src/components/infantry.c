@@ -58,6 +58,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
 
+    Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
 }

@@ -186,7 +186,7 @@ void System_Attack(struct scene* scene)
         float closestDist = 68;
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
-        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, GROUND_UNIT_FLAG_COMPONENT_ID);
+        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, LAND_UNIT_FLAG_COMPONENT_ID);
         EntityID otherID;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);

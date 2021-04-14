@@ -10,8 +10,11 @@ void Components_Init(struct scene* scene)
     TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
 	SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
+
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
     GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
     HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
