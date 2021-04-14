@@ -38,7 +38,15 @@ x Fancy selection methods
 
 
 3.2.x- Combat
-- Add bullet projectiles
+x Add bullet projectiles
+	x Fix bug with purging entities
+x Add attack system
+	x Add nation component flags
+	x Add land unit flag
+- Add detect hit system
+	x Add projectile flag
+	x Add nation flags to bullets
+	- Add health to units
 - Make vector functions make sense
 - Add health to units, death
 

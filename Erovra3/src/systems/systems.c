@@ -10,6 +10,37 @@
 #include "../textures.h"
 #include <stdio.h>
 
+void System_DetectHit(struct scene* scene)
+{
+    const ComponentMask renderMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        Health* health = (Unit*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+
+        ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
+
+        // Find closest enemy projectile
+        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, PROJECTILE_COMPONENT_ID);
+        EntityID otherID;
+        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
+            float dist = Vector_Dist(&motion->pos, &otherMotion->pos);
+            if (dist < 8) {
+                health->health -= projectile->attack / unit->defense;
+                printf("%f\n", health->health);
+                Scene_MarkPurged(scene, otherID);
+                if (health->health <= 0) {
+                    Scene_MarkPurged(scene, id);
+                }
+            }
+        }
+    }
+}
+
 void System_Motion(struct terrain* terrain, struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(1, MOTION_COMPONENT_ID);
@@ -170,6 +201,9 @@ void System_Select(struct scene* scene)
     }
 }
 
+/*
+	This system goes through all ground units, has them search for the closest 
+	enemy land unit to them, and finally shoot a bullet at them. */
 void System_Attack(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID);
@@ -214,10 +248,10 @@ void System_Attack(struct scene* scene)
         unit->engaged = true;
 
         // Shoot enemy units if found
-		Vector displacement = Vector_Sub(&motion->pos, &closestPos);
+        Vector displacement = Vector_Sub(&motion->pos, &closestPos);
         float deflection = Vector_Angle(&displacement);
         if (ticks % 60 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
-            Bullet_Create(scene, motion->pos, closestPos, simpleRenderable->nation);
+            Bullet_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
         }
     }
 }

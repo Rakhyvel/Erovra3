@@ -97,6 +97,7 @@ int main(int argc, char** argv)
             Game_PollInput();
             // update entities
             terrain_update(terrain);
+            System_DetectHit(match);
             System_Target(terrain, match);
             System_Motion(terrain, match);
             System_Select(match);

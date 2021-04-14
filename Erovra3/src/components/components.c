@@ -15,6 +15,8 @@ void Components_Init(struct scene* scene)
     GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
 
+    PROJECTILE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Projectile));
+
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
     HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);

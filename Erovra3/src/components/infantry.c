@@ -47,8 +47,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        0,
-        0
+        1,
+        0.5f
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 

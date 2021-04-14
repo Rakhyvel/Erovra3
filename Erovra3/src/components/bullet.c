@@ -4,7 +4,7 @@
 #include "../textures.h"
 #include "components.h"
 
-EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, EntityID nation)
+EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
 {
     EntityID bulletID = Scene_NewEntity(scene);
 
@@ -35,4 +35,12 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, EntityID nat
         0
     };
     Scene_Assign(scene, bulletID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+	Projectile projectile = {
+        attack
+    };
+    Scene_Assign(scene, bulletID, PROJECTILE_COMPONENT_ID, &projectile);
+
+    Scene_Assign(scene, bulletID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    return bulletID;
 }

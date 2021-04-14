@@ -63,6 +63,11 @@ ComponentID UNIT_COMPONENT_ID;
 ComponentID LAND_UNIT_FLAG_COMPONENT_ID;
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID;
 
+typedef struct projectile {
+    const float attack;
+} Projectile;
+ComponentID PROJECTILE_COMPONENT_ID;
+
 typedef struct nation {
     SDL_Color color;
     ComponentID ownNationFlag;

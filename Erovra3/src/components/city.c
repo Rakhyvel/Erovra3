@@ -49,7 +49,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Unit type = {
         0,
-        0
+        1
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
