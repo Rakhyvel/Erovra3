@@ -16,7 +16,7 @@ typedef Uint16 EntityVersion;
 typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
 
 #define MAX_COMPONENTS sizeof(ComponentMask) * 8
-#define INVALID_ENTITY_INDEX ((EntityID)-1)
+#define INVALID_ENTITY_INDEX ((EntityID)65535)
 #define MAX_ENTITIES 1000
 
 #define GET_COMPONENT_FIELD(scene, id, componentid, structName, fieldName) ((structName*)Scene_GetComponent(scene, id, componentid))->fieldName

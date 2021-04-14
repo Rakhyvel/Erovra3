@@ -6,7 +6,8 @@
 	Takes in a scene, registers components used in the game for that scene */
 void Components_Init(struct scene* scene)
 {
-    TRANSFORM_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Transform));
+    MOTION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Motion));
+    TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
 	SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));

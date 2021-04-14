@@ -37,6 +37,8 @@ Strategy and logistics:
 
 #include "./util/arraylist.h"
 
+int ticks = 0;
+
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
 Scene* startMatch(Terrain* terrain)
@@ -49,10 +51,12 @@ Scene* startMatch(Terrain* terrain)
     EntityID homeCapital = City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), homeNation, true);
     EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
 
-    EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos), homeNation);
-    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos), homeNation);
+    EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID homeInfantry3 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID homeInfantry4 = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
 
-    terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, TRANSFORM_COMPONENT_ID, Transform, pos));
+    terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos));
     // Set enemy nations to each other
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
@@ -69,7 +73,7 @@ int main(int argc, char** argv)
 {
     Game_Init("Erovra", 1166, 640);
     Textures_Init();
-    Terrain* terrain = terrain_create(32 * 64);
+    Terrain* terrain = terrain_create(5 * 64);
     Scene* match = startMatch(terrain);
 
     long previous = clock();
@@ -95,9 +99,12 @@ int main(int argc, char** argv)
             Game_PollInput();
             // update entities
             terrain_update(terrain);
-            System_Transform(terrain, match);
+            System_Target(terrain, match);
+            System_Motion(terrain, match);
             System_Select(match);
+            Scene_Purge(match);
             lag -= dt;
+            ticks++;
         }
         if (elapsedFrames > 16) {
             Game_BeginDraw();

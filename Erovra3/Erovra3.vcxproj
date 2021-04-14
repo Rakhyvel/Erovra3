@@ -149,6 +149,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\bullet.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\city.c">
       <SubType>
       </SubType>
@@ -205,9 +209,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\bullet.h" />
     <ClInclude Include="src\components\city.h" />
     <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\nation.h" />
+    <ClInclude Include="src\main.h" />
     <ClInclude Include="src\util\arraylist.h" />
     <ClInclude Include="src\components\components.h" />
     <ClInclude Include="src\util\debug.h" />

@@ -8,10 +8,12 @@ void Textures_Init()
 {
     CITY_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
     BUILDING_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/hit.png");
+    BUILDING_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
     CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     GROUND_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/ground_outline.png");
     GROUND_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/shadow.png");
+    BULLET_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
 
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, Polygon_Create("res/ground_border.gon"), (SDL_Color) { 0, 0, 0, 255 });
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, Polygon_Create("res/infantry.gon"), (SDL_Color) { 0, 0, 0, 255 });

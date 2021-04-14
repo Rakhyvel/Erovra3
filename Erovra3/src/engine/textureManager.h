@@ -5,6 +5,7 @@
 
 #define MAX_TEXTURES 255
 #define RAD_TO_DEG 180.0f / 3.141592653589793f
+#define INVALID_TEXTURE_ID 255
 
 typedef Uint8 TextureID;
 

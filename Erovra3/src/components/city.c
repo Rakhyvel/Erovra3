@@ -11,20 +11,26 @@
 EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
-    Transform transform = {
+    Motion motion = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
+        0,
+		0,
+		false
+    };
+    Scene_Assign(scene, cityID, MOTION_COMPONENT_ID, &motion);
+
+	Target target = {
         (struct vector) { 0.0f, 0.0f },
         pos,
-        0,
-		0
     };
-    Scene_Assign(scene, cityID, TRANSFORM_COMPONENT_ID, &transform);
+    Scene_Assign(scene, cityID, TARGET_COMPONENT_ID, &target);
 
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
+		BUILDING_SHADOW_TEXTURE_ID,
         false,
         nation,
         32,

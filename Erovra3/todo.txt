@@ -22,7 +22,7 @@ x Add infantry entities
 x Create release zip (copy any .dll and .exe, and everything in /res)
 
 
-3.1.x- Selection API april
+3.1.x- Selection API
 x Add unit selection API
 	x select units by clicking on them
 	x selected units change target
@@ -34,11 +34,12 @@ x Fancy selection methods
 	x Regular click selects 1
 	x Ctrl click to select more than one unit
 	x Hold shift to target based on center of mass
-	- Ctrl a selected unit should deselect it
+	x Ctrl a selected unit should deselect it
 
 
 3.2.x- Combat
 - Add bullet projectiles
+- Make vector functions make sense
 - Add health to units, death
 
 

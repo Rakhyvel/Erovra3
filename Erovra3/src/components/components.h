@@ -11,16 +11,21 @@ void Components_Init(struct scene*);
 /*
 		Contains basic data for positioning an entity in the world space, as
    well as moving the entity with a target and velocity */
-typedef struct transform {
+typedef struct motion {
     struct vector pos;
     float z;
-    struct vector lookat;
     struct vector vel;
-    struct vector tar;
     float angle;
     float speed;
-} Transform;
-ComponentID TRANSFORM_COMPONENT_ID;
+    bool destroyOnBounds;
+} Motion;
+ComponentID MOTION_COMPONENT_ID;
+
+typedef struct target {
+    struct vector tar;
+    struct vector lookat;
+} Target;
+ComponentID TARGET_COMPONENT_ID;
 
 /*
 		Contains data for rendering an entity to the screen, like it's sprite,
@@ -28,6 +33,7 @@ ComponentID TRANSFORM_COMPONENT_ID;
 typedef struct simpleRenderable {
     TextureID sprite;
     TextureID spriteOutline;
+    TextureID shadow;
     bool showOutline;
     EntityID nation;
     int width;

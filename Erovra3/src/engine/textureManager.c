@@ -27,6 +27,9 @@ void Texture_ColorMod(TextureID textureID, SDL_Color color)
 	Image width and height will be originalSize * scalar. Scalars under 0 are ignored */
 void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float angle)
 {
+    if (textureID == INVALID_TEXTURE_ID) {
+        return;
+    }
     SDL_Texture* texture = textures[textureID];
     SDL_Rect dest;
 

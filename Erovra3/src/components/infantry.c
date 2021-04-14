@@ -10,20 +10,26 @@
 EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID infantryID = Scene_NewEntity(scene);
-    Transform transform = {
+    Motion motion = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
-        (struct vector) { 0.0f, 0.0f },
-        (struct vector) { 0.0f, 0.0f },
         0,
-		0.2f
+		0.2f,
+		false
     };
-    Scene_Assign(scene, infantryID, TRANSFORM_COMPONENT_ID, &transform);
+    Scene_Assign(scene, infantryID, MOTION_COMPONENT_ID, &motion);
+
+    Target target = {
+        pos,
+        pos,
+    };
+    Scene_Assign(scene, infantryID, TARGET_COMPONENT_ID, &target);
 
     SimpleRenderable render = {
         INFANTRY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
+		GROUND_SHADOW_TEXTURE_ID,
         false,
         nation,
 		32,

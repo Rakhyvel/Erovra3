@@ -39,7 +39,7 @@ struct terrain* terrain_create(int mapSize)
     terrain_normalize(retval->map, retval->size);
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.7f + 0.15f;
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5f + 0.5f;
         }
     }
     paintMap(retval);
@@ -109,8 +109,8 @@ void terrain_update(struct terrain* terrain)
         oldOffset.y = offset.y;
     }
     if (g->mouseMoved) {
-        mousePos.x = (g->mouseX - g->width / 2) / terrain_zoom - offset.x;
-        mousePos.y = (g->mouseY - g->height / 2) / terrain_zoom - offset.y;
+        mousePos.x = (float)(((float)g->mouseX - (float)g->width / 2.0f) / terrain_zoom) - offset.x;
+        mousePos.y = (float)(((float)g->mouseY - (float)g->height / 2.0f) / terrain_zoom) - offset.y;
     }
     if (g->mouseDrag) {
         offset.x = (g->mouseX - g->mouseInitX) / terrain_zoom + oldOffset.x;
@@ -401,9 +401,9 @@ struct vector Terrain_MousePos()
     return mousePos;
 }
 
-SDL_Point terrain_inverseTranslate(int x, int y)
+SDL_FPoint terrain_inverseTranslate(int x, int y)
 {
-    SDL_Point newPos;
+    SDL_FPoint newPos;
     newPos.x = (x - g->width / 2) / terrain_zoom - offset.x;
     newPos.y = (y - g->height / 2) / terrain_zoom - offset.y;
     return newPos;

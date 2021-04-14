@@ -21,24 +21,23 @@
 	Creates an arraylist with a given type size */
 struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
 {
-	struct arraylist* retval = malloc(sizeof(struct arraylist));
-	if (!retval) 
-	{
-		PANIC("Memory error");
-		exit(1);
-	}
-	retval->typeSize = typeSize;
-	retval->size = 0;
-	retval->capacity = initSize;
-	retval->data = calloc(retval->capacity * retval->typeSize, sizeof(char));
-	return retval;
+    struct arraylist* retval = malloc(sizeof(struct arraylist));
+    if (!retval) {
+        PANIC("Memory error");
+        exit(1);
+    }
+    retval->typeSize = typeSize;
+    retval->size = 0;
+    retval->capacity = initSize;
+    retval->data = calloc(retval->capacity * retval->typeSize, sizeof(char));
+    return retval;
 }
 
 /*
 	Returns a pointer to within the arraylist at a given index */
 void* Arraylist_Get(struct arraylist* list, int index)
 {
-	return list->data + (index * list->typeSize);
+    return list->data + (index * list->typeSize);
 }
 
 /*
@@ -47,15 +46,12 @@ void* Arraylist_Get(struct arraylist* list, int index)
 	Doesn't reduce memory pool size on purpose */
 void* Arraylist_Pop(struct arraylist* list)
 {
-	if (list->size == 0)
-	{
-		PANIC("List is too small to be popped");
-	}
-	else
-	{
-		list->size--;
-		return list->data + ((long long)list->size + 1) * list->typeSize;
-	}
+    if (list->size == 0) {
+        PANIC("List is too small to be popped");
+    } else {
+        list->size--;
+        return list->data + ((long long)list->size) * list->typeSize;
+    }
 }
 
 /* 
@@ -63,22 +59,20 @@ void* Arraylist_Pop(struct arraylist* list)
 	also functions as a push method */
 void Arraylist_Add(struct arraylist* list, void* data)
 {
-	if (list->size >= list->capacity) 
-	{
-		void* res = realloc(list->data, 2 * list->size * list->typeSize);
-		if (res != NULL && res != list->data)
-		{
-			list->data = res;
-		}
-		list->capacity = list->size * 2;
-	}
-	Arraylist_Put(list, list->size, data);
-	list->size++;
+    if (list->size >= list->capacity) {
+        void* res = realloc(list->data, 2 * list->size * list->typeSize);
+        if (res != NULL && res != list->data) {
+            list->data = res;
+        }
+        list->capacity = list->size * 2;
+    }
+    Arraylist_Put(list, list->size, data);
+    list->size++;
 }
 
 /*
 	Copies data to an index */
 void Arraylist_Put(struct arraylist* list, int index, void* data)
 {
-	memcpy(list->data + index * list->typeSize, data, list->typeSize);
+    memcpy(list->data + index * list->typeSize, data, list->typeSize);
 }
