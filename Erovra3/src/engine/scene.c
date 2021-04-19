@@ -173,6 +173,13 @@ ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
     return retval;
 }
 
+bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID id)
+{
+    EntityIndex index = getIndex(id);
+    struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
+    return (entt->mask & mask) == mask;
+}
+
 /*
 	Finds and returns first index of a mask matching an entity */
 EntityID Scene_Begin(struct scene* scene, ComponentMask mask)

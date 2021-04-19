@@ -34,7 +34,7 @@ Strategy and logistics:
 #include "./systems/systems.h"
 #include "terrain.h"
 #include "textures.h"
-
+#include "./gui/gui.h"
 #include "./util/arraylist.h"
 
 int ticks = 0;
@@ -44,6 +44,10 @@ int ticks = 0;
 Scene* startMatch(Terrain* terrain)
 {
     Scene* match = Scene_Create(Components_Init);
+    GUI_Init(match);
+
+	EntityID container = GUI_CreateContainer(match, (Vector) { 100, 100 });
+    EntityID testContainer = GUI_CreateContainer(match, (Vector) { 10, 100 });
 
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
@@ -53,6 +57,15 @@ Scene* startMatch(Terrain* terrain)
 
     EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
     EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+
+	GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is a button!"));
+    GUI_ContainerAdd(match, container, testContainer);
+    GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is another button!"));
+
+    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt a button!"));
+    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt another button!"));
+
+	GUI_SetContainerShown(match, testContainer, false);
 
     terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos));
     // Set enemy nations to each other
@@ -102,6 +115,7 @@ int main(int argc, char** argv)
             System_Motion(terrain, match);
             System_Select(match);
             System_Attack(match);
+            GUI_Update(match);
             Scene_Purge(match);
             lag -= dt;
             ticks++;
@@ -111,6 +125,7 @@ int main(int argc, char** argv)
             elapsedFrames = 0;
             terrain_render(terrain);
             System_Render(match);
+            GUI_Render(match);
             Game_EndDraw();
         }
         frames++;

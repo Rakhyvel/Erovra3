@@ -80,7 +80,8 @@ void Scene_MarkPurged(struct scene*, EntityID id);
 void Scene_Purge(struct scene*);
 
 ComponentMask Scene_CreateMask(int, ComponentID, ...);
-// give it a current index, a mask, and it will return the next index. will be -1 at end
+bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID id);
+
 EntityID Scene_Begin(struct scene* scene, ComponentMask mask);
 bool Scene_End(struct scene* scene, EntityID id);
 EntityID Scene_Next(struct scene* scene, EntityID prev, ComponentMask mask);
