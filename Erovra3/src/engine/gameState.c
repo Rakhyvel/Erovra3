@@ -3,6 +3,8 @@ game.c
 */
 #pragma once
 #include "gameState.h"
+#include "scene.h"
+#include "../util/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -34,10 +36,9 @@ void Game_Init(char* windowName, int width, int height)
     if (SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl") == SDL_FALSE) {
         printf("Warning: opengl not set as driver\n");
     }
-	if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == SDL_FALSE)
-	{
+    if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == SDL_FALSE) {
         printf("Didnt work");
-	}
+    }
 
     // Create Renderer
     g->rend = SDL_CreateRenderer(g->window, -1, SDL_RENDERER_SOFTWARE);
@@ -48,27 +49,76 @@ void Game_Init(char* windowName, int width, int height)
     SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
     g->running = 1;
-    g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = 0;
+    g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = g->ticks = 0;
+    g->sceneStack = Arraylist_Create(100, sizeof(Scene));
 }
 
 /*
-	Clears the screen, draws a gray background */
-void Game_BeginDraw()
+	Adds a scene to the top of the scene stack */
+void Game_PushScene(Scene* scene)
 {
-    SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
-    SDL_RenderClear(g->rend);
+    Arraylist_Add(g->sceneStack, scene);
 }
 
 /*
-	Presents the renderer to the screen. Should be called after rendering frame
-	is done */
-void Game_EndDraw()
+	Starts the game loop. 
+	
+	Runs the update method of the scene at the top of the scene stack 60 times / second
+	Runs the render method of the scene at the top of the scene stack when possible */
+void Game_Run()
 {
-    SDL_RenderPresent(g->rend);
+    long previous = clock();
+    long lag = 0;
+    long current = clock();
+    long elapsed = 0;
+    long dt = 16;
+    int elapsedFrames = 0;
+
+    unsigned int frames = 0;
+
+    Uint64 start = SDL_GetPerformanceCounter();
+    while (g->running) {
+        current = clock();
+        elapsed = current - previous;
+
+        previous = current;
+        lag += elapsed;
+
+        elapsedFrames += elapsed;
+        if (g->sceneStack->size < 1) {
+            PANIC("No scene added to game");
+        }
+        Scene* scene = Arraylist_Get(g->sceneStack, g->sceneStack->size - 1);
+
+        while (lag >= dt) {
+            Game_PollInput();
+            scene->update(scene);
+            Scene_Purge(scene);
+            lag -= dt;
+            g->ticks++;
+        }
+        if (elapsedFrames > 16) {
+            elapsedFrames = 0;
+            SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
+            SDL_RenderClear(g->rend);
+            scene->render(scene);
+            SDL_RenderPresent(g->rend);
+        }
+        frames++;
+        const Uint64 end = SDL_GetPerformanceCounter();
+        Uint64 freq = SDL_GetPerformanceFrequency();
+        const double seconds = (end - start) / (float)(freq);
+        if (seconds > 1.0) {
+            // MUST be under 16,000 micro seconds
+            printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames / seconds, (seconds * 1000000.0) / frames);
+            start = end;
+            frames = 0;
+        }
+    }
 }
 
 /*
-	Polls and handles input from SDL event queue */
+	Polls and handles input from SDL event queue, updates game's state struct */
 void Game_PollInput()
 {
     // PRE INPUT

@@ -1,16 +1,22 @@
 #pragma once
-#include "systems.h"
 #include "../components/bullet.h"
+#include "../components/city.h"
 #include "../components/components.h"
+#include "../components/infantry.h"
+#include "../components/nation.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
+#include "../gui/gui.h"
 #include "../main.h"
 #include "../terrain.h"
 #include "../textures.h"
 #include <stdio.h>
 
-void System_DetectHit(struct scene* scene)
+Terrain* terrain;
+EntityID container;
+
+void Match_DetectHit(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID);
     EntityID id;
@@ -48,7 +54,7 @@ void System_DetectHit(struct scene* scene)
 /*
 	Takes in a scene, iterates through all entites that have a motion component. 
 	Their position is then incremented by their velocity. */
-void System_Motion(struct terrain* terrain, struct scene* scene)
+void Match_Motion(struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(1, MOTION_COMPONENT_ID);
     EntityID id;
@@ -66,7 +72,7 @@ void System_Motion(struct terrain* terrain, struct scene* scene)
 	Takes in a scene, iterates through all entities that have a target component.
 	First checks that the angle is correct, and then sets the velocity according
 	to the target vector accordingly */
-void System_Target(struct terrain* terrain, struct scene* scene)
+void Match_Target(struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID);
     EntityID id;
@@ -118,15 +124,36 @@ void System_Target(struct terrain* terrain, struct scene* scene)
     }
 }
 
-/*
-	 Iterates through entities that are selectable. Determines if a unit is 
-	 hovered, selected, if a whole task force is selected, and if and where to 
-	 set units' targets. */
-void System_Select(struct scene* scene)
+void Match_Hover(struct scene* scene)
 {
-    bool targeted = false;
+    EntityID id;
+    const ComponentMask hoverMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
+    for (id = Scene_Begin(scene, hoverMask); Scene_End(scene, id); id = Scene_Next(scene, id, hoverMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
 
-    // If escape is pressed, go through all entities, make them not selected
+        Vector mouse = Terrain_MousePos();
+        float dx = motion->pos.x - mouse.x;
+        float dy = mouse.y - motion->pos.y + motion->z;
+
+        float sin = sinf(motion->angle);
+        float cos = cosf(motion->angle);
+
+        bool checkLR = fabs(sin * dx + cos * dy) <= simpleRenderable->height / 2;
+        bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
+
+        hoverable->isHovered = checkLR && checkTB;
+
+        simpleRenderable->showOutline = hoverable->isHovered;
+    }
+}
+
+/*
+	Checks to see if the escape key is pressed. If it is, all selectables are 
+	deselected */
+void Match_ClearSelection(struct scene* scene)
+{
     if (g->keys[SDL_SCANCODE_ESCAPE]) {
         const ComponentMask transformMask = Scene_CreateMask(1, SELECTABLE_COMPONENT_ID);
         EntityID id;
@@ -135,7 +162,30 @@ void System_Select(struct scene* scene)
             selectable->selected = false;
         }
     }
+}
 
+/*
+	Checks to see if the escape key is pressed, and if it is, clears all focused 
+	units */
+void Match_ClearFocus(struct scene* scene)
+{
+    if (g->keys[SDL_SCANCODE_ESCAPE]) {
+        const ComponentMask mask = Scene_CreateMask(1, FOCUSABLE_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+            focusable->focused = false;
+        }
+    }
+}
+
+/*
+	 Iterates through entities that are selectable. Determines if a unit is 
+	 hovered, selected, if a whole task force is selected, and if and where to 
+	 set units' targets. */
+void Match_Select(struct scene* scene)
+{
+    bool targeted = false;
     // If ctrl is not clicked, go through entities, if they are selected, set their target
     if (!g->ctrl && g->mouseLeftUp && !g->mouseDragged) {
         const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID);
@@ -179,30 +229,36 @@ void System_Select(struct scene* scene)
     Selectable* hovered = NULL;
     // If no unit targets were set previously, go thru entities, check to see if they are now hovered and selected
     if (!targeted) {
-        const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
         EntityID id;
+        bool anySelected = false;
         for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
-            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-
-            Vector mouse = Terrain_MousePos();
-            float dx = motion->pos.x - mouse.x;
-            float dy = mouse.y - motion->pos.y + motion->z;
-
-            float sin = sinf(motion->angle);
-            float cos = cosf(motion->angle);
-
-            bool checkLR = fabs(sin * dx + cos * dy) <= simpleRenderable->height / 2;
-            bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
-
-            selectable->isHovered = checkLR && checkTB;
-
-            simpleRenderable->showOutline = selectable->isHovered || selectable->selected;
-            if (g->mouseLeftUp && selectable->isHovered) {
+            simpleRenderable->showOutline = hoverable->isHovered || selectable->selected;
+            if (hoverable->isHovered && g->mouseLeftUp) {
                 selectable->selected = !selectable->selected;
+                anySelected |= selectable->selected;
                 break;
             }
+        }
+    }
+}
+
+void Match_Focus(struct scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
+    EntityID id;
+    bool anySelected = false;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (hoverable->isHovered && g->mouseRightUp) {
+            focusable->focused = !focusable->focused;
+            GUI_SetContainerShown(scene, container, focusable->focused);
+            break;
         }
     }
 }
@@ -210,7 +266,7 @@ void System_Select(struct scene* scene)
 /*
 	This system goes through all ground units, has them search for the closest 
 	enemy land unit to them, and finally shoot a bullet at them. */
-void System_Attack(struct scene* scene)
+void Match_Attack(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID);
     EntityID id;
@@ -256,7 +312,7 @@ void System_Attack(struct scene* scene)
         // Shoot enemy units if found
         Vector displacement = Vector_Sub(motion->pos, closestPos);
         float deflection = Vector_Angle(displacement);
-        if (ticks % 60 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
+        if (g->ticks % 60 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
             Bullet_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
         }
     }
@@ -266,7 +322,7 @@ void System_Attack(struct scene* scene)
 	Takes in a scene, iterates through all entities with SimpleRenderable and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
 	colorizes based on the nation color, and renders texture to screen. */
-void System_Render(struct scene* scene)
+void Match_SimpleRender(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
     EntityID id;
@@ -294,4 +350,65 @@ void System_Render(struct scene* scene)
         }
         Texture_Draw(simpleRenderable->sprite, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
     }
+}
+
+void matchUpdate(Scene* match)
+{
+    terrain_update(terrain);
+    Match_DetectHit(match);
+    Match_Target(match);
+    Match_Motion(match);
+    Match_ClearSelection(match);
+    Match_ClearFocus(match);
+    Match_Hover(match);
+    Match_Select(match);
+    Match_Focus(match);
+    Match_Attack(match);
+    GUI_Update(match);
+}
+
+void matchRender(Scene* match)
+{
+    terrain_render(terrain);
+    Match_SimpleRender(match);
+    GUI_Render(match);
+}
+
+/*
+	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
+Scene* Match_Init()
+{
+    Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
+    terrain = terrain_create(35 * 64);
+    GUI_Init(match);
+
+    container = GUI_CreateContainer(match, (Vector) { 100, 100 });
+    EntityID testContainer = GUI_CreateContainer(match, (Vector) { 10, 100 });
+
+    GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is a button!"));
+    GUI_ContainerAdd(match, container, testContainer);
+    GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is another button!"));
+
+    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt a button!"));
+    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt another button!"));
+
+    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);
+    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
+
+    EntityID homeCapital = City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), homeNation, true);
+    EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
+
+    EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+
+    terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos));
+    // Set enemy nations to each other
+    SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
+    SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+    // Set nations capitals
+    SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, capital, homeCapital);
+    SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, capital, enemyCapital);
+    Game_PushScene(match);
+
+    return match;
 }

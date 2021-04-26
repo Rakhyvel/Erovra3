@@ -21,5 +21,8 @@ void Components_Init(struct scene* scene)
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
     HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     ENEMY_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+
+    HOVERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Hoverable));
     SELECTABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Selectable));
+    FOCUSABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Focusable));
 }

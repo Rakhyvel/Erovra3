@@ -87,8 +87,18 @@ typedef struct city {
 } City;
 ComponentID CITY_COMPONENT_ID;
 
-typedef struct selectable {
+typedef struct hoverable {
     bool isHovered;
+} Hoverable;
+ComponentID HOVERABLE_COMPONENT_ID;
+
+typedef struct selectable {
     bool selected;
 } Selectable;
 ComponentID SELECTABLE_COMPONENT_ID;
+
+typedef struct focusable {
+    bool focused;
+    EntityID guiContainer;
+} Focusable;
+ComponentID FOCUSABLE_COMPONENT_ID;

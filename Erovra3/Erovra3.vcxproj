@@ -191,7 +191,7 @@
     </ClCompile>
     <ClCompile Include="src\engine\gameState.c" />
     <ClCompile Include="src\main.c" />
-    <ClCompile Include="src\systems\systems.c">
+    <ClCompile Include="src\scenes\match.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -229,7 +229,7 @@
     <ClInclude Include="src\util\debug.h" />
     <ClInclude Include="src\engine\scene.h" />
     <ClInclude Include="src\engine\gameState.h" />
-    <ClInclude Include="src\systems\systems.h" />
+    <ClInclude Include="src\scenes\match.h" />
     <ClInclude Include="src\terrain.h" />
     <ClInclude Include="src\engine\textureManager.h" />
     <ClInclude Include="src\textures.h" />

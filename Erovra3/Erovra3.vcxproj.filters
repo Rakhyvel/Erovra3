@@ -45,7 +45,7 @@
     <ClCompile Include="src\util\arraylist.c">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="src\systems\systems.c">
+    <ClCompile Include="src\scenes\match.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
     <ClCompile Include="src\components\components.c">
@@ -101,7 +101,7 @@
     <ClInclude Include="src\components\components.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
-    <ClInclude Include="src\systems\systems.h">
+    <ClInclude Include="src\scenes\match.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\textureManager.h">

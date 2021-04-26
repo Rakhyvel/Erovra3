@@ -5,6 +5,8 @@ game.h
 
 #include <SDL.h>
 #include <stdbool.h>
+#include "scene.h"
+#include "../util/arraylist.h"
 
 struct game {
     SDL_Window* window;
@@ -17,7 +19,9 @@ struct game {
 		mouseInitX,
 		mouseInitY, 
 		width,
-		height;
+		height,
+		ticks;
+
     bool running, 
 		up, 
 		down, 
@@ -33,11 +37,13 @@ struct game {
 		mouseRightUp, 
 		mouseDrag, 
 		mouseDragged;
+
+	Arraylist* sceneStack;
 };
 
 struct game* g;
 
 void Game_Init(char* windowName, int width, int height);
+void Game_PushScene(Scene*);
+void Game_Run();
 void Game_PollInput();
-void Game_BeginDraw();
-void Game_EndDraw();

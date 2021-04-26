@@ -25,7 +25,7 @@ static struct entity* getEntityStruct(struct scene*, EntityID);
 
 /*
 	Initializes the memory pools for a scene */
-struct scene* Scene_Create(void(initComponents)(struct Scene*))
+struct scene* Scene_Create(void(initComponents)(struct Scene*), void(*update)(struct Scene*), void(*render)(struct Scene*))
 {
     struct scene* retval = calloc(1, sizeof(struct scene));
     if (!retval) {
@@ -35,6 +35,8 @@ struct scene* Scene_Create(void(initComponents)(struct Scene*))
     retval->entities = Arraylist_Create(10, sizeof(struct entity));
     retval->purgedEntities = Arraylist_Create(10, sizeof(EntityIndex));
     retval->freeIndices = Arraylist_Create(10, sizeof(EntityIndex));
+    retval->update = update;
+    retval->render = render;
 
     initComponents(retval);
 
@@ -173,6 +175,8 @@ ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
     return retval;
 }
 
+/*
+	Returns whether or not the entity matches a component mask */
 bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID id)
 {
     EntityIndex index = getIndex(id);

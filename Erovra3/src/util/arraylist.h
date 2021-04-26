@@ -5,7 +5,7 @@
 */
 
 #pragma once
-
+#include <stdlib.h>
 // Some macros that automatically cast type
 #define ARRAYLIST_GET(list, index, type)		((type*)(Arraylist_Get(list, index)))
 #define ARRAYLIST_POP(list, type)				((type*)(Arraylist_Pop(list)))

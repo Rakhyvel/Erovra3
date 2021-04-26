@@ -1,6 +1,7 @@
 #pragma once
 #include "infantry.h"
 #include "../textures.h"
+#include "../scenes/match.h"
 #include "components.h"
 
 /*
@@ -54,9 +55,18 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Selectable selectable = {
         false,
-        false
     };
     Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
+
+    Hoverable hoverable = {
+        false,
+    };
+    Scene_Assign(scene, infantryID, HOVERABLE_COMPONENT_ID, &hoverable);
+
+    Focusable focusable = {
+        false,
+    };
+    Scene_Assign(scene, infantryID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

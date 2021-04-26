@@ -4,10 +4,10 @@
 	Author: Joseph Shimel
 */
 #pragma once
+#include "../util/arraylist.h"
 #include <SDL.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "../util/arraylist.h"
 
 typedef Uint8 ComponentID;
 typedef Uint64 ComponentMask;
@@ -25,12 +25,12 @@ typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
 /*
 	Stored in the "entities" arraylist */
 typedef struct entity {
-	EntityID id;
-	ComponentMask mask;
+    EntityID id;
+    ComponentMask mask;
 } Entity;
 
 typedef struct scene {
-	/*
+    /*
 		Jagged 2D array of component data
 		Components ->
 		|---|---|---| E
@@ -44,22 +44,24 @@ typedef struct scene {
 		|---|   |   |
 		|   |   |   |
 	*/
-	struct arraylist* components[MAX_COMPONENTS];
-	/* List of all entities in scene */
-	struct arraylist* entities;
-	/* List of purged entity indices To be cleared removed later */
-	struct arraylist* purgedEntities;
-	/* List of free indices that can be overwritten */
-	struct arraylist* freeIndices;
-	/* Number of entities in scene */
-	int numEntities;
-	/* Number of components in scene */
-	int numComponents;
+    struct arraylist* components[MAX_COMPONENTS];
+    /* List of all entities in scene */
+    struct arraylist* entities;
+    /* List of purged entity indices To be cleared removed later */
+    struct arraylist* purgedEntities;
+    /* List of free indices that can be overwritten */
+    struct arraylist* freeIndices;
+    /* Number of entities in scene */
+    int numEntities;
+    /* Number of components in scene */
+    int numComponents;
+    const void (*update)(struct scene*);
+    const void (*render)(struct scene*);
 } Scene;
 
 /*
 	Initializes the components table, entities list, and purged list */
-struct scene* Scene_Create(void (initComponents)(struct Scene*));
+struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(struct Scene*), void (*render)(struct Scene*));
 
 /* 
 	Sets the component size for a componentID */
