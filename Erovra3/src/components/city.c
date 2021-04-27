@@ -1,6 +1,7 @@
 #pragma once
 #include "./city.h"
 
+#include "../scenes/match.h"
 #include "../components/components.h"
 #include "../textures.h"
 
@@ -60,6 +61,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Focusable focusable = {
         false,
+		CITY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, FOCUSABLE_COMPONENT_ID, &focusable);
 

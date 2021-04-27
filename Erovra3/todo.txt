@@ -53,7 +53,9 @@ x Add hit highlight
 
 3.3.x- UI system
 x Add UI system
-- Add scene stack
+x Add scene stack
+x Add focusable units
+- Add unit focus gui
 - Add game menu
 - Add main menu
 

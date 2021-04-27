@@ -65,6 +65,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Focusable focusable = {
         false,
+        INFANTRY_FOCUSED_GUI
     };
     Scene_Assign(scene, infantryID, FOCUSABLE_COMPONENT_ID, &focusable);
 

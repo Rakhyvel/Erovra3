@@ -1,4 +1,5 @@
 #pragma once
+#include "match.h"
 #include "../components/bullet.h"
 #include "../components/city.h"
 #include "../components/components.h"
@@ -124,6 +125,9 @@ void Match_Target(struct scene* scene)
     }
 }
 
+/*
+	Calculates whether a unit is hovered over with the mouse. Assumes rectangle 
+	shape, given by SimpleRenderable texture bounds */
 void Match_Hover(struct scene* scene)
 {
     EntityID id;
@@ -246,19 +250,35 @@ void Match_Select(struct scene* scene)
     }
 }
 
+/*
+	When the right mouse button is released, finds the focusable entity that 
+	is hovered, and shows its GUI */
 void Match_Focus(struct scene* scene)
 {
-    const ComponentMask focusMask = Scene_CreateMask(3, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
-    EntityID id;
-    bool anySelected = false;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (hoverable->isHovered && g->mouseRightUp) {
-            focusable->focused = !focusable->focused;
-            GUI_SetContainerShown(scene, container, focusable->focused);
-            break;
+    if (g->mouseRightUp) {
+        EntityID focusedEntity = INVALID_ENTITY_INDEX;
+        const ComponentMask focusMask = Scene_CreateMask(3, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
+        EntityID id;
+        for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+            Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (hoverable->isHovered) {
+                focusedEntity = id;
+            }
+        }
+        // The focused entity's gui container should be shown, all others should not be. If the focused entity is none, all should be hidden
+        EntityID containerID = INVALID_ENTITY_INDEX;
+        for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+            if (containerID != INVALID_ENTITY_INDEX && focusable->guiContainer == containerID) {
+                continue;
+            }
+            if (focusedEntity == id) {
+                containerID = focusable->guiContainer;
+            }
+            focusable->focused = focusedEntity == id;
+            GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
         }
     }
 }
@@ -383,14 +403,18 @@ Scene* Match_Init()
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
-    EntityID testContainer = GUI_CreateContainer(match, (Vector) { 10, 100 });
 
-    GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is a button!"));
-    GUI_ContainerAdd(match, container, testContainer);
-    GUI_ContainerAdd(match, container, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This is another button!"));
+    INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City"));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory"));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield"));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port"));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil"));
 
-    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt a button!"));
-    GUI_ContainerAdd(match, testContainer, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "This isnt another button!"));
+    CITY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    GUI_ContainerAdd(match, container, CITY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, CITY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Pause Recruitment"));
 
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
