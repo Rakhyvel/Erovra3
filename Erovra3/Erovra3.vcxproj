@@ -173,6 +173,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\scenes\menu.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\util\arraylist.c">
       <SubType>
       </SubType>
@@ -224,6 +228,7 @@
     <ClInclude Include="src\gui\font.h" />
     <ClInclude Include="src\gui\gui.h" />
     <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\scenes\menu.h" />
     <ClInclude Include="src\util\arraylist.h" />
     <ClInclude Include="src\components\components.h" />
     <ClInclude Include="src\util\debug.h" />

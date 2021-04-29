@@ -55,9 +55,11 @@ x Add hit highlight
 x Add UI system
 x Add scene stack
 x Add focusable units
-- Add unit focus gui
-- Add game menu
-- Add main menu
+x Add unit focus gui
+x Add main menu
+- Final finishing touches
+	x All containers should be hidden when match starts
+	- Only one unit hovered at a time
 
 
 3.4.x- Buildings, resources
@@ -68,17 +70,28 @@ x Add focusable units
 - Add ore, population
 
 
-3.5.x- Airplanes
+3.5.x- AI
+- Add time warp
+- Add AI flag
+	- AI Units cannot be selected or hovered
+- Add AI controller system
+
+
+3.6.x- Airplanes
 - Add airplanes
 - Add airfields
 
 
-3.6.x- Boats
+3.7.x- Boats
 - Add ports
 - Add ships
 
 
-3.7.x- Prettify
+3.8.x- Prettify
+- Make GUI look better
+	- Container background colors
+	- Borders around elements
+	- Centering of elements
 - Add sound
 - Add particles
 - Add animations
@@ -86,7 +99,7 @@ x Add focusable units
 - Add death animation
 
 
-3.8.x- Multiplayer
+3.9.x- Multiplayer
 - Multiplayer
 
 

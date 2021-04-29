@@ -1,4 +1,5 @@
 #pragma once
+#include "../util/debug.h"
 #include "../engine/gameState.h"
 #include "font.h"
 #include "gui.h"
@@ -19,7 +20,7 @@ void GUI_Init(Scene* scene)
 /*
 	Creates a button GUI entity. You can give a pos, width and height, but these
 	will be overriden if the button is added to a container*/
-EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text)
+EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void (*onclick)())
 {
     EntityID buttonID = Scene_NewEntity(scene);
 
@@ -35,10 +36,12 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
     Scene_Assign(scene, buttonID, GUI_COMPONENT_ID, &gui);
 
     Button button = {
-        false
+        false,
+        onclick
     };
     strncpy_s(button.text, 255, text, 255);
     Scene_Assign(scene, buttonID, GUI_BUTTON_COMPONENT_ID, &button);
+
     return buttonID;
 }
 
@@ -73,7 +76,7 @@ EntityID GUI_GetRoot(Scene* scene, EntityID id)
         return id;
     } else {
         return GUI_GetRoot(scene, gui->parent);
-	}
+    }
 }
 
 /*
@@ -110,7 +113,8 @@ void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
 }
 
 /*
-	Updates the layout tree based on the sizes of children and the position of parents */
+	Updates the layout tree based on the sizes of children and the position of 
+	parents. Returns height and width of component */
 Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
 {
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
@@ -152,6 +156,12 @@ static void updateButton(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
         button->isHovered = g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (button->isHovered && g->mouseLeftUp) {
+			if (button->onclick == NULL) {
+                PANIC("Button onclick is NULL");
+			}
+            button->onclick();
+        }
     }
 }
 

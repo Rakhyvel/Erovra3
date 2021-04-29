@@ -3,7 +3,7 @@
 #include "../engine/scene.h"
 
 void GUI_Init(Scene* scene);
-EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text);
+EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void(*onclick)());
 EntityID GUI_CreateContainer(Scene* scene, Vector pos);
 void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object);
 void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown);
@@ -22,6 +22,7 @@ ComponentID GUI_COMPONENT_ID;
 
 typedef struct button {
     bool isHovered;
+    void (*onclick)(void);
     char text[255];
 } Button;
 ComponentID GUI_BUTTON_COMPONENT_ID;

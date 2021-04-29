@@ -25,7 +25,7 @@ Strategy and logistics:
 #include <stdio.h>
 
 #include "textures.h"
-#include "./scenes/match.h"
+#include "./scenes/menu.h"
 
 /*
 	Inits the game, then starts the game loop */
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 {
     Game_Init("Erovra", 1166, 640);
     Textures_Init();
-    Match_Init();
+    Menu_Init();
     Game_Run();
     return 0;
 }
