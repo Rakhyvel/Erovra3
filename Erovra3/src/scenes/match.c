@@ -131,6 +131,7 @@ void Match_Target(struct scene* scene)
 void Match_Hover(struct scene* scene)
 {
     EntityID id;
+    EntityID hoveredID = INVALID_ENTITY_INDEX;
     const ComponentMask hoverMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
     for (id = Scene_Begin(scene, hoverMask); Scene_End(scene, id); id = Scene_Next(scene, id, hoverMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
@@ -148,8 +149,14 @@ void Match_Hover(struct scene* scene)
         bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
 
         hoverable->isHovered = checkLR && checkTB;
-
-        simpleRenderable->showOutline = hoverable->isHovered;
+        if (hoverable->isHovered) {
+            hoveredID = id;
+        }
+        simpleRenderable->showOutline = false;
+    }
+    if (hoveredID != INVALID_ENTITY_INDEX) {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, hoveredID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        simpleRenderable->showOutline = true;
     }
 }
 
