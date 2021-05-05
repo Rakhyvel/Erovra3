@@ -14,9 +14,11 @@
 #include "../terrain.h"
 #include "../textures.h"
 #include <stdio.h>
+#include <string.h>
 
 Terrain* terrain;
 EntityID container;
+EntityID goldLabel;
 
 void Match_DetectHit(struct scene* scene)
 {
@@ -358,8 +360,11 @@ void Match_CreateCoins(struct scene* scene)
         City* city = (Motion*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
-        if (health->aliveTicks % 200 == 0) {
-            EntityID coin = Coin_Create(scene, motion->pos, simpleRenderable->nation);
+        if (health->aliveTicks % 300 == 0) {
+            Coin_Create(scene, motion->pos, simpleRenderable->nation);
+        }
+        if (health->aliveTicks % 18000 == 0) {
+            Infantry_Create(scene, motion->pos, simpleRenderable->nation);
         }
     }
 }
@@ -374,9 +379,9 @@ void Match_DestroyCoins(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
-		printf("%f %f\n", capital->pos.x, capital->pos.y);
         if (Vector_Dist(motion->pos, capital->pos) < 6) {
             Scene_MarkPurged(scene, id);
+            nation->coins++;
         }
     }
 }
@@ -415,20 +420,42 @@ void Match_SimpleRender(struct scene* scene)
     }
 }
 
+void Match_UpdateLabels(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+
+        char goldText[255];
+        memset(goldText, 0, 255);
+        char goldAmount[255];
+        _itoa_s(nation->coins, goldAmount, 255, 10);
+        strcat_s(goldText, 255, goldAmount);
+        GUI_SetLabelText(scene, goldLabel, goldText);
+    }
+}
+
 void matchUpdate(Scene* match)
 {
     terrain_update(terrain);
     Match_DetectHit(match);
+
     Match_Target(match);
     Match_Motion(match);
+
     Match_ClearSelection(match);
     Match_ClearFocus(match);
     Match_Hover(match);
     Match_Select(match);
     Match_Focus(match);
+
     Match_Attack(match);
+
     Match_CreateCoins(match);
     Match_DestroyCoins(match);
+
+	Match_UpdateLabels(match);
     GUI_Update(match);
 }
 
@@ -448,10 +475,13 @@ void Match_InfantryAddCity(Scene* scene)
     for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_getBuildingAt(terrain, motion->pos.x, motion->pos.y) == INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, motion->pos.x, motion->pos.y) > 2) {
+        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_getBuildingAt(terrain, motion->pos.x, motion->pos.y) == INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, motion->pos.x, motion->pos.y) > 2 && nation->coins >= nation->cityCost) {
             EntityID city = City_Create(scene, (Vector) { 64 * (int)(motion->pos.x / 64) + 32, 64 * (int)(motion->pos.y / 64) + 32 }, simpleRenderable->nation, false);
             terrain_addBuildingAt(terrain, city, motion->pos.x, motion->pos.y);
+            nation->coins -= nation->cityCost;
+            nation->cityCost *= 2;
         }
     }
 }
@@ -465,6 +495,8 @@ Scene* Match_Init()
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
+    goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    GUI_ContainerAdd(match, container, goldLabel);
 
     INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);

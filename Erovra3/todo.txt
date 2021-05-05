@@ -63,12 +63,13 @@ x Final finishing touches
 
 
 3.4.x- Buildings, resources
-- Infantry can build buildings
+x Infantry can build buildings
 	x Cities should need to be built with the cross space requirement
-	- Cities should add coins to nation
+	x Cities should add coins to nation
 		x add coin entities that fly from cities to capital
-		- have a little ticker in the gui thing that shows the number of coins
-	- Cities build infantry, can be toggled
+		x have a little ticker in the gui thing that shows the number of coins
+	x Cities build infantry, can be toggled
+	x Cities require coins
 - Add ore, population
 - Add factories
 	- Factories need to be built adjacent cities
@@ -99,12 +100,18 @@ x Final finishing touches
 	- Container background colors
 	- Borders around elements
 	- Centering of elements
+	- Copy Microsoft design doc
+	- [G]raphics [M]arkup [L]anguage (Would be cool!)
 - Add sound
 - Add particles
 - Add animations
+	- GUI animations should use timing specified by Microsoft design doc
 - Add arrow when moving a unit
 - Add death animation
 - Give coins a shadow, arc, and change their velocity based on their path
+- Enumerate units
+- Give names to cities randomly
+- Icons embedded in text
 
 
 3.9.x- Multiplayer

@@ -1,6 +1,6 @@
 #pragma once
-#include "components.h"
 #include "nation.h"
+#include "components.h"
 
 /*
 	Takes in a scene and color, registers a nation entity, assigns components 
@@ -10,9 +10,12 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, ComponentID ownNati
     EntityID nationID = Scene_NewEntity(scene);
     Nation nation = {
         color,
-		ownNation,
-		enemyNation
+        ownNation,
+        enemyNation,
+        40,
+		5
     };
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);
+    Scene_Assign(scene, nationID, ownNation, NULL);
     return nationID;
 }

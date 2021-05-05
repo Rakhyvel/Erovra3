@@ -1,6 +1,6 @@
 #pragma once
-#include "../util/debug.h"
 #include "../engine/gameState.h"
+#include "../util/debug.h"
 #include "font.h"
 #include "gui.h"
 #include <string.h>
@@ -11,8 +11,9 @@
 	Call this before using GUI. Registers GUI ECS components, and fonts */
 void GUI_Init(Scene* scene)
 {
-    GUI_BUTTON_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Button));
     GUI_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(GUIComponent));
+    GUI_BUTTON_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Button));
+    GUI_LABEL_ID = Scene_RegisterComponent(scene, sizeof(Label));
     GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
     Font_Init();
 }
@@ -45,6 +46,27 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
     return buttonID;
 }
 
+EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
+{
+    EntityID labelID = Scene_NewEntity(scene);
+
+    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+
+    GUIComponent gui = {
+        pos,
+        textWidth,
+        16,
+        true,
+        INVALID_ENTITY_INDEX
+    };
+    Scene_Assign(scene, labelID, GUI_COMPONENT_ID, &gui);
+    printf("Text: %s\n", text);
+    Label label;
+    strncpy_s(label.text, 255, text, 255);
+    Scene_Assign(scene, labelID, GUI_LABEL_ID, &label);
+    return labelID;
+}
+
 /*
 	Creates a container, which holds other GUI components. You can give it a pos,
 	but will be overriden if added to another container*/
@@ -65,6 +87,19 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
     (container.children) = *Arraylist_Create(1, sizeof(EntityID));
     Scene_Assign(scene, containerID, GUI_CONTAINER_COMPONENT_ID, &container);
     return containerID;
+}
+
+void GUI_SetLabelText(Scene* scene, EntityID labelID, char* text)
+{
+    Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID);
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, labelID, GUI_COMPONENT_ID);
+    strcpy_s(label->text, 255, text);
+    int oldWidth = gui->width;
+    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+    if (oldWidth != textWidth) {
+        gui->width = textWidth;
+        GUI_UpdateLayout(scene, GUI_GetRoot(scene, labelID), 50, 50);
+    }
 }
 
 /*
@@ -157,9 +192,9 @@ static void updateButton(Scene* scene)
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
         button->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
         if (button->isHovered && g->mouseLeftUp) {
-			if (button->onclick == NULL) {
+            if (button->onclick == NULL) {
                 PANIC("Button onclick is NULL");
-			}
+            }
             button->onclick(scene);
         }
     }
@@ -196,6 +231,20 @@ static void renderButton(Scene* scene)
     }
 }
 
+static void renderLabel(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_LABEL_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        Label* label = (Label*)Scene_GetComponent(scene, id, GUI_LABEL_ID);
+        Font_DrawString(label->text, gui->pos.x + (gui->width - Font_GetWidth(label->text)) / 2, gui->pos.y + gui->height / 2 - 8);
+    }
+}
+
 /*
 	Draws a container to the screen */
 static void renderContainer(Scene* scene)
@@ -219,4 +268,5 @@ void GUI_Render(Scene* scene)
 {
     renderContainer(scene);
     renderButton(scene);
+    renderLabel(scene);
 }

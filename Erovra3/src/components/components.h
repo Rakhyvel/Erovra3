@@ -73,6 +73,8 @@ typedef struct nation {
     SDL_Color color;
     ComponentID ownNationFlag;
     ComponentID enemyNationFlag;
+    int coins;
+    int cityCost;
     EntityID capital;
     EntityID enemyNation;
 } Nation;
