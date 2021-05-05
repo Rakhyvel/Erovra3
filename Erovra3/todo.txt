@@ -57,21 +57,27 @@ x Add scene stack
 x Add focusable units
 x Add unit focus gui
 x Add main menu
-- Final finishing touches
+x Final finishing touches
 	x All containers should be hidden when match starts
-	- Only one unit hovered at a time
+	x Only one unit hovered at a time
 
 
 3.4.x- Buildings, resources
 - Infantry can build buildings
-- Add factories
-- Able to build units in factories
-- Add cavalry, artillery with different shades
+	x Cities should need to be built with the cross space requirement
+	- Cities should add coins to nation
+		- add coin entities that fly from cities to capital
+		- have a little ticker in the gui thing that shows the number of coins
+	- Cities build infantry, can be toggled
 - Add ore, population
+- Add factories
+	- Factories need to be built adjacent cities
+	- Able to build units in factories
+- Add cavalry, artillery with different shades
 
 
 3.5.x- AI
-- Add time warp
+- Add time warp (?)
 - Add AI flag
 	- AI Units cannot be selected or hovered
 - Add AI controller system
@@ -88,6 +94,7 @@ x Add main menu
 
 
 3.8.x- Prettify
+- "Layers" for elements on screen
 - Make GUI look better
 	- Container background colors
 	- Borders around elements

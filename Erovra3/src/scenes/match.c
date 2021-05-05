@@ -346,6 +346,14 @@ void Match_Attack(struct scene* scene)
     }
 }
 
+void Match_CreateCoins(struct scene* scene)
+{
+    const ComponentMask renderMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, CITY_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    }
+}
+
 /*
 	Takes in a scene, iterates through all entities with SimpleRenderable and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
@@ -403,6 +411,23 @@ void matchRender(Scene* match)
 }
 
 /*
+	Called when infantry build city button is pressed. Builds a city */
+void Match_InfantryAddCity(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_getBuildingAt(terrain, motion->pos.x, motion->pos.y) == INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, motion->pos.x, motion->pos.y) > 2) {
+            EntityID city = City_Create(scene, (Vector) { 64 * (int)(motion->pos.x / 64) + 32, 64 * (int)(motion->pos.y / 64) + 32 }, simpleRenderable->nation, false);
+            terrain_addBuildingAt(terrain, city, motion->pos.x, motion->pos.y);
+        }
+    }
+}
+
+/*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
 Scene* Match_Init()
 {
@@ -414,7 +439,7 @@ Scene* Match_Init()
 
     INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", NULL));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", &Match_InfantryAddCity));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", NULL));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", NULL));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", NULL));
@@ -426,19 +451,29 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, CITY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Pause Recruitment", NULL));
     GUI_SetContainerShown(match, CITY_FOCUSED_GUI, false);
 
+    // Create home and enemy nations
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
 
-    EntityID homeCapital = City_Create(match, findBestLocation(terrain, (Vector) { terrain->size, terrain->size }), homeNation, true);
-    EntityID enemyCapital = City_Create(match, findBestLocation(terrain, (Vector) { 0, 0 }), enemyNation, true);
+    // Create and register home city
+    Vector homeVector = findBestLocation(terrain, (Vector) { terrain->size, terrain->size });
+    EntityID homeCapital = City_Create(match, homeVector, homeNation, true);
+    terrain_addBuildingAt(terrain, homeCapital, homeVector.x, homeVector.y);
+    terrain_setOffset(homeVector);
 
+    // Create and register enemy city
+    Vector enemyVector = findBestLocation(terrain, (Vector) { 0, 0 });
+    EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, true);
+    terrain_addBuildingAt(terrain, enemyCapital, enemyVector.x, enemyVector.y);
+
+    // Create home and enemy infantry
     EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    EntityID homeInfantry2 = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+    EntityID enemyInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
 
-    terrain_setOffset(GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos));
     // Set enemy nations to each other
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+
     // Set nations capitals
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, capital, homeCapital);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, capital, enemyCapital);

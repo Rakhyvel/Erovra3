@@ -84,6 +84,9 @@
     <ClCompile Include="src\scenes\menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\coin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\coin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

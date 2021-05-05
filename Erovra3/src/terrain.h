@@ -12,7 +12,9 @@ typedef struct terrain {
     float* map;
     float* ore;
     int size;
+    int tileSize;
     SDL_Texture* texture;
+    EntityID* buildings;
 } Terrain;
 
 struct terrain* terrain_create(int);
@@ -37,6 +39,12 @@ void terrain_normalize(float* map, int mapSize);
 float terrain_getHeight(struct terrain*, int x, int y);
 void terrain_setOffset(struct vector);
 float terrain_getZoom();
+
+// Building map functions
+float terrain_getHeightForBuilding(struct terrain*, int x, int y);
+EntityID terrain_getBuildingAt(struct terrain*, int x, int y);
+void terrain_addBuildingAt(struct terrain*, EntityID id, int x, int y);
+int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1);
 
 // Map affine transformations
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height);

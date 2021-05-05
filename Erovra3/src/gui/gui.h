@@ -22,7 +22,7 @@ ComponentID GUI_COMPONENT_ID;
 
 typedef struct button {
     bool isHovered;
-    void (*onclick)(void);
+    void (*onclick)(struct scene*);
     char text[255];
 } Button;
 ComponentID GUI_BUTTON_COMPONENT_ID;

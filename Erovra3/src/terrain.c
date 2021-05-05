@@ -9,6 +9,7 @@ terrain.c
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "./engine/gameState.h"
 #include "./util/debug.h"
@@ -34,7 +35,16 @@ struct terrain* terrain_create(int mapSize)
         exit(1);
     }
     retval->size = mapSize;
+    retval->tileSize = mapSize / 64;
     retval->map = terrain_perlin(retval->size, retval->size / 2);
+    retval->buildings = (EntityID*)malloc((mapSize * mapSize) / (64 * 64) * sizeof(EntityID));
+    if (!retval->buildings) {
+        PANIC("Memory error");
+        exit(1);
+    }
+    for (int i = 0; i < (mapSize * mapSize) / (64 * 64); i++) {
+        retval->buildings[i] = INVALID_ENTITY_INDEX;
+    }
     //retval->ore = terrain_perlin(retval->size / 64, retval->size / 128);
     terrain_normalize(retval->map, retval->size);
     for (int y = 0; y < retval->size; y++) {
@@ -132,14 +142,14 @@ void terrain_render(struct terrain* terrain)
     SDL_FPoint gridLineStart = { 32, 32 };
     SDL_FRect gridLineRect = { 0, 0, 0, 0 };
     terrain_translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
-    for (int x = 0; x <= terrain->size / 64; x++) {
+    for (int x = 0; x <= terrain->tileSize; x++) {
         SDL_RenderDrawLine(g->rend,
             max((int)(gridLineRect.x + x * 64.0 * terrain_zoom), 0),
             gridLineRect.y,
             (int)(gridLineRect.x + x * 64.0 * terrain_zoom),
             (int)(gridLineRect.y + (terrain->size * terrain_zoom)));
     }
-    for (int y = 0; y <= terrain->size / 64; y++) {
+    for (int y = 0; y <= terrain->tileSize; y++) {
         SDL_RenderDrawLine(g->rend,
             max(gridLineRect.x, 0),
             (int)(gridLineRect.y + y * 64.0 * terrain_zoom),
@@ -263,6 +273,7 @@ Returns: A pointer to the begining of the map. Map is row major ordered as an ar
 */
 float* terrain_generate(int mapSize, int cellSize, float amplitude)
 {
+    srand(235);
     // Allocate map
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
@@ -384,6 +395,43 @@ void terrain_setOffset(struct vector vector)
 inline float terrain_getZoom()
 {
     return terrain_zoom;
+}
+
+float terrain_getHeightForBuilding(struct terrain* terrain, int x, int y)
+{
+    return terrain_getHeight(terrain, 64 * (int)(x / 64) + 32, 64 * (int)(y / 64) + 32);
+}
+
+EntityID terrain_getBuildingAt(struct terrain* terrain, int x, int y)
+{
+    x /= 64;
+    y /= 64;
+    return terrain->buildings[x + y * (terrain->tileSize)];
+}
+
+void terrain_addBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
+{
+    x /= 64;
+    y /= 64;
+    terrain->buildings[x + y * (terrain->tileSize)] = id;
+}
+
+int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1)
+{
+    x1 /= 64;
+    y1 /= 64;
+    int retval = terrain->size * 2;
+    for (int x = 0; x < terrain->tileSize; x++) {
+        for (int y = 0; y < terrain->tileSize; y++) {
+            if (terrain->buildings[x + y * terrain->tileSize] != INVALID_ENTITY_INDEX) {
+                int dist = abs(x1 - x) + abs(y1 - y);
+                if (dist < retval) {
+                    retval = dist;
+                }
+            }
+        }
+    }
+    return retval;
 }
 
 /*

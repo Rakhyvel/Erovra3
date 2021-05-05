@@ -20,7 +20,7 @@ void GUI_Init(Scene* scene)
 /*
 	Creates a button GUI entity. You can give a pos, width and height, but these
 	will be overriden if the button is added to a container*/
-EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void (*onclick)())
+EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void (*onclick)(struct scene*))
 {
     EntityID buttonID = Scene_NewEntity(scene);
 
@@ -155,12 +155,12 @@ static void updateButton(Scene* scene)
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
-        button->isHovered = g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        button->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
         if (button->isHovered && g->mouseLeftUp) {
 			if (button->onclick == NULL) {
                 PANIC("Button onclick is NULL");
 			}
-            button->onclick();
+            button->onclick(scene);
         }
     }
 }
