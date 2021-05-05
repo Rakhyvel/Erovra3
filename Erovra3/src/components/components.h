@@ -87,6 +87,8 @@ typedef struct city {
 } City;
 ComponentID CITY_COMPONENT_ID;
 
+ComponentID COIN_COMPONENT_ID;
+
 typedef struct hoverable {
     bool isHovered;
 } Hoverable;

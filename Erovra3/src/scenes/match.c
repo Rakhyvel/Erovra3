@@ -2,6 +2,7 @@
 #include "match.h"
 #include "../components/bullet.h"
 #include "../components/city.h"
+#include "../components/coin.h"
 #include "../components/components.h"
 #include "../components/infantry.h"
 #include "../components/nation.h"
@@ -30,6 +31,7 @@ void Match_DetectHit(struct scene* scene)
         if (simpleRenderable->hitTicks > 0) {
             simpleRenderable->hitTicks--;
         }
+        health->aliveTicks++;
 
         ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
 
@@ -348,9 +350,34 @@ void Match_Attack(struct scene* scene)
 
 void Match_CreateCoins(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, CITY_COMPONENT_ID);
+    const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, CITY_COMPONENT_ID, HEALTH_COMPONENT_ID);
     EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        City* city = (Motion*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
+        Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+
+        if (health->aliveTicks % 200 == 0) {
+            EntityID coin = Coin_Create(scene, motion->pos, simpleRenderable->nation);
+        }
+    }
+}
+
+void Match_DestroyCoins(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, COIN_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+
+		printf("%f %f\n", capital->pos.x, capital->pos.y);
+        if (Vector_Dist(motion->pos, capital->pos) < 6) {
+            Scene_MarkPurged(scene, id);
+        }
     }
 }
 
@@ -400,6 +427,8 @@ void matchUpdate(Scene* match)
     Match_Select(match);
     Match_Focus(match);
     Match_Attack(match);
+    Match_CreateCoins(match);
+    Match_DestroyCoins(match);
     GUI_Update(match);
 }
 

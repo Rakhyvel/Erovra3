@@ -66,7 +66,7 @@ x Final finishing touches
 - Infantry can build buildings
 	x Cities should need to be built with the cross space requirement
 	- Cities should add coins to nation
-		- add coin entities that fly from cities to capital
+		x add coin entities that fly from cities to capital
 		- have a little ticker in the gui thing that shows the number of coins
 	- Cities build infantry, can be toggled
 - Add ore, population
@@ -94,7 +94,7 @@ x Final finishing touches
 
 
 3.8.x- Prettify
-- "Layers" for elements on screen
+- "Layers" to order elements on screen based on depth
 - Make GUI look better
 	- Container background colors
 	- Borders around elements
@@ -104,6 +104,7 @@ x Final finishing touches
 - Add animations
 - Add arrow when moving a unit
 - Add death animation
+- Give coins a shadow, arc, and change their velocity based on their path
 
 
 3.9.x- Multiplayer

@@ -3,31 +3,40 @@
 #include "../textures.h"
 #include "components.h"
 
-EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nation)
+EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
 {
     EntityID coinID = Scene_NewEntity(scene);
+
+	Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
+    Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+    Vector vel = Vector_Sub(capitalMotion->pos, pos);
+    vel = Vector_Normalize(vel);
+    vel = Vector_Scalar(vel, 6);
+    float angle = Vector_Angle(vel);
     Motion motion = {
         pos,
         0.5f,
-        (struct vector) { 0.0f, 0.0f },
+        vel,
         0,
         0.2f,
-        false
+        true
     };
     Scene_Assign(scene, coinID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
-        INFANTRY_TEXTURE_ID,
-        GROUND_OUTLINE_TEXTURE_ID,
-        GROUND_SHADOW_TEXTURE_ID,
+        COIN_TEXTURE_ID,
+        INVALID_TEXTURE_ID,
+        INVALID_TEXTURE_ID,
         false,
-        nation,
-        32,
-        16,
-        36,
-        20
+        nationID,
+        20,
+        20,
+        0,
+        0
     };
     Scene_Assign(scene, coinID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Scene_Assign(scene, coinID, COIN_COMPONENT_ID, NULL);
 
     return coinID;
 }
