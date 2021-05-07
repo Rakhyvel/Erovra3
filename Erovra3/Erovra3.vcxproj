@@ -165,7 +165,15 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\mine.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\nation.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\ore.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -229,7 +237,9 @@
     <ClInclude Include="src\components\city.h" />
     <ClInclude Include="src\components\coin.h" />
     <ClInclude Include="src\components\infantry.h" />
+    <ClInclude Include="src\components\mine.h" />
     <ClInclude Include="src\components\nation.h" />
+    <ClInclude Include="src\components\ore.h" />
     <ClInclude Include="src\gui\font.h" />
     <ClInclude Include="src\gui\gui.h" />
     <ClInclude Include="src\main.h" />

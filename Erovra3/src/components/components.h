@@ -74,7 +74,11 @@ typedef struct nation {
     ComponentID ownNationFlag;
     ComponentID enemyNationFlag;
     int coins;
+    int ore;
+    int population;
     int cityCost;
+    int foundryCost;
+    int mineCost;
     EntityID capital;
     EntityID enemyNation;
 } Nation;
@@ -85,11 +89,13 @@ ComponentID ENEMY_NATION_FLAG_COMPONENT_ID;
 typedef struct city {
     char name[20];
     bool isCapital;
-    float oreMined;
 } City;
 ComponentID CITY_COMPONENT_ID;
 
+ComponentID MINE_COMPONENT_ID;
+
 ComponentID COIN_COMPONENT_ID;
+ComponentID ORE_COMPONENT_ID;
 
 typedef struct hoverable {
     bool isHovered;

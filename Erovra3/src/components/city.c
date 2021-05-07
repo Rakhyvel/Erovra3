@@ -68,8 +68,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     char name[20] = "Name";
     City city = {
         name,
-        false,
-        0
+        false
     };
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
 	

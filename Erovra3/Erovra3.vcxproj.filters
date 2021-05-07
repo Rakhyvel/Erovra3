@@ -87,6 +87,12 @@
     <ClCompile Include="src\components\coin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\mine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\ore.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -147,6 +153,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\coin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\mine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\ore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

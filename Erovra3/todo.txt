@@ -70,11 +70,21 @@ x Infantry can build buildings
 		x have a little ticker in the gui thing that shows the number of coins
 	x Cities build infantry, can be toggled
 	x Cities require coins
-- Add ore, population
+x Add ore, population
+	x Random ore map generated
+		x Infantry can do a soil test
+		x Ore mine
+			x Vulnerable to attack
+			x Can be built anywhere
+			x Ore particle flows to capital
+			x Ore produced based on ore map
+	x Population increases with each city, can then build more units
 - Add factories
 	- Factories need to be built adjacent cities
 	- Able to build units in factories
+	- For units that need metal, they take a small amount from each foundry
 - Add cavalry, artillery with different shades
+- Defensive walls
 
 
 3.5.x- AI
@@ -112,10 +122,18 @@ x Infantry can build buildings
 - Enumerate units
 - Give names to cities randomly
 - Icons embedded in text
+- A scrolling message box for messages about the game
+- A mini map in the corner, with ore and oil data represented
 
 
 3.9.x- Multiplayer
 - Multiplayer
+
+
+??? government stuff
+
+
+??? save game files
 
 
 misc.

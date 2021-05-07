@@ -29,6 +29,7 @@ static int oldWheel = 0;
 	texture. */
 struct terrain* terrain_create(int mapSize)
 {
+    srand((unsigned)time(0));
     struct terrain* retval = calloc(1, sizeof(struct terrain));
     if (!retval) {
         fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
@@ -36,7 +37,8 @@ struct terrain* terrain_create(int mapSize)
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / 2);
+    retval->map = terrain_perlin(retval->size, retval->size / 4);
+    retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8);
     retval->buildings = (EntityID*)malloc((mapSize * mapSize) / (64 * 64) * sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -45,11 +47,11 @@ struct terrain* terrain_create(int mapSize)
     for (int i = 0; i < (mapSize * mapSize) / (64 * 64); i++) {
         retval->buildings[i] = INVALID_ENTITY_INDEX;
     }
-    //retval->ore = terrain_perlin(retval->size / 64, retval->size / 128);
     terrain_normalize(retval->map, retval->size);
+    terrain_normalize(retval->ore, retval->tileSize);
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 1.0f + 0.0f;
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.75f + 0.25f;
         }
     }
     paintMap(retval);
@@ -273,7 +275,6 @@ Returns: A pointer to the begining of the map. Map is row major ordered as an ar
 */
 float* terrain_generate(int mapSize, int cellSize, float amplitude)
 {
-    srand(235);
     // Allocate map
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
@@ -397,6 +398,12 @@ inline float terrain_getZoom()
     return terrain_zoom;
 }
 
+float terrain_getOre(struct terrain* terrain, int x, int y) {
+    x /= 64;
+    y /= 64;
+    return terrain->ore[x + y * (terrain->tileSize)];
+}
+
 float terrain_getHeightForBuilding(struct terrain* terrain, int x, int y)
 {
     return terrain_getHeight(terrain, 64 * (int)(x / 64) + 32, 64 * (int)(y / 64) + 32);
@@ -424,6 +431,25 @@ int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1)
     for (int x = 0; x < terrain->tileSize; x++) {
         for (int y = 0; y < terrain->tileSize; y++) {
             if (terrain->buildings[x + y * terrain->tileSize] != INVALID_ENTITY_INDEX) {
+                int dist = abs(x1 - x) + abs(y1 - y);
+                if (dist < retval) {
+                    retval = dist;
+                }
+            }
+        }
+    }
+    return retval;
+}
+
+int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1)
+{
+    x1 /= 64;
+    y1 /= 64;
+    int retval = terrain->size * 2;
+    for (int x = 0; x < terrain->tileSize; x++) {
+        for (int y = 0; y < terrain->tileSize; y++) {
+            EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
+            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
                 int dist = abs(x1 - x) + abs(y1 - y);
                 if (dist < retval) {
                     retval = dist;

@@ -5,7 +5,9 @@
 #include "../components/coin.h"
 #include "../components/components.h"
 #include "../components/infantry.h"
+#include "../components/mine.h"
 #include "../components/nation.h"
+#include "../components/ore.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
@@ -19,6 +21,8 @@
 Terrain* terrain;
 EntityID container;
 EntityID goldLabel;
+EntityID metalLabel;
+EntityID populationLabel;
 
 void Match_DetectHit(struct scene* scene)
 {
@@ -386,6 +390,39 @@ void Match_DestroyCoins(struct scene* scene)
     }
 }
 
+void Match_CreateOre(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, MINE_COMPONENT_ID, HEALTH_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+
+        int ticks = (int)(300.0 / terrain_getOre(terrain, motion->pos.x, motion->pos.y));
+        if (health->aliveTicks % ticks == 0) {
+            Ore_Create(scene, motion->pos, simpleRenderable->nation);
+        }
+    }
+}
+
+void Match_DestroyOre(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, ORE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+
+        if (Vector_Dist(motion->pos, capital->pos) < 6) {
+            Scene_MarkPurged(scene, id);
+            nation->ore++;
+        }
+    }
+}
+
 /*
 	Takes in a scene, iterates through all entities with SimpleRenderable and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
@@ -433,6 +470,20 @@ void Match_UpdateLabels(struct scene* scene)
         _itoa_s(nation->coins, goldAmount, 255, 10);
         strcat_s(goldText, 255, goldAmount);
         GUI_SetLabelText(scene, goldLabel, goldText);
+
+		char metalText[255];
+        memset(metalText, 0, 255);
+        char metalAmount[255];
+        _itoa_s((int)(nation->ore), metalAmount, 255, 10);
+        strcat_s(metalText, 255, metalAmount);
+        GUI_SetLabelText(scene, metalLabel, metalText);
+
+        char populationText[255];
+        memset(populationText, 0, 255);
+        char populationAmount[255];
+        _itoa_s((int)(nation->population), populationAmount, 255, 10);
+        strcat_s(populationText, 255, populationAmount);
+        GUI_SetLabelText(scene, populationLabel, populationText);
     }
 }
 
@@ -454,14 +505,16 @@ void matchUpdate(Scene* match)
 
     Match_CreateCoins(match);
     Match_DestroyCoins(match);
+    Match_CreateOre(match);
+    Match_DestroyOre(match);
 
-	Match_UpdateLabels(match);
     GUI_Update(match);
 }
 
 void matchRender(Scene* match)
 {
     terrain_render(terrain);
+    Match_UpdateLabels(match);
     Match_SimpleRender(match);
     GUI_Render(match);
 }
@@ -477,11 +530,45 @@ void Match_InfantryAddCity(Scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_getBuildingAt(terrain, motion->pos.x, motion->pos.y) == INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, motion->pos.x, motion->pos.y) > 2 && nation->coins >= nation->cityCost) {
+        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_closestMaskDist(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, motion->pos.x, motion->pos.y) > 2 && nation->coins >= nation->cityCost) {
             EntityID city = City_Create(scene, (Vector) { 64 * (int)(motion->pos.x / 64) + 32, 64 * (int)(motion->pos.y / 64) + 32 }, simpleRenderable->nation, false);
             terrain_addBuildingAt(terrain, city, motion->pos.x, motion->pos.y);
             nation->coins -= nation->cityCost;
             nation->cityCost *= 2;
+            nation->population++;
+        }
+    }
+}
+
+void Match_InfantryAddMine(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_closestBuildingDist(terrain, motion->pos.x, motion->pos.y) > 0 && nation->coins >= nation->mineCost) {
+            EntityID mine = Mine_Create(scene, (Vector) { 64 * (int)(motion->pos.x / 64) + 32, 64 * (int)(motion->pos.y / 64) + 32 }, simpleRenderable->nation, false);
+            terrain_addBuildingAt(terrain, mine, motion->pos.x, motion->pos.y);
+            nation->coins -= nation->mineCost;
+            nation->mineCost *= 2;
+        }
+    }
+}
+
+void Match_InfantryTestSoil(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        if (focusable->focused) {
+            printf("Ore: %f\n", terrain->ore[(int)(motion->pos.x / 64) + (int)(motion->pos.y / 64) * terrain->tileSize]);
         }
     }
 }
@@ -496,15 +583,17 @@ Scene* Match_Init()
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
     goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    metalLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    populationLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     GUI_ContainerAdd(match, container, goldLabel);
+    GUI_ContainerAdd(match, container, metalLabel);
+    GUI_ContainerAdd(match, container, populationLabel);
 
     INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", &Match_InfantryAddCity));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", NULL));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", NULL));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", NULL));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", NULL));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", &Match_InfantryAddMine));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", &Match_InfantryTestSoil));
     GUI_SetContainerShown(match, INFANTRY_FOCUSED_GUI, false);
 
     CITY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
