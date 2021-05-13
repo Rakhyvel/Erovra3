@@ -1,5 +1,4 @@
 #pragma once
-#include "infantry.h"
 #include "../textures.h"
 #include "../scenes/match.h"
 #include "components.h"
@@ -16,7 +15,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
-        0.2f,
+        1.2f,
         false
     };
     Scene_Assign(scene, infantryID, MOTION_COMPONENT_ID, &motion);
@@ -48,6 +47,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
+		UnitType_INFANTRY,
         1,
         0.5f
     };

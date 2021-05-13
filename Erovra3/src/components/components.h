@@ -54,9 +54,20 @@ typedef struct health {
 } Health;
 ComponentID HEALTH_COMPONENT_ID;
 
+typedef enum unitType {
+	UnitType_INFANTRY,
+	UnitType_CAVALRY,
+    UnitType_ARTILLERY,
+    UnitType_CITY,
+    UnitType_MINE,
+	UnitType_FACTORY
+} UnitType;
+
 typedef struct unit {
+    UnitType type;
     const float attack;
     const float defense;
+    char* name;
     bool stuckIn;
     bool engaged;
 } Unit;
@@ -76,9 +87,12 @@ typedef struct nation {
     int coins;
     int ore;
     int population;
+    int popCapacity;
     int cityCost;
-    int foundryCost;
+    int factoryCost;
     int mineCost;
+    const int cavalryCost;
+    const int artilleryCost;
     EntityID capital;
     EntityID enemyNation;
 } Nation;
@@ -91,6 +105,13 @@ typedef struct city {
     bool isCapital;
 } City;
 ComponentID CITY_COMPONENT_ID;
+
+typedef struct producer {
+    int orderTicksRemaining;
+    UnitType order;
+    bool repeat;
+} Producer;
+ComponentID PRODUCER_COMPONENT_ID;
 
 ComponentID MINE_COMPONENT_ID;
 

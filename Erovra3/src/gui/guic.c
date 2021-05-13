@@ -38,6 +38,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 
     Button button = {
         false,
+		false,
         onclick
     };
     strncpy_s(button.text, 255, text, 255);
@@ -89,13 +90,46 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
     return containerID;
 }
 
-void GUI_SetLabelText(Scene* scene, EntityID labelID, char* text)
+void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
 {
     Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID);
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, labelID, GUI_COMPONENT_ID);
-    strcpy_s(label->text, 255, text);
+
+    memset(label->text, 0, 255);
+    int labelPos = 0;
+    int formatPos;
+    va_list args;
+    va_start(args, format);
+
+    for (formatPos = 0; labelPos < 254 && format[formatPos] != '\0'; formatPos++) {
+        if (format[formatPos] == '%') {
+            char temp[255];
+            memset(temp, 0, 255);
+            int offset = -1;
+            if (format[formatPos + 1] == 'd') {
+                int arg = va_arg(args, int);
+                offset = sprintf_s(temp, 17, "%d", arg);
+            } else if (format[formatPos + 1] == 'f') {
+                offset = sprintf_s(temp, 17, "%.2f", va_arg(args, double));
+            } else if (format[formatPos + 1] == 's') {
+                offset = sprintf_s(temp, 17, "%s", va_arg(args, char*));
+            }
+            if (offset < 0) {
+                PANIC("Error printing to a stirng in GUI#SetLabelText");
+            } else {
+                labelPos += offset;
+            }
+            strcat_s(label->text, 255, temp);
+            label->text[labelPos + 1] = '\0';
+            formatPos++;
+        } else {
+            label->text[labelPos++] = format[formatPos];
+        }
+    }
+    va_end(args);
+
     int oldWidth = gui->width;
-    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+    int textWidth = Font_GetWidth(label->text) + 2 * GUI_PADDING;
     if (oldWidth != textWidth) {
         gui->width = textWidth;
         GUI_UpdateLayout(scene, GUI_GetRoot(scene, labelID), 50, 50);
@@ -133,6 +167,9 @@ void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object)
 	container, will udpate all children. Will update layout tree. */
 void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
 {
+    if (containerID == INVALID_ENTITY_INDEX) {
+        PANIC("Invalid entity id passed to setContainerShown");
+    }
     Container* container = (Container*)Scene_GetComponent(scene, containerID, GUI_CONTAINER_COMPONENT_ID);
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, containerID, GUI_COMPONENT_ID);
     gui->shown = shown;
@@ -191,11 +228,17 @@ static void updateButton(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
         button->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
-        if (button->isHovered && g->mouseLeftUp) {
-            if (button->onclick == NULL) {
-                PANIC("Button onclick is NULL");
+        if (button->isHovered && g->mouseLeftDown) {
+            button->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        }
+        if (g->mouseLeftUp) {
+            if (button->clickedIn && button->isHovered) {
+                if (button->onclick == NULL) {
+                    PANIC("Button onclick is NULL for button %s", button->text);
+                }
+                button->onclick(scene);
             }
-            button->onclick(scene);
+            button->clickedIn = false;
         }
     }
 }

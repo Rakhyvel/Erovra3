@@ -1,9 +1,12 @@
 #pragma once
 #include "match.h"
+#include "../components/artillery.h"
 #include "../components/bullet.h"
+#include "../components/cavalry.h"
 #include "../components/city.h"
 #include "../components/coin.h"
 #include "../components/components.h"
+#include "../components/factory.h"
 #include "../components/infantry.h"
 #include "../components/mine.h"
 #include "../components/nation.h"
@@ -20,9 +23,19 @@
 
 Terrain* terrain;
 EntityID container;
+
+// Nation labels
 EntityID goldLabel;
-EntityID metalLabel;
+EntityID oreLabel;
 EntityID populationLabel;
+
+// Factory labels
+EntityID orderLabel;
+EntityID timeLabel;
+
+static const int cityPop = 5;
+static const float taxRate = 0.25f;
+static const int ticksPerLabor = 400;
 
 void Match_DetectHit(struct scene* scene)
 {
@@ -275,6 +288,7 @@ void Match_Focus(struct scene* scene)
         EntityID focusedEntity = INVALID_ENTITY_INDEX;
         const ComponentMask focusMask = Scene_CreateMask(3, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
         EntityID id;
+        // Go through all focusable entities, find the last one that is hovered, set focusedEntity to it
         for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
@@ -288,6 +302,7 @@ void Match_Focus(struct scene* scene)
         for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             if (containerID != INVALID_ENTITY_INDEX && focusable->guiContainer == containerID) {
+                focusable->focused = false;
                 continue;
             }
             if (focusedEntity == id) {
@@ -363,12 +378,14 @@ void Match_CreateCoins(struct scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         City* city = (Motion*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
-        if (health->aliveTicks % 300 == 0) {
+        if (health->aliveTicks % (int)(ticksPerLabor * taxRate * cityPop) == 0) {
             Coin_Create(scene, motion->pos, simpleRenderable->nation);
         }
-        if (health->aliveTicks % 18000 == 0) {
+        if (nation->population < nation->popCapacity && health->aliveTicks % 18000 == 0) {
             Infantry_Create(scene, motion->pos, simpleRenderable->nation);
+            nation->population++;
         }
     }
 }
@@ -399,7 +416,7 @@ void Match_CreateOre(struct scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
-        int ticks = (int)(300.0 / terrain_getOre(terrain, motion->pos.x, motion->pos.y));
+        int ticks = (int)(ticksPerLabor / terrain_getOre(terrain, motion->pos.x, motion->pos.y));
         if (health->aliveTicks % ticks == 0) {
             Ore_Create(scene, motion->pos, simpleRenderable->nation);
         }
@@ -419,6 +436,32 @@ void Match_DestroyOre(struct scene* scene)
         if (Vector_Dist(motion->pos, capital->pos) < 6) {
             Scene_MarkPurged(scene, id);
             nation->ore++;
+        }
+    }
+}
+
+void Match_Produce(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+
+        producer->orderTicksRemaining--;
+        if (producer->orderTicksRemaining == 0) {
+            if (producer->order == UnitType_CAVALRY) {
+                Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_ARTILLERY) {
+                Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+            }
+            producer->order = INVALID_ENTITY_INDEX;
+
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
+            GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
         }
     }
 }
@@ -464,26 +507,21 @@ void Match_UpdateLabels(struct scene* scene)
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
-        char goldText[255];
-        memset(goldText, 0, 255);
-        char goldAmount[255];
-        _itoa_s(nation->coins, goldAmount, 255, 10);
-        strcat_s(goldText, 255, goldAmount);
-        GUI_SetLabelText(scene, goldLabel, goldText);
+        GUI_SetLabelText(scene, goldLabel, "Coins: %d", nation->coins);
+        GUI_SetLabelText(scene, oreLabel, "Ore: %d", nation->ore);
+        GUI_SetLabelText(scene, populationLabel, "Population: %d/%d", nation->population, nation->popCapacity);
 
-		char metalText[255];
-        memset(metalText, 0, 255);
-        char metalAmount[255];
-        _itoa_s((int)(nation->ore), metalAmount, 255, 10);
-        strcat_s(metalText, 255, metalAmount);
-        GUI_SetLabelText(scene, metalLabel, metalText);
+        const ComponentMask focusMask = Scene_CreateMask(1, FOCUSABLE_COMPONENT_ID);
+        EntityID focusID;
+        for (focusID = Scene_Begin(scene, focusMask); Scene_End(scene, focusID); focusID = Scene_Next(scene, focusID, focusMask)) {
+            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, focusID, FOCUSABLE_COMPONENT_ID);
 
-        char populationText[255];
-        memset(populationText, 0, 255);
-        char populationAmount[255];
-        _itoa_s((int)(nation->population), populationAmount, 255, 10);
-        strcat_s(populationText, 255, populationAmount);
-        GUI_SetLabelText(scene, populationLabel, populationText);
+            if (focusable->focused && Scene_EntityHasComponent(scene, Scene_CreateMask(1, PRODUCER_COMPONENT_ID), focusID)) {
+                Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
+                GUI_SetLabelText(scene, orderLabel, "Order: %d", producer->order);
+                GUI_SetLabelText(scene, timeLabel, "Time remaining: %d", producer->orderTicksRemaining);
+            }
+        }
     }
 }
 
@@ -507,6 +545,7 @@ void matchUpdate(Scene* match)
     Match_DestroyCoins(match);
     Match_CreateOre(match);
     Match_DestroyOre(match);
+    Match_Produce(match);
 
     GUI_Update(match);
 }
@@ -514,8 +553,8 @@ void matchUpdate(Scene* match)
 void matchRender(Scene* match)
 {
     terrain_render(terrain);
-    Match_UpdateLabels(match);
     Match_SimpleRender(match);
+    Match_UpdateLabels(match);
     GUI_Render(match);
 }
 
@@ -535,7 +574,7 @@ void Match_InfantryAddCity(Scene* scene)
             terrain_addBuildingAt(terrain, city, motion->pos.x, motion->pos.y);
             nation->coins -= nation->cityCost;
             nation->cityCost *= 2;
-            nation->population++;
+            nation->popCapacity += 5;
         }
     }
 }
@@ -558,6 +597,24 @@ void Match_InfantryAddMine(Scene* scene)
     }
 }
 
+void Match_InfantryAddFactory(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        if (focusable->focused && terrain_getHeightForBuilding(terrain, motion->pos.x, motion->pos.y) > 0.5 && terrain_closestMaskDist(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, motion->pos.x, motion->pos.y) == 1 && nation->coins >= nation->factoryCost) {
+            EntityID factory = Factory_Create(scene, (Vector) { 64 * (int)(motion->pos.x / 64) + 32, 64 * (int)(motion->pos.y / 64) + 32 }, simpleRenderable->nation, false);
+            terrain_addBuildingAt(terrain, factory, motion->pos.x, motion->pos.y);
+            nation->coins -= nation->factoryCost;
+            nation->factoryCost *= 2;
+        }
+    }
+}
+
 void Match_InfantryTestSoil(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -573,6 +630,74 @@ void Match_InfantryTestSoil(Scene* scene)
     }
 }
 
+void Match_FactoryOrderCavalry(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+
+        if (focusable->focused && nation->coins >= nation->cavalryCost) {
+            nation->coins -= nation->cavalryCost;
+            producer->orderTicksRemaining = nation->cavalryCost * ticksPerLabor;
+            producer->order = UnitType_CAVALRY;
+
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->guiContainer = FACTORY_BUSY_FOCUSED_GUI;
+            GUI_SetContainerShown(scene, focusable->guiContainer, true);
+        }
+    }
+}
+
+// TODO: This and the OrderCavalry function are super similar. Way too similar to not be simplified
+//			I was thinking about adding a system for units, basically a lookup table by name/id for values
+void Match_FactoryOrderArtillery(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+
+        if (focusable->focused && nation->coins >= nation->cavalryCost) {
+            nation->coins -= nation->cavalryCost;
+            producer->orderTicksRemaining = nation->cavalryCost * ticksPerLabor;
+            producer->order = UnitType_CAVALRY;
+
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->guiContainer = FACTORY_BUSY_FOCUSED_GUI;
+            GUI_SetContainerShown(scene, focusable->guiContainer, true);
+        }
+    }
+}
+
+void Match_FactoryCancelOrder(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+
+        if (focusable->focused) {
+            producer->orderTicksRemaining = -1;
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
+            GUI_SetContainerShown(scene, focusable->guiContainer, true);
+        }
+    }
+}
+
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
 Scene* Match_Init()
@@ -583,16 +708,19 @@ Scene* Match_Init()
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
     goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
-    metalLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    oreLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     populationLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     GUI_ContainerAdd(match, container, goldLabel);
-    GUI_ContainerAdd(match, container, metalLabel);
+    GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
 
     INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", &Match_InfantryAddCity));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", &Match_InfantryAddMine));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", &Match_InfantryAddFactory));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", &Match_InfantryTestSoil));
     GUI_SetContainerShown(match, INFANTRY_FOCUSED_GUI, false);
 
@@ -600,6 +728,20 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, container, CITY_FOCUSED_GUI);
     GUI_ContainerAdd(match, CITY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Pause Recruitment", NULL));
     GUI_SetContainerShown(match, CITY_FOCUSED_GUI, false);
+
+    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    GUI_ContainerAdd(match, container, FACTORY_READY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", &Match_FactoryOrderCavalry));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", &Match_FactoryOrderArtillery));
+    GUI_SetContainerShown(match, FACTORY_READY_FOCUSED_GUI, false);
+
+    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    GUI_ContainerAdd(match, container, FACTORY_BUSY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateLabel(match, (Vector) { 0, 0 }, "Factory is busy. Come back later."));
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_FactoryCancelOrder));
+    GUI_SetContainerShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID);

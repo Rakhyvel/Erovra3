@@ -149,7 +149,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\artillery.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\bullet.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\cavalry.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -158,6 +166,10 @@
       </SubType>
     </ClCompile>
     <ClCompile Include="src\components\coin.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\factory.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -233,9 +245,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\artillery.h" />
     <ClInclude Include="src\components\bullet.h" />
+    <ClInclude Include="src\components\cavalry.h" />
     <ClInclude Include="src\components\city.h" />
     <ClInclude Include="src\components\coin.h" />
+    <ClInclude Include="src\components\factory.h" />
     <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\mine.h" />
     <ClInclude Include="src\components\nation.h" />

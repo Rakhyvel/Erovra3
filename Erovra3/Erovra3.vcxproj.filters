@@ -93,6 +93,15 @@
     <ClCompile Include="src\components\ore.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\factory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\cavalry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\artillery.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -159,6 +168,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\ore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\cavalry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\artillery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
