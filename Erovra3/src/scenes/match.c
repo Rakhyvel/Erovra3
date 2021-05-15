@@ -652,7 +652,7 @@ void matchUpdate(Scene* match)
     Match_BulletAttack(match);
     Match_ShellAttack(match);
 
-    Match_CreateCoins(match);
+    Match_UpdateCity(match);
     Match_DestroyCoins(match);
     Match_CreateOre(match);
     Match_DestroyOre(match);
