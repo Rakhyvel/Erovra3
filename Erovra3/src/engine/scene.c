@@ -97,11 +97,13 @@ EntityID Scene_NewEntity(struct scene* scene)
         EntityIndex index = ARRAYLIST_POP_DEREF(scene->freeIndices, EntityIndex);
         struct entity* entity = ARRAYLIST_GET(scene->entities, index, struct entity);
         entity->id = ((EntityID)index << 16) | getVersion(entity->id);
+        scene->numEntities++;
         return entity->id;
     } else {
         EntityIndex index = (EntityIndex)(scene->entities->size);
         struct entity newEntity = { ((EntityID)index << 16), 0 };
         Arraylist_Add(scene->entities, &newEntity);
+        scene->numEntities++;
         return newEntity.id;
     }
 }
@@ -150,8 +152,9 @@ void Scene_Purge(struct scene* scene)
     while (scene->purgedEntities->size > 0) {
         EntityIndex index = ARRAYLIST_POP_DEREF(scene->purgedEntities, EntityIndex);
         struct entity* purgedEntity = ARRAYLIST_GET(scene->entities, index, struct entity);
-        purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | 0;
+        purgedEntity->id = (INVALID_ENTITY_INDEX << 16);
         purgedEntity->mask = 0;
+        scene->numEntities--;
         Arraylist_Add(scene->freeIndices, &index);
     }
 }

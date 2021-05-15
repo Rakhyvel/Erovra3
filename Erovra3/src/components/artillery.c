@@ -23,7 +23,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, artilleryID, TARGET_COMPONENT_ID, &target);
 
     SimpleRenderable render = {
-        CAVALRY_TEXTURE_ID,
+        ARTILLERY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
         false,
@@ -44,7 +44,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_ARTILLERY,
-        1,
+        2,
         0.5f
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
@@ -61,6 +61,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 
     Scene_Assign(scene, artilleryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, artilleryID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     return artilleryID;
 }

@@ -79,22 +79,23 @@ x Add ore, population
 			x Ore particle flows to capital
 			x Ore produced based on ore map
 	x Population increases with each city, can then build more units
-- Add factories
+x Add factories
 	x Factories need to be built adjacent cities
-	- Able to build units in factories
+	x Able to build units in factories
 		x Cavalry
-		- Artillery
-			- Add artillery attack, with special "shell_attack" flag probably
-			- Add artillery circle polygon
+		x Artillery
+			x Add artillery attack, with special "shell_attack" flag probably
+			x Artillery splash damage
+			x Add artillery circle polygon
 - Defensive walls
-- Create unit stat lookup table based on a data file
 
 
 3.5.x- AI
 - Add time warp (?)
-- Add AI flag
+- Add AI flag, player flag
 	- AI Units cannot be selected or hovered
 - Add AI controller system
+- Fog of war
 
 
 3.6.x- Airplanes
@@ -122,7 +123,14 @@ x Add ore, population
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 - Add sound
+	- Sound for gunfire
+	- Sound for marching when giving order
+	- Sound for shell shoot
+	- Sound for shell explosion
+	- Sound when building a building
+	- Small sound when doing any action button basically
 - Add particles
+	- Shell explosion particles, maybe particles on its trajectory
 - Add animations
 	- GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
 - Add arrow when moving a unit
@@ -133,6 +141,7 @@ x Add ore, population
 - Icons embedded in text
 - A scrolling message box for messages about the game
 - Make producer menu show real time rather than ticks
+- Give height to shells with shadow as they go to their target
 
 
 3.9.x- Multiplayer

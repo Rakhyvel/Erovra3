@@ -47,6 +47,8 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
     return buttonID;
 }
 
+/*
+	Creates a label, given a position and some text */
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
 {
     EntityID labelID = Scene_NewEntity(scene);
@@ -90,6 +92,13 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
     return containerID;
 }
 
+/*
+	Changes the labels text. Takes a format string, with some convenient 
+	formatting.
+	
+	%d - replaces with the ascii represenation of an integer
+	%f - replaces with the ascii representation of a float
+	%s - inserts the text at the given character pointer into the label text */
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
 {
     Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID);
@@ -274,6 +283,8 @@ static void renderButton(Scene* scene)
     }
 }
 
+/*
+	Draws a label */
 static void renderLabel(Scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(2, GUI_LABEL_ID, GUI_COMPONENT_ID);

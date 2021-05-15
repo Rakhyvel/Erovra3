@@ -18,6 +18,7 @@ void Textures_Init()
     GROUND_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/ground_outline.png");
     GROUND_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/shadow.png");
     BULLET_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
+    SHELL_TEXTURE_ID = Texture_RegisterTexture("res/shell.png");
     COIN_TEXTURE_ID = Texture_RegisterTexture("res/coin.png");
     ORE_TEXTURE_ID = Texture_RegisterTexture("res/ore.png");
 
@@ -26,4 +27,7 @@ void Textures_Init()
 
     Texture_DrawPolygon(CAVALRY_TEXTURE_ID, Polygon_Create("res/ground_border.gon"), (SDL_Color) { 0, 0, 0, 255 });
     Texture_DrawPolygon(CAVALRY_TEXTURE_ID, Polygon_Create("res/cavalry.gon"), (SDL_Color) { 0, 0, 0, 255 });
+
+    Texture_DrawPolygon(ARTILLERY_TEXTURE_ID, Polygon_Create("res/ground_border.gon"), (SDL_Color) { 0, 0, 0, 255 });
+    Texture_DrawPolygon(ARTILLERY_TEXTURE_ID, Polygon_Create("res/artillery.gon"), (SDL_Color) { 0, 0, 0, 255 });
 }

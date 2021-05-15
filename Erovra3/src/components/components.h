@@ -75,10 +75,20 @@ ComponentID UNIT_COMPONENT_ID;
 ComponentID LAND_UNIT_FLAG_COMPONENT_ID;
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID;
 
+ComponentID BULLET_ATTACK_FLAG_COMPONENT_ID;
+ComponentID SHELL_ATTACK_FLAG_COMPONENT_ID;
+
 typedef struct projectile {
     const float attack;
+    bool armed;
+    const float splash;
 } Projectile;
 ComponentID PROJECTILE_COMPONENT_ID;
+
+typedef struct shell {
+    struct vector tar;
+} Shell;
+ComponentID SHELL_COMPONENT_ID;
 
 typedef struct nation {
     SDL_Color color;

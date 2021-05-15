@@ -51,7 +51,7 @@ struct terrain* terrain_create(int mapSize)
     terrain_normalize(retval->ore, retval->tileSize);
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.75f + 0.25f;
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5f + 0.5f;
         }
     }
     paintMap(retval);

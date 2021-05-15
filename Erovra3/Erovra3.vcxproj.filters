@@ -102,6 +102,9 @@
     <ClCompile Include="src\components\artillery.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\shell.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -177,6 +180,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\artillery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\shell.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

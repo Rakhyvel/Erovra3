@@ -61,5 +61,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Scene_Assign(scene, cavalryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, cavalryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    return cavalryID;
 }

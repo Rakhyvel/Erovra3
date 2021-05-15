@@ -14,8 +14,11 @@ void Components_Init(struct scene* scene)
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
     GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-
+    BULLET_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    SHELL_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+	
     PROJECTILE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Projectile));
+    SHELL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Shell));
 
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Producer));

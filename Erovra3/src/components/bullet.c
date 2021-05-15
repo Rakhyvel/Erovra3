@@ -40,7 +40,9 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     Scene_Assign(scene, bulletID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
 	Projectile projectile = {
-        attack
+        attack,
+		true,
+		8.0f
     };
     Scene_Assign(scene, bulletID, PROJECTILE_COMPONENT_ID, &projectile);
 

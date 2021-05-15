@@ -11,6 +11,7 @@
 #include "../components/mine.h"
 #include "../components/nation.h"
 #include "../components/ore.h"
+#include "../components/shell.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
@@ -35,8 +36,15 @@ EntityID timeLabel;
 
 static const int cityPop = 5;
 static const float taxRate = 0.25f;
-static const int ticksPerLabor = 400;
+static const int ticksPerLabor = 4;
 
+/*
+	Checks each health entity against all projectile entites. If the two are 
+	collided, the health of the entity is reduced based on the projectile's 
+	attack, and the health's defense. 
+	
+	Some projectiles have splash damage. If so, the damage of the projectile 
+	falls off as the distance from the projectile increases */
 void Match_DetectHit(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID);
@@ -61,8 +69,14 @@ void Match_DetectHit(struct scene* scene)
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
             float dist = Vector_Dist(motion->pos, otherMotion->pos);
-            if (dist < 8) {
-                health->health -= projectile->attack / unit->defense;
+            if (projectile->armed && dist < projectile->splash) {
+                float splashDamageModifier;
+                if (projectile->splash <= 8) {
+                    splashDamageModifier = 1.0f; // Damage is same regardless of distance
+                } else {
+					splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
+				}
+                health->health -= projectile->attack * splashDamageModifier / unit->defense;
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
                 if (health->health <= 0) {
@@ -142,6 +156,30 @@ void Match_Target(struct scene* scene)
         } else {
             motion->vel.x = 0;
             motion->vel.y = 0;
+        }
+    }
+}
+
+/*
+	This system checks to see if a shell has reached it's desitantion. If it has, 
+	if the shell isn't armed, arms the shell. If the shell is already armed, it 
+	destroys the shell entity. */
+void Match_ShellMove(struct scene* scene)
+{
+    const ComponentMask motionMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID, SHELL_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
+        Shell* shell = (Shell*)Scene_GetComponent(scene, id, SHELL_COMPONENT_ID);
+
+        float dist = Vector_Dist(motion->pos, shell->tar);
+        if (dist < 8) {
+            if (!projectile->armed) {
+                projectile->armed = true;
+            } else {
+                Scene_MarkPurged(scene, id);
+            }
         }
     }
 }
@@ -281,7 +319,7 @@ void Match_Select(struct scene* scene)
 
 /*
 	When the right mouse button is released, finds the focusable entity that 
-	is hovered, and shows its GUI */
+	is hovered, and shows its GUI. */
 void Match_Focus(struct scene* scene)
 {
     if (g->mouseRightUp) {
@@ -317,9 +355,9 @@ void Match_Focus(struct scene* scene)
 /*
 	This system goes through all ground units, has them search for the closest 
 	enemy land unit to them, and finally shoot a bullet at them. */
-void Match_Attack(struct scene* scene)
+void Match_BulletAttack(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID);
+    const ComponentMask renderMask = Scene_CreateMask(6, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID, BULLET_ATTACK_FLAG_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
@@ -369,7 +407,63 @@ void Match_Attack(struct scene* scene)
     }
 }
 
-void Match_CreateCoins(struct scene* scene)
+/*
+	Does the same thing as BulletAttack, but has different range parameters and shoots a shell instead */
+void Match_ShellAttack(struct scene* scene)
+{
+    const ComponentMask renderMask = Scene_CreateMask(6, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID, SHELL_ATTACK_FLAG_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+
+        ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
+
+        // Find closest enemy ground unit
+        float closestDist = 100;
+        EntityID closest = INVALID_ENTITY_INDEX;
+        Vector closestPos = { -1, -1 };
+        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, LAND_UNIT_FLAG_COMPONENT_ID);
+        EntityID otherID;
+        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            float dist = Vector_Dist(otherMotion->pos, motion->pos);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closest = otherID;
+                closestPos = otherMotion->pos;
+            }
+        }
+
+        // If no enemy units were found, stuckin and engaged are false, skip
+        if (closestDist < 64 || closest == INVALID_ENTITY_INDEX) {
+            unit->stuckIn = false;
+            unit->engaged = false;
+            continue;
+        }
+        // If enemies were within 48, tar = pos, stuck in
+        target->tar = motion->pos;
+        target->lookat = closestPos;
+        unit->stuckIn = true;
+        // engaged = true, engagedTicks = whatever
+        unit->engaged = true;
+
+        // Shoot enemy units if found
+        Vector displacement = Vector_Sub(motion->pos, closestPos);
+        float deflection = Vector_Angle(displacement);
+        if (g->ticks % 120 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
+            Shell_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
+        }
+    }
+}
+
+/*
+	Every time a unit of labor has passed, one coin is added.
+	
+	An infantry is spawned every 5 minutes. */
+void Match_UpdateCity(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, CITY_COMPONENT_ID, HEALTH_COMPONENT_ID);
     EntityID id;
@@ -390,6 +484,9 @@ void Match_CreateCoins(struct scene* scene)
     }
 }
 
+/*
+	For every coin, if the coin is at the capital, marks coin for purge, increases
+	nation's gold by 1. */
 void Match_DestroyCoins(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, COIN_COMPONENT_ID);
@@ -407,6 +504,8 @@ void Match_DestroyCoins(struct scene* scene)
     }
 }
 
+/*
+	Every unit of labor ticks, mines create one ore for capital */
 void Match_CreateOre(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, MINE_COMPONENT_ID, HEALTH_COMPONENT_ID);
@@ -423,6 +522,9 @@ void Match_CreateOre(struct scene* scene)
     }
 }
 
+/*
+	For every ore, if the ore is at the capital, marks ore for purge, increases
+	nation's ore by 1.  */
 void Match_DestroyOre(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, ORE_COMPONENT_ID);
@@ -440,6 +542,10 @@ void Match_DestroyOre(struct scene* scene)
     }
 }
 
+/*
+	For every producer, decrements time left for producer. If there are no ticks 
+	left, produces the unit, and resets the producer back to not producing 
+	anything. */
 void Match_Produce(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -500,6 +606,8 @@ void Match_SimpleRender(struct scene* scene)
     }
 }
 
+/*
+	Called every tick. Sets the text of labels to reflect the game state */
 void Match_UpdateLabels(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(2, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
@@ -528,10 +636,12 @@ void Match_UpdateLabels(struct scene* scene)
 void matchUpdate(Scene* match)
 {
     terrain_update(terrain);
-    Match_DetectHit(match);
 
     Match_Target(match);
     Match_Motion(match);
+    Match_ShellMove(match);
+
+    Match_DetectHit(match);
 
     Match_ClearSelection(match);
     Match_ClearFocus(match);
@@ -539,7 +649,8 @@ void matchUpdate(Scene* match)
     Match_Select(match);
     Match_Focus(match);
 
-    Match_Attack(match);
+    Match_BulletAttack(match);
+    Match_ShellAttack(match);
 
     Match_CreateCoins(match);
     Match_DestroyCoins(match);
@@ -579,6 +690,8 @@ void Match_InfantryAddCity(Scene* scene)
     }
 }
 
+/*
+	Called by the infantry's "Build Factory" button. Builds a mine */
 void Match_InfantryAddMine(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -597,6 +710,8 @@ void Match_InfantryAddMine(Scene* scene)
     }
 }
 
+/*
+	Called by the infantry's "Build Factory" button. Builds a factory */
 void Match_InfantryAddFactory(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -615,6 +730,8 @@ void Match_InfantryAddFactory(Scene* scene)
     }
 }
 
+/*
+	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
 void Match_InfantryTestSoil(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -630,6 +747,8 @@ void Match_InfantryTestSoil(Scene* scene)
     }
 }
 
+/*
+	Called by factory "Build Cavalry" button. Sets the producer that is focused to produce cavalry */
 void Match_FactoryOrderCavalry(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
@@ -666,10 +785,10 @@ void Match_FactoryOrderArtillery(Scene* scene)
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
-        if (focusable->focused && nation->coins >= nation->cavalryCost) {
-            nation->coins -= nation->cavalryCost;
-            producer->orderTicksRemaining = nation->cavalryCost * ticksPerLabor;
-            producer->order = UnitType_CAVALRY;
+        if (focusable->focused && nation->coins >= nation->artilleryCost) {
+            nation->coins -= nation->artilleryCost;
+            producer->orderTicksRemaining = nation->artilleryCost * ticksPerLabor;
+            producer->order = UnitType_ARTILLERY;
 
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
             focusable->guiContainer = FACTORY_BUSY_FOCUSED_GUI;
@@ -678,6 +797,8 @@ void Match_FactoryOrderArtillery(Scene* scene)
     }
 }
 
+/*
+	Called from factory "Cancel Order" button. Cancels the order of the Producer that is focused */
 void Match_FactoryCancelOrder(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
@@ -703,7 +824,7 @@ void Match_FactoryCancelOrder(Scene* scene)
 Scene* Match_Init()
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(12 * 64);
+    terrain = terrain_create(8 * 64);
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
