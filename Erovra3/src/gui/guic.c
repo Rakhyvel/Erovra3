@@ -14,6 +14,7 @@ void GUI_Init(Scene* scene)
     GUI_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(GUIComponent));
     GUI_BUTTON_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Button));
     GUI_LABEL_ID = Scene_RegisterComponent(scene, sizeof(Label));
+    GUI_ROCKER_SWITCH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RockerSwitch));
     GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
     Font_Init();
 }
@@ -38,7 +39,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 
     Button button = {
         false,
-		false,
+        false,
         onclick
     };
     strncpy_s(button.text, 255, text, 255);
@@ -68,6 +69,33 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
     strncpy_s(label.text, 255, text, 255);
     Scene_Assign(scene, labelID, GUI_LABEL_ID, &label);
     return labelID;
+}
+
+EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, void (*onchange)(struct scene* scene, bool value))
+{
+    EntityID rockerSwitchID = Scene_NewEntity(scene);
+
+    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+
+    GUIComponent gui = {
+        pos,
+        textWidth,
+        50,
+        true,
+        INVALID_ENTITY_INDEX
+    };
+    Scene_Assign(scene, rockerSwitchID, GUI_COMPONENT_ID, &gui);
+
+    RockerSwitch rockerSwitch = {
+        false,
+        false,
+        value,
+        onchange
+    };
+    strncpy_s(rockerSwitch.text, 255, text, 255);
+    Scene_Assign(scene, rockerSwitchID, GUI_ROCKER_SWITCH_COMPONENT_ID, &rockerSwitch);
+
+    return rockerSwitchID;
 }
 
 /*
@@ -143,6 +171,12 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
         gui->width = textWidth;
         GUI_UpdateLayout(scene, GUI_GetRoot(scene, labelID), 50, 50);
     }
+}
+
+void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value)
+{
+    RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, labelID, GUI_ROCKER_SWITCH_COMPONENT_ID);
+    rockerSwitch->value = value;
 }
 
 /*
@@ -253,10 +287,39 @@ static void updateButton(Scene* scene)
 }
 
 /*
+	Updates a rocker switch. Checks to see if it's hovered, and then if its 
+	clicked. When clicked, inverts boolean value, calls callback with new value
+	passed */
+static void updateRockerSwitch(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        RockerSwitch* rockerSwitch = (Button*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
+        rockerSwitch->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (rockerSwitch->isHovered && g->mouseLeftDown) {
+            rockerSwitch->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        }
+        if (g->mouseLeftUp) {
+            if (rockerSwitch->clickedIn && rockerSwitch->isHovered) {
+                if (rockerSwitch->onchange == NULL) {
+                    PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
+                }
+                rockerSwitch->value = !rockerSwitch->value;
+                rockerSwitch->onchange(scene, rockerSwitch->value);
+            }
+            rockerSwitch->clickedIn = false;
+        }
+    }
+}
+
+/*
 	Runs all GUI update systems */
 void GUI_Update(Scene* scene)
 {
     updateButton(scene);
+    updateRockerSwitch(scene);
 }
 
 // RENDERING
@@ -283,6 +346,32 @@ static void renderButton(Scene* scene)
     }
 }
 
+/*
+	Draws a rocker switch to the screen */
+static void renderRockerSwitch(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
+        if (rockerSwitch->value) {
+            SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 180);
+        } else {
+            SDL_SetRenderDrawColor(g->rend, 40, 40, 40, 180);
+        }
+        SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
+        SDL_RenderFillRect(g->rend, &rect);
+        if (rockerSwitch->isHovered) {
+            SDL_SetRenderDrawColor(g->rend, 128, 128, 128, 180);
+            SDL_RenderFillRect(g->rend, &rect);
+        }
+        Font_DrawString(rockerSwitch->text, gui->pos.x + (gui->width - Font_GetWidth(rockerSwitch->text)) / 2, gui->pos.y + gui->height / 2 - 8);
+    }
+}
 /*
 	Draws a label */
 static void renderLabel(Scene* scene)
@@ -323,4 +412,5 @@ void GUI_Render(Scene* scene)
     renderContainer(scene);
     renderButton(scene);
     renderLabel(scene);
+    renderRockerSwitch(scene);
 }

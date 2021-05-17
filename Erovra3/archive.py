@@ -10,7 +10,7 @@ from os.path import basename
 from pathlib import Path
 
 # Some configurations
-VERSION = "4"
+VERSION = "5"
 IN_PATH = str(Path.home()) + "\\source\\repos\\Erovra3\\"
 OUT_PATH = str(Path.home()) + "\\OneDrive\\Erovra versions\\"
 

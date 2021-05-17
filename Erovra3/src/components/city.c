@@ -22,12 +22,6 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, MOTION_COMPONENT_ID, &motion);
 
-	Target target = {
-        (struct vector) { 0.0f, 0.0f },
-        pos,
-    };
-    Scene_Assign(scene, cityID, TARGET_COMPONENT_ID, &target);
-
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
@@ -74,6 +68,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
 	
     Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, cityID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
 
     return cityID;

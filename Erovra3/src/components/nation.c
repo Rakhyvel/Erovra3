@@ -12,7 +12,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, ComponentID ownNati
         color,
         ownNation,
         enemyNation,
-        85, // coins
+        45, // coins
         0, // ore
         1, // pop.
 		5, // pop. cap

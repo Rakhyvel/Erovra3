@@ -11,7 +11,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
-        0.4f,
+        0.2f,
         false
     };
     Scene_Assign(scene, artilleryID, MOTION_COMPONENT_ID, &motion);

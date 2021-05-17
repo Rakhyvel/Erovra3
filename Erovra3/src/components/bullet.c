@@ -3,6 +3,8 @@
 #include "bullet.h"
 #include "../textures.h"
 #include "components.h"
+#include "../util/arraylist.h"
+#include "../engine/scene.h"
 
 /*
 	Creates a bullet entity, that starts at a given position, moves towards 

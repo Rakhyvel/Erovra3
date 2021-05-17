@@ -6,6 +6,7 @@
 
 #pragma once
 #include <stdlib.h>
+#include <stdbool.h>
 // Some macros that automatically cast type
 #define ARRAYLIST_GET(list, index, type)		((type*)(Arraylist_Get(list, index)))
 #define ARRAYLIST_POP(list, type)				((type*)(Arraylist_Pop(list)))
@@ -25,3 +26,4 @@ void Arraylist_Add(struct arraylist* list, void* data);
 void Arraylist_Put(struct arraylist* list, int index, void* data);
 void* Arraylist_Get(struct arraylist* list, int index);
 void* Arraylist_Pop(struct arraylist* list);
+bool Arraylist_Contains(struct arraylist* list, void* data);

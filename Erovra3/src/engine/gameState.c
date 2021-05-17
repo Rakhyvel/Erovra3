@@ -71,7 +71,7 @@ void Game_Run()
     long lag = 0;
     long current = clock();
     long elapsed = 0;
-    long dt = 16;
+    g->dt = 16.0f;
     int elapsedFrames = 0;
 
     unsigned int frames = 0;
@@ -90,11 +90,11 @@ void Game_Run()
         }
         Scene* scene = Arraylist_Get(g->sceneStack, g->sceneStack->size - 1);
 
-        while (lag >= dt) {
+        while (lag >= g->dt) {
             Game_PollInput();
             scene->update(scene);
             Scene_Purge(scene);
-            lag -= dt;
+            lag -= g->dt;
             g->ticks++;
         }
         if (elapsedFrames > 16) {
@@ -125,6 +125,8 @@ void Game_PollInput()
     g->mouseLeftUp = false;
     g->mouseRightUp = false;
     g->mouseMoved = false;
+    g->lt = false;
+    g->gt = false;
 
     // DIRECT INPUT
     SDL_Event event;
@@ -156,6 +158,12 @@ void Game_PollInput()
             case SDL_SCANCODE_LSHIFT:
                 g->shift = 1;
                 break;
+            case SDL_SCANCODE_COMMA:
+                g->lt = 1;
+                break;
+            case SDL_SCANCODE_PERIOD:
+                g->gt = 1;
+                break;
             }
             g->keys[event.key.keysym.scancode] = 1;
             break;
@@ -178,6 +186,12 @@ void Game_PollInput()
                 break;
             case SDL_SCANCODE_LSHIFT:
                 g->shift = 0;
+                break;
+            case SDL_SCANCODE_COMMA:
+                g->lt = 0;
+                break;
+            case SDL_SCANCODE_PERIOD:
+                g->gt = 0;
                 break;
             }
             g->keys[event.key.keysym.scancode] = 0;

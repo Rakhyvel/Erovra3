@@ -14,6 +14,7 @@
 #pragma once
 #include "arraylist.h"
 #include "debug.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -75,4 +76,14 @@ void Arraylist_Add(struct arraylist* list, void* data)
 void Arraylist_Put(struct arraylist* list, int index, void* data)
 {
     memcpy(list->data + index * list->typeSize, data, list->typeSize);
+}
+
+bool Arraylist_Contains(struct arraylist* list, void* data)
+{
+    for (int i = 0; i < list->size; i++) {
+        if (!memcmp(list->data + (list->typeSize * i), data, list->typeSize)) {
+            return true;
+        }
+    }
+    return false;
 }

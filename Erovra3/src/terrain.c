@@ -47,6 +47,14 @@ struct terrain* terrain_create(int mapSize)
     for (int i = 0; i < (mapSize * mapSize) / (64 * 64); i++) {
         retval->buildings[i] = INVALID_ENTITY_INDEX;
     }
+    retval->walls = (EntityID*)malloc(((mapSize + 1) * (mapSize + 1)) / (32 * 32) * sizeof(EntityID));
+    if (!retval->walls) {
+        PANIC("Memory error");
+        exit(1);
+    }
+    for (int i = 0; i < ((mapSize + 1) * (mapSize + 1)) / (32 * 32); i++) {
+        retval->walls[i] = INVALID_ENTITY_INDEX;
+    }
     terrain_normalize(retval->map, retval->size);
     terrain_normalize(retval->ore, retval->tileSize);
     for (int y = 0; y < retval->size; y++) {
@@ -320,6 +328,7 @@ float* terrain_perlin(int mapSize, int cellSize)
     cellSize /= 2;
     amplitude /= 2;
 
+
     while (cellSize > 2) {
         float* map = terrain_generate(mapSize, cellSize, amplitude);
         for (int i = 0; i < mapSize * mapSize; i++) {
@@ -421,6 +430,20 @@ void terrain_addBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
     x /= 64;
     y /= 64;
     terrain->buildings[x + y * (terrain->tileSize)] = id;
+}
+
+EntityID terrain_getWallAt(struct terrain* terrain, int x, int y)
+{
+    x /= 32;
+    y /= 32;
+    return terrain->walls[x + y * (terrain->tileSize)];
+}
+
+void terrain_addWallAt(struct terrain* terrain, EntityID id, int x, int y)
+{
+    x /= 32;
+    y /= 32;
+    terrain->walls[x + y * (terrain->tileSize)] = id;
 }
 
 int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1)

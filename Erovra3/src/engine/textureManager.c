@@ -18,6 +18,9 @@ static int numTextures = 0;
 	Changes the AlphaMod of a texture given a texture id. */
 void Texture_AlphaMod(TextureID textureID, Uint8 alpha)
 {
+    if (textureID == INVALID_TEXTURE_ID) {
+        return;
+    }
     SDL_Texture* texture = textures[textureID];
     SDL_SetTextureAlphaMod(texture, alpha);
 }
@@ -26,6 +29,9 @@ void Texture_AlphaMod(TextureID textureID, Uint8 alpha)
 	Changes the ColorMod of a texture given a texture id. */
 void Texture_ColorMod(TextureID textureID, SDL_Color color)
 {
+    if (textureID == INVALID_TEXTURE_ID) {
+        return;
+    }
     SDL_Texture* texture = textures[textureID];
     SDL_SetTextureColorMod(texture, color.r, color.g, color.b);
 }
@@ -138,11 +144,7 @@ SDL_Texture* loadTexture(char* filename)
     // Create a new texture that can be rendered on
     SDL_Rect rect = { 0, 0, 0, 0 };
     SDL_QueryTexture(imgTexture, 0, 0, &rect.w, &rect.h);
-    if (rect.h > 32) {
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    } else {
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-    }
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
     SDL_Texture* accessibleTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rect.w, rect.h);
 
     // Copy IMG texture to drawible texture

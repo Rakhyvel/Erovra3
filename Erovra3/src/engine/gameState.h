@@ -28,7 +28,9 @@ struct game {
 		left, 
 		right, 
 		ctrl, 
-		shift, 
+		shift,
+		lt,
+		gt,
 		keys[255],
 		mouseMoved, 
 		mouseLeftDown,
@@ -37,6 +39,7 @@ struct game {
 		mouseRightUp, 
 		mouseDrag, 
 		mouseDragged;
+    float dt;
 
 	Arraylist* sceneStack;
 };

@@ -193,6 +193,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\wall.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\gui\font.c">
       <SubType>
       </SubType>
@@ -260,6 +264,7 @@
     <ClInclude Include="src\components\nation.h" />
     <ClInclude Include="src\components\ore.h" />
     <ClInclude Include="src\components\shell.h" />
+    <ClInclude Include="src\components\wall.h" />
     <ClInclude Include="src\gui\font.h" />
     <ClInclude Include="src\gui\gui.h" />
     <ClInclude Include="src\main.h" />

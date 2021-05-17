@@ -12,6 +12,8 @@ void Textures_Init()
     BUILDING_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/hit.png");
     BUILDING_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
     CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
+    WALL_TEXTURE_ID = Texture_RegisterTexture("res/wall.png");
+    WALL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/wall_shadow.png");
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     CAVALRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     ARTILLERY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");

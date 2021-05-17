@@ -87,7 +87,17 @@ x Add factories
 			x Add artillery attack, with special "shell_attack" flag probably
 			x Artillery splash damage
 			x Add artillery circle polygon
+	x Auto re-order
 - Defensive walls
+	x Built by infantry (should really add engineers!)
+	x Enemy units cannot move past wall, like water
+		x Note: since they are always orthoganal, we can check the original x or y 
+		  coord (depending on angle), and new x or y coord, and if the signs of the 
+		  coord - wall coord changes, unit would cross wall, stop unit
+	x Walls absorb enemy projectiles
+		x Units shouldn't become engaged with walls
+	x Walls should remove themselves from map if they die (prob bldg too)
+	x Have auto-reorder update its value based on the producer
 
 
 3.5.x- AI
@@ -142,9 +152,15 @@ x Add factories
 - A scrolling message box for messages about the game
 - Make producer menu show real time rather than ticks
 - Give height to shells with shadow as they go to their target
+- Get better building images, make buildings close to their home city
+	- Put progress bar above factories (it looks good)
+- Fix building hover (probably should be none)
 
 
-3.9.x- Multiplayer
+3.9.x- Fun "maybe" stuff
+- Mines (as in explode mines, not ore mines)
+
+3.10.x- Multiplayer
 - Multiplayer
 
 

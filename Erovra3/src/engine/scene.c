@@ -25,7 +25,7 @@ static struct entity* getEntityStruct(struct scene*, EntityID);
 
 /*
 	Initializes the memory pools for a scene */
-struct scene* Scene_Create(void(initComponents)(struct Scene*), void(*update)(struct Scene*), void(*render)(struct Scene*))
+struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(struct Scene*), void (*render)(struct Scene*))
 {
     struct scene* retval = calloc(1, sizeof(struct scene));
     if (!retval) {
@@ -73,6 +73,9 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
         PANIC("Invalid entity index");
     } else if (scene->components[componentID] == NULL) {
         PANIC("Component id not registered yet");
+    } else if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, componentID), id)) {
+        struct entity* entt = ARRAYLIST_GET(scene->entities, id, struct entity);
+        PANIC("Entity %d does not have component %d, mask is %d", id >> 16, componentID, entt->mask);
     } else {
         return Arraylist_Get(scene->components[componentID], getIndex(id));
     }
@@ -96,7 +99,8 @@ EntityID Scene_NewEntity(struct scene* scene)
     if (scene->freeIndices->size != 0) {
         EntityIndex index = ARRAYLIST_POP_DEREF(scene->freeIndices, EntityIndex);
         struct entity* entity = ARRAYLIST_GET(scene->entities, index, struct entity);
-        entity->id = ((EntityID)index << 16) | getVersion(entity->id);
+        entity->id = ((EntityID)index << 16) | getVersion(entity->id) + 1;
+        entity->mask = 0;
         scene->numEntities++;
         return entity->id;
     } else {
@@ -135,7 +139,10 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 
 /*
 	Marks an entity as purged, and ready for deallocation when the purge 
-	function is called */
+	function is called 
+	
+	The same entity can be marked purged more than once. Any call after the first 
+	call, though, has no effect. */
 void Scene_MarkPurged(struct scene* scene, EntityID id)
 {
     int index = getIndex(id);
@@ -146,16 +153,19 @@ void Scene_MarkPurged(struct scene* scene, EntityID id)
 	Frees all purged entities.
 	
 	Marks index as invalid, increments version, clears mask, and finally frees
-	the index in the entity thing */
+	the index in the entity thing. */
 void Scene_Purge(struct scene* scene)
 {
     while (scene->purgedEntities->size > 0) {
         EntityIndex index = ARRAYLIST_POP_DEREF(scene->purgedEntities, EntityIndex);
         struct entity* purgedEntity = ARRAYLIST_GET(scene->entities, index, struct entity);
-        purgedEntity->id = (INVALID_ENTITY_INDEX << 16);
+        purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | getVersion(purgedEntity->id);
         purgedEntity->mask = 0;
         scene->numEntities--;
-        Arraylist_Add(scene->freeIndices, &index);
+        // must gaurd against duplicates, otherwise allocated entity would be marked "free"
+        if (!Arraylist_Contains(scene->freeIndices, &index)) {
+            Arraylist_Add(scene->freeIndices, &index);
+        }
     }
 }
 

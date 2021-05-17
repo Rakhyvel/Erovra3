@@ -60,20 +60,24 @@ typedef enum unitType {
     UnitType_ARTILLERY,
     UnitType_CITY,
     UnitType_MINE,
-	UnitType_FACTORY
+	UnitType_FACTORY,
+	UnitType_WALL
 } UnitType;
 
 typedef struct unit {
     UnitType type;
     const float attack;
     const float defense;
+    int randShoot;
     char* name;
     bool stuckIn;
     bool engaged;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;
-ComponentID LAND_UNIT_FLAG_COMPONENT_ID;
-ComponentID GROUND_UNIT_FLAG_COMPONENT_ID;
+ComponentID LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
+ComponentID GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
+ComponentID BUILDING_FLAG_COMPONENT_ID;
+ComponentID WALL_FLAG_COMPONENT_ID;
 
 ComponentID BULLET_ATTACK_FLAG_COMPONENT_ID;
 ComponentID SHELL_ATTACK_FLAG_COMPONENT_ID;
