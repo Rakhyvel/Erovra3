@@ -102,10 +102,16 @@ x Add factories
 
 3.5.x- AI
 x Add time warp (?)
-- Add AI flag, player flag
-	- AI Units cannot be selected or hovered
-- Add AI controller system
-- Fog of war
+x Add AI flag, player flag
+	x AI Units cannot be selected or hovered
+x Add AI controller system
+	x visited spaces
+	x Ground unit target
+	x Infantry build
+	x Building build
+x Fog of war
+- Buildings should be "of" cities, cities should be captured not destroyed
+- Mines should be captured as well
 
 
 3.6.x- Airplanes
@@ -139,6 +145,8 @@ x Add time warp (?)
 	- Sound for shell explosion
 	- Sound when building a building
 	- Small sound when doing any action button basically
+	- SOUND ANY TIME AN ACTION IS DONE
+	- SOUND ANY TIME AN ENTITY IS SPAWNED
 - Add particles
 	- Shell explosion particles, maybe particles on its trajectory
 - Add animations
@@ -146,10 +154,12 @@ x Add time warp (?)
 - Add arrow when moving a unit
 - Add death animation
 - Give coins a shadow, arc, and change their velocity based on their path
+- Update coin sprite, ore sprite to be HD
 - Enumerate unit divisions
 - Give names to cities randomly
 - Icons embedded in text
 - A scrolling message box for messages about the game
+- Alerts (should swing in like in War Thuder)
 - Make producer menu show real time rather than ticks
 - Give height to shells with shadow as they go to their target
 - Get better building images, make buildings close to their home city

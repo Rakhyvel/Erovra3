@@ -28,6 +28,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
         FACTORY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         BUILDING_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -46,7 +47,6 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
 		UnitType_FACTORY,
-        0,
         1
     };
     Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);

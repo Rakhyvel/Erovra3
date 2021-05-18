@@ -34,6 +34,7 @@ typedef struct simpleRenderable {
     TextureID sprite;
     TextureID spriteOutline;
     TextureID shadow;
+    bool hidden;
     bool showOutline;
     EntityID nation;
     int width;
@@ -55,25 +56,35 @@ typedef struct health {
 ComponentID HEALTH_COMPONENT_ID;
 
 typedef enum unitType {
-	UnitType_INFANTRY,
-	UnitType_CAVALRY,
+    UnitType_INFANTRY,
+    UnitType_CAVALRY,
     UnitType_ARTILLERY,
     UnitType_CITY,
     UnitType_MINE,
-	UnitType_FACTORY,
-	UnitType_WALL
+    UnitType_FACTORY,
+    UnitType_WALL
 } UnitType;
 
 typedef struct unit {
     UnitType type;
-    const float attack;
     const float defense;
-    int randShoot;
     char* name;
     bool stuckIn;
     bool engaged;
+    int engagedTicks;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;
+
+typedef struct combatant {
+    const float attack;
+    float attackDist;
+    ComponentMask enemyMask;
+    int attackTime;
+    void (*projConstructor)(struct scene*, Vector pos, Vector tar, float attack, EntityID nation);
+    int randShoot;
+} Combatant;
+ComponentID COMBATANT_COMPONENT_ID;
+
 ComponentID LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
 ComponentID INFANTRY_UNIT_FLAG_COMPONENT_ID;
@@ -97,8 +108,8 @@ ComponentID SHELL_COMPONENT_ID;
 
 typedef struct nation {
     SDL_Color color;
-    ComponentID ownNationFlag;
-    ComponentID enemyNationFlag;
+    ComponentID ownNationFlag; // Flag that determines if an entity belongs to this nation
+    ComponentID enemyNationFlag; // Flag that determines if an entity belongs to enemy nation
     ComponentID controlFlag;
     int coins;
     int ore;
@@ -110,7 +121,7 @@ typedef struct nation {
     const int cavalryCost;
     const int artilleryCost;
     EntityID capital;
-    EntityID enemyNation;
+    EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces;
     int visitedSpacesSize;
 } Nation;

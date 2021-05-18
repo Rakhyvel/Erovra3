@@ -24,6 +24,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
         WALL_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         WALL_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         64,
@@ -42,7 +43,6 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
 
     Unit type = {
         UnitType_WALL,
-        0,
         2.0f
     };
     Scene_Assign(scene, wallID, UNIT_COMPONENT_ID, &type);

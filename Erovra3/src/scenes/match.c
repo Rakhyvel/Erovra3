@@ -162,8 +162,9 @@ void Match_DetectHit(struct scene* scene)
                     splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
                 }
                 health->health -= projectile->attack * splashDamageModifier / unit->defense;
-                if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id)) {
-                    nation->visitedSpaces[(int)(motion->pos.x / 32) + (int)(motion->pos.y / 32) * nation->visitedSpacesSize] = -100;
+                if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id) || Scene_EntityHasComponent(scene, Scene_CreateMask(1, WALL_FLAG_COMPONENT_ID), id)) {
+                    nation->visitedSpaces[(int)(motion->pos.x / 32) + (int)(motion->pos.y / 32) * nation->visitedSpacesSize] = -1;
+                    unit->engagedTicks = 100000;
                 }
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
@@ -176,6 +177,9 @@ void Match_DetectHit(struct scene* scene)
                     // Remove from building map if building
                     if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id)) {
                         terrain_addBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                    }
+                    if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GROUND_UNIT_FLAG_COMPONENT_ID), id)) {
+                        nation->population--;
                     }
                 }
             }
@@ -543,7 +547,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         float dist = Vector_Dist(motion->pos, target->tar);
-        if (dist > 1 || unit->engaged) {
+        if (unit->engaged) {
             continue;
         }
 
@@ -554,13 +558,13 @@ void Match_AIGroundUnitTarget(struct scene* scene)
             for (int x = 0; x < nation->visitedSpacesSize; x++) {
                 Vector point = { x * 32 + 16, y * 32 + 16 };
                 // Tile must be unvisited
-                if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > -1)
+                if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > 0)
                     continue;
                 // If there is an enemy, don't go to unknown spaces, go to enemy spaces
                 if (foundEnemy && nation->visitedSpaces[x + y * nation->visitedSpacesSize] > -1)
                     continue;
 
-                float score = Vector_Dist(motion->pos, point) + 64 * (float)rand() / (float)RAND_MAX;
+                float score = Vector_Dist(motion->pos, point);
 
                 // Must be land
                 if (terrain_getHeight(terrain, point.x, point.y) <= 0.5)
@@ -579,15 +583,21 @@ void Match_AIGroundUnitTarget(struct scene* scene)
         }
 
         if (closestTile.x != -1) {
-            target->tar = closestTile;
-            target->lookat = closestTile;
+            float newDist = Vector_Dist(target->tar, closestTile);
+            if (newDist != dist && foundEnemy) {
+                target->tar = closestTile;
+                target->lookat = closestTile;
+                continue;
+            }
+        }
+        if (dist > 1) {
             continue;
         }
 
         // An empty space could not be found, set unit's target randomly
         float randX = (float)(rand()) / (float)RAND_MAX - 0.5;
         float randY = (float)(rand()) / (float)RAND_MAX - 0.5;
-        Vector newTarget = Vector_Add(motion->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 32));
+        Vector newTarget = Vector_Add(motion->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
         if (terrain_lineOfSight(terrain, motion->pos, newTarget)) {
             target->tar = newTarget;
             target->lookat = newTarget;
@@ -751,28 +761,47 @@ void Match_AIInfantryBuild(struct scene* scene)
     }
 }
 
-/*
-	This system goes through all ground units, has them search for the closest 
-	enemy land unit to them, and finally shoot a bullet at them. */
-void Match_BulletAttack(struct scene* scene)
+void Match_AIOrderUnits(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(6, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID, BULLET_ATTACK_FLAG_COMPONENT_ID);
+    const ComponentMask mask = Scene_CreateMask(2, PRODUCER_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
+    EntityID id;
+    ComponentMask nationsDone = 0;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        if (producer->orderTicksRemaining > 0) {
+            continue;
+        }
+        if (rand() % 2 == 0) {
+            Match_PlaceOrder(scene, nation, producer, UnitType_ARTILLERY);
+        } else {
+            Match_PlaceOrder(scene, nation, producer, UnitType_CAVALRY);
+        }
+    }
+}
+
+/*
+	This system goes through all combatants, has them search for the closest 
+	enemy to them, and finally shoot a projectile at them. */
+void Match_CombatantAttack(struct scene* scene)
+{
+    const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Unit*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
-        ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
-
         // Find closest enemy ground unit
-        float closestDist = 68;
+        float closestDist = combatant->attackDist;
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
-        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, LAND_UNIT_FLAG_COMPONENT_ID);
+        const ComponentMask otherMask = Scene_CreateMask(1, MOTION_COMPONENT_ID) | combatant->enemyMask;
         EntityID otherID;
         bool groundUnit = false;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
@@ -783,7 +812,17 @@ void Match_BulletAttack(struct scene* scene)
                 closest = otherID;
                 closestPos = otherMotion->pos;
                 groundUnit = Scene_EntityHasComponent(scene, Scene_CreateMask(1, GROUND_UNIT_FLAG_COMPONENT_ID), otherID);
-                nation->visitedSpaces[(int)(motion->pos.x / 32) + (int)(motion->pos.y / 32) * nation->visitedSpacesSize] = -1;
+                int x = (int)closestPos.x / 32;
+                int y = (int)closestPos.y / 32;
+                nation->visitedSpaces[x + (y * nation->visitedSpacesSize)] = -1;
+                if (x > 0)
+                    nation->visitedSpaces[x - 1 + (y * nation->visitedSpacesSize)] = -1;
+                if (y > 0)
+                    nation->visitedSpaces[x + (y - 1) * nation->visitedSpacesSize] = -1;
+                if (x < (terrain->tileSize * 2) - 1)
+                    nation->visitedSpaces[x + 1 + y * nation->visitedSpacesSize] = -1;
+                if (y < (terrain->tileSize * 2) - 1)
+                    nation->visitedSpaces[x + (y + 1) * nation->visitedSpacesSize] = -1;
             }
         }
 
@@ -796,14 +835,15 @@ void Match_BulletAttack(struct scene* scene)
             unit->engaged = false;
             continue;
         }
-        // If enemies were within 48, tar = pos, stuck in
+
+        // Set flags indicating that unit is engaged in battle
         if (groundUnit) {
             target->tar = motion->pos;
         }
         target->lookat = closestPos;
         unit->stuckIn = true;
-        // engaged = true, engagedTicks = whatever
         unit->engaged = true;
+        unit->engagedTicks = (int)(128.0f / motion->speed);
 
         // Shoot enemy units if found
         Vector displacement = Vector_Sub(motion->pos, closestPos);
@@ -815,72 +855,8 @@ void Match_BulletAttack(struct scene* scene)
         while (deflection < 0) {
             deflection += M_PI * 2;
         }
-        if (health->aliveTicks % (30 + unit->randShoot) == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
-            unit->randShoot = (int)(rand() % 15);
-            Bullet_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
-        }
-        int x = (int)closestPos.x / 32;
-        int y = (int)closestPos.y / 32;
-        if (x > 0)
-            nation->visitedSpaces[x - 1 + y] = -20;
-        if (y > 0)
-            nation->visitedSpaces[x + y - 1] = -20;
-        if (x < (terrain->tileSize * 2) - 1)
-            nation->visitedSpaces[x + 1 + y] = -20;
-        if (y < (terrain->tileSize * 2) - 1)
-            nation->visitedSpaces[x + y + 1] = -20;
-    }
-}
-
-/*
-	Does the same thing as BulletAttack, but has different range parameters and shoots a shell instead */
-void Match_ShellAttack(struct scene* scene)
-{
-    const ComponentMask renderMask = Scene_CreateMask(6, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID, SHELL_ATTACK_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-
-        ComponentID otherNation = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
-
-        // Find closest enemy ground unit
-        float closestDist = 100;
-        EntityID closest = INVALID_ENTITY_INDEX;
-        Vector closestPos = { -1, -1 };
-        const ComponentMask otherMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, otherNation, LAND_UNIT_FLAG_COMPONENT_ID);
-        EntityID otherID;
-        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
-            float dist = Vector_Dist(otherMotion->pos, motion->pos);
-            if (dist < closestDist) {
-                closestDist = dist;
-                closest = otherID;
-                closestPos = otherMotion->pos;
-            }
-        }
-
-        // If no enemy units were found, stuckin and engaged are false, skip
-        if (closestDist < 64 || closest == INVALID_ENTITY_INDEX) {
-            unit->stuckIn = false;
-            unit->engaged = false;
-            continue;
-        }
-        // If enemies were within 48, tar = pos, stuck in
-        target->tar = motion->pos;
-        target->lookat = closestPos;
-        unit->stuckIn = true;
-        // engaged = true, engagedTicks = whatever
-        unit->engaged = true;
-
-        // Shoot enemy units if found
-        Vector displacement = Vector_Sub(motion->pos, closestPos);
-        float deflection = Vector_Angle(displacement);
-        if (health->aliveTicks % 120 == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
-            Shell_Create(scene, motion->pos, closestPos, unit->attack, simpleRenderable->nation);
+        if (health->aliveTicks % combatant->attackTime == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
+            combatant->projConstructor(scene, motion->pos, closestPos, combatant->attack, simpleRenderable->nation);
         }
     }
 }
@@ -986,21 +962,21 @@ void Match_Produce(struct scene* scene)
 
         if (nation->population < nation->popCapacity) {
             producer->orderTicksRemaining--;
-        }
-        if (producer->orderTicksRemaining == 0) {
-            if (producer->order == UnitType_CAVALRY) {
-                Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
-                nation->population++;
-            } else if (producer->order == UnitType_ARTILLERY) {
-                Artillery_Create(scene, motion->pos, simpleRenderable->nation);
-                nation->population++;
-            }
+            if (producer->orderTicksRemaining == 0) {
+                if (producer->order == UnitType_CAVALRY) {
+                    Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->population++;
+                } else if (producer->order == UnitType_ARTILLERY) {
+                    Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->population++;
+                }
 
-            if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, producer->order)) {
-                producer->order = INVALID_ENTITY_INDEX;
-                GUI_SetContainerShown(scene, focusable->guiContainer, false);
-                focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
-                GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+                if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, producer->order)) {
+                    producer->order = INVALID_ENTITY_INDEX;
+                    GUI_SetContainerShown(scene, focusable->guiContainer, false);
+                    focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
+                    GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+                }
             }
         }
     }
@@ -1018,6 +994,9 @@ void Match_SimpleRender(struct scene* scene)
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         SDL_FRect rect = { 0, 0, 0, 0 };
+        if (simpleRenderable->hidden) {
+            continue;
+        }
 
         terrain_translate(&rect, motion->pos.x, motion->pos.y, simpleRenderable->width, simpleRenderable->height);
         Texture_Draw(simpleRenderable->shadow, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
@@ -1070,9 +1049,29 @@ void Match_UpdateGUIElements(struct scene* scene)
     }
 }
 
+/*
+	Goes through each unit AI entity unit. Updates engaged ticks. 
+	Units are hidden when their engaged ticks are less than 0. */
+void Match_UpdateFogOfWar(struct scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, UNIT_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+
+        unit->engagedTicks--;
+        //simpleRenderable->hidden = unit->engagedTicks < 0;
+    }
+}
+
 void matchUpdate(Scene* match)
 {
     terrain_update(terrain);
+
+    Match_AIUpdateVisitedSpaces(match);
+
+    Match_DetectHit(match);
 
     Match_ClearSelection(match);
     Match_ClearFocus(match);
@@ -1080,18 +1079,15 @@ void matchUpdate(Scene* match)
     Match_Select(match);
     Match_Focus(match);
 
-    Match_AIUpdateVisitedSpaces(match);
     Match_AIGroundUnitTarget(match);
+    Match_AIOrderUnits(match);
     Match_AIInfantryBuild(match);
 
     Match_Target(match);
     Match_Motion(match);
     Match_ShellMove(match);
     Match_SetVisitedSpace(match);
-
-    Match_DetectHit(match);
-    Match_BulletAttack(match);
-    Match_ShellAttack(match);
+    Match_CombatantAttack(match);
 
     Match_UpdateCity(match);
     Match_DestroyCoins(match);
@@ -1108,12 +1104,15 @@ void matchUpdate(Scene* match)
     } else if (g->gt) {
         g->dt *= 0.5;
         printf("%f\n", g->dt);
+    } else if (g->ctrl) {
+        Game_PopScene(match);
     }
 }
 
 void matchRender(Scene* match)
 {
     terrain_render(terrain);
+    Match_UpdateFogOfWar(match);
     Match_SimpleRender(match);
     Match_UpdateGUIElements(match);
     GUI_Render(match);
@@ -1260,8 +1259,8 @@ void Match_FactoryOrderCavalry(Scene* scene)
     }
 }
 
-// TODO: This and the OrderCavalry function are super similar. Way too similar to not be simplified
-//			I was thinking about adding a system for units, basically a lookup table by name/id for values
+/*
+	Called by factory "Build Artillery" button. Sets the producer that is focused to producer artillery */
 void Match_FactoryOrderArtillery(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
@@ -1303,6 +1302,9 @@ void Match_FactoryCancelOrder(Scene* scene)
     }
 }
 
+/*
+	RockerSwitch callback that updates the repeat value of a producer based on the
+	value of the rocker switch */
 void Match_FactoryReOrder(Scene* scene, bool value)
 {
     const ComponentMask focusMask = Scene_CreateMask(2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
@@ -1322,7 +1324,7 @@ void Match_FactoryReOrder(Scene* scene, bool value)
 Scene* Match_Init()
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(32 * 64); // 8 is smallest for good reasons
+    terrain = terrain_create(12 * 64); // 8 is smallest for good reasons
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });

@@ -2,10 +2,14 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "components.h"
+#include "shell.h"
 
 EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID artilleryID = Scene_NewEntity(scene);
+
+    Nation* nationStruct = (Unit*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -26,6 +30,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         ARTILLERY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -44,10 +49,18 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_ARTILLERY,
-        2,
         0.5f
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
+
+    Combatant combatant = {
+        2.0f,
+        100.0f,
+        Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        120,
+        &Shell_Create
+    };
+    Scene_Assign(scene, artilleryID, COMBATANT_COMPONENT_ID, &combatant);
 
     Selectable selectable = {
         false,

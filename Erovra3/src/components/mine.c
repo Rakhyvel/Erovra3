@@ -29,6 +29,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         MINE_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         BUILDING_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -47,7 +48,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
 		UnitType_MINE,
-        0,
         0.05
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);

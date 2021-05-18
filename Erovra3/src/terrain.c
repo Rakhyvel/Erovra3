@@ -29,7 +29,6 @@ static int oldWheel = 0;
 	texture. */
 struct terrain* terrain_create(int mapSize)
 {
-    srand((unsigned)time(0));
     struct terrain* retval = calloc(1, sizeof(struct terrain));
     if (!retval) {
         fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
@@ -37,7 +36,7 @@ struct terrain* terrain_create(int mapSize)
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / 4);
+    retval->map = terrain_perlin(retval->size, retval->size / 8);
     retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8);
     retval->buildings = (EntityID*)malloc((mapSize * mapSize) / (64 * 64) * sizeof(EntityID));
     if (!retval->buildings) {
@@ -59,8 +58,9 @@ struct terrain* terrain_create(int mapSize)
     terrain_normalize(retval->ore, retval->tileSize);
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            //retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5f + 0.5f; // plains
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.8f - 0.1f; // islands
+            float z = retval->map[x + y * retval->size];
+            retval->map[x + y * retval->size] = sin(2 * M_PI * z) / (2 * M_PI) + z;
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5 + 0.4; // islands
         }
     }
     paintMap(retval);
@@ -260,10 +260,10 @@ float terrain_bicosineInterpolation(int x0, int y0, int cellSize, float* map, in
     int x1 = x0 + cellSize;
     int y1 = y0 + cellSize;
     if (x1 >= mapWidth) {
-        x1 = 0;
+        x1 -= cellSize;
     }
     if (y1 >= mapWidth) {
-        y1 = 0;
+        y1 -= cellSize;
     }
 
     float top = terrain_cosineInterpolation(x0, map[y0 * mapWidth + x0], x0 + cellSize, map[(int)(y0 * mapWidth + x1)], x2);
@@ -284,6 +284,7 @@ Returns: A pointer to the begining of the map. Map is row major ordered as an ar
 */
 float* terrain_generate(int mapSize, int cellSize, float amplitude)
 {
+    srand((unsigned)time(0));
     // Allocate map
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
@@ -304,7 +305,7 @@ float* terrain_generate(int mapSize, int cellSize, float amplitude)
         int y1 = (int)((y / cellSize) * cellSize); // y coord of point's cell
 
         if (x != x1 || y != y1) {
-            retval[x + y * mapSize] = terrain_bilinearInterpolation(x1, y1, cellSize, retval, mapSize, (float)x, (float)y);
+            retval[x + y * mapSize] = terrain_bicosineInterpolation(x1, y1, cellSize, retval, mapSize, (float)x, (float)y);
         }
     }
     return retval;
@@ -313,6 +314,9 @@ float* terrain_generate(int mapSize, int cellSize, float amplitude)
 /**
 Generates a perlin noise map. Map has fractal detail, so detail on higher
 scales and detail on lower scales. This makes it good for terrain
+
+Creates a base noise map at a high amplitude, and low frequency. Layers on more
+and more maps with decresing amplitude and increasing frequency.
 
 Parameters: int mapSize - Height and width of the map (maps are squares)
 			int cellSize - Size of cells. Lower values = lower grain, higher values = higher grain
@@ -328,7 +332,6 @@ float* terrain_perlin(int mapSize, int cellSize)
     float* retval = terrain_generate(mapSize, cellSize, amplitude);
     cellSize /= 2;
     amplitude /= 2;
-
 
     while (cellSize > 2) {
         float* map = terrain_generate(mapSize, cellSize, amplitude);
@@ -408,7 +411,8 @@ inline float terrain_getZoom()
     return terrain_zoom;
 }
 
-float terrain_getOre(struct terrain* terrain, int x, int y) {
+float terrain_getOre(struct terrain* terrain, int x, int y)
+{
     x /= 64;
     y /= 64;
     return terrain->ore[x + y * (terrain->tileSize)];
@@ -607,7 +611,13 @@ struct vector findBestLocation(struct terrain* terrain, struct vector start)
         for (int x = 0; x < terrain->size; x++) {
             struct vector point = { x * 64 + 32, y * 64 + 32 };
             // Must be land
-            if (terrain_getHeight(terrain, point.x, point.y) <= 0.5)
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 32, 0 })))
+                continue;
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { -32, 0 })))
+                continue;
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, 32 })))
+                continue;
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, -32 })))
                 continue;
             double score = Vector_Dist(start, point);
 

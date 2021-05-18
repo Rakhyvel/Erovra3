@@ -12,6 +12,7 @@ void Components_Init(struct scene* scene)
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
 
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
+    COMBATANT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Combatant));
     GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     INFANTRY_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);

@@ -2,10 +2,13 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "components.h"
+#include "bullet.h"
 
 EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID cavalryID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Unit*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -26,6 +29,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
         CAVALRY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -44,10 +48,18 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_CAVALRY,
-        0.5,
         0.5f
     };
     Scene_Assign(scene, cavalryID, UNIT_COMPONENT_ID, &type);
+
+    Combatant combatant = {
+        0.5f,
+        68.0f,
+        Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        30,
+        &Bullet_Create
+    };
+    Scene_Assign(scene, cavalryID, COMBATANT_COMPONENT_ID, &combatant);
 
     Selectable selectable = {
         false,

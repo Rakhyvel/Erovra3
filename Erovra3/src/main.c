@@ -16,9 +16,22 @@ Production management:
 	Factories should be able to build things like bombs, wings, guns; intermediate products for units
 
 Strategy and logistics:
-	Can set up "task forces" or another better name. Can then assign task forces of task forces to manipulate on the field
+	Can set up "task forces" or another better name (formation?). Can then assign task forces of task forces to manipulate on the field
 	Set up and plan invasions
 	Maybe a supply line that you'd have to maintain? That'd be hard tho
+
+
+
+Code guidelines:
+	Messy logic is fine as long as it is necessary
+	Long functions are fine as long as they are necessary
+	Similar functions that can be parameratized into one function should be parameritized into one function
+	Utility functions (not systems) that are only called from one place, and are not recursive, should be inlined
+	Update comments for a function when you change something in the method
+	Add line comments to a piece of code when you spend time trying to understand a piece of code
+	Each file should have a header comment giving its purpose
+	Each function should have a comment should tell what it takes in, does, and returns
+	THE LESS LINES OF CODE THE BETTER!
 */
 
 #include <SDL.h>

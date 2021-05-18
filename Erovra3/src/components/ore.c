@@ -27,6 +27,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         ORE_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         INVALID_TEXTURE_ID,
+		false,
         false,
         nationID,
         20,

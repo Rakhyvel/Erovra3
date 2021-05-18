@@ -27,6 +27,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
 		BUILDING_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -45,7 +46,6 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Unit type = {
 		UnitType_CITY,
-        0,
         1
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);

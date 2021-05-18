@@ -1,6 +1,7 @@
 #pragma once
-#include "../textures.h"
 #include "../scenes/match.h"
+#include "../textures.h"
+#include "bullet.h"
 #include "components.h"
 
 /*
@@ -10,6 +11,8 @@
 EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID infantryID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Unit*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -30,6 +33,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         INFANTRY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
+		false,
         false,
         nation,
         32,
@@ -47,11 +51,19 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-		UnitType_INFANTRY,
-        0.5f,
+        UnitType_INFANTRY,
         0.5f
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
+
+    Combatant combatant = {
+        0.5f,
+        68.0f,
+        Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        30,
+        &Bullet_Create
+    };
+    Scene_Assign(scene, infantryID, COMBATANT_COMPONENT_ID, &combatant);
 
     Selectable selectable = {
         false,

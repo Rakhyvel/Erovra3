@@ -61,6 +61,13 @@ void Game_PushScene(Scene* scene)
 }
 
 /*
+	Removes the scene at the top of the scene stack */
+void Game_PopScene(Scene* scene)
+{
+    Arraylist_Pop(g->sceneStack);
+}
+
+/*
 	Starts the game loop. 
 	
 	Runs the update method of the scene at the top of the scene stack 60 times / second
