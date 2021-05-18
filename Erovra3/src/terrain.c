@@ -59,7 +59,8 @@ struct terrain* terrain_create(int mapSize)
     terrain_normalize(retval->ore, retval->tileSize);
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5f + 0.5f;
+            //retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5f + 0.5f; // plains
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.8f - 0.1f; // islands
         }
     }
     paintMap(retval);
@@ -578,6 +579,23 @@ SDL_Color terrain_HSVtoRGB(float hue, float saturation, float value)
 }
 
 /*
+	Takes two positions, checks to see if there is dry land between them */
+bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to)
+{
+    Vector increment = Vector_Normalize(Vector_Sub(to, from));
+    Vector check = { from.x, from.y };
+    float distance = Vector_Dist(from, to);
+    for (int i = 0; i < distance; i++) {
+        check = Vector_Add(check, increment);
+        float height = terrain_getHeight(terrain, check.x, check.y);
+        if (height > 1 || height < 0.5) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
 	Takes in a seed starting location. Searches the entire map for the location 
 	that is closest to the starting point, and is above sea level */
 struct vector findBestLocation(struct terrain* terrain, struct vector start)
@@ -591,9 +609,6 @@ struct vector findBestLocation(struct terrain* terrain, struct vector start)
             // Must be land
             if (terrain_getHeight(terrain, point.x, point.y) <= 0.5)
                 continue;
-            // Gotta start with the goods
-            //if (terrain_getOre(point) <= 0.66)
-            //    continue;
             double score = Vector_Dist(start, point);
 
             // Must have direct line of sight to tile center

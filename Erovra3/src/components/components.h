@@ -76,6 +76,7 @@ typedef struct unit {
 ComponentID UNIT_COMPONENT_ID;
 ComponentID LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
+ComponentID INFANTRY_UNIT_FLAG_COMPONENT_ID;
 ComponentID BUILDING_FLAG_COMPONENT_ID;
 ComponentID WALL_FLAG_COMPONENT_ID;
 
@@ -98,6 +99,7 @@ typedef struct nation {
     SDL_Color color;
     ComponentID ownNationFlag;
     ComponentID enemyNationFlag;
+    ComponentID controlFlag;
     int coins;
     int ore;
     int population;
@@ -109,10 +111,14 @@ typedef struct nation {
     const int artilleryCost;
     EntityID capital;
     EntityID enemyNation;
+    float* visitedSpaces;
+    int visitedSpacesSize;
 } Nation;
 ComponentID NATION_COMPONENT_ID;
 ComponentID HOME_NATION_FLAG_COMPONENT_ID;
 ComponentID ENEMY_NATION_FLAG_COMPONENT_ID;
+ComponentID PLAYER_FLAG_COMPONENT_ID;
+ComponentID AI_FLAG_COMPONENT_ID;
 
 typedef struct city {
     char name[20];

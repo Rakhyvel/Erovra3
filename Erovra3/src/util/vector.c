@@ -27,6 +27,12 @@ struct vector Vector_Scalar(struct vector a, float scalar)
     return (struct vector) { a.x * scalar, a.y * scalar };
 }
 
+float Vector_CabDist(struct vector a, struct vector b)
+{
+    return fabs(a.x - b.x) + fabs(a.y - b.y);
+}
+
+
 /*
 	Finds the euclidian distance between two vectors */
 float Vector_Dist(struct vector a, struct vector b)

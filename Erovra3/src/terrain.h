@@ -40,6 +40,7 @@ void terrain_normalize(float* map, int mapSize);
 float terrain_getHeight(struct terrain*, int x, int y);
 void terrain_setOffset(struct vector);
 float terrain_getZoom();
+bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to);
 
 // Resources
 float terrain_getOre(struct terrain*, int x, int y);

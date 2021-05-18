@@ -50,5 +50,6 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
     Scene_Assign(scene, wallID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, wallID, WALL_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, wallID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    Scene_Assign(scene, wallID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return wallID;
 }

@@ -35,8 +35,8 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0
     };
     Scene_Assign(scene, coinID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
-
     Scene_Assign(scene, coinID, COIN_COMPONENT_ID, NULL);
+    Scene_Assign(scene, coinID, GET_COMPONENT_FIELD(scene, nationID, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return coinID;
 }

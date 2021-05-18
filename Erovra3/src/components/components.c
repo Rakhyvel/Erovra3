@@ -14,6 +14,7 @@ void Components_Init(struct scene* scene)
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
     GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    INFANTRY_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     BUILDING_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
 	WALL_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     BULLET_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
@@ -30,6 +31,8 @@ void Components_Init(struct scene* scene)
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
     HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     ENEMY_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    PLAYER_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    AI_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
 
     HOVERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Hoverable));
     SELECTABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Selectable));

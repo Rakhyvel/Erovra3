@@ -37,6 +37,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
     Scene_Assign(scene, oreID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Scene_Assign(scene, oreID, ORE_COMPONENT_ID, NULL);
+    Scene_Assign(scene, oreID, GET_COMPONENT_FIELD(scene, nationID, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return oreID;
 }

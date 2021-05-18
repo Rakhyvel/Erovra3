@@ -48,7 +48,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
 		UnitType_INFANTRY,
-        0.1f,
+        0.5f,
         0.5f
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
@@ -72,6 +72,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, infantryID, INFANTRY_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return infantryID;
 }
