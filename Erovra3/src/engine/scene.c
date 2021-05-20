@@ -138,6 +138,26 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 }
 
 /*
+	Takes in an entity ID, and a componentID. Unassigns the component from the
+	entity's component mask
+	
+	Sequential unassigns of the same entity and component id are allowed. This
+	means you can unassign a component to an entity that does not have the 
+	component assigned. (Might change?) */
+void Scene_Unassign(struct scene* scene, EntityID id, ComponentID componentID)
+{
+    if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
+        PANIC("Invalid entity index");
+    } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
+        PANIC("Invalid entity index");
+    } else if (scene->components[componentID] == NULL) {
+        PANIC("Component id not registered yet");
+    } else {
+        getEntityStruct(scene, id)->mask &= ~((ComponentMask)1 << componentID);
+    }
+}
+
+/*
 	Marks an entity as purged, and ready for deallocation when the purge 
 	function is called 
 	

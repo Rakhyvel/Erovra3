@@ -1,8 +1,8 @@
 #pragma once
 #include "./city.h"
 
-#include "../scenes/match.h"
 #include "../components/components.h"
+#include "../scenes/match.h"
 #include "../textures.h"
 
 /*
@@ -18,22 +18,22 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
-		0,
-		false
+        0,
+        false
     };
     Scene_Assign(scene, cityID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-		BUILDING_SHADOW_TEXTURE_ID,
-		false,
+        BUILDING_SHADOW_TEXTURE_ID,
+        false,
         false,
         nation,
         32,
         32,
-		36,
-		36
+        36,
+        36
     };
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
@@ -45,7 +45,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Scene_Assign(scene, cityID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-		UnitType_CITY,
+        UnitType_CITY,
         1
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
@@ -57,7 +57,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Focusable focusable = {
         false,
-		CITY_FOCUSED_GUI
+        CITY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, FOCUSABLE_COMPONENT_ID, &focusable);
 
@@ -66,8 +66,11 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         name,
         false
     };
+    for (int i = 0; i < 4; i++) {
+        city.buildings[i] = INVALID_ENTITY_INDEX;
+    }
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
-	
+
     Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

@@ -488,6 +488,25 @@ int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terr
     return retval;
 }
 
+EntityID terrain_adjacentMask(struct scene* scene, ComponentID mask, struct terrain* terrain, int x1, int y1)
+{
+    x1 /= 64;
+    y1 /= 64;
+    int closestDist = terrain->size * 2;
+    for (int x = 0; x < terrain->tileSize; x++) {
+        for (int y = 0; y < terrain->tileSize; y++) {
+            EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
+            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+                int dist = abs(x1 - x) + abs(y1 - y);
+                if (dist == 1) {
+                    return buildingID;
+                }
+            }
+        }
+    }
+    return INVALID_ENTITY_INDEX;
+}
+
 /*
 	Takes in a pointer to an FRect struct, the position and size of a sprite. 
 	Translates and scales the rect based on the offset and zoom */

@@ -27,7 +27,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         ORE_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         INVALID_TEXTURE_ID,
-		false,
+		nation->controlFlag == AI_FLAG_COMPONENT_ID,
         false,
         nationID,
         20,

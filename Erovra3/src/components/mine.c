@@ -1,12 +1,12 @@
 #pragma once
+#include "mine.h"
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "components.h"
-#include "mine.h"
 
 /*
 	Creates a mine */
-EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation) 
+EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
 {
     EntityID mineID = Scene_NewEntity(scene);
     Motion motion = {
@@ -29,7 +29,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         MINE_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         BUILDING_SHADOW_TEXTURE_ID,
-		false,
+        false,
         false,
         nation,
         32,
@@ -47,7 +47,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, mineID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-		UnitType_MINE,
+        UnitType_MINE,
         0.05
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);

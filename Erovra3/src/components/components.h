@@ -134,6 +134,7 @@ ComponentID AI_FLAG_COMPONENT_ID;
 typedef struct city {
     char name[20];
     bool isCapital;
+    EntityID buildings[4]; // Corresponds to NWSE cardinal directions
 } City;
 ComponentID CITY_COMPONENT_ID;
 
@@ -141,6 +142,7 @@ typedef struct producer {
     int orderTicksRemaining;
     UnitType order;
     bool repeat;
+    EntityID homeCity;
 } Producer;
 ComponentID PRODUCER_COMPONENT_ID;
 

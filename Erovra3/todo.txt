@@ -110,8 +110,7 @@ x Add AI controller system
 	x Infantry build
 	x Building build
 x Fog of war
-- Buildings should be "of" cities, cities should be captured not destroyed
-- Mines should be captured as well
+x Buildings should be "of" cities, cities should be captured not destroyed
 
 
 3.6.x- Airplanes
@@ -165,9 +164,12 @@ x Fog of war
 - Get better building images, make buildings close to their home city
 	- Put progress bar above factories (it looks good)
 - Fix building hover (probably should be none)
+- Factories, airfields should be "close" to their respective cities
+	- Ports should not, since they need to be in the center of a tile, an in water
 
 
 3.9.x- Fun "maybe" stuff
+- Farms, food
 - Mines (as in explode mines, not ore mines)
 
 3.10.x- Multiplayer

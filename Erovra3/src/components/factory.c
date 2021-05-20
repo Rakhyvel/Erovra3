@@ -1,11 +1,10 @@
 #pragma once
 #include "./factory.h"
-
 #include "../components/components.h"
 #include "../scenes/match.h"
 #include "../textures.h"
 
-EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
+EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
 {
     EntityID factoryID = Scene_NewEntity(scene);
     Motion motion = {
@@ -28,7 +27,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
         FACTORY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         BUILDING_SHADOW_TEXTURE_ID,
-		false,
+        false,
         false,
         nation,
         32,
@@ -46,7 +45,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, factoryID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-		UnitType_FACTORY,
+        UnitType_FACTORY,
         1
     };
     Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
@@ -64,12 +63,12 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation)
 
     Producer producer = {
         -1,
-		INVALID_ENTITY_INDEX,
-		false
+        INVALID_ENTITY_INDEX,
+        false,
+		homeCity
     };
     Scene_Assign(scene, factoryID, PRODUCER_COMPONENT_ID, &producer);
 
-    Scene_Assign(scene, factoryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, factoryID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);

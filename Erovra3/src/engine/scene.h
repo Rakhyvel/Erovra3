@@ -77,6 +77,9 @@ EntityID Scene_NewEntity(struct scene*);
 	Assigns a component to an entity, changing its bitmask */
 void Scene_Assign(struct scene*, EntityID, ComponentID, void* componentData);
 /*
+	Unassigns a component to an entity */
+void Scene_Unassign(struct scene* scene, EntityID id, ComponentID componentID);
+/*
 	Marks an entity for deletion the next update */
 void Scene_MarkPurged(struct scene*, EntityID id);
 void Scene_Purge(struct scene*);
