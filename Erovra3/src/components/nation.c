@@ -23,6 +23,24 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
         15, // cavalry cost
         15 // artillery cost
     };
+    nation.resources[ResourceType_COIN] = 45;
+    nation.resources[ResourceType_ORE] = 0;
+    nation.resources[ResourceType_POPULATION] = 1;
+    nation.resources[ResourceType_POPULATION_CAPACITY] = 3;
+
+    nation.costs[ResourceType_COIN][UnitType_CITY] = 5;
+    nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
+    nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
+    nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
+
+    nation.costs[ResourceType_ORE][UnitType_CITY] = 0;
+    nation.costs[ResourceType_ORE][UnitType_FACTORY] = 0;
+    nation.costs[ResourceType_ORE][UnitType_MINE] = 0;
+    nation.costs[ResourceType_ORE][UnitType_CAVALRY] = 5;
+    nation.costs[ResourceType_ORE][UnitType_ARTILLERY] = 5;
+
     nation.visitedSpacesSize = mapSize / 32;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));
     Scene_Assign(scene, nationID, controlFlag, NULL);

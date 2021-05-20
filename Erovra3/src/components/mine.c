@@ -3,6 +3,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "components.h"
+#include "ore.h"
 
 /*
 	Creates a mine */
@@ -52,12 +53,16 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
+    ResourceProducer resourceProducer = {
+        1.0f / terrain_getOre(terrain, pos.x, pos.y),
+        &Ore_Create
+    };
+    Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
+
     Hoverable hoverable = {
         false,
     };
     Scene_Assign(scene, mineID, HOVERABLE_COMPONENT_ID, &hoverable);
-
-    Scene_Assign(scene, mineID, MINE_COMPONENT_ID, NULL);
 
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);

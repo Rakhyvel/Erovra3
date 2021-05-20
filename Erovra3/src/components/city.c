@@ -1,9 +1,9 @@
 #pragma once
 #include "./city.h"
-
 #include "../components/components.h"
 #include "../scenes/match.h"
 #include "../textures.h"
+#include "./coin.h"
 
 /*
 	Takes in a scene, and some information for a city entity. Registers a new 
@@ -50,6 +50,20 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
+	Producer producer = {
+        6000,
+        UnitType_INFANTRY,
+        true,
+        INVALID_ENTITY_INDEX
+    };
+    Scene_Assign(scene, cityID, PRODUCER_COMPONENT_ID, &producer);
+
+    ResourceProducer resourceProducer = {
+        0.75,
+        &Coin_Create
+    };
+    Scene_Assign(scene, cityID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
+
     Hoverable hoverable = {
         false,
     };
@@ -57,7 +71,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Focusable focusable = {
         false,
-        CITY_FOCUSED_GUI
+		FACTORY_BUSY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, FOCUSABLE_COMPONENT_ID, &focusable);
 

@@ -104,7 +104,7 @@ void Game_Run()
             lag -= g->dt;
             g->ticks++;
         }
-        if (elapsedFrames > 16) {
+        if (elapsedFrames > g->dt) {
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
             SDL_RenderClear(g->rend);

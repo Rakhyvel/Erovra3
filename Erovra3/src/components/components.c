@@ -8,7 +8,7 @@ void Components_Init(struct scene* scene)
 {
     MOTION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Motion));
     TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
-	SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
+    SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
 
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
@@ -17,17 +17,18 @@ void Components_Init(struct scene* scene)
     LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     INFANTRY_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     BUILDING_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-	WALL_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    WALL_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     BULLET_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     SHELL_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-	
+
     PROJECTILE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Projectile));
     SHELL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Shell));
 
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Producer));
 
-    COIN_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    RESOURCE_PARTICLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceParticle));
+    RESOURCE_PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceProducer));
 
     NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
     HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);

@@ -8,6 +8,25 @@
 
 void Components_Init(struct scene*);
 
+typedef enum unitType {
+    UnitType_INFANTRY,
+    UnitType_CAVALRY,
+    UnitType_ARTILLERY,
+    UnitType_CITY,
+    UnitType_MINE,
+    UnitType_FACTORY,
+    UnitType_WALL,
+    _UnitType_Length
+} UnitType;
+
+typedef enum resourceType {
+    ResourceType_COIN,
+    ResourceType_ORE,
+    ResourceType_POPULATION,
+    ResourceType_POPULATION_CAPACITY,
+    _ResourceType_Length
+} ResourceType;
+
 /*
 		Contains basic data for positioning an entity in the world space, as
    well as moving the entity with a target and velocity */
@@ -55,16 +74,6 @@ typedef struct health {
 } Health;
 ComponentID HEALTH_COMPONENT_ID;
 
-typedef enum unitType {
-    UnitType_INFANTRY,
-    UnitType_CAVALRY,
-    UnitType_ARTILLERY,
-    UnitType_CITY,
-    UnitType_MINE,
-    UnitType_FACTORY,
-    UnitType_WALL
-} UnitType;
-
 typedef struct unit {
     UnitType type;
     const float defense;
@@ -111,15 +120,8 @@ typedef struct nation {
     ComponentID ownNationFlag; // Flag that determines if an entity belongs to this nation
     ComponentID enemyNationFlag; // Flag that determines if an entity belongs to enemy nation
     ComponentID controlFlag;
-    int coins;
-    int ore;
-    int population;
-    int popCapacity;
-    int cityCost;
-    int factoryCost;
-    int mineCost;
-    const int cavalryCost;
-    const int artilleryCost;
+    int resources[_ResourceType_Length];
+    int costs[_ResourceType_Length][_UnitType_Length];
     EntityID capital;
     EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces;
@@ -146,10 +148,16 @@ typedef struct producer {
 } Producer;
 ComponentID PRODUCER_COMPONENT_ID;
 
-ComponentID MINE_COMPONENT_ID;
+typedef struct resourceParticle {
+    ResourceType type;
+} ResourceParticle;
+ComponentID RESOURCE_PARTICLE_COMPONENT_ID;
 
-ComponentID COIN_COMPONENT_ID;
-ComponentID ORE_COMPONENT_ID;
+typedef struct resourceProducer {
+    float produceRate;
+    void (*particleConstructor)(struct scene* scene, Vector pos, EntityID nationID);
+} ResourceProducer;
+ComponentID RESOURCE_PRODUCER_COMPONENT_ID;
 
 typedef struct hoverable {
     bool isHovered;

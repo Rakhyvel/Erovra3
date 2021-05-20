@@ -111,16 +111,45 @@ x Add AI controller system
 	x Building build
 x Fog of war
 x Buildings should be "of" cities, cities should be captured not destroyed
+x Nations should have resource array, with resource ID
+x Resource particle component
+x Resource generator component, for cities and mines. Generates resource particle every tick
+x Cities should be producers, of infantry
 
 
-3.6.x- Airplanes
+3.6.x- Boats
+- Add ports
+	- Need to be built in water
+	- A certain amount of bays
+		- Can store ships in each bay
+		- Can repair ships in a bay
+		- Can load ships with units in a bay
+		- 
+- Add ships      
+	- Ships should glide and drift, like they're on real water
+		- Probably have some kind of friction force, and stuff
+		- Ship determines best turn and speed, player just needs to enter targets for ships
+	- Stats		 ( A ,  D ,  S )
+	- Transport  (-,   1/4,   2)	0.5
+		- Can carry ground units
+		- Does not need a port to load/deploy units
+	- Destroyer  (1/2, 1/2,   2)	0.5
+		- Torpedos, artillery, AA
+	- Cruiser    (  1,   1,   1)	1
+		- Torpedos, artillery, AA
+		- Can carry ground units
+	- Battleship (  2,   2, 1/2)	2
+		- Torpedos, artillery, AA
+		- Can carry ground units
+		- Can carry transport ships
+	- ACC        (   ,   4, 1/2)	4
+		- AA
+		- Can carry planes (hold off until 3.7)
+
+
+3.7.x- Airplanes
 - Add airplanes
 - Add airfields
-
-
-3.7.x- Boats
-- Add ports
-- Add ships
 
 
 3.8.x- Prettify
@@ -138,14 +167,9 @@ x Buildings should be "of" cities, cities should be captured not destroyed
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 - Add sound
-	- Sound for gunfire
-	- Sound for marching when giving order
-	- Sound for shell shoot
-	- Sound for shell explosion
-	- Sound when building a building
-	- Small sound when doing any action button basically
-	- SOUND ANY TIME AN ACTION IS DONE
+	- SOUND ANY TIME AN ORDER IS GIVEN
 	- SOUND ANY TIME AN ENTITY IS SPAWNED
+	- sound should get quieter as it gets farther from the camera, inverse square
 - Add particles
 	- Shell explosion particles, maybe particles on its trajectory
 - Add animations
@@ -170,7 +194,12 @@ x Buildings should be "of" cities, cities should be captured not destroyed
 
 3.9.x- Fun "maybe" stuff
 - Farms, food
-- Mines (as in explode mines, not ore mines)
+- Mines (as in anti personel mines, not mines for ore)
+- Training units (haha) of people
+	- In order to build cavalry, you'd need to train people to be tankers etc
+	- After training is done, increases trained score for the respective skills
+	- Unskilled workers would work in farms/factories/ports/airfields etc
+- Units retreat
 
 3.10.x- Multiplayer
 - Multiplayer
