@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
+/*
+	Halts the program, allows me to see stack trace when something goes wrong */
 void debug_panic(const char* file, int line, const char* function,
     const char* message, ...) {
     va_list args;

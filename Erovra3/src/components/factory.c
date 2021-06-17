@@ -4,6 +4,8 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 
+/*
+	Creates a factory entity */
 EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
 {
     EntityID factoryID = Scene_NewEntity(scene);
@@ -65,7 +67,9 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         -1,
         INVALID_ENTITY_INDEX,
         false,
-		homeCity
+        homeCity,
+        FACTORY_READY_FOCUSED_GUI,
+        FACTORY_BUSY_FOCUSED_GUI
     };
     Scene_Assign(scene, factoryID, PRODUCER_COMPONENT_ID, &producer);
 

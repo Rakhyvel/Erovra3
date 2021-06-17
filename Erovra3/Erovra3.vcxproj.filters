@@ -108,6 +108,12 @@
     <ClCompile Include="src\components\wall.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\port.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\battleship.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -189,6 +195,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\wall.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\port.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\battleship.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

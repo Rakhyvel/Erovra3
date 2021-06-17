@@ -12,7 +12,6 @@
 EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
-    printf("%d\n", cityID);
     Motion motion = {
         pos,
         0.5f,
@@ -51,10 +50,12 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
 	Producer producer = {
-        6000,
-        UnitType_INFANTRY,
-        true,
-        INVALID_ENTITY_INDEX
+        -1,
+        INVALID_ENTITY_INDEX,
+        false,
+        INVALID_ENTITY_INDEX,
+		CITY_READY_FOCUSED_GUI,
+		CITY_BUSY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, PRODUCER_COMPONENT_ID, &producer);
 
@@ -71,7 +72,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Focusable focusable = {
         false,
-		FACTORY_BUSY_FOCUSED_GUI
+		CITY_READY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, FOCUSABLE_COMPONENT_ID, &focusable);
 

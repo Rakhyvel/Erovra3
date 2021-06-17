@@ -1,6 +1,7 @@
 #pragma once
 #include "match.h"
 #include "../components/artillery.h"
+#include "../components/battleship.h"
 #include "../components/bullet.h"
 #include "../components/cavalry.h"
 #include "../components/city.h"
@@ -11,6 +12,7 @@
 #include "../components/mine.h"
 #include "../components/nation.h"
 #include "../components/ore.h"
+#include "../components/port.h"
 #include "../components/shell.h"
 #include "../components/wall.h"
 #include "../engine/gameState.h"
@@ -37,7 +39,7 @@ EntityID orderLabel;
 EntityID timeLabel;
 EntityID autoReOrderRockerSwitch;
 
-static const int cityPop = 3;
+static const int cityPop = 2;
 static const float taxRate = 0.25f;
 static const int ticksPerLabor = 400;
 
@@ -61,6 +63,11 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, UnitType
     return true;
 }
 
+/*
+	Checks whether a city can be built for a nation at a position. If so, creates
+	a new city, and deducts the approriate resources.
+	
+	Returns whether a city was/can be built */
 bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -77,12 +84,17 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     return false;
 }
 
+/*
+	Checks whether a mine can be built for a nation at a position. If so, creates
+	a new mine, and deducts the approriate resources.
+	
+	Returns whether a mine was/can be built  */
 bool Match_BuyMine(struct scene* scene, EntityID nationID, Vector pos)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (int)(pos.x / 64) * 64 + 32;
     pos.y = (int)(pos.y / 64) * 64 + 32;
-    if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && terrain_getBuildingAt(terrain, pos.x, pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE]) {
+    if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && terrain_getBuildingAt(terrain, pos.x, pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         EntityID mine = Mine_Create(scene, (Vector) { pos.x, pos.y }, nationID, false);
         terrain_addBuildingAt(terrain, mine, pos.x, pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_MINE];
@@ -93,6 +105,10 @@ bool Match_BuyMine(struct scene* scene, EntityID nationID, Vector pos)
     return false;
 }
 
+/*	Checks whether a factory can be built for a nation at a position. If so, creates
+	a new factory, and deducts the approriate resources.
+	
+	Returns whether a factory was/can be built */
 bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -100,9 +116,27 @@ bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
     pos.y = (int)(pos.y / 64) * 64 + 32;
 
     EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, pos.x, pos.y);
-    if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, pos.x, pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY]) {
+    if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, pos.x, pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         EntityID factory = Factory_Create(scene, (Vector) { pos.x, pos.y }, nationID, homeCity);
         terrain_addBuildingAt(terrain, factory, pos.x, pos.y);
+        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FACTORY];
+        nation->costs[ResourceType_COIN][UnitType_FACTORY] *= 2;
+        nation->resources[ResourceType_POPULATION] += 1;
+        return true;
+    }
+    return false;
+}
+
+bool Match_BuyPort(struct scene* scene, EntityID nationID, Vector pos)
+{
+    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
+    pos.x = (int)(pos.x / 64) * 64 + 32;
+    pos.y = (int)(pos.y / 64) * 64 + 32;
+
+    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, pos.x, pos.y);
+    if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) < 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, pos.x, pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+        EntityID port = Port_Create(scene, (Vector) { pos.x, pos.y }, nationID, homeCity);
+        terrain_addBuildingAt(terrain, port, pos.x, pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FACTORY];
         nation->costs[ResourceType_COIN][UnitType_FACTORY] *= 2;
         nation->resources[ResourceType_POPULATION] += 1;
@@ -221,6 +255,12 @@ void Match_Motion(struct scene* scene)
     }
 }
 
+/*
+	Goes through each nation, updates the visited spaces array.
+	
+	The array represents an AI nation's confidence that there are no enemy units
+	at the position of each sub tile. This system makes nations more unsure as time
+	passes*/
 void Match_SetVisitedSpace(struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID);
@@ -463,8 +503,9 @@ void Match_Select(struct scene* scene)
     }
 
     Selectable* hovered = NULL;
-    // If no unit targets were set previously, go thru entities, check to see if they are now hovered and selected
+    // If no unit targets were set previously
     if (!targeted) {
+        // Go thru entities, check to see if they are now hovered and selected
         const ComponentMask transformMask = Scene_CreateMask(3, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
         EntityID id;
         bool anySelected = false;
@@ -477,6 +518,18 @@ void Match_Select(struct scene* scene)
                 selectable->selected = !selectable->selected;
                 anySelected |= selectable->selected;
                 break;
+            }
+        }
+        // Defocus entities if others are selected and not them
+        if (anySelected) {
+            const ComponentMask selectFocusMask = Scene_CreateMask(2, SELECTABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+            for (id = Scene_Begin(scene, selectFocusMask); Scene_End(scene, id); id = Scene_Next(scene, id, selectFocusMask)) {
+                Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+                Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+                if (focusable->focused && !selectable->selected) {
+                    focusable->focused = false;
+                    GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+                }
             }
         }
     }
@@ -545,7 +598,9 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 }
 
 /*
-	 */
+	Moves a ground unit to the closest space where the AI nation believes 
+	contains enemies. If none are found, sets units target to a random 
+	position around the unit */
 void Match_AIGroundUnitTarget(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, GROUND_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
@@ -616,6 +671,10 @@ void Match_AIGroundUnitTarget(struct scene* scene)
     }
 }
 
+/*
+	Checks each infantry unit to see if they can build either a city, a mine, or 
+	a factory in that order. If an infantry can build something, no other 
+	infantry is taken into account */
 void Match_AIInfantryBuild(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(2, INFANTRY_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
@@ -688,12 +747,12 @@ void Match_AIInfantryBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64, y * 64) != INVALID_ENTITY_INDEX)
-                        continue;
-
                     // Only go to empty squares
                     Vector point = { x * 64 + 32, y * 64 + 32 };
                     if (terrain_getHeight(terrain, point.x, point.y) < 0.5)
+                        continue;
+
+                    if (terrain_getOre(terrain, point.x, point.y) < 0.75)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
@@ -771,6 +830,8 @@ void Match_AIInfantryBuild(struct scene* scene)
     }
 }
 
+/*
+	Goes through each producer. If they are not producing anything, sets the order randomly */
 void Match_AIOrderUnits(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(2, PRODUCER_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
@@ -847,11 +908,13 @@ void Match_CombatantAttack(struct scene* scene)
         }
 
         // Set flags indicating that unit is engaged in battle
-        if (groundUnit) {
+        if (groundUnit && combatant->faceEnemy) {
             target->tar = motion->pos;
         }
-        target->lookat = closestPos;
-        unit->stuckIn = true;
+        if (combatant->faceEnemy) {
+            target->lookat = closestPos;
+            unit->stuckIn = true; // Useless?
+        }
         unit->engaged = true;
         unit->engagedTicks = (int)(128.0f / motion->speed);
 
@@ -865,30 +928,27 @@ void Match_CombatantAttack(struct scene* scene)
         while (deflection < 0) {
             deflection += M_PI * 2;
         }
-        if (health->aliveTicks % combatant->attackTime == 0 && fabs(deflection - motion->angle) < 0.2 * motion->speed) {
+        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - motion->angle) < 0.2 * motion->speed || !combatant->faceEnemy)) {
             combatant->projConstructor(scene, motion->pos, closestPos, combatant->attack, simpleRenderable->nation);
         }
     }
 }
 
 /*
-	Every time a unit of labor has passed, one coin is added.
-	
-	An infantry is spawned every 5 minutes. */
-void Match_UpdateCity(struct scene* scene)
+	Creates a resource particle every time a production period has passed */
+void Match_ProduceResources(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, CITY_COMPONENT_ID, HEALTH_COMPONENT_ID);
+    const ComponentMask mask = Scene_CreateMask(1, RESOURCE_PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        City* city = (Motion*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
-        if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY] && health->aliveTicks % 18000 == 0) {
-            Infantry_Create(scene, motion->pos, simpleRenderable->nation);
-            nation->resources[ResourceType_POPULATION]++;
+        int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
+        if (health->aliveTicks % ticks == 0) {
+            resourceProducer->particleConstructor(scene, motion->pos, simpleRenderable->nation);
         }
     }
 }
@@ -919,30 +979,11 @@ void Match_DestroyResourceParticles(struct scene* scene)
 }
 
 /*
-	Every unit of labor ticks, mines create one ore for capital */
-void Match_ProduceResources(struct scene* scene)
-{
-    const ComponentMask mask = Scene_CreateMask(1, RESOURCE_PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
-
-        int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
-        if (health->aliveTicks % ticks == 0) {
-            resourceProducer->particleConstructor(scene, motion->pos, simpleRenderable->nation);
-        }
-    }
-}
-
-/*
 	For every producer, decrements time left for producer. If there are no ticks 
 	left, produces the unit. 
 	
 	If the producer's "repeat" flag is set, repeats the order a second time. */
-void Match_Produce(struct scene* scene)
+void Match_ProduceUnits(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -953,30 +994,40 @@ void Match_Produce(struct scene* scene)
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
 
-        if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY] && --producer->orderTicksRemaining == 0) {
-            if (producer->order == UnitType_INFANTRY) {
-                Infantry_Create(scene, motion->pos, simpleRenderable->nation);
-            } else if (producer->order == UnitType_CAVALRY) {
-                Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
-            } else if (producer->order == UnitType_ARTILLERY) {
-                Artillery_Create(scene, motion->pos, simpleRenderable->nation);
-            } else {
-                PANIC("Producer's can't build that UnitType");
-            }
-            nation->resources[ResourceType_POPULATION]++;
+        if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+            producer->orderTicksRemaining--;
+            if (producer->orderTicksRemaining == 0) {
+                if (producer->order == UnitType_INFANTRY) {
+                    Infantry_Create(scene, motion->pos, simpleRenderable->nation);
+                } else if (producer->order == UnitType_CAVALRY) {
+                    Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+                } else if (producer->order == UnitType_ARTILLERY) {
+                    Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+                } else if (producer->order == UnitType_BATTLESHIP) {
+                    Battleship_Create(scene, motion->pos, simpleRenderable->nation);
+                } else {
+                    PANIC("Producer's can't build that UnitType");
+                }
+                nation->resources[ResourceType_POPULATION]++;
 
-            if (!producer->repeat) {
-                producer->order = INVALID_ENTITY_INDEX;
-                GUI_SetContainerShown(scene, focusable->guiContainer, false);
-                focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
-                GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+                if (!producer->repeat) {
+                    producer->order = INVALID_ENTITY_INDEX;
+                    GUI_SetContainerShown(scene, focusable->guiContainer, false);
+                    focusable->guiContainer = producer->readyGUIContainer;
+                    GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+                } else {
+                    Match_PlaceOrder(scene, nation, producer, producer->order);
+                }
+            } else if (producer->repeat && producer->orderTicksRemaining < 0) {
+                Match_PlaceOrder(scene, nation, producer, producer->order);
             }
-        } else if (producer->repeat && producer->orderTicksRemaining < 0) {
-            Match_PlaceOrder(scene, nation, producer, producer->order);
         }
     }
 }
 
+/*
+	Goes through every producer that isn't a city, sets the nation of the 
+	producer to be the nation of the homeCity */
 void Match_UpdateProducerAllegiance(struct scene* scene)
 {
     const ComponentMask mask = Scene_CreateMask(1, PRODUCER_COMPONENT_ID);
@@ -1074,6 +1125,8 @@ void Match_UpdateFogOfWar(struct scene* scene)
     }
 }
 
+/*
+	Runs each update system, every tick */
 void matchUpdate(Scene* match)
 {
     terrain_update(terrain);
@@ -1100,7 +1153,7 @@ void matchUpdate(Scene* match)
 
     Match_ProduceResources(match);
     Match_DestroyResourceParticles(match);
-    Match_Produce(match);
+    Match_ProduceUnits(match);
     Match_UpdateProducerAllegiance(match);
 
     GUI_Update(match);
@@ -1112,11 +1165,11 @@ void matchUpdate(Scene* match)
     } else if (g->gt) {
         g->dt *= 0.5;
         printf("%f\n", g->dt);
-    } else if (g->ctrl) {
-        Game_PopScene(match);
     }
 }
 
+/*
+	Runs each render system, every screen draw */
 void matchRender(Scene* match)
 {
     terrain_render(terrain);
@@ -1236,6 +1289,23 @@ void Match_InfantryAddWall(Scene* scene)
 
 /*
 	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
+void Match_InfantryAddPort(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        if (focusable->focused) {
+            Match_BuyPort(scene, simpleRenderable->nation, motion->pos);
+        }
+    }
+}
+
+/*
+	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
 void Match_InfantryTestSoil(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
@@ -1266,7 +1336,7 @@ void Match_FactoryOrderCavalry(Scene* scene)
 
         if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_CAVALRY)) {
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = FACTORY_BUSY_FOCUSED_GUI;
+            focusable->guiContainer = producer->busyGUIContainer;
             GUI_SetContainerShown(scene, focusable->guiContainer, true);
         }
     }
@@ -1287,15 +1357,36 @@ void Match_FactoryOrderArtillery(Scene* scene)
 
         if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_ARTILLERY)) {
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = FACTORY_BUSY_FOCUSED_GUI;
+            focusable->guiContainer = producer->busyGUIContainer;
             GUI_SetContainerShown(scene, focusable->guiContainer, true);
         }
     }
 }
 
 /*
-	Called from factory "Cancel Order" button. Cancels the order of the Producer that is focused */
-void Match_FactoryCancelOrder(Scene* scene)
+	Called by factory "Build Artillery" button. Sets the producer that is focused to producer artillery */
+void Match_PortOrderBattleship(Scene* scene)
+{
+    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+
+        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_BATTLESHIP)) {
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->guiContainer = producer->busyGUIContainer;
+            GUI_SetContainerShown(scene, focusable->guiContainer, true);
+        }
+    }
+}
+
+/*
+	Called from producer's "Cancel Order" button. Cancels the order of the Producer that is focused */
+void Match_ProducerCancelOrder(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
     EntityID id;
@@ -1307,9 +1398,11 @@ void Match_FactoryCancelOrder(Scene* scene)
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
         if (focusable->focused) {
-            producer->orderTicksRemaining = -1;
+            producer->orderTicksRemaining = -10;
+            producer->order = -1;
+            producer->repeat = false;
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = FACTORY_READY_FOCUSED_GUI;
+            focusable->guiContainer = producer->readyGUIContainer;
             GUI_SetContainerShown(scene, focusable->guiContainer, true);
         }
     }
@@ -1318,7 +1411,7 @@ void Match_FactoryCancelOrder(Scene* scene)
 /*
 	RockerSwitch callback that updates the repeat value of a producer based on the
 	value of the rocker switch */
-void Match_FactoryReOrder(Scene* scene, bool value)
+void Match_ProducerReOrder(Scene* scene, bool value)
 {
     const ComponentMask focusMask = Scene_CreateMask(2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
     EntityID id;
@@ -1337,7 +1430,7 @@ void Match_FactoryReOrder(Scene* scene, bool value)
 Scene* Match_Init()
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(12 * 64); // 8 is smallest for good reasons
+    terrain = terrain_create(8 * 64, 0.4f); // 8 is smallest for good reasons
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
@@ -1350,29 +1443,59 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
 
-    INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", &Match_InfantryAddCity));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", &Match_InfantryAddMine));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", &Match_InfantryAddFactory));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", &Match_InfantryAddWall));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", &Match_InfantryAddPort));
     GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", &Match_InfantryTestSoil));
     GUI_SetContainerShown(match, INFANTRY_FOCUSED_GUI, false);
 
-    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, FACTORY_READY_FOCUSED_GUI);
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", &Match_FactoryOrderCavalry));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", &Match_FactoryOrderArtillery));
     GUI_SetContainerShown(match, FACTORY_READY_FOCUSED_GUI, false);
 
-    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 10, 100 });
+    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, FACTORY_BUSY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateLabel(match, (Vector) { 0, 0 }, "Factory is busy. Come back later."));
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_FactoryCancelOrder));
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_FactoryReOrder));
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
     GUI_SetContainerShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
+
+    CITY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, CITY_READY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, CITY_READY_FOCUSED_GUI, GUI_CreateLabel(match, (Vector) { 0, 0 }, "Unimplemented. Will eventually have options to recruit engineers/infantry/train laborers"));
+    GUI_SetContainerShown(match, CITY_READY_FOCUSED_GUI, false);
+
+    CITY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, CITY_BUSY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, orderLabel);
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, timeLabel);
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_SetContainerShown(match, CITY_BUSY_FOCUSED_GUI, false);
+
+    PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, PORT_READY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", &Match_FactoryOrderCavalry));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Destroyer", &Match_FactoryOrderArtillery));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", &Match_FactoryOrderCavalry));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Battleship", &Match_PortOrderBattleship));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Air Craft Carrier", &Match_FactoryOrderCavalry));
+    GUI_SetContainerShown(match, PORT_READY_FOCUSED_GUI, false);
+
+    PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, PORT_BUSY_FOCUSED_GUI);
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, orderLabel);
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, timeLabel);
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_SetContainerShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);

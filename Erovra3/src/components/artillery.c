@@ -4,6 +4,8 @@
 #include "components.h"
 #include "shell.h"
 
+/*
+	Creates an artillery entity */
 EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID artilleryID = Scene_NewEntity(scene);
@@ -58,7 +60,8 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         100.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         120,
-        &Shell_Create
+        &Shell_Create,
+		true
     };
     Scene_Assign(scene, artilleryID, COMBATANT_COMPONENT_ID, &combatant);
 

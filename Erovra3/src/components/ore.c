@@ -3,6 +3,8 @@
 #include "coin.h"
 #include "components.h"
 
+/*
+	Creates an ore particle entity */
 EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
 {
     EntityID oreID = Scene_NewEntity(scene);

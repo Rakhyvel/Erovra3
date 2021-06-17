@@ -61,7 +61,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         68.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,
-        &Bullet_Create
+        &Bullet_Create,
+		true
     };
     Scene_Assign(scene, infantryID, COMBATANT_COMPONENT_ID, &combatant);
 

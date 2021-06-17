@@ -115,41 +115,48 @@ x Nations should have resource array, with resource ID
 x Resource particle component
 x Resource generator component, for cities and mines. Generates resource particle every tick
 x Cities should be producers, of infantry
+x AI shouldn't be able to produce without population
+- Factories not adjacent to a city are sometimes counted as adjacent
 
 
 3.6.x- Boats
 - Add ports
-	- Need to be built in water
-	- A certain amount of bays
-		- Can store ships in each bay
-		- Can repair ships in a bay
-		- Can load ships with units in a bay
-		- 
+	x Make sand color less red, more yellow
+	x Add port button for infantry
+	x Need center to be in water
+	x Side thing: if you select another unit it should unfocus the focused
+	x Producers should have two const GUI containers for ready and busy, and a GUI container that says which they are
+	x Can build ships
 - Add ships      
+	- Stats		 ( A ,  D ,  S )
+	- Landing    (-,   1/4,   2)	0.5 (7 coin, 3 ore) rectangle ship
+		- Can carry ground units
+		- Does not need a port to load/deploy units
+	- Destroyer  (1/2, 1/2,   2)	0.5 (15 coin, 5 ore) ship with no stripe
+		- Torpedos
+	- Cruiser    (  1,   1,   1)	1 (30 coin, 10 ore?) ship with one stripe
+		- Artillery
+		- AA
+		- Can carry ground units
+	- Battleship (  2,   2, 1/2)	2 (60 coin, 20 ore) ship with two stripes
+		- Artillery
+		- Can carry ground units
+		- Can carry transport ships
 	- Ships should glide and drift, like they're on real water
 		- Probably have some kind of friction force, and stuff
 		- Ship determines best turn and speed, player just needs to enter targets for ships
-	- Stats		 ( A ,  D ,  S )
-	- Transport  (-,   1/4,   2)	0.5
-		- Can carry ground units
-		- Does not need a port to load/deploy units
-	- Destroyer  (1/2, 1/2,   2)	0.5
-		- Torpedos, artillery, AA
-	- Cruiser    (  1,   1,   1)	1
-		- Torpedos, artillery, AA
-		- Can carry ground units
-	- Battleship (  2,   2, 1/2)	2
-		- Torpedos, artillery, AA
-		- Can carry ground units
-		- Can carry transport ships
-	- ACC        (   ,   4, 1/2)	4
-		- AA
-		- Can carry planes (hold off until 3.7)
+- Ships get stored in port after being built, until they set sail
+	- Can store ships in each bay
+	- Can repair ships in a bay
+	- Can load and unload ships with units in a bay
 
 
 3.7.x- Airplanes
 - Add airplanes
 - Add airfields
+	- Air craft carrier (0 attack, 4 defense, 1/2 speed) 4x cost of cruiser (120 coin, 20 ore)
+		- AA guns
+		- Act as airfield and ship at same time
 
 
 3.8.x- Prettify
@@ -160,6 +167,9 @@ x Cities should be producers, of infantry
 	- Centering of elements (specifically for main menu)
 	- Copy Microsoft design doc
 	- [G]raphics [M]arkup [L]anguage (Would be cool! (How would events work though?))
+		- Each element could be specified with an alphanum ID, could then look up elements by ID and retreive their EntityID
+		- Could also utilize tree structure 
+			GUI_AssignButtonEvent(match, GUI_GetElemByID(match, tree, "root/factory_ready_container/orders_container/build_artillery_button"), &Match_BuildArtillery);
 	- Add in-game pause menu
 - Update action button text in real time
 	- Add resources needed for each cost
@@ -192,20 +202,21 @@ x Cities should be producers, of infantry
 	- Ports should not, since they need to be in the center of a tile, an in water
 
 
-3.9.x- Fun "maybe" stuff
+3.9.x- Cool stuff
+- Simplify/reduce components
 - Farms, food
 - Mines (as in anti personel mines, not mines for ore)
-- Training units (haha) of people
+- Training people
 	- In order to build cavalry, you'd need to train people to be tankers etc
 	- After training is done, increases trained score for the respective skills
 	- Unskilled workers would work in farms/factories/ports/airfields etc
+- Instead of pop cap, have a number of unemployed unskilled, unemployed skilled, etc
 - Units retreat
+- Units have a queue of targets instead of just one, can give them a path to follow
+	- cycles can be achived by enqueueing after dequieing
 
 3.10.x- Multiplayer
 - Multiplayer
-
-
-??? government stuff
 
 
 ??? save game files

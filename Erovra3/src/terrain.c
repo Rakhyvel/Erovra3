@@ -27,8 +27,9 @@ static int oldWheel = 0;
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
 	texture. */
-struct terrain* terrain_create(int mapSize)
+struct terrain* terrain_create(int mapSize, float biome)
 {
+    srand(0);
     struct terrain* retval = calloc(1, sizeof(struct terrain));
     if (!retval) {
         fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
@@ -36,7 +37,7 @@ struct terrain* terrain_create(int mapSize)
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / 8);
+    retval->map = terrain_perlin(retval->size, retval->size / 1);
     retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8);
     retval->buildings = (EntityID*)malloc((mapSize * mapSize) / (64 * 64) * sizeof(EntityID));
     if (!retval->buildings) {
@@ -56,13 +57,13 @@ struct terrain* terrain_create(int mapSize)
     }
     terrain_normalize(retval->map, retval->size);
     terrain_normalize(retval->ore, retval->tileSize);
+    // Scale down for land:water ratio
     for (int y = 0; y < retval->size; y++) {
         for (int x = 0; x < retval->size; x++) {
-            float z = retval->map[x + y * retval->size];
-            retval->map[x + y * retval->size] = sin(2 * M_PI * z) / (2 * M_PI) + z;
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5 + 0.4; // islands
+            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5 + biome; // islands
         }
     }
+    terrain_erode(retval);
     paintMap(retval);
     return retval;
 }
@@ -84,15 +85,21 @@ void paintMap(struct terrain* terrain)
             SDL_Color terrainColor;
             float i = terrain_getHeight(terrain, x, y);
             i = i * 2 - 0.5f;
+            float g = 0;
+            if (x < terrain->size - 2 && y < terrain->size - 2) {
+                Gradient grad = terrain_getGradient(terrain, x, y);
+                g = sqrtf(grad.gradX * grad.gradX + grad.gradY * grad.gradY);
+            }
             if (i < 0.5) {
                 // water
                 i *= 2;
                 i = i * i * i;
-                terrainColor = terrain_HSVtoRGB(210.0f - 15.0f * i, 0.90f - 0.5f * i, 0.35f + 0.35f * i);
+                terrainColor = terrain_HSVtoRGB(210.0f - 15.0f * i, 0.90f - 0.5f * i, 0.3f + 0.35f * i + 0.05 * i * i * i * i * i + g);
             } else {
+                // ground
                 i = (i - 0.5f) * 2;
                 i = sqrtf(i);
-                terrainColor = terrain_HSVtoRGB(30.0f + 100.0f * i, (i * 0.1f) + 0.25f, 0.7f - i * 0.35f);
+                terrainColor = terrain_HSVtoRGB(60.0f + 85.0f * i - 60.0f * g, (i * 0.1f) + 0.25f, 0.7f - i * 0.35f);
             }
             if (terrain_isBorder(terrain->map, terrain->size, terrain->size, x, y, 0.5f, 1)) {
                 terrainColor = (SDL_Color) { 255, 255, 255 };
@@ -326,7 +333,7 @@ Returns: a pointer to a float array, with size of mapSize * mapSize, in row majo
 float* terrain_perlin(int mapSize, int cellSize)
 {
     if (cellSize < 1) {
-        cellSize = mapSize / 8;
+        cellSize = mapSize / 2;
     }
     float amplitude = 1;
     float* retval = terrain_generate(mapSize, cellSize, amplitude);
@@ -386,6 +393,127 @@ void terrain_normalize(float* map, int mapSize)
 }
 
 /*
+	Finds the gradient on the map at a given point */
+Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY)
+{
+    int nodeX = (int)posX;
+    int nodeY = (int)posY;
+
+    float x = posX - nodeX;
+    float y = posY - nodeY;
+
+    int nodeIndexNW = nodeY * terrain->size + nodeX;
+    float heightNW = terrain->map[nodeIndexNW];
+    float heightNE = terrain->map[nodeIndexNW + 1];
+    float heightSW = terrain->map[nodeIndexNW + terrain->size];
+    float heightSE = terrain->map[nodeIndexNW + terrain->size + 1];
+
+    // Calculate droplet's direction of flow with bilinear interpolation of height difference along the edges
+    float gradientX = (heightNE - heightNW) * (1 - y) + (heightSE - heightSW) * y;
+    float gradientY = (heightSW - heightNW) * (1 - x) + (heightSE - heightNE) * x;
+
+    // Calculate height with bilinear interpolation of the heights of the nodes of the cell
+    float height = heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;
+    Gradient grad = { gradientX, gradientY, height };
+
+    return grad;
+}
+
+void terrain_erode(struct terrain* terrain)
+{
+    float inertia = 0.05f;
+    float sedimentCapacityFactor = 400;
+    float minSedimentCapacity = .1f;
+    float depositSpeed = .3f;
+    float erodeSpeed = 0.3f;
+    float evaporateSpeed = .01f;
+    float gravity = 4;
+
+    int* erosionBrushIndices = NULL;
+    float* erosionBrushWeights = NULL;
+    for (int i = 0; i < terrain->size * terrain->size * 4; i++) {
+        // Create random droplet
+        float posX = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
+        float posY = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
+        if (terrain->map[(int)posX + (int)posY * terrain->size] < 0.6) {
+            continue;
+        }
+        float dirX = 0;
+        float dirY = 0;
+        float speed = 1;
+        float water = 1;
+        float sediment = 0;
+        for (int j = 0; j < terrain->tileSize * 2; j++) {
+            int nodeX = (int)posX;
+            int nodeY = (int)posY;
+            int dropletIndex = nodeX + nodeY * terrain->size;
+            float cellOffsetX = posX - nodeX;
+            float cellOffsetY = posY - nodeY;
+
+            Gradient grad = terrain_getGradient(terrain, posX, posY);
+
+            // Update the droplet's movement
+            dirX = (dirX * inertia - grad.gradX * (1 - inertia));
+            dirY = (dirY * inertia - grad.gradY * (1 - inertia));
+            // Normalize direction
+            float len = sqrtf(dirX * dirX + dirY * dirY);
+            if (len != 0) {
+                dirX /= len;
+                dirY /= len;
+            }
+            posX += dirX;
+            posY += dirY;
+
+            // Stop simulating droplet if it's not moving or has flowed over edge of map
+            if ((dirX == 0 && dirY == 0) || posX < 0 || posX >= terrain->size - 1 || posY < 0 || posY >= terrain->size - 1) {
+                break;
+            }
+
+            // Find the droplet's new height and calculate the deltaHeight
+            float newHeight = terrain_getGradient(terrain, posX, posY).z;
+            float deltaHeight = newHeight - grad.z;
+
+            // Calculate the droplet's sediment capacity (higher when moving fast down a slope and contains lots of water)
+            float sedimentCapacity = max(-deltaHeight * speed * water * sedimentCapacityFactor, minSedimentCapacity);
+
+            // If carrying more sediment than capacity, or if flowing uphill:
+            if (sediment > sedimentCapacity || deltaHeight > 0) {
+                // If moving uphill (deltaHeight > 0) try fill up to the current height, otherwise deposit a fraction of the excess sediment
+                float amountToDeposit = (deltaHeight > 0) ? min(deltaHeight, sediment) : (sediment - sedimentCapacity) * depositSpeed;
+                sediment -= amountToDeposit;
+
+                // Add the sediment to the four nodes of the current cell using bilinear interpolation
+                // Deposition is not distributed over a radius (like erosion) so that it can fill small pits
+                terrain->map[dropletIndex] += amountToDeposit * (1 - cellOffsetX) * (1 - cellOffsetY);
+                terrain->map[dropletIndex + 1] += amountToDeposit * cellOffsetX * (1 - cellOffsetY);
+                terrain->map[dropletIndex + terrain->size] += amountToDeposit * (1 - cellOffsetX) * cellOffsetY;
+                terrain->map[dropletIndex + terrain->size + 1] += amountToDeposit * cellOffsetX * cellOffsetY;
+            } else {
+                // Erode a fraction of the droplet's current carry capacity.
+                // Clamp the erosion to the change in height so that it doesn't dig a hole in the terrain behind the droplet
+                float amountToErode = min((sedimentCapacity - sediment) * erodeSpeed, -deltaHeight);
+
+                // Use erosion brush to erode from all nodes inside the droplet's erosion radius
+                float eroded = 0;
+                eroded += amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
+                terrain->map[dropletIndex] -= amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
+                eroded += amountToErode * cellOffsetX * (1 - cellOffsetY);
+                terrain->map[dropletIndex + 1] -= amountToErode * cellOffsetX * (1 - cellOffsetY);
+                eroded += amountToErode * (1 - cellOffsetX) * cellOffsetY;
+                terrain->map[dropletIndex + terrain->size] -= amountToErode * (1 - cellOffsetX) * cellOffsetY;
+                eroded += amountToErode * cellOffsetX * cellOffsetY;
+                terrain->map[dropletIndex + terrain->size + 1] -= amountToErode * cellOffsetX * cellOffsetY;
+                sediment += eroded;
+            }
+
+            // Update droplet's speed and water content
+            speed = sqrtf(speed * speed + deltaHeight * gravity);
+            water *= (1 - evaporateSpeed);
+        }
+    }
+}
+
+/*
 	Returns the height at a given point (x, y). If point is outside bounds, 
 	returns -1 */
 float terrain_getHeight(struct terrain* terrain, int x, int y)
@@ -425,6 +553,8 @@ float terrain_getHeightForBuilding(struct terrain* terrain, int x, int y)
 
 EntityID terrain_getBuildingAt(struct terrain* terrain, int x, int y)
 {
+    x -= 32;
+    y -= 32;
     x /= 64;
     y /= 64;
     return terrain->buildings[x + y * (terrain->tileSize)];
@@ -432,6 +562,8 @@ EntityID terrain_getBuildingAt(struct terrain* terrain, int x, int y)
 
 void terrain_addBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
 {
+    x -= 32;
+    y -= 32;
     x /= 64;
     y /= 64;
     terrain->buildings[x + y * (terrain->tileSize)] = id;
@@ -453,6 +585,8 @@ void terrain_addWallAt(struct terrain* terrain, EntityID id, int x, int y)
 
 int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1)
 {
+    x1 -= 32;
+    y1 -= 32;
     x1 /= 64;
     y1 /= 64;
     int retval = terrain->size * 2;
@@ -471,6 +605,8 @@ int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1)
 
 int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1)
 {
+    x1 -= 32;
+    y1 -= 32;
     x1 /= 64;
     y1 /= 64;
     int retval = terrain->size * 2;
@@ -490,9 +626,10 @@ int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terr
 
 EntityID terrain_adjacentMask(struct scene* scene, ComponentID mask, struct terrain* terrain, int x1, int y1)
 {
+    x1 -= 32;
+    y1 -= 32;
     x1 /= 64;
     y1 /= 64;
-    int closestDist = terrain->size * 2;
     for (int x = 0; x < terrain->tileSize; x++) {
         for (int y = 0; y < terrain->tileSize; y++) {
             EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
@@ -608,8 +745,9 @@ bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to)
     Vector increment = Vector_Normalize(Vector_Sub(to, from));
     Vector check = { from.x, from.y };
     float distance = Vector_Dist(from, to);
-    for (int i = 0; i < distance; i++) {
-        check = Vector_Add(check, increment);
+    for (int i = 0; i < distance; i += 10) {
+        check.x += increment.x;
+        check.y += increment.y;
         float height = terrain_getHeight(terrain, check.x, check.y);
         if (height > 1 || height < 0.5) {
             return false;

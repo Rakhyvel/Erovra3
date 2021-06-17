@@ -5,21 +5,29 @@
 #include "../gui/gui.h"
 #include "match.h"
 
+/*
+	Starts a new game */
 void Menu_NewGame()
 {
     Match_Init();
 }
 
+/*
+	Called every tick */
 void Menu_Update(Scene* scene)
 {
     GUI_Update(scene);
 }
 
+/*
+	Draws every screen draw */
 void Menu_Render(Scene* scene)
 {
     GUI_Render(scene);
 }
 
+/*
+	Called when the menu starts */
 Scene* Menu_Init()
 {
     Scene* scene = Scene_Create(Components_Init, &Menu_Update, &Menu_Render);

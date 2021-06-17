@@ -13,33 +13,31 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
         ownNation,
         enemyNation,
         controlFlag,
-        45, // coins
-        0, // ore
-        1, // pop.
-        5, // pop. cap
-        5, // city cost
-        10, // factory cost
-        10, // mine cost
-        15, // cavalry cost
-        15 // artillery cost
     };
+	// Initial resources
     nation.resources[ResourceType_COIN] = 45;
     nation.resources[ResourceType_ORE] = 0;
     nation.resources[ResourceType_POPULATION] = 1;
-    nation.resources[ResourceType_POPULATION_CAPACITY] = 3;
+    nation.resources[ResourceType_POPULATION_CAPACITY] = 2;
 
+	// Coin costs
     nation.costs[ResourceType_COIN][UnitType_CITY] = 5;
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
+    nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_BATTLESHIP] = 6;
 
+	// Ore costs
     nation.costs[ResourceType_ORE][UnitType_CITY] = 0;
     nation.costs[ResourceType_ORE][UnitType_FACTORY] = 0;
+    nation.costs[ResourceType_ORE][UnitType_PORT] = 0;
     nation.costs[ResourceType_ORE][UnitType_MINE] = 0;
     nation.costs[ResourceType_ORE][UnitType_CAVALRY] = 5;
     nation.costs[ResourceType_ORE][UnitType_ARTILLERY] = 5;
+    nation.costs[ResourceType_ORE][UnitType_BATTLESHIP] = 0;
 
     nation.visitedSpacesSize = mapSize / 32;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));

@@ -104,14 +104,14 @@ void Game_Run()
             lag -= g->dt;
             g->ticks++;
         }
-        if (elapsedFrames > g->dt) {
+        if (elapsedFrames >= g->dt) {
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
             SDL_RenderClear(g->rend);
             scene->render(scene);
             SDL_RenderPresent(g->rend);
+            frames++;
         }
-        frames++;
         const Uint64 end = SDL_GetPerformanceCounter();
         Uint64 freq = SDL_GetPerformanceFrequency();
         const double seconds = (end - start) / (float)(freq);

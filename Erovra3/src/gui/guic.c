@@ -64,13 +64,14 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
         INVALID_ENTITY_INDEX
     };
     Scene_Assign(scene, labelID, GUI_COMPONENT_ID, &gui);
-    printf("Text: %s\n", text);
     Label label;
     strncpy_s(label.text, 255, text, 255);
     Scene_Assign(scene, labelID, GUI_LABEL_ID, &label);
     return labelID;
 }
 
+/*
+	Creates a rocker switch entity, given a value and callback function */
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, void (*onchange)(struct scene* scene, bool value))
 {
     EntityID rockerSwitchID = Scene_NewEntity(scene);
@@ -173,6 +174,8 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
     }
 }
 
+/*
+	 Sets the value of a rocker switch GUI entity */
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value)
 {
     RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, labelID, GUI_ROCKER_SWITCH_COMPONENT_ID);

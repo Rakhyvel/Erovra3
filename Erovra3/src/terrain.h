@@ -18,7 +18,13 @@ typedef struct terrain {
     EntityID* walls;
 } Terrain;
 
-struct terrain* terrain_create(int);
+typedef struct gradient {
+    float gradX;
+    float gradY;
+    float z; // Optional
+} Gradient;
+
+struct terrain* terrain_create(int tileSize, float biome);
 void paintMap(struct terrain* terrain);
 void terrain_render(struct terrain* terrain);
 
@@ -35,10 +41,12 @@ float* terrain_perlin(int mapSize, int cellSize);
 
 // Map modifications
 void terrain_normalize(float* map, int mapSize);
+void terrain_erode(struct terrain* terrain);
 
 // Some map functions
 float terrain_getHeight(struct terrain*, int x, int y);
 void terrain_setOffset(struct vector);
+Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY);
 float terrain_getZoom();
 bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to);
 

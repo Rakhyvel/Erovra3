@@ -4,6 +4,8 @@
 #include "components.h"
 #include "bullet.h"
 
+/*
+	Creates a cavalry entity */
 EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID cavalryID = Scene_NewEntity(scene);
@@ -57,7 +59,8 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
         68.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,
-        &Bullet_Create
+        &Bullet_Create,
+		true
     };
     Scene_Assign(scene, cavalryID, COMBATANT_COMPONENT_ID, &combatant);
 

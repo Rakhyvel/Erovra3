@@ -3,6 +3,8 @@
 #include "../textures.h"
 #include "components.h"
 
+/*
+	Creates a coin entity */
 EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
 {
     EntityID coinID = Scene_NewEntity(scene);

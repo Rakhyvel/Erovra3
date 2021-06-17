@@ -15,7 +15,13 @@ typedef enum unitType {
     UnitType_CITY,
     UnitType_MINE,
     UnitType_FACTORY,
+	UnitType_PORT,
     UnitType_WALL,
+	UnitType_LANDING_CRAFT,
+	UnitType_DESTROYER,
+	UnitType_CRUISER,
+	UnitType_BATTLESHIP,
+	UnitType_AIRCRAFT_CARRIER,
     _UnitType_Length
 } UnitType;
 
@@ -90,6 +96,7 @@ typedef struct combatant {
     ComponentMask enemyMask;
     int attackTime;
     void (*projConstructor)(struct scene*, Vector pos, Vector tar, float attack, EntityID nation);
+    bool faceEnemy;
     int randShoot;
 } Combatant;
 ComponentID COMBATANT_COMPONENT_ID;
@@ -102,6 +109,8 @@ ComponentID WALL_FLAG_COMPONENT_ID;
 
 ComponentID BULLET_ATTACK_FLAG_COMPONENT_ID;
 ComponentID SHELL_ATTACK_FLAG_COMPONENT_ID;
+
+ComponentID SHIP_FLAG_COMPONENT_ID;
 
 typedef struct projectile {
     const float attack;
@@ -145,6 +154,8 @@ typedef struct producer {
     UnitType order;
     bool repeat;
     EntityID homeCity;
+    const EntityID readyGUIContainer;
+    const EntityID busyGUIContainer;
 } Producer;
 ComponentID PRODUCER_COMPONENT_ID;
 
