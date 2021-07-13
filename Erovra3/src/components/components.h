@@ -49,6 +49,7 @@ ComponentID MOTION_COMPONENT_ID;
 typedef struct target {
     struct vector tar;
     struct vector lookat;
+    struct vector scoutLock;
 } Target;
 ComponentID TARGET_COMPONENT_ID;
 
@@ -135,6 +136,11 @@ typedef struct nation {
     EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces;
     int visitedSpacesSize;
+    int cities;
+    int factories;
+    int mines;
+    int land;
+    int sea;
 } Nation;
 ComponentID NATION_COMPONENT_ID;
 ComponentID HOME_NATION_FLAG_COMPONENT_ID;

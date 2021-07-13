@@ -21,13 +21,13 @@ static struct vector offset = { 0, 0 };
 static struct vector oldOffset = { 0, 0 };
 static struct vector mousePos = { 0, 0 };
 static float terrain_zoom_target = 1;
-static float terrain_zoom = 2;
+static float terrain_zoom = 0.8;
 static int oldWheel = 0;
 
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
 	texture. */
-struct terrain* terrain_create(int mapSize, float biome)
+struct terrain* terrain_create(int mapSize, float biome, int scale)
 {
     srand(0);
     struct terrain* retval = calloc(1, sizeof(struct terrain));
@@ -37,14 +37,15 @@ struct terrain* terrain_create(int mapSize, float biome)
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / 1);
+    retval->map = terrain_perlin(retval->size, retval->size / scale);
+    printf("Generated noise\n");
     retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8);
-    retval->buildings = (EntityID*)malloc((mapSize * mapSize) / (64 * 64) * sizeof(EntityID));
+    retval->buildings = (EntityID*)malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
         exit(1);
     }
-    for (int i = 0; i < (mapSize * mapSize) / (64 * 64); i++) {
+    for (int i = 0; i < (retval->tileSize * retval->tileSize); i++) {
         retval->buildings[i] = INVALID_ENTITY_INDEX;
     }
     retval->walls = (EntityID*)malloc(((mapSize + 1) * (mapSize + 1)) / (32 * 32) * sizeof(EntityID));
@@ -55,7 +56,6 @@ struct terrain* terrain_create(int mapSize, float biome)
     for (int i = 0; i < ((mapSize + 1) * (mapSize + 1)) / (32 * 32); i++) {
         retval->walls[i] = INVALID_ENTITY_INDEX;
     }
-    terrain_normalize(retval->map, retval->size);
     terrain_normalize(retval->ore, retval->tileSize);
     // Scale down for land:water ratio
     for (int y = 0; y < retval->size; y++) {
@@ -63,8 +63,11 @@ struct terrain* terrain_create(int mapSize, float biome)
             retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5 + biome; // islands
         }
     }
-    terrain_erode(retval);
+    printf("Updated biomes\n");
+    //terrain_erode(retval);
+    printf("Eroded\n");
     paintMap(retval);
+    printf("Painted\n");
     return retval;
 }
 
@@ -93,13 +96,14 @@ void paintMap(struct terrain* terrain)
             if (i < 0.5) {
                 // water
                 i *= 2;
-                i = i * i * i;
-                terrainColor = terrain_HSVtoRGB(210.0f - 15.0f * i, 0.90f - 0.5f * i, 0.3f + 0.35f * i + 0.05 * i * i * i * i * i + g);
+                i = powf(i, 9);
+                terrainColor = terrain_HSVtoRGB(214.0f - 25.0f * i, 0.92f - 0.45f * i, 0.21f + 0.6f * i + 0.1 * powf(i, 91));
             } else {
                 // ground
                 i = (i - 0.5f) * 2;
                 i = sqrtf(i);
-                terrainColor = terrain_HSVtoRGB(60.0f + 85.0f * i - 60.0f * g, (i * 0.1f) + 0.25f, 0.7f - i * 0.35f);
+                i = sqrtf(i);
+                terrainColor = terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.2f) + 0.2f, 0.96f - i * 0.6f);
             }
             if (terrain_isBorder(terrain->map, terrain->size, terrain->size, x, y, 0.5f, 1)) {
                 terrainColor = (SDL_Color) { 255, 255, 255 };
@@ -298,12 +302,33 @@ float* terrain_generate(int mapSize, int cellSize, float amplitude)
         PANIC("Memory error");
     }
 
-    // Sparsely fill with random values according to cell size
+    int n = (mapSize * mapSize) / (cellSize * cellSize);
+    bool* used = (bool*)calloc(n, sizeof(bool));
+    float* values = (float*)malloc(n * sizeof(float));
+    // Setting up random values from [0-amplitude)
+    for (int i = 0; i < n; i++) {
+        values[i] = (float)i / (float)n * amplitude;
+    }
+
+    // For each node assign it a height
     for (int y = 0; y < mapSize; y += cellSize) {
         for (int x = 0; x < mapSize; x += cellSize) {
-            retval[y * mapSize + x] = amplitude * (0.5 * (float)rand() / (float)RAND_MAX);
+            // Randomly choose an index
+            int randIndex = rand() % n;
+            // If the index is already used, find next available index
+            while (used[randIndex]) {
+                randIndex++;
+                // Wrap around
+                if (randIndex >= n) {
+                    randIndex = 0;
+                }
+            }
+            retval[y * mapSize + x] = values[randIndex];
+            used[randIndex] = true;
         }
     }
+    free(used);
+    free(values);
     // Interpolate the rest of the map
     for (int i = 0; i < mapSize * mapSize; i++) {
         int x = i % mapSize; // x coord of point
@@ -332,15 +357,12 @@ Returns: a pointer to a float array, with size of mapSize * mapSize, in row majo
 */
 float* terrain_perlin(int mapSize, int cellSize)
 {
-    if (cellSize < 1) {
-        cellSize = mapSize / 2;
-    }
-    float amplitude = 1;
+    float amplitude = 0.5;
     float* retval = terrain_generate(mapSize, cellSize, amplitude);
     cellSize /= 2;
     amplitude /= 2;
 
-    while (cellSize > 2) {
+    while (mapSize > 64 ? cellSize > 8 : cellSize > 1) {
         float* map = terrain_generate(mapSize, cellSize, amplitude);
         for (int i = 0; i < mapSize * mapSize; i++) {
             retval[i] += map[i];
@@ -421,27 +443,24 @@ Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY)
 
 void terrain_erode(struct terrain* terrain)
 {
-    float inertia = 0.05f;
+    float inertia = 0.05f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
-    float minSedimentCapacity = .1f;
-    float depositSpeed = .3f;
+    float minSedimentCapacity = 0.01f; // Small values := more deposit
+    float depositSpeed = 0.3f;
     float erodeSpeed = 0.3f;
-    float evaporateSpeed = .01f;
+    float evaporateSpeed = 100.0f;
     float gravity = 4;
 
     int* erosionBrushIndices = NULL;
     float* erosionBrushWeights = NULL;
-    for (int i = 0; i < terrain->size * terrain->size * 4; i++) {
+    for (int i = 0; i < terrain->size * terrain->size; i++) {
         // Create random droplet
         float posX = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
         float posY = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
-        if (terrain->map[(int)posX + (int)posY * terrain->size] < 0.6) {
-            continue;
-        }
         float dirX = 0;
         float dirY = 0;
         float speed = 1;
-        float water = 1;
+        float water = 0;
         float sediment = 0;
         for (int j = 0; j < terrain->tileSize * 2; j++) {
             int nodeX = (int)posX;
@@ -456,7 +475,7 @@ void terrain_erode(struct terrain* terrain)
             dirX = (dirX * inertia - grad.gradX * (1 - inertia));
             dirY = (dirY * inertia - grad.gradY * (1 - inertia));
             // Normalize direction
-            float len = sqrtf(dirX * dirX + dirY * dirY);
+            float len = sqrtf(dirX * dirX + dirY * dirY) * 0.9;
             if (len != 0) {
                 dirX /= len;
                 dirY /= len;
@@ -491,19 +510,14 @@ void terrain_erode(struct terrain* terrain)
             } else {
                 // Erode a fraction of the droplet's current carry capacity.
                 // Clamp the erosion to the change in height so that it doesn't dig a hole in the terrain behind the droplet
-                float amountToErode = min((sedimentCapacity - sediment) * erodeSpeed, -deltaHeight);
+                float amountToErode = min((sedimentCapacity - sediment) * erodeSpeed, fabs(deltaHeight));
+                sediment += amountToErode;
 
                 // Use erosion brush to erode from all nodes inside the droplet's erosion radius
-                float eroded = 0;
-                eroded += amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
                 terrain->map[dropletIndex] -= amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
-                eroded += amountToErode * cellOffsetX * (1 - cellOffsetY);
                 terrain->map[dropletIndex + 1] -= amountToErode * cellOffsetX * (1 - cellOffsetY);
-                eroded += amountToErode * (1 - cellOffsetX) * cellOffsetY;
                 terrain->map[dropletIndex + terrain->size] -= amountToErode * (1 - cellOffsetX) * cellOffsetY;
-                eroded += amountToErode * cellOffsetX * cellOffsetY;
                 terrain->map[dropletIndex + terrain->size + 1] -= amountToErode * cellOffsetX * cellOffsetY;
-                sediment += eroded;
             }
 
             // Update droplet's speed and water content
@@ -624,21 +638,36 @@ int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terr
     return retval;
 }
 
-EntityID terrain_adjacentMask(struct scene* scene, ComponentID mask, struct terrain* terrain, int x1, int y1)
+/*
+	Checks the four adjacent tiles to see if there is a building with the 
+	entity mask given. If so, returns that entity ID. If not, returns 
+	INVALID_ENTITY_INDEX */
+EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x, int y)
 {
-    x1 -= 32;
-    y1 -= 32;
-    x1 /= 64;
-    y1 /= 64;
-    for (int x = 0; x < terrain->tileSize; x++) {
-        for (int y = 0; y < terrain->tileSize; y++) {
-            EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
-            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
-                int dist = abs(x1 - x) + abs(y1 - y);
-                if (dist == 1) {
-                    return buildingID;
-                }
-            }
+    x /= 64;
+    y /= 64;
+    if (x >= 0) {
+        EntityID buildingID = terrain->buildings[(x - 1) + y * terrain->tileSize];
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+            return buildingID;
+        }
+    }
+    if (y >= 0) {
+        EntityID buildingID = terrain->buildings[x + (y - 1) * terrain->tileSize];
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+            return buildingID;
+        }
+    }
+    if (x < terrain->tileSize) {
+        EntityID buildingID = terrain->buildings[(x + 1) + y * terrain->tileSize];
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+            return buildingID;
+        }
+    }
+    if (y < terrain->tileSize) {
+        EntityID buildingID = terrain->buildings[x + (y + 1) * terrain->tileSize];
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+            return buildingID;
         }
     }
     return INVALID_ENTITY_INDEX;
@@ -740,20 +769,49 @@ SDL_Color terrain_HSVtoRGB(float hue, float saturation, float value)
 
 /*
 	Takes two positions, checks to see if there is dry land between them */
-bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to)
+bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to, float z)
 {
-    Vector increment = Vector_Normalize(Vector_Sub(to, from));
+    Vector increment = Vector_Scalar(Vector_Normalize(Vector_Sub(to, from)), 0.5);
     Vector check = { from.x, from.y };
     float distance = Vector_Dist(from, to);
-    for (int i = 0; i < distance; i += 10) {
+    for (double i = 0; i < distance; i += 0.5) {
         check.x += increment.x;
         check.y += increment.y;
         float height = terrain_getHeight(terrain, check.x, check.y);
-        if (height > 1 || height < 0.5) {
+        if (height > z + 0.5f || height < z) {
             return false;
         }
     }
     return true;
+}
+
+Vector terrain_lineOfSightPoint(struct terrain* terrain, Vector from, Vector to)
+{
+    Vector increment = Vector_Normalize(Vector_Sub(to, from));
+    Vector check = { from.x, from.y };
+    float distance = Vector_Dist(from, to);
+    for (int i = 0; i < distance; i += 1) {
+        check.x += increment.x;
+        check.y += increment.y;
+        float height = terrain_getHeight(terrain, check.x, check.y);
+        if (height > 1 || height < 0.5) {
+            return check;
+        }
+    }
+    return check;
+}
+
+bool terrain_isSolidSquare(struct terrain* terrain, Vector point)
+{
+    // Must be land
+    if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 32, 0 }), 0.5))
+        return false;
+    if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { -32, 0 }), 0.5))
+        return false;
+    if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, 32 }), 0.5))
+        return false;
+    if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, -32 }), 0.5))
+        return false;
 }
 
 /*
@@ -768,13 +826,13 @@ struct vector findBestLocation(struct terrain* terrain, struct vector start)
         for (int x = 0; x < terrain->size; x++) {
             struct vector point = { x * 64 + 32, y * 64 + 32 };
             // Must be land
-            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 32, 0 })))
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 32, 0 }), 0.5))
                 continue;
-            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { -32, 0 })))
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { -32, 0 }), 0.5))
                 continue;
-            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, 32 })))
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, 32 }), 0.5))
                 continue;
-            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, -32 })))
+            if (!terrain_lineOfSight(terrain, point, Vector_Add(point, (Vector) { 0, -32 }), 0.5))
                 continue;
             double score = Vector_Dist(start, point);
 

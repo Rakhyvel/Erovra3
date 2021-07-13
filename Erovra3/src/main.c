@@ -36,10 +36,12 @@ Code guidelines:
 
 #include <SDL.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "./scenes/menu.h"
 #include "engine/gameState.h"
 #include "textures.h"
+#include "./util/lexicon.h"
 
 /*
 	Inits the game, then starts the game loop */

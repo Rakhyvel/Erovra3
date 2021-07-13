@@ -19,7 +19,7 @@ struct polygon_t Polygon_Create(char* filename)
     fopen_s(&gonFile, filename, "r");
     if (!gonFile) {
         perror(filename);
-        PANIC("Pausing...");
+        PANIC("Crashing please wait...");
     }
 
     struct polygon_t retval;

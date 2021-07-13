@@ -83,6 +83,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\lib\SDL2_image-2.0.5\include;C:\lib\SDL2-2.0.14\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\lib\SDL2_image-2.0.5\lib\x64;C:\lib\SDL2-2.0.14\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -140,12 +142,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -170,6 +176,14 @@
       </SubType>
     </ClCompile>
     <ClCompile Include="src\components\coin.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\cruiser.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\destroyer.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -251,6 +265,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\util\lexicon.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\util\polygon.c">
       <SubType>
       </SubType>
@@ -267,6 +285,8 @@
     <ClInclude Include="src\components\cavalry.h" />
     <ClInclude Include="src\components\city.h" />
     <ClInclude Include="src\components\coin.h" />
+    <ClInclude Include="src\components\cruiser.h" />
+    <ClInclude Include="src\components\destroyer.h" />
     <ClInclude Include="src\components\factory.h" />
     <ClInclude Include="src\components\port.h" />
     <ClInclude Include="src\components\infantry.h" />
@@ -288,6 +308,7 @@
     <ClInclude Include="src\terrain.h" />
     <ClInclude Include="src\engine\textureManager.h" />
     <ClInclude Include="src\textures.h" />
+    <ClInclude Include="src\util\lexicon.h" />
     <ClInclude Include="src\util\polygon.h" />
     <ClInclude Include="src\util\vector.h" />
   </ItemGroup>

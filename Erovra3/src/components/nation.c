@@ -21,13 +21,15 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.resources[ResourceType_POPULATION_CAPACITY] = 2;
 
 	// Coin costs
-    nation.costs[ResourceType_COIN][UnitType_CITY] = 5;
+    nation.costs[ResourceType_COIN][UnitType_CITY] = 10;
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_DESTROYER] = 6;
+    nation.costs[ResourceType_COIN][UnitType_CRUISER] = 6;
     nation.costs[ResourceType_COIN][UnitType_BATTLESHIP] = 6;
 
 	// Ore costs
@@ -37,6 +39,8 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_ORE][UnitType_MINE] = 0;
     nation.costs[ResourceType_ORE][UnitType_CAVALRY] = 5;
     nation.costs[ResourceType_ORE][UnitType_ARTILLERY] = 5;
+    nation.costs[ResourceType_ORE][UnitType_DESTROYER] = 0;
+    nation.costs[ResourceType_ORE][UnitType_CRUISER] = 0;
     nation.costs[ResourceType_ORE][UnitType_BATTLESHIP] = 0;
 
     nation.visitedSpacesSize = mapSize / 32;

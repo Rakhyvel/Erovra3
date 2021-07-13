@@ -47,7 +47,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, portID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        UnitType_FACTORY,
+        UnitType_PORT,
         1
     };
     Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
@@ -73,7 +73,6 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     };
     Scene_Assign(scene, portID, PRODUCER_COMPONENT_ID, &producer);
 
-    Scene_Assign(scene, portID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, portID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);

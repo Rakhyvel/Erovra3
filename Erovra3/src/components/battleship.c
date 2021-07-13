@@ -37,8 +37,8 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
         nation,
         16,
         46,
-        20,
-        50
+        16,
+        46
     };
     Scene_Assign(scene, battleshipID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 

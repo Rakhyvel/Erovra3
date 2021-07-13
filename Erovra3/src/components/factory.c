@@ -9,6 +9,7 @@
 EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
 {
     EntityID factoryID = Scene_NewEntity(scene);
+	// pos parameter will be slightly towards the home city, hopefully
     Motion motion = {
         pos,
         0.5f,

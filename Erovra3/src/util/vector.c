@@ -35,6 +35,11 @@ struct vector Vector_Scalar(struct vector a, float scalar)
     return (struct vector) { a.x * scalar, a.y * scalar };
 }
 
+float Vector_Dot(struct vector a, struct vector b)
+{
+    return a.x * b.x + a.y * b.y;
+}
+
 /*
 	Finds the cab distance between two vectors */
 float Vector_CabDist(struct vector a, struct vector b)

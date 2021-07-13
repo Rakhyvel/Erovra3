@@ -1,13 +1,13 @@
 #pragma once
+#include "textureManager.h"
+#include "../util/debug.h"
+#include "../util/polygon.h"
+#include "../util/vector.h"
+#include "gameState.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <float.h>
 #include <stdio.h>
-
-#include "../util/debug.h"
-#include "../util/polygon.h"
-#include "gameState.h"
-#include "textureManager.h"
 
 SDL_Texture* loadTexture(char* filename);
 
@@ -60,7 +60,7 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
 	Takes in the ID of a texture, and a polygon struct and color. Draws the 
 	polygon onto the texture with the given color. Texture must be created with
 	target access. */
-void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
+void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 {
     int nodes, pixelX, pixelY, i, j, swap;
     float nodeX[255], minY = FLT_MAX, maxY = 0;
@@ -117,6 +117,125 @@ void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
         }
         SDL_SetRenderTarget(g->rend, NULL);
     }
+}
+
+static void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color color)
+{
+    SDL_Texture* texture = textures[textureID];
+    if (SDL_SetRenderTarget(g->rend, texture)) {
+        PANIC("%s", SDL_GetError());
+    }
+    SDL_SetRenderDrawColor(g->rend, color.r, color.g, color.b, color.a);
+    for (double y = -radius; y < radius; y++) {
+        double newY = y + center.y;
+        double x = radius * (double)sqrtf(1.0 - powf(y / (double)radius, 2.0));
+        SDL_RenderDrawLineF(g->rend, max(-x + center.x, -1), y + center.y, x + center.x, y + center.y);
+    }
+    SDL_SetRenderTarget(g->rend, NULL);
+}
+
+/*
+	Takes two points, and a thickness. Creates a polygon representing a rectangle
+	with the thickness that spans between p1 and p2. */
+static void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color color, float thickness)
+{
+    if (fabs(p1.x - p2.x) < 0.001) {
+        p1.x += 0.001f;
+    }
+    if (fabs(p1.y - p2.y) < 0.001) {
+        p1.y += 0.001f;
+    }
+    Polygon rectangle;
+    rectangle.numVertices = 4;
+    float slope = (p1.y - p2.y) / (p1.x - p2.x);
+    float slopeSquared = slope * slope;
+    float inverseSlope = -1.0f / slope;
+    float circleOffset = thickness * sqrtf(slopeSquared / (slopeSquared + 1));
+
+    rectangle.vertexX[0] = p1.x + circleOffset;
+    rectangle.vertexX[1] = p1.x - circleOffset;
+    rectangle.vertexX[2] = p2.x - circleOffset;
+    rectangle.vertexX[3] = p2.x + circleOffset;
+
+    rectangle.vertexY[0] = inverseSlope * circleOffset + p1.y;
+    rectangle.vertexY[1] = inverseSlope * -circleOffset + p1.y;
+    rectangle.vertexY[2] = inverseSlope * -circleOffset + p2.y;
+    rectangle.vertexY[3] = inverseSlope * circleOffset + p2.y;
+
+    Texture_FillPolygon(textureID, rectangle, color);
+}
+
+/*
+	Goes through the points in a polygon. Draws a line between each point */
+void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
+{
+    // For each edge in the polygon
+    for (int i = 0; i < polygon.numVertices; i++) {
+        // Draw a line between the vertex i and i+1
+        Vector p1 = { polygon.vertexX[i], polygon.vertexY[i] };
+        Vector p2 = { polygon.vertexX[(i + 1) % polygon.numVertices], polygon.vertexY[(i + 1) % polygon.numVertices] };
+        drawThickLine(textureID, p1, p2, color, thickness);
+        drawCircle(textureID, p1, thickness, color);
+    }
+}
+
+/*
+	Takes in an array of x values and an array of y values where the first and 
+	fourth elements are fixed points, and the second and third are slope points.
+	
+	Returns the vector <x,y> of the point along the curve from 0-1, with 0 being
+	closer to the first point and 1 being closer to the fourth and last point.*/
+static Vector bezierCurve(int x[4], int y[4], double u)
+{
+    double xu = 0.0, yu = 0.0;
+    xu = pow(1 - u, 3) * x[0] + 3 * u * pow(1 - u, 2) * x[1] + 3 * pow(u, 2) * (1 - u) * x[2]
+        + pow(u, 3) * x[3];
+    yu = pow(1 - u, 3) * y[0] + 3 * u * pow(1 - u, 2) * y[1] + 3 * pow(u, 2) * (1 - u) * y[2]
+        + pow(u, 3) * y[3];
+    return (Vector) { xu, yu };
+}
+
+/*
+	Interprets the polygon's vertices as control points for a closed bezier curve.
+	Approximates the bezier curve with more vertices.*/
+static Polygon spliceBezier(Polygon polygon)
+{
+    int tempX[4];
+    int tempY[4];
+    Polygon rendval;
+    rendval.numVertices = 0;
+    int rendVertexIndex = 0;
+    const float detail = 16.0f;
+    for (int i = 0; i < polygon.numVertices; i += 3) {
+        // Fill temp with the four points from the polygon
+        for (int j = 0; j < 4; j++) {
+            tempX[j] = polygon.vertexX[(i + j) % polygon.numVertices];
+            tempY[j] = polygon.vertexY[(i + j) % polygon.numVertices];
+        }
+        // Add new vertices to the polygon based on a time step
+        for (int j = 0; j < detail; j++, rendVertexIndex++) {
+            Vector vertex = bezierCurve(tempX, tempY, (float)j / detail);
+            rendval.vertexX[rendVertexIndex] = vertex.x;
+            rendval.vertexY[rendVertexIndex] = vertex.y;
+            printf("%f %f\n", rendval.vertexX[rendVertexIndex], rendval.vertexY[rendVertexIndex]);
+            rendval.numVertices++;
+        }
+    }
+    return rendval;
+}
+
+/*
+	Fills the spliced version of a bezier */
+TextureID Texture_FillBezier(TextureID textureID, Polygon polygon, SDL_Color color)
+{
+    Texture_FillPolygon(textureID, spliceBezier(polygon), color);
+}
+
+/*
+	Draws the spliced version of a bezier polygon */
+TextureID Texture_DrawBezier(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
+{
+    Texture_DrawPolygon(textureID, spliceBezier(polygon), color, thickness);
 }
 
 /*

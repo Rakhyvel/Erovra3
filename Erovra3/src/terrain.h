@@ -24,7 +24,7 @@ typedef struct gradient {
     float z; // Optional
 } Gradient;
 
-struct terrain* terrain_create(int tileSize, float biome);
+struct terrain* terrain_create(int tileSize, float biome, int scale);
 void paintMap(struct terrain* terrain);
 void terrain_render(struct terrain* terrain);
 
@@ -48,7 +48,8 @@ float terrain_getHeight(struct terrain*, int x, int y);
 void terrain_setOffset(struct vector);
 Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY);
 float terrain_getZoom();
-bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to);
+bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
+Vector terrain_lineOfSightPoint(struct terrain* terrain, Vector from, Vector to);
 
 // Resources
 float terrain_getOre(struct terrain*, int x, int y);
@@ -59,7 +60,7 @@ EntityID terrain_getBuildingAt(struct terrain*, int x, int y);
 void terrain_addBuildingAt(struct terrain*, EntityID id, int x, int y);
 int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1);
 int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
-EntityID terrain_adjacentMask(struct scene* scene, ComponentID mask, struct terrain* terrain, int x1, int y1);
+EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
 
 // Wall functions
 EntityID terrain_getWallAt(struct terrain*, int x, int y);
@@ -74,4 +75,5 @@ struct vector terrain_translateVector(float x, float y);
 bool terrain_isBorder(float* terrain, int width, int height, int x, int y, float z, int i);
 SDL_Color terrain_HSVtoRGB(float hue, float sat, float val);
 
+bool terrain_isSolidSquare(struct terrain* terrain, Vector point);
 struct vector findBestLocation(struct terrain* terrain, struct vector start);
