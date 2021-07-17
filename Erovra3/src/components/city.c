@@ -25,7 +25,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-        BUILDING_SHADOW_TEXTURE_ID,
+        isCapital ? CAPITAL_SHADOW_TEXTURE_ID : CITY_SHADOW_TEXTURE_ID,
         false,
         false,
         nation,
@@ -40,6 +40,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         100.0f,
         0.0f,
         0.0f,
+        Scene_CreateMask(2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
     };
     Scene_Assign(scene, cityID, HEALTH_COMPONENT_ID, &health);
 

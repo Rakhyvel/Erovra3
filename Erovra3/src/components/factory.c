@@ -29,7 +29,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     SimpleRenderable render = {
         FACTORY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-        BUILDING_SHADOW_TEXTURE_ID,
+        FACTORY_SHADOW_TEXTURE_ID,
         false,
         false,
         nation,
@@ -44,6 +44,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         100.0f,
         0.0f,
         0.0f,
+        Scene_CreateMask(2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
     };
     Scene_Assign(scene, factoryID, HEALTH_COMPONENT_ID, &health);
 

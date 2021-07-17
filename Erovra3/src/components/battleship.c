@@ -46,6 +46,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
         100.0f,
         0.0f,
         0.0f,
+        Scene_CreateMask(2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
     };
     Scene_Assign(scene, battleshipID, HEALTH_COMPONENT_ID, &health);
 

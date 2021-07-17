@@ -123,6 +123,9 @@
     <ClCompile Include="src\util\lexicon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\fighter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -219,6 +222,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\lexicon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\fighter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

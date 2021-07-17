@@ -205,7 +205,7 @@ static Polygon spliceBezier(Polygon polygon)
     Polygon rendval;
     rendval.numVertices = 0;
     int rendVertexIndex = 0;
-    const float detail = 16.0f;
+    const float detail = 8.0f;
     for (int i = 0; i < polygon.numVertices; i += 3) {
         // Fill temp with the four points from the polygon
         for (int j = 0; j < 4; j++) {
@@ -217,7 +217,6 @@ static Polygon spliceBezier(Polygon polygon)
             Vector vertex = bezierCurve(tempX, tempY, (float)j / detail);
             rendval.vertexX[rendVertexIndex] = vertex.x;
             rendval.vertexY[rendVertexIndex] = vertex.y;
-            printf("%f %f\n", rendval.vertexX[rendVertexIndex], rendval.vertexY[rendVertexIndex]);
             rendval.numVertices++;
         }
     }
@@ -226,16 +225,48 @@ static Polygon spliceBezier(Polygon polygon)
 
 /*
 	Fills the spliced version of a bezier */
-TextureID Texture_FillBezier(TextureID textureID, Polygon polygon, SDL_Color color)
+void Texture_FillBezier(TextureID textureID, Polygon polygon, SDL_Color color)
 {
     Texture_FillPolygon(textureID, spliceBezier(polygon), color);
 }
 
 /*
 	Draws the spliced version of a bezier polygon */
-TextureID Texture_DrawBezier(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
+void Texture_DrawBezier(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
 {
     Texture_DrawPolygon(textureID, spliceBezier(polygon), color, thickness);
+}
+
+/*
+	Draws a shadow on the destination texture if for each corresponding pixel in 
+	the source texture is non-transparent */
+void Texture_CreateShadow(TextureID dstID, TextureID srcID)
+{
+    SDL_Texture* src = textures[srcID];
+    SDL_Texture* dst = textures[dstID];
+    int srcFormat = SDL_PIXELFORMAT_ARGB8888, srcPitch = 4, w, h;
+    SDL_QueryTexture(src, &srcFormat, NULL, &w, &h);
+    Uint8* srcPixels = calloc(srcPitch * w * h, 1);
+    if (!srcPixels) {
+        PANIC("Mem err");
+    }
+
+	// Set src texture as target, get array of pixels
+    SDL_SetRenderTarget(g->rend, src);
+    SDL_RenderCopy(g->rend, src, NULL, NULL);
+    SDL_RenderReadPixels(g->rend, NULL, srcFormat, srcPixels, srcPitch * w);
+
+	// Set dst texture as target, if src pixel non-transparent, dst pixel is shadow colored
+    SDL_SetRenderTarget(g->rend, dst);
+    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 64);
+    for (int i = 0; i < w * h * 4; i += 4) {
+        int x = (i / 4) % w;
+        int y = (i / 4) / w;
+        if (srcPixels[i] || srcPixels[i + 1] || srcPixels[i + 2] || srcPixels[i + 3]) {
+            SDL_RenderDrawPoint(g->rend, x, y);
+        }
+    }
+    SDL_SetRenderTarget(g->rend, NULL);
 }
 
 /*

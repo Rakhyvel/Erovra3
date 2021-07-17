@@ -1,0 +1,83 @@
+#pragma once
+#include "fighter.h"
+#include "../scenes/match.h"
+#include "../textures.h"
+#include "bullet.h"
+#include "components.h"
+
+/*
+	Creates a fighter plane entity */
+EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
+{
+    EntityID fighterID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Unit*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
+    Motion motion = {
+        pos,
+        0.5f,
+        (struct vector) { 0.0f, 0.0f },
+        0,
+        0.8f, // speed
+        false
+    };
+    Scene_Assign(scene, fighterID, MOTION_COMPONENT_ID, &motion);
+
+    Target target = {
+        pos,
+        pos,
+    };
+    Scene_Assign(scene, fighterID, TARGET_COMPONENT_ID, &target);
+
+    SimpleRenderable render = {
+        FIGHTER_TEXTURE_ID,
+        FIGHTER_OUTLINE_TEXTURE_ID,
+        FIGHTER_SHADOW_TEXTURE_ID,
+        false,
+        false,
+        nation,
+        42,
+        41,
+        42,
+        41
+    };
+    Scene_Assign(scene, fighterID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Health health = {
+        100.0f,
+        0.0f,
+        0.0f,
+        Scene_CreateMask(1, AIR_BULLET_COMPONENT_ID)
+    };
+    Scene_Assign(scene, fighterID, HEALTH_COMPONENT_ID, &health);
+
+    Unit type = {
+        UnitType_FIGHTER,
+        0.5f // Defense
+    };
+    Scene_Assign(scene, fighterID, UNIT_COMPONENT_ID, &type);
+
+    Combatant combatant = {
+        0.5f, // Attack amount
+        68.0f, // Attack dist
+        Scene_CreateMask(2, AIRCRAFT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        30, // Attack time (ticks)
+        &AirBullet_Create,
+        true
+    };
+    Scene_Assign(scene, fighterID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Selectable selectable = {
+        false,
+    };
+    Scene_Assign(scene, fighterID, SELECTABLE_COMPONENT_ID, &selectable);
+
+    Hoverable hoverable = {
+        false,
+    };
+    Scene_Assign(scene, fighterID, HOVERABLE_COMPONENT_ID, &hoverable);
+
+    Scene_Assign(scene, fighterID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, fighterID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    Scene_Assign(scene, fighterID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    return fighterID;
+}

@@ -32,6 +32,9 @@ Code guidelines:
 	Each file should have a header comment giving its purpose
 	Each function should have a comment should tell what it takes in, does, and returns
 	THE LESS LINES OF CODE THE BETTER!
+
+
+
 */
 
 #include <SDL.h>

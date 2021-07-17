@@ -143,8 +143,11 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <Optimization>Disabled</Optimization>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -188,6 +191,10 @@
       </SubType>
     </ClCompile>
     <ClCompile Include="src\components\factory.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\fighter.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -288,6 +295,7 @@
     <ClInclude Include="src\components\cruiser.h" />
     <ClInclude Include="src\components\destroyer.h" />
     <ClInclude Include="src\components\factory.h" />
+    <ClInclude Include="src\components\fighter.h" />
     <ClInclude Include="src\components\port.h" />
     <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\mine.h" />

@@ -29,7 +29,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
     SimpleRenderable render = {
         MINE_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-        BUILDING_SHADOW_TEXTURE_ID,
+        MINE_SHADOW_TEXTURE_ID,
         false,
         false,
         nation,
@@ -44,6 +44,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         100.0f,
         0.0f,
         0.0f,
+        Scene_CreateMask(2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
     };
     Scene_Assign(scene, mineID, HEALTH_COMPONENT_ID, &health);
 

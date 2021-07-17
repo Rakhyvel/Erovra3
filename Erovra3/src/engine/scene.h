@@ -86,6 +86,7 @@ void Scene_Purge(struct scene*);
 
 ComponentMask Scene_CreateMask(int, ComponentID, ...);
 bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID id);
+bool Scene_EntityHasAnyComponents(struct scene* scene, ComponentMask mask, EntityID id);
 
 EntityID Scene_Begin(struct scene* scene, ComponentMask mask);
 bool Scene_End(struct scene* scene, EntityID id);

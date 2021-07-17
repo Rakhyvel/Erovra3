@@ -10,6 +10,7 @@
 #include "../components/cruiser.h"
 #include "../components/destroyer.h"
 #include "../components/factory.h"
+#include "../components/fighter.h"
 #include "../components/infantry.h"
 #include "../components/mine.h"
 #include "../components/nation.h"
@@ -243,6 +244,9 @@ void Match_DetectHit(struct scene* scene)
         SimpleRenderable* otherSimpleRenderable = NULL;
         bool deadFlag = false;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+            if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
+                continue;
+            }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
             otherSimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -260,9 +264,6 @@ void Match_DetectHit(struct scene* scene)
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id) || Scene_EntityHasComponent(scene, Scene_CreateMask(1, WALL_FLAG_COMPONENT_ID), id)) {
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
-                    Match_SetAlertedTile(nation, motion->pos.x - 33, motion->pos.y, -10);
-                    Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y - 33, -10);
-                    Match_SetAlertedTile(nation, motion->pos.x - 33, motion->pos.y - 33, -10);
                     unit->engagedTicks = 100000;
                 }
                 if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, TARGET_COMPONENT_ID), id)) {
@@ -1088,7 +1089,9 @@ void Match_CombatantAttack(struct scene* scene)
             target->lookat = closestPos;
             unit->stuckIn = true; // Useless?
         }
-        unit->engaged = true;
+        if (!onlyBuildings) {
+            unit->engaged = true;
+        }
         unit->engagedTicks = (int)(128.0f / motion->speed);
 
         // Shoot enemy units if found
@@ -1248,9 +1251,11 @@ void Match_SimpleRender(struct scene* scene)
             continue;
         }
 
+		// Shadow
         terrain_translate(&rect, motion->pos.x, motion->pos.y, simpleRenderable->width, simpleRenderable->height);
         Texture_Draw(simpleRenderable->shadow, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
 
+		// Outline
         if (simpleRenderable->showOutline) {
             Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)255);
             terrain_translate(&rect, motion->pos.x, motion->pos.y - 2, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
@@ -1261,6 +1266,7 @@ void Match_SimpleRender(struct scene* scene)
             Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
         }
 
+		// Base image
         terrain_translate(&rect, motion->pos.x, motion->pos.y - 2, simpleRenderable->width, simpleRenderable->height);
         if (!motion->destroyOnBounds) {
             Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
@@ -1775,6 +1781,8 @@ Scene* Match_Init()
     // Set enemy nations to each other
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
     SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+
+    Fighter_Create(match, homeVector, homeNation);
 
     // Set nations capitals
     Nation_SetCapital(match, homeNation, homeCapital);

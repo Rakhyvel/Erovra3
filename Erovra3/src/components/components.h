@@ -22,6 +22,7 @@ typedef enum unitType {
 	UnitType_CRUISER,
 	UnitType_BATTLESHIP,
 	UnitType_AIRCRAFT_CARRIER,
+	UnitType_FIGHTER,
     _UnitType_Length
 } UnitType;
 
@@ -78,6 +79,7 @@ typedef struct health {
     float health;
     int aliveTicks;
     int deathTicks;
+    ComponentMask sensedProjectiles;
 } Health;
 ComponentID HEALTH_COMPONENT_ID;
 
@@ -113,6 +115,8 @@ ComponentID SHELL_ATTACK_FLAG_COMPONENT_ID;
 
 ComponentID SHIP_FLAG_COMPONENT_ID;
 
+ComponentID AIRCRAFT_FLAG_COMPONENT_ID;
+
 typedef struct projectile {
     const float attack;
     bool armed;
@@ -120,6 +124,8 @@ typedef struct projectile {
 } Projectile;
 ComponentID PROJECTILE_COMPONENT_ID;
 
+ComponentID AIR_BULLET_COMPONENT_ID;
+ComponentID BULLET_COMPONENT_ID;
 typedef struct shell {
     struct vector tar;
 } Shell;

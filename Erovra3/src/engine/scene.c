@@ -218,6 +218,15 @@ bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID 
 }
 
 /*
+	Returns whether or not the entity mathces some of the components in a mask */
+bool Scene_EntityHasAnyComponents(struct scene* scene, ComponentMask mask, EntityID id)
+{
+    EntityIndex index = getIndex(id);
+    struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
+    return (entt->mask & mask) != 0;
+}
+
+/*
 	Finds and returns first index of a mask matching an entity */
 EntityID Scene_Begin(struct scene* scene, ComponentMask mask)
 {
