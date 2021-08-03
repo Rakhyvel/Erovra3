@@ -14,10 +14,10 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
 
     Motion motion = {
         pos,
-        0.5f,
+        -1,
         (struct vector) { 0.0f, 0.0f },
         0,
-        0.8f, // speed
+        1.6f, // speed
         false
     };
     Scene_Assign(scene, fighterID, MOTION_COMPONENT_ID, &motion);
@@ -28,6 +28,12 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, fighterID, TARGET_COMPONENT_ID, &target);
 
+    Patrol patrol = {
+        { 384, 384 },
+        { 384, 384 }
+    };
+    Scene_Assign(scene, fighterID, PATROL_COMPONENT_ID, &patrol);
+
     SimpleRenderable render = {
         FIGHTER_TEXTURE_ID,
         FIGHTER_OUTLINE_TEXTURE_ID,
@@ -35,8 +41,8 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
         false,
         false,
         nation,
-        42,
-        41,
+        42,//42
+        41, //41
         42,
         41
     };
@@ -58,9 +64,9 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
 
     Combatant combatant = {
         0.5f, // Attack amount
-        68.0f, // Attack dist
+        128.0f, // Attack dist
         Scene_CreateMask(2, AIRCRAFT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
-        30, // Attack time (ticks)
+        15, // Attack time (ticks)
         &AirBullet_Create,
         true
     };

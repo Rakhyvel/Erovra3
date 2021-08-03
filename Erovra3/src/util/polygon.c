@@ -38,6 +38,8 @@ struct polygon_t Polygon_Create(char* filename)
         numVertices++;
     }
     retval.numVertices = numVertices;
+    retval.x = 0;
+    retval.y = 0;
     fclose(gonFile);
     return retval;
 }

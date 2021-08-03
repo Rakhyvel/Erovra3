@@ -31,6 +31,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_COIN][UnitType_DESTROYER] = 6;
     nation.costs[ResourceType_COIN][UnitType_CRUISER] = 6;
     nation.costs[ResourceType_COIN][UnitType_BATTLESHIP] = 6;
+    nation.costs[ResourceType_COIN][UnitType_FIGHTER] = 15;
 
 	// Ore costs
     nation.costs[ResourceType_ORE][UnitType_CITY] = 0;
@@ -42,6 +43,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_ORE][UnitType_DESTROYER] = 0;
     nation.costs[ResourceType_ORE][UnitType_CRUISER] = 0;
     nation.costs[ResourceType_ORE][UnitType_BATTLESHIP] = 0;
+    nation.costs[ResourceType_ORE][UnitType_FIGHTER] = 5;
 
     nation.visitedSpacesSize = mapSize / 32;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));

@@ -47,12 +47,23 @@ typedef struct motion {
 } Motion;
 ComponentID MOTION_COMPONENT_ID;
 
+/*
+	Used by ground units and ships. These units go directly towards their target. */
 typedef struct target {
     struct vector tar;
     struct vector lookat;
-    struct vector scoutLock;
 } Target;
 ComponentID TARGET_COMPONENT_ID;
+
+/*
+	Used by air units only. Player specifies a patrol point, and unit moves 
+	around this point */
+typedef struct patrol {
+    struct vector patrolPoint; // Where the patroller will be targeted to go
+    struct vector focalPoint; // Where the patroller will actually go, depending on if there are enemies
+    float angle;
+} Patrol;
+ComponentID PATROL_COMPONENT_ID;
 
 /*
 		Contains data for rendering an entity to the screen, like it's sprite,
@@ -117,6 +128,7 @@ ComponentID SHIP_FLAG_COMPONENT_ID;
 
 ComponentID AIRCRAFT_FLAG_COMPONENT_ID;
 
+// TODO: Add "origin" vector for projectiles, so that units can mark those areas as hostile
 typedef struct projectile {
     const float attack;
     bool armed;

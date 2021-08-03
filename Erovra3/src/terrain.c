@@ -64,7 +64,7 @@ struct terrain* terrain_create(int mapSize, float biome, int scale)
         }
     }
     printf("Updated biomes\n");
-    //terrain_erode(retval);
+    terrain_erode(retval);
     printf("Eroded\n");
     paintMap(retval);
     printf("Painted\n");

@@ -3,6 +3,7 @@
 #define MAX_VERTICES 64
 
 typedef struct polygon_t {
+    int x, y;
     float vertexX[MAX_VERTICES];
     float vertexY[MAX_VERTICES];
     int numVertices;

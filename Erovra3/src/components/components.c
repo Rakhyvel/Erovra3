@@ -8,6 +8,7 @@ void Components_Init(struct scene* scene)
 {
     MOTION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Motion));
     TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
+    PATROL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Patrol));
     SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
 

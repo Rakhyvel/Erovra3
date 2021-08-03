@@ -162,6 +162,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\attacker.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\battleship.c">
       <SubType>
       </SubType>
@@ -287,6 +291,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\artillery.h" />
+    <ClInclude Include="src\components\attacker.h" />
     <ClInclude Include="src\components\battleship.h" />
     <ClInclude Include="src\components\bullet.h" />
     <ClInclude Include="src\components\cavalry.h" />

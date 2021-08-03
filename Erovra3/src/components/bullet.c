@@ -31,7 +31,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     SimpleRenderable render = {
         BULLET_TEXTURE_ID,
         INVALID_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        BULLET_SHADOW_TEXTURE_ID,
         false,
         false,
         nation,
@@ -59,5 +59,6 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
     EntityID airBulletID = Bullet_Create(scene, pos, tar, attack, nation);
     Scene_Unassign(scene, airBulletID, BULLET_COMPONENT_ID);
     Scene_Assign(scene, airBulletID, AIR_BULLET_COMPONENT_ID, NULL);
+    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = -1;
     return airBulletID;
 }

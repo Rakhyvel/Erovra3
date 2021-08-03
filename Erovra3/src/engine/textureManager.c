@@ -63,7 +63,7 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
 void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 {
     int nodes, pixelX, pixelY, i, j, swap;
-    float nodeX[255], minY = FLT_MAX, maxY = 0;
+    float nodeX[255], minY = FLT_MAX, maxY = FLT_MIN;
     SDL_Texture* texture = textures[textureID];
 
     for (i = 0; i < polygon.numVertices; i++) {
@@ -105,14 +105,14 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
         }
         SDL_SetRenderDrawColor(g->rend, color.r, color.g, color.b, color.a);
         for (i = 0; i < nodes; i += 2) {
-            if (nodeX[i] >= g->width)
+            if (nodeX[i] + polygon.x >= g->width)
                 break;
             if (nodeX[i + 1] > 0) {
-                if (nodeX[i] < 0)
+                if (nodeX[i] + polygon.x < 0)
                     nodeX[i] = 0;
-                if (nodeX[i + 1] > g->width)
+                if (nodeX[i + 1] + polygon.x > g->width)
                     nodeX[i + 1] = g->width;
-                SDL_RenderDrawLine(g->rend, nodeX[i], pixelY - 1, nodeX[i + 1], pixelY - 1);
+                SDL_RenderDrawLine(g->rend, nodeX[i] + polygon.x, pixelY - 1 + polygon.y, nodeX[i + 1] + polygon.x, pixelY - 1 + polygon.y);
             }
         }
         SDL_SetRenderTarget(g->rend, NULL);
@@ -147,6 +147,8 @@ static void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color c
     }
     Polygon rectangle;
     rectangle.numVertices = 4;
+    rectangle.x = 0;
+    rectangle.y = 0;
     float slope = (p1.y - p2.y) / (p1.x - p2.x);
     float slopeSquared = slope * slope;
     float inverseSlope = -1.0f / slope;
@@ -172,8 +174,8 @@ void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color, 
     // For each edge in the polygon
     for (int i = 0; i < polygon.numVertices; i++) {
         // Draw a line between the vertex i and i+1
-        Vector p1 = { polygon.vertexX[i], polygon.vertexY[i] };
-        Vector p2 = { polygon.vertexX[(i + 1) % polygon.numVertices], polygon.vertexY[(i + 1) % polygon.numVertices] };
+        Vector p1 = { polygon.vertexX[i] + polygon.x, polygon.vertexY[i] + polygon.y };
+        Vector p2 = { polygon.vertexX[(i + 1) % polygon.numVertices] + polygon.x, polygon.vertexY[(i + 1) % polygon.numVertices] + polygon.y };
         drawThickLine(textureID, p1, p2, color, thickness);
         drawCircle(textureID, p1, thickness, color);
     }
@@ -227,14 +229,20 @@ static Polygon spliceBezier(Polygon polygon)
 	Fills the spliced version of a bezier */
 void Texture_FillBezier(TextureID textureID, Polygon polygon, SDL_Color color)
 {
-    Texture_FillPolygon(textureID, spliceBezier(polygon), color);
+    Polygon splicedBezier = spliceBezier(polygon);
+    splicedBezier.x = polygon.x;
+    splicedBezier.y = polygon.y;
+    Texture_FillPolygon(textureID, splicedBezier, color);
 }
 
 /*
 	Draws the spliced version of a bezier polygon */
 void Texture_DrawBezier(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
 {
-    Texture_DrawPolygon(textureID, spliceBezier(polygon), color, thickness);
+    Polygon splicedBezier = spliceBezier(polygon);
+    splicedBezier.x = polygon.x;
+    splicedBezier.y = polygon.y;
+    Texture_DrawPolygon(textureID, splicedBezier, color, thickness);
 }
 
 /*
@@ -258,14 +266,19 @@ void Texture_CreateShadow(TextureID dstID, TextureID srcID)
 
 	// Set dst texture as target, if src pixel non-transparent, dst pixel is shadow colored
     SDL_SetRenderTarget(g->rend, dst);
+    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 0);
+    SDL_RenderClear(g->rend);
     SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 64);
+    int area = 0;
     for (int i = 0; i < w * h * 4; i += 4) {
         int x = (i / 4) % w;
         int y = (i / 4) / w;
         if (srcPixels[i] || srcPixels[i + 1] || srcPixels[i + 2] || srcPixels[i + 3]) {
             SDL_RenderDrawPoint(g->rend, x, y);
+            area++;
         }
     }
+    printf("%d\n", area);
     SDL_SetRenderTarget(g->rend, NULL);
 }
 
