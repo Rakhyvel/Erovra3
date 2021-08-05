@@ -152,16 +152,22 @@ x AI shouldn't be able to produce without population
 
 
 3.7.x- Airplanes
-- Add airplanes (x fighter, - attacker, - bomber)
+- Add airplanes (x fighter, x attacker, x bomber)
 	x Can build in factories
 	x Can select the target of a plane if player (should have to click on sprite, not shadow!)
+	x Planes should lead their targets
+	x Planes get deleted when they go off the map
+	x Bombs
+	x Add outline for bomber
+	x Fix highlighting
 - Add airfields
 	- Can only build planes if the city has an airfield, will take off from city's airfield
-	- Land, rearm, repair?
+	- Land and repair?
 - Make AI build airfields and airplanes
 - Planes shouldn't care about walls
 - AI fighter planes should scout
 ! When a factory or city is changed from AI to Player, they are not focusable
+! Ground units dont shoot now
 
 
 3.8.x- Prettify
@@ -202,12 +208,14 @@ x AI shouldn't be able to produce without population
 - Make producer menu show real time rather than ticks
 - Give height to shells with shadow as they go to their target
 	- Shells shouldn't care about walls
+- AirToGroundBullet for attackers, descends from the ground
 - Get better building images, make buildings close to their home city
 	- Put progress bar above factories (it looks good)
 - Fix building hover (probably should be none)
 - Factories, airfields should be "close" to their respective cities
 	- Ports should not, since they need to be in the center of a tile, an in water
 - Completely document code, with a python script to create HTML documentation for everything
+- Defensive armament for bombers
 
 
 3.9.x- Cool stuff

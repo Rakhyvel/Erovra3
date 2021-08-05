@@ -22,7 +22,9 @@ typedef enum unitType {
 	UnitType_CRUISER,
 	UnitType_BATTLESHIP,
 	UnitType_AIRCRAFT_CARRIER,
-	UnitType_FIGHTER,
+    UnitType_FIGHTER,
+    UnitType_ATTACKER,
+    UnitType_BOMBER,
     _UnitType_Length
 } UnitType;
 
@@ -44,6 +46,8 @@ typedef struct motion {
     float angle;
     float speed;
     bool destroyOnBounds;
+    float dZ; // Change in z (height)
+    float aZ; // Change in dZ (vertical acceleration)
 } Motion;
 ComponentID MOTION_COMPONENT_ID;
 
@@ -59,8 +63,8 @@ ComponentID TARGET_COMPONENT_ID;
 	Used by air units only. Player specifies a patrol point, and unit moves 
 	around this point */
 typedef struct patrol {
-    struct vector patrolPoint; // Where the patroller will be targeted to go
-    struct vector focalPoint; // Where the patroller will actually go, depending on if there are enemies
+    struct vector patrolPoint; // Where the patroller will be targeted to go by the user or by AI. Basically, the "general location" to go.
+    struct vector focalPoint; // Where the patroller will actually go. Changed by systems that check for enemies. If no enemies, will likely be patrolPoint.
     float angle;
 } Patrol;
 ComponentID PATROL_COMPONENT_ID;
@@ -142,6 +146,8 @@ typedef struct shell {
     struct vector tar;
 } Shell;
 ComponentID SHELL_COMPONENT_ID;
+
+ComponentID BOMB_COMPONENT_ID;
 
 typedef struct nation {
     SDL_Color color;

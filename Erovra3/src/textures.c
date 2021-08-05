@@ -7,7 +7,7 @@
 void Textures_Init()
 {
     // 30px padding should be included when creating polygonal sprites
-	// Default orientation is that the bottom is the front
+    // Default orientation is that the bottom is the front
     Polygon groundBorderPoly = Polygon_Create("res/ground_border.gon");
     Polygon shipPoly = Polygon_Create("res/ship.gon");
 
@@ -18,8 +18,12 @@ void Textures_Init()
     Polygon attackerWing = Polygon_Create("res/attacker_wings.gon");
     Polygon attackerBody = Polygon_Create("res/attacker_body.gon");
     Polygon attackerTail = Polygon_Create("res/attacker_tail.gon");
+    Polygon attackerNacelle = Polygon_Create("res/attacker_nacelle.gon");
 
-    Polygon nacelle = Polygon_Create("res/nacelle.gon");
+    Polygon bomberWing = Polygon_Create("res/bomber_wings.gon");
+    Polygon bomberBody = Polygon_Create("res/bomber_body.gon");
+    Polygon bomberTail = Polygon_Create("res/bomber_tail.gon");
+    Polygon bomberNacelle = Polygon_Create("res/bomber_nacelle.gon");
 
     CITY_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
     FACTORY_TEXTURE_ID = Texture_RegisterTexture("res/factory.png");
@@ -55,9 +59,15 @@ void Textures_Init()
     ATTACKER_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/attacker.png");
     ATTACKER_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/attacker.png");
 
+    BOMBER_TEXTURE_ID = Texture_RegisterTexture("res/bomber.png");
+    BOMBER_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/bomber.png");
+    BOMBER_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bomber.png");
+
     BULLET_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
     BULLET_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
     SHELL_TEXTURE_ID = Texture_RegisterTexture("res/shell.png");
+    BOMB_TEXTURE_ID = Texture_RegisterTexture("res/bomb.png");
+    BOMB_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bomb.png");
     COIN_TEXTURE_ID = Texture_RegisterTexture("res/coin.png");
     ORE_TEXTURE_ID = Texture_RegisterTexture("res/ore.png");
 
@@ -68,6 +78,7 @@ void Textures_Init()
     Texture_CreateShadow(MINE_SHADOW_TEXTURE_ID, MINE_TEXTURE_ID);
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
+    Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
 
     Texture_FillPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -78,7 +89,6 @@ void Textures_Init()
     Texture_FillPolygon(ARTILLERY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(ARTILLERY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(ARTILLERY_TEXTURE_ID, Polygon_Create("res/artillery.gon"), (SDL_Color) { 0, 0, 0, 255 });
-    printf("Um lol:\n");
     Texture_CreateShadow(GROUND_SHADOW_TEXTURE_ID, INFANTRY_TEXTURE_ID);
 
     Texture_FillBezier(BATTLESHIP_TEXTURE_ID, shipPoly, (SDL_Color) { 255, 255, 255, 255 });
@@ -98,7 +108,6 @@ void Textures_Init()
     Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
-
     Texture_FillBezier(FIGHTER_TEXTURE_ID, fighterWing, (SDL_Color) { 255, 255, 255, 255 }, 10);
     Texture_DrawBezier(FIGHTER_TEXTURE_ID, fighterWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(FIGHTER_TEXTURE_ID, fighterTail, (SDL_Color) { 255, 255, 255, 255 }, 10);
@@ -107,18 +116,48 @@ void Textures_Init()
     Texture_DrawBezier(FIGHTER_TEXTURE_ID, fighterBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_CreateShadow(FIGHTER_SHADOW_TEXTURE_ID, FIGHTER_TEXTURE_ID);
 
-	nacelle.x = 230;
-    nacelle.y = 130;
-    Texture_FillBezier(ATTACKER_TEXTURE_ID, nacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
-    Texture_DrawBezier(ATTACKER_TEXTURE_ID, nacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
-    nacelle.x = 390;
-    Texture_FillBezier(ATTACKER_TEXTURE_ID, nacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
-    Texture_DrawBezier(ATTACKER_TEXTURE_ID, nacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
-    Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerWing, (SDL_Color) { 255, 255, 255, 255 }, 10);
-    Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(ATTACKER_OUTLINE_TEXTURE_ID, attackerTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    attackerNacelle.x = 230;
+    attackerNacelle.y = 135;
+    Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    attackerNacelle.x = 390;
+    Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(ATTACKER_TEXTURE_ID, attackerTail, (SDL_Color) { 255, 255, 255, 255 }, 10);
     Texture_DrawPolygon(ATTACKER_TEXTURE_ID, attackerTail, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerWing, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerBody, (SDL_Color) { 255, 255, 255, 255 }, 10);
     Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_CreateShadow(ATTACKER_SHADOW_TEXTURE_ID, ATTACKER_TEXTURE_ID);
+
+    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(BOMBER_OUTLINE_TEXTURE_ID, bomberTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    bomberNacelle.x = 323;
+    bomberNacelle.y = 137;
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    bomberNacelle.x = 227;
+    bomberNacelle.y = 143;
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    bomberNacelle.x = 467;
+    bomberNacelle.y = 137;
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    bomberNacelle.x = 563;
+    bomberNacelle.y = 143;
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillPolygon(BOMBER_TEXTURE_ID, bomberTail, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawPolygon(BOMBER_TEXTURE_ID, bomberTail, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberWing, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 }, 10);
+    Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_CreateShadow(BOMBER_SHADOW_TEXTURE_ID, BOMBER_TEXTURE_ID);
 }

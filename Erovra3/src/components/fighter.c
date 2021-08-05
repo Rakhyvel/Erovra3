@@ -14,10 +14,10 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
 
     Motion motion = {
         pos,
-        -1,
+        1.0f,
         (struct vector) { 0.0f, 0.0f },
         0,
-        1.6f, // speed
+        1.13f, // speed
         false
     };
     Scene_Assign(scene, fighterID, MOTION_COMPONENT_ID, &motion);
@@ -29,8 +29,8 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, fighterID, TARGET_COMPONENT_ID, &target);
 
     Patrol patrol = {
-        { 384, 384 },
-        { 384, 384 }
+        { 256, 256 },
+        { 256, 256 }
     };
     Scene_Assign(scene, fighterID, PATROL_COMPONENT_ID, &patrol);
 
@@ -63,7 +63,7 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, fighterID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.5f, // Attack amount
+        5.0f, // Attack amount
         128.0f, // Attack dist
         Scene_CreateMask(2, AIRCRAFT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         15, // Attack time (ticks)

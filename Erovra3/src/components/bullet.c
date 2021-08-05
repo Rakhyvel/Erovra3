@@ -45,7 +45,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     Projectile projectile = {
         attack,
         true,
-        8.0f
+        12.0f
     };
     Scene_Assign(scene, bulletID, PROJECTILE_COMPONENT_ID, &projectile);
     Scene_Assign(scene, bulletID, BULLET_COMPONENT_ID, NULL);
@@ -59,6 +59,7 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
     EntityID airBulletID = Bullet_Create(scene, pos, tar, attack, nation);
     Scene_Unassign(scene, airBulletID, BULLET_COMPONENT_ID);
     Scene_Assign(scene, airBulletID, AIR_BULLET_COMPONENT_ID, NULL);
-    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = -1;
+    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = 1.0f;
+    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->aZ = -0.0001f;
     return airBulletID;
 }

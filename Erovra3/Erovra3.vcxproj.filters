@@ -129,6 +129,12 @@
     <ClCompile Include="src\components\attacker.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\bomber.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\bomb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -231,6 +237,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\attacker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\bomber.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\bomb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

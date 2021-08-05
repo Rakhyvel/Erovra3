@@ -170,6 +170,14 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\bomb.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\bomber.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\bullet.c">
       <SubType>
       </SubType>
@@ -293,6 +301,7 @@
     <ClInclude Include="src\components\artillery.h" />
     <ClInclude Include="src\components\attacker.h" />
     <ClInclude Include="src\components\battleship.h" />
+    <ClInclude Include="src\components\bomber.h" />
     <ClInclude Include="src\components\bullet.h" />
     <ClInclude Include="src\components\cavalry.h" />
     <ClInclude Include="src\components\city.h" />
@@ -301,6 +310,7 @@
     <ClInclude Include="src\components\destroyer.h" />
     <ClInclude Include="src\components\factory.h" />
     <ClInclude Include="src\components\fighter.h" />
+    <ClInclude Include="src\components\bomb.h" />
     <ClInclude Include="src\components\port.h" />
     <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\mine.h" />

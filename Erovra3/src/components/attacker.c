@@ -14,7 +14,7 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
 
     Motion motion = {
         pos,
-        -1,
+        1.0f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0.8f, // speed
@@ -41,10 +41,10 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
         false,
         false,
         nation,
-        49 * 1.189207115, //42
-        41 * 1.189207115, //41
-        42,
-        41
+        58, //42
+        48, //41
+        58,
+        48
     };
     Scene_Assign(scene, attackerID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
@@ -57,17 +57,17 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, attackerID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        UnitType_FIGHTER,
+        UnitType_ATTACKER,
         0.5f // Defense
     };
     Scene_Assign(scene, attackerID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.5f, // Attack amount
+        10.0f, // Attack amount
         128.0f, // Attack dist
         Scene_CreateMask(2, GROUND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         15, // Attack time (ticks)
-        &AirBullet_Create,
+        &Bullet_Create,
         true
     };
     Scene_Assign(scene, attackerID, COMBATANT_COMPONENT_ID, &combatant);

@@ -3,6 +3,7 @@
 #include "../components/artillery.h"
 #include "../components/attacker.h"
 #include "../components/battleship.h"
+#include "../components/bomber.h"
 #include "../components/bullet.h"
 #include "../components/cavalry.h"
 #include "../components/city.h"
@@ -48,6 +49,25 @@ static const float taxRate = 0.25f;
 static const int ticksPerLabor = 400;
 
 // UTILITY FUNCTIONS
+
+bool Match_Collision(Scene* scene, EntityID id, Vector pos)
+{
+    Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+    SimpleRenderable* simpleRenderable = (Motion*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+    float dx = motion->pos.x - pos.x;
+    float dy = pos.y - motion->pos.y + motion->z;
+    if (motion->z == -1) {
+        dy += 32;
+    }
+
+    float sin = sinf(motion->angle);
+    float cos = cosf(motion->angle);
+
+    bool checkLR = fabs(sin * dx + cos * dy) <= simpleRenderable->height / 2;
+    bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
+
+    return checkLR && checkTB;
+}
 
 /*
 	Takes in a producer, and a unit. Depending on the resources of the producer's
@@ -263,6 +283,8 @@ void Match_DetectHit(struct scene* scene)
                     splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
                 }
                 health->health -= projectile->attack * splashDamageModifier / unit->defense;
+                motion->speed *= 0.9966f;
+                printf("%f\n", health->health);
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id) || Scene_EntityHasComponent(scene, Scene_CreateMask(1, WALL_FLAG_COMPONENT_ID), id)) {
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
@@ -327,8 +349,10 @@ void Match_Motion(struct scene* scene)
     for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         motion->pos = Vector_Add(motion->pos, motion->vel);
+        motion->dZ += motion->aZ;
+        motion->z += motion->dZ;
         float height = terrain_getHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
-        if (height == -1) {
+        if (motion->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
         }
     }
@@ -405,8 +429,8 @@ void Match_Target(struct scene* scene)
 
             displacement = Vector_Add((motion->pos), (motion->vel));
             float height = terrain_getHeight(terrain, (int)displacement.x, (int)displacement.y);
-            // Hit water -> stay still
-            if (motion->z > 0 && (height < motion->z || height > motion->z + 0.5f)) {
+            // Not in air and hit edge -> stay still
+            if (motion->z <= 0.5f && (height < motion->z || height > motion->z + 0.5f)) {
                 motion->vel.x = 0;
                 motion->vel.y = 0;
             }
@@ -446,6 +470,13 @@ void Match_Target(struct scene* scene)
     }
 }
 
+/*
+fly towards enemy
+if enemy is behind you, keep flying until you're far enough away, then turn around
+ 0.9, 1.0: Go straight
+ 0.0, 0.9: Fly towards target
+-1.0, 0.0: Turn around if you're far enough away
+*/
 void Match_Patrol(struct scene* scene)
 {
     const ComponentMask motionMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID);
@@ -459,16 +490,19 @@ void Match_Patrol(struct scene* scene)
         Vector perpVel = { -motion->vel.y, motion->vel.x };
         float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
 
-        if (targetAlignment < 0.92) {
+		// Only make targetAlignment better
+        if (targetAlignment > -0.99 && targetAlignment < 0) {
             float diff = Vector_Dot(perpVel, innerCircle);
             diff *= 0.5f;
-            diff += (diff >= 0 ? 1 : -1) * 0.5;
+            diff += diff >= 0 ? 0.5 : -0.5;
             // If perpVel and innerCircle are perpendicular (dot == 0), then you're right on track.
             // dot is + -> turn left -> increase angle
             // dot is - -> turn right -> decrease angle
             patrol->angle += motion->speed * diff / 35.0f;
-        } else if (targetAlignment > -0.9 && Vector_Dist(motion->pos, patrol->focalPoint) > 64) {
-            patrol->angle += motion->speed / 205.0f;
+        } 
+		// If not going directly away, and distance is greater than 64
+        else if (targetAlignment >= 0 && Vector_Dist(motion->pos, patrol->focalPoint) > 64) {
+            patrol->angle += motion->speed / 35.0f;
         }
 
         target->tar = Vector_Add(motion->pos, Vector_Scalar((Vector) { sinf(patrol->angle), cosf(patrol->angle) }, 2 * motion->speed));
@@ -503,6 +537,27 @@ void Match_ShellMove(struct scene* scene)
 }
 
 /*
+TODO: combine this with shells so that any time an aloft projectile hits the ground it becomes armed.
+*/
+void Match_BombMove(struct scene* scene)
+{
+    const ComponentMask motionMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
+
+        if (motion->z < 0.5) {
+            if (!projectile->armed) {
+                projectile->armed = true;
+            } else {
+                Scene_MarkPurged(scene, id);
+            }
+        }
+    }
+}
+
+/*
 	Calculates whether a unit is hovered over with the mouse. Assumes rectangle 
 	shape, given by SimpleRenderable texture bounds */
 void Match_Hover(struct scene* scene)
@@ -517,10 +572,7 @@ void Match_Hover(struct scene* scene)
 
         Vector mouse = Terrain_MousePos();
         float dx = motion->pos.x - mouse.x;
-        float dy = mouse.y - motion->pos.y + motion->z;
-        if (motion->z == -1) {
-            dy += 32;
-        }
+        float dy = mouse.y - motion->pos.y + (motion->z < 0.5 ? 0 : 60 * motion->z - 28);
 
         float sin = sinf(motion->angle);
         float cos = cosf(motion->angle);
@@ -1065,6 +1117,9 @@ void Match_CombatantAttack(struct scene* scene)
     const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+        if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, PATROL_COMPONENT_ID), id)) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -1078,6 +1133,7 @@ void Match_CombatantAttack(struct scene* scene)
         float closestDist = combatant->attackDist;
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
+        Vector closestVel = { -1, -1 };
         const ComponentMask otherMask = Scene_CreateMask(1, MOTION_COMPONENT_ID) | combatant->enemyMask;
         EntityID otherID;
         bool groundUnit = false;
@@ -1109,6 +1165,7 @@ void Match_CombatantAttack(struct scene* scene)
                 closestDist = dist;
                 closest = otherID;
                 closestPos = otherMotion->pos;
+                closestVel = otherMotion->vel;
                 groundUnit = Scene_EntityHasComponent(scene, Scene_CreateMask(1, GROUND_UNIT_FLAG_COMPONENT_ID), otherID);
             }
         }
@@ -1127,8 +1184,19 @@ void Match_CombatantAttack(struct scene* scene)
         if (groundUnit && combatant->faceEnemy) {
             target->tar = motion->pos;
         }
+        Vector lead = closestPos;
+        // Find lead angle
+        for (int i = 0; i < 1000; i++) {
+            // t := time it takes for a bullet to travel to target
+            //	 := distance / bullet speed
+            float ticksToTarget = closestDist / 4;
+            // target pos += velocity * t
+            lead = Vector_Add(closestPos, Vector_Scalar(closestVel, ticksToTarget));
+            closestDist = Vector_Dist(lead, motion->pos);
+            // Repeat for new target pos a few times
+        }
         if (combatant->faceEnemy) {
-            target->lookat = closestPos;
+            target->lookat = lead;
             unit->stuckIn = true; // Useless?
         }
         if (!onlyBuildings) {
@@ -1137,19 +1205,12 @@ void Match_CombatantAttack(struct scene* scene)
         unit->engagedTicks = (int)(128.0f / motion->speed);
 
         // Shoot enemy units if found
-        Vector displacement = Vector_Sub(motion->pos, closestPos);
-        float deflection = Vector_Angle(displacement);
-
-        while (deflection > M_PI * 2) {
-            deflection -= M_PI * 2;
-        }
-        while (deflection < 0) {
-            deflection += M_PI * 2;
-        }
-        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - motion->angle) < 0.2 * motion->speed || !combatant->faceEnemy)) {
+        Vector innerCircle = Vector_Normalize(Vector_Sub(lead, motion->pos)); // Points from pos to patrol
+        float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
+        if (health->aliveTicks % combatant->attackTime == 0 && (targetAlignment > 0.95 || !combatant->faceEnemy)) {
             float homeFieldAdvantage = 0.6 * (Vector_Dist(capital->pos, motion->pos) / sqrtf(terrain->size * terrain->size)) + 1;
             float manPower = health->health / 100.0f;
-            combatant->projConstructor(scene, motion->pos, closestPos, manPower * homeFieldAdvantage * combatant->attack, simpleRenderable->nation);
+            combatant->projConstructor(scene, motion->pos, lead, manPower * homeFieldAdvantage * combatant->attack, simpleRenderable->nation);
         }
     }
 }
@@ -1158,10 +1219,11 @@ void Match_CombatantAttack(struct scene* scene)
 	Actually just for fighters and attackers really */
 void Match_AirplaneAttack(Scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(2, PATROL_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID);
+    const ComponentMask renderMask = Scene_CreateMask(3, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1171,48 +1233,56 @@ void Match_AirplaneAttack(Scene* scene)
         Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
         // Find closest enemy ground unit
-        float closestDist = combatant->attackDist;
+        float closestDist = combatant->attackDist + 100.0f;
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
+        Vector closestVel = { -1, -1 };
         const ComponentMask otherMask = Scene_CreateMask(1, MOTION_COMPONENT_ID) | combatant->enemyMask;
         EntityID otherID;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
             float patrolDist = Vector_Dist(otherMotion->pos, patrol->patrolPoint);
 
             float dist = Vector_Dist(otherMotion->pos, motion->pos);
+            Vector innerCircle = Vector_Normalize(Vector_Sub(otherMotion->pos, motion->pos)); // Points from pos to patrol
+            float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
 
-            if (dist < closestDist && patrolDist < combatant->attackDist) {
-                closestDist = dist;
+            if (patrolDist + otherHealth->health < closestDist && dist < combatant->attackDist) {
+                closestDist = dist + otherHealth->health;
                 closest = otherID;
                 closestPos = otherMotion->pos;
+                closestVel = otherMotion->vel;
             }
         }
 
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
             patrol->focalPoint = patrol->patrolPoint;
-            continue;
-        }
+        } else if (health->aliveTicks % combatant->attackTime == 0) {
+            // Find lead angle
+            patrol->focalPoint = closestPos;
+            if (fabs(Vector_Dot(Vector_Normalize(closestVel), Vector_Normalize(motion->vel))) < 0.9f) {
+                for (int i = 0; i < 10000; i++) {
+                    // t := time it takes for a bullet to travel to target
+                    //	 := distance / bullet speed
+                    float ticksToTarget = closestDist / 2;
+                    // target pos += velocity * t
+                    patrol->focalPoint = Vector_Add(closestPos, Vector_Scalar(closestVel, ticksToTarget));
+                    closestDist = Vector_Dist(patrol->focalPoint, motion->pos);
+                    // Repeat for new target pos a few times
+                }
+            }
 
-        patrol->focalPoint = closestPos;
+            unit->engagedTicks = (int)(128.0f / motion->speed);
 
-        unit->engagedTicks = (int)(128.0f / motion->speed);
+            // Shoot enemy units if found
+            Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, motion->pos)); // Points from pos to patrol
+            float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
 
-        // Shoot enemy units if found
-        Vector displacement = Vector_Sub(motion->pos, closestPos);
-        float deflection = Vector_Angle(displacement);
-
-        while (deflection > M_PI * 2) {
-            deflection -= M_PI * 2;
-        }
-        while (deflection < 0) {
-            deflection += M_PI * 2;
-        }
-        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - motion->angle) < 0.3 * motion->speed || !combatant->faceEnemy)) {
-            float homeFieldAdvantage = 0.6 * (Vector_Dist(capital->pos, motion->pos) / sqrtf(terrain->size * terrain->size)) + 1;
-            float manPower = health->health / 100.0f;
-            combatant->projConstructor(scene, motion->pos, closestPos, manPower * homeFieldAdvantage * combatant->attack, simpleRenderable->nation);
+            if (targetAlignment > 0.9) {
+                combatant->projConstructor(scene, motion->pos, target->lookat, combatant->attack, simpleRenderable->nation);
+            }
         }
     }
 }
@@ -1294,6 +1364,10 @@ void Match_ProduceUnits(struct scene* scene)
                     Battleship_Create(scene, motion->pos, simpleRenderable->nation);
                 } else if (producer->order == UnitType_FIGHTER) {
                     Fighter_Create(scene, motion->pos, simpleRenderable->nation);
+                } else if (producer->order == UnitType_ATTACKER) {
+                    Attacker_Create(scene, motion->pos, simpleRenderable->nation);
+                } else if (producer->order == UnitType_BOMBER) {
+                    Bomber_Create(scene, motion->pos, simpleRenderable->nation);
                 } else {
                     PANIC("Producer's can't build that UnitType");
                 }
@@ -1358,7 +1432,7 @@ void Match_SimpleRender(struct scene* scene)
             continue;
         }
 
-        int shadowZ = (motion->z < 0 ? 32 : 2);
+        int shadowZ = (motion->z < 0.5 ? 2 : 60 * motion->z - 28);
 
         // Shadow
         terrain_translate(&rect, motion->pos.x, motion->pos.y, simpleRenderable->width, simpleRenderable->height);
@@ -1455,6 +1529,7 @@ void matchUpdate(Scene* match)
     Match_Target(match);
     Match_Motion(match);
     Match_ShellMove(match);
+    Match_BombMove(match);
     Match_SetVisitedSpace(match);
     Match_CombatantAttack(match);
     Match_AirplaneAttack(match);
@@ -1632,10 +1707,14 @@ void Match_InfantryTestSoil(Scene* scene)
     }
 }
 
-/*
-	Called by factory "Build Cavalry" button. Sets the producer that is focused to produce cavalry */
-void Match_FactoryOrderCavalry(Scene* scene)
+/*	Callback for factory and port GUI buttons. GUI buttons should have UnitType
+	stored in their meta data. 
+	
+	@param scene	Scene that click took place in
+	@param buttonID	ID of button that was clicked */
+void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 {
+    UnitType type = (UnitType)((Button*)Scene_GetComponent(scene, buttonID, GUI_BUTTON_COMPONENT_ID))->meta;
     const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
@@ -1645,112 +1724,7 @@ void Match_FactoryOrderCavalry(Scene* scene)
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_CAVALRY)) {
-            GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetContainerShown(scene, focusable->guiContainer, true);
-        }
-    }
-}
-
-/*
-	Called by factory "Build Artillery" button. Sets the producer that is focused to producer artillery */
-void Match_FactoryOrderArtillery(Scene* scene)
-{
-    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_ARTILLERY)) {
-            GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetContainerShown(scene, focusable->guiContainer, true);
-        }
-    }
-}
-
-/*
-	Called by factory "Build Fighter" button. Sets the producer that is focused to producer fighter */
-void Match_FactoryOrderFighter(Scene* scene)
-{
-    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_FIGHTER)) {
-            GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetContainerShown(scene, focusable->guiContainer, true);
-        }
-    }
-}
-
-/*
-	Called by port "Build Destroyer" button. Sets the producer that is focused to produce a destroyer */
-void Match_PortOrderDestroyer(Scene* scene)
-{
-    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_DESTROYER)) {
-            GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetContainerShown(scene, focusable->guiContainer, true);
-        }
-    }
-}
-
-/*
-	Called by port "Build Cruiser" button. Sets the producer that is focused to produce a cruiser */
-void Match_PortOrderCruiser(Scene* scene)
-{
-    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_CRUISER)) {
-            GUI_SetContainerShown(scene, focusable->guiContainer, false);
-            focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetContainerShown(scene, focusable->guiContainer, true);
-        }
-    }
-}
-
-/*
-	Called by port "Build Battleship" button. Sets the producer that is focused to produce a battleship */
-void Match_PortOrderBattleship(Scene* scene)
-{
-    const ComponentMask focusMask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, UnitType_BATTLESHIP)) {
+        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, type)) {
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
             focusable->guiContainer = producer->busyGUIContainer;
             GUI_SetContainerShown(scene, focusable->guiContainer, true);
@@ -1819,26 +1793,28 @@ Scene* Match_Init()
 
     INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", &Match_InfantryAddCity));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", &Match_InfantryAddMine));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", &Match_InfantryAddFactory));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", &Match_InfantryAddWall));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", &Match_InfantryAddPort));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", &Match_InfantryTestSoil));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_InfantryAddCity));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_InfantryAddMine));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_InfantryAddFactory));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_InfantryAddWall));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_InfantryAddPort));
+    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_InfantryTestSoil));
     GUI_SetContainerShown(match, INFANTRY_FOCUSED_GUI, false);
 
     FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, FACTORY_READY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", &Match_FactoryOrderCavalry));
-    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", &Match_FactoryOrderArtillery));
-    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Figher", &Match_FactoryOrderFighter));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", UnitType_CAVALRY, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", UnitType_ARTILLERY, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Figher", UnitType_FIGHTER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Attacker", UnitType_ATTACKER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Bomber", UnitType_BOMBER, &Match_ProducerOrder));
     GUI_SetContainerShown(match, FACTORY_READY_FOCUSED_GUI, false);
 
     FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, FACTORY_BUSY_FOCUSED_GUI);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
     GUI_SetContainerShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
@@ -1851,24 +1827,24 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, container, CITY_BUSY_FOCUSED_GUI);
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, timeLabel);
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
     GUI_SetContainerShown(match, CITY_BUSY_FOCUSED_GUI, false);
 
     PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, PORT_READY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", &Match_FactoryOrderCavalry));
-    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Destroyer", &Match_PortOrderDestroyer));
-    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", &Match_PortOrderCruiser));
-    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Battleship", &Match_PortOrderBattleship));
-    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Air Craft Carrier", &Match_FactoryOrderCavalry));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", 0, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Destroyer", UnitType_DESTROYER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", UnitType_CRUISER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Battleship", UnitType_BATTLESHIP, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Air Craft Carrier", 0, &Match_ProducerOrder));
     GUI_SetContainerShown(match, PORT_READY_FOCUSED_GUI, false);
 
     PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, PORT_BUSY_FOCUSED_GUI);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, timeLabel);
-    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", &Match_ProducerCancelOrder));
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
     GUI_SetContainerShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
@@ -1918,9 +1894,11 @@ Scene* Match_Init()
     for (int i = 0; i < 2; i++) {
         Vector randVect = { (float)rand() / (float)RAND_MAX * 128, (float)rand() / (float)RAND_MAX };
         Fighter_Create(match, Vector_Sub(homeVector, randVect), homeNation);
+        Fighter_Create(match, Vector_Add(enemyVector, randVect), enemyNation);
+        //Attacker_Create(match, Vector_Sub(homeVector, randVect), homeNation);
         Attacker_Create(match, Vector_Add(enemyVector, randVect), enemyNation);
-        Attacker_Create(match, Vector_Sub(enemyVector, randVect), homeNation);
-        Fighter_Create(match, Vector_Add(homeVector, randVect), enemyNation);
+        Bomber_Create(match, Vector_Sub(homeVector, randVect), homeNation);
+        //Bomber_Create(match, Vector_Add(enemyVector, randVect), enemyNation);
     }
 
     // Set nations capitals

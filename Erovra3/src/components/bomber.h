@@ -2,4 +2,4 @@
 #include "../engine/scene.h"
 #include "../util/vector.h"
 
-EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation);

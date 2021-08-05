@@ -34,9 +34,9 @@ Scene* Menu_Init()
     GUI_Init(scene);
 
     EntityID container = GUI_CreateContainer(scene, (Vector) { 100, 100 });
-    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Start New Game", &Menu_NewGame));
-    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Report a Bug", NULL));
-    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Exit", NULL));
+    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Start New Game", 0, &Menu_NewGame));
+    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Report a Bug", 0, NULL));
+    GUI_ContainerAdd(scene, container, GUI_CreateButton(scene, (Vector) { 100, 100 }, 150, 50, "Exit", 0, NULL));
 
     Game_PushScene(scene);
     return scene;

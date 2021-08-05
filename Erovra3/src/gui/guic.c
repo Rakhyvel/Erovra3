@@ -22,7 +22,7 @@ void GUI_Init(Scene* scene)
 /*
 	Creates a button GUI entity. You can give a pos, width and height, but these
 	will be overriden if the button is added to a container*/
-EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void (*onclick)(struct scene*))
+EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, int meta, GUICallback onclick)
 {
     EntityID buttonID = Scene_NewEntity(scene);
 
@@ -40,7 +40,8 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
     Button button = {
         false,
         false,
-        onclick
+        onclick,
+		meta
     };
     strncpy_s(button.text, 255, text, 255);
     Scene_Assign(scene, buttonID, GUI_BUTTON_COMPONENT_ID, &button);
@@ -72,7 +73,7 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
 
 /*
 	Creates a rocker switch entity, given a value and callback function */
-EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, void (*onchange)(struct scene* scene, bool value))
+EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback onchange)
 {
     EntityID rockerSwitchID = Scene_NewEntity(scene);
 
@@ -282,7 +283,7 @@ static void updateButton(Scene* scene)
                 if (button->onclick == NULL) {
                     PANIC("Button onclick is NULL for button %s", button->text);
                 }
-                button->onclick(scene);
+                button->onclick(scene, id);
             }
             button->clickedIn = false;
         }
@@ -310,7 +311,7 @@ static void updateRockerSwitch(Scene* scene)
                     PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
                 }
                 rockerSwitch->value = !rockerSwitch->value;
-                rockerSwitch->onchange(scene, rockerSwitch->value);
+                rockerSwitch->onchange(scene, id);
             }
             rockerSwitch->clickedIn = false;
         }

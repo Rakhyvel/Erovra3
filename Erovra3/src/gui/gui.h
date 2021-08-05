@@ -2,10 +2,12 @@
 #include "../engine/scene.h"
 #include "../util/vector.h"
 
+typedef void (*GUICallback)(struct scene*, EntityID);
+
 void GUI_Init(Scene* scene);
-EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, void (*onclick)(struct scene*));
+EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, int meta, GUICallback);
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
-EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, void (*onchange)(struct scene* scene, bool value));
+EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
 EntityID GUI_CreateContainer(Scene* scene, Vector pos);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
@@ -27,7 +29,8 @@ ComponentID GUI_COMPONENT_ID;
 typedef struct button {
     bool isHovered;
     bool clickedIn;
-    void (*onclick)(struct scene*);
+    GUICallback onclick;
+    int meta;
     char text[255];
 } Button;
 ComponentID GUI_BUTTON_COMPONENT_ID;
@@ -41,7 +44,7 @@ typedef struct rockerSwitch {
     bool isHovered;
     bool clickedIn;
     bool value;
-    void (*onchange)(struct scene* scene, bool value);
+    GUICallback onchange;
     char text[255];
 } RockerSwitch;
 ComponentID GUI_ROCKER_SWITCH_COMPONENT_ID;
