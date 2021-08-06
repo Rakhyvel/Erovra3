@@ -453,7 +453,7 @@ void terrain_erode(struct terrain* terrain)
 
     int* erosionBrushIndices = NULL;
     float* erosionBrushWeights = NULL;
-    for (int i = 0; i < terrain->size * terrain->size; i++) {
+    for (int i = 0; i < terrain->size * terrain->size * 0.5; i++) {
         // Create random droplet
         float posX = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
         float posY = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);

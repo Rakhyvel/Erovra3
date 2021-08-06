@@ -29,6 +29,7 @@ void Textures_Init()
     FACTORY_TEXTURE_ID = Texture_RegisterTexture("res/factory.png");
     MINE_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
     PORT_TEXTURE_ID = Texture_RegisterTexture("res/port.png");
+    AIRFIELD_TEXTURE_ID = Texture_RegisterTexture("res/airfield.png");
     BUILDING_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/hit.png");
     CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
     WALL_TEXTURE_ID = Texture_RegisterTexture("res/wall.png");

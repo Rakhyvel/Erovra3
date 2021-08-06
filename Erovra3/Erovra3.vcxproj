@@ -158,6 +158,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\airfield.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\artillery.c">
       <SubType>
       </SubType>
@@ -298,6 +302,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\airfield.h" />
     <ClInclude Include="src\components\artillery.h" />
     <ClInclude Include="src\components\attacker.h" />
     <ClInclude Include="src\components\battleship.h" />

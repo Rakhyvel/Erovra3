@@ -20,12 +20,6 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     };
     Scene_Assign(scene, factoryID, MOTION_COMPONENT_ID, &motion);
 
-    Target target = {
-        (struct vector) { 0.0f, 0.0f },
-        pos,
-    };
-    Scene_Assign(scene, factoryID, TARGET_COMPONENT_ID, &target);
-
     SimpleRenderable render = {
         FACTORY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,

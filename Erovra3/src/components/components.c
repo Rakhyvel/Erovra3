@@ -46,3 +46,4 @@ void Components_Init(struct scene* scene)
     SELECTABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Selectable));
     FOCUSABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Focusable));
 }
+

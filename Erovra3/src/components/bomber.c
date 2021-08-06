@@ -29,8 +29,8 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, bomberID, TARGET_COMPONENT_ID, &target);
 
     Patrol patrol = {
-        { 384, 384 },
-        { 384, 384 }
+        pos,
+        pos
     };
     Scene_Assign(scene, bomberID, PATROL_COMPONENT_ID, &patrol);
 

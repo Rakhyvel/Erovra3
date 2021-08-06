@@ -15,7 +15,8 @@ typedef enum unitType {
     UnitType_CITY,
     UnitType_MINE,
     UnitType_FACTORY,
-	UnitType_PORT,
+    UnitType_PORT,
+    UnitType_AIRFIELD,
     UnitType_WALL,
 	UnitType_LANDING_CRAFT,
 	UnitType_DESTROYER,
@@ -101,10 +102,10 @@ ComponentID HEALTH_COMPONENT_ID;
 typedef struct unit {
     UnitType type;
     const float defense;
+    int engagedTicks;
     char* name;
     bool stuckIn;
     bool engaged;
-    int engagedTicks;
 } Unit;
 ComponentID UNIT_COMPONENT_ID;
 
@@ -175,6 +176,7 @@ ComponentID AI_FLAG_COMPONENT_ID;
 typedef struct city {
     char name[20];
     bool isCapital;
+    bool hasAirfield;
     EntityID buildings[4]; // Corresponds to NWSE cardinal directions
 } City;
 ComponentID CITY_COMPONENT_ID;

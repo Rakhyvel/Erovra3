@@ -29,8 +29,8 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, fighterID, TARGET_COMPONENT_ID, &target);
 
     Patrol patrol = {
-        { 256, 256 },
-        { 256, 256 }
+        pos,
+        pos
     };
     Scene_Assign(scene, fighterID, PATROL_COMPONENT_ID, &patrol);
 

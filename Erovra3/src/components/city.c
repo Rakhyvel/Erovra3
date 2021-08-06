@@ -46,7 +46,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     Unit type = {
         UnitType_CITY,
-        5.0f
+        5.0f,
+		-10
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
@@ -80,7 +81,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     char name[20] = "Name";
     City city = {
         name,
-        false
+        false,
+		false
     };
     for (int i = 0; i < 4; i++) {
         city.buildings[i] = INVALID_ENTITY_INDEX;

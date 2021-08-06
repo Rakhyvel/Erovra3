@@ -135,6 +135,9 @@
     <ClCompile Include="src\components\bomb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\airfield.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -243,6 +246,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\bomb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\airfield.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

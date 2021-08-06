@@ -25,6 +25,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
+    nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 10;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
@@ -40,6 +41,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_ORE][UnitType_FACTORY] = 0;
     nation.costs[ResourceType_ORE][UnitType_PORT] = 0;
     nation.costs[ResourceType_ORE][UnitType_MINE] = 0;
+    nation.costs[ResourceType_ORE][UnitType_AIRFIELD] = 0;
     nation.costs[ResourceType_ORE][UnitType_CAVALRY] = 5;
     nation.costs[ResourceType_ORE][UnitType_ARTILLERY] = 5;
     nation.costs[ResourceType_ORE][UnitType_DESTROYER] = 5;
