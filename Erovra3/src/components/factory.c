@@ -6,10 +6,9 @@
 
 /*
 	Creates a factory entity */
-EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
+EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID factoryID = Scene_NewEntity(scene);
-	// pos parameter will be slightly towards the home city, hopefully
     Motion motion = {
         pos,
         0.5f,
@@ -63,11 +62,16 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         -1,
         INVALID_ENTITY_INDEX,
         false,
-        homeCity,
         FACTORY_READY_FOCUSED_GUI,
         FACTORY_BUSY_FOCUSED_GUI
     };
     Scene_Assign(scene, factoryID, PRODUCER_COMPONENT_ID, &producer);
+
+    Expansion expansion = {
+        homeCity,
+        dir
+    };
+    Scene_Assign(scene, factoryID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, factoryID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

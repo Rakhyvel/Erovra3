@@ -162,14 +162,12 @@ x AI shouldn't be able to produce without population
 	x Fix highlighting
 x Add airfields
 	x Can only build planes if the city has an airfield, will take off from city's airfield
-- Planes should scout when not engaged
+x Planes should scout when not engaged
 - Make AI build airfields and airplanes
 	- If no air supremacy, build fighters
 	- Else, build attackers/bombers
 	- Fighters should target other fighters, else other planes, else scout
 	- Attackers and bombers go after their respective targets, like ground units do
-! Mines don't release population when you kill them
-! Ground units slow way down when they're hit
 
 
 3.8.x- Prettify
@@ -240,7 +238,7 @@ x Add airfields
 - Mines (as in anti personel mines, not mines for ore)
 - Units retreat
 - Units have a queue of targets instead of just one, can give them a path to follow
-	- cycles can be achived by enqueueing after dequieing
+	- cycles can be achived by enqueueing after dequieing a target, which would be kinda neat!
 - Projectiles should scan walls and see if they're hitting them, even at oblique angles
 - Add a true unit lookup system so that you can just say Unit_Create(UnitType, other stuff) and all that
 	- With config files, which are always good
@@ -249,7 +247,7 @@ x Add airfields
 - Box select
 - Holding shift while selecting multiple units will change between "goto point" and "center of mass"
 	- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
-- Being able to specify a number of different targets for a unit to follow
+- Circle search for tiles rather than searching all tiles
 
 3.10.x- Multiplayer
 - Multiplayer

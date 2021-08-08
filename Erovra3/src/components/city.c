@@ -51,16 +51,6 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
-	Producer producer = {
-        -1,
-        INVALID_ENTITY_INDEX,
-        false,
-        INVALID_ENTITY_INDEX,
-		CITY_READY_FOCUSED_GUI,
-		CITY_BUSY_FOCUSED_GUI
-    };
-    Scene_Assign(scene, cityID, PRODUCER_COMPONENT_ID, &producer);
-
     ResourceProducer resourceProducer = {
         0.75,
         &Coin_Create
@@ -80,12 +70,10 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
 
     char name[20] = "Name";
     City city = {
-        name,
-        false,
-		false
+        name
     };
     for (int i = 0; i < 4; i++) {
-        city.buildings[i] = INVALID_ENTITY_INDEX;
+        city.expansions[i] = INVALID_ENTITY_INDEX;
     }
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
 

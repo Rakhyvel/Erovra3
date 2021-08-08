@@ -25,16 +25,16 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
-    nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 10;
+    nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 25;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
     nation.costs[ResourceType_COIN][UnitType_DESTROYER] = 15;
     nation.costs[ResourceType_COIN][UnitType_CRUISER] = 30;
     nation.costs[ResourceType_COIN][UnitType_BATTLESHIP] = 60;
-    nation.costs[ResourceType_COIN][UnitType_FIGHTER] = 15;
-    nation.costs[ResourceType_COIN][UnitType_ATTACKER] = 30;
-    nation.costs[ResourceType_COIN][UnitType_BOMBER] = 60;
+    nation.costs[ResourceType_COIN][UnitType_FIGHTER] = 30;
+    nation.costs[ResourceType_COIN][UnitType_ATTACKER] = 60;
+    nation.costs[ResourceType_COIN][UnitType_BOMBER] = 120;
 
 	// Ore costs
     nation.costs[ResourceType_ORE][UnitType_CITY] = 0;

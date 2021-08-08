@@ -6,7 +6,7 @@
 
 /*
 	Creates a port entity */
-EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
+EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID portID = Scene_NewEntity(scene);
     Motion motion = {
@@ -68,11 +68,16 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         -1,
         INVALID_ENTITY_INDEX,
         false,
-        homeCity,
         PORT_READY_FOCUSED_GUI,
         PORT_BUSY_FOCUSED_GUI
     };
     Scene_Assign(scene, portID, PRODUCER_COMPONENT_ID, &producer);
+
+    Expansion expansion = {
+        homeCity,
+        dir
+    };
+    Scene_Assign(scene, portID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, portID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

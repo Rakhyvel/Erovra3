@@ -574,7 +574,7 @@ EntityID terrain_getBuildingAt(struct terrain* terrain, int x, int y)
     return terrain->buildings[x + y * (terrain->tileSize)];
 }
 
-void terrain_addBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
+void terrain_setBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
 {
     x -= 32;
     y -= 32;
@@ -590,7 +590,7 @@ EntityID terrain_getWallAt(struct terrain* terrain, int x, int y)
     return terrain->walls[x + y * (terrain->tileSize)];
 }
 
-void terrain_addWallAt(struct terrain* terrain, EntityID id, int x, int y)
+void terrain_setWallAt(struct terrain* terrain, EntityID id, int x, int y)
 {
     x /= 32;
     y /= 32;
@@ -771,6 +771,12 @@ SDL_Color terrain_HSVtoRGB(float hue, float saturation, float value)
 	Takes two positions, checks to see if there is dry land between them */
 bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to, float z)
 {
+    if (to.x < 0 || to.x >= terrain->size || to.y < 0 || to.y >= terrain->size) {
+        return false;
+    }
+    if (z > 0.5) {
+        return true;
+    }
     Vector increment = Vector_Scalar(Vector_Normalize(Vector_Sub(to, from)), 0.5);
     Vector check = { from.x, from.y };
     float distance = Vector_Dist(from, to);

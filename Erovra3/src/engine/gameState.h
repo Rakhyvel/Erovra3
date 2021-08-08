@@ -3,45 +3,46 @@
 game.h
 */
 
+#include "../util/arraylist.h"
+#include "scene.h"
 #include <SDL.h>
 #include <stdbool.h>
-#include "scene.h"
-#include "../util/arraylist.h"
 
 struct game {
     SDL_Window* window;
     SDL_Renderer* rend;
 
-    int mouseX, 
-		mouseY,
-		mouseWheelX, 
-		mouseWheelY, 
-		mouseInitX,
-		mouseInitY, 
-		width,
-		height,
-		ticks;
+    int mouseX,
+        mouseY,
+        mouseWheelX,
+        mouseWheelY,
+        mouseInitX,
+        mouseInitY,
+        width,
+        height,
+        ticks;
 
-    bool running, 
-		up, 
-		down, 
-		left, 
-		right, 
-		ctrl, 
-		shift,
-		lt,
-		gt,
-		keys[255],
-		mouseMoved, 
-		mouseLeftDown,
-		mouseRightDown, 
-		mouseLeftUp, 
-		mouseRightUp, 
-		mouseDrag, 
-		mouseDragged;
+    bool running,
+        up,
+        down,
+        left,
+        right,
+        ctrl,
+        shift,
+        lt,
+        gt,
+        keys[255],
+        mouseMoved,
+        mouseLeftDown,
+        mouseRightDown,
+        mouseLeftUp,
+        mouseRightUp,
+        mouseDrag,
+        mouseDragged;
+
     float dt;
 
-	Arraylist* sceneStack;
+    Arraylist* sceneStack;
 };
 
 struct game* g;

@@ -32,6 +32,7 @@ void Components_Init(struct scene* scene)
 
     CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
     PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Producer));
+    EXPANSION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Expansion));
 
     RESOURCE_PARTICLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceParticle));
     RESOURCE_PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceProducer));

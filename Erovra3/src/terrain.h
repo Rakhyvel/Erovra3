@@ -57,14 +57,14 @@ float terrain_getOre(struct terrain*, int x, int y);
 // Building map functions
 float terrain_getHeightForBuilding(struct terrain*, int x, int y);
 EntityID terrain_getBuildingAt(struct terrain*, int x, int y);
-void terrain_addBuildingAt(struct terrain*, EntityID id, int x, int y);
+void terrain_setBuildingAt(struct terrain*, EntityID id, int x, int y);
 int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1);
 int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
 EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
 
 // Wall functions
 EntityID terrain_getWallAt(struct terrain*, int x, int y);
-void terrain_addWallAt(struct terrain*, EntityID id, int x, int y);
+void terrain_setWallAt(struct terrain*, EntityID id, int x, int y);
 
 // Map affine transformations
 void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height);

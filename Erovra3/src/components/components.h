@@ -8,6 +8,9 @@
 
 void Components_Init(struct scene*);
 
+/*
+General guideline: Use flags for system iterations, and unit type for if statements
+*/
 typedef enum unitType {
     UnitType_INFANTRY,
     UnitType_CAVALRY,
@@ -36,6 +39,13 @@ typedef enum resourceType {
     ResourceType_POPULATION_CAPACITY,
     _ResourceType_Length
 } ResourceType;
+
+typedef enum cardinalDir {
+	N,
+	E,
+	S,
+	W
+} CardinalDirection;
 
 /*
 		Contains basic data for positioning an entity in the world space, as
@@ -176,8 +186,7 @@ ComponentID AI_FLAG_COMPONENT_ID;
 typedef struct city {
     char name[20];
     bool isCapital;
-    bool hasAirfield;
-    EntityID buildings[4]; // Corresponds to NWSE cardinal directions
+    EntityID expansions[4]; // Corresponds to NWSE CardinalDirection id
 } City;
 ComponentID CITY_COMPONENT_ID;
 
@@ -185,11 +194,16 @@ typedef struct producer {
     int orderTicksRemaining;
     UnitType order;
     bool repeat;
-    EntityID homeCity;
     const EntityID readyGUIContainer;
     const EntityID busyGUIContainer;
 } Producer;
 ComponentID PRODUCER_COMPONENT_ID;
+
+typedef struct expansion {
+    EntityID homeCity;
+    CardinalDirection dir; // N=0 E=1 S=2 W=3
+} Expansion;
+ComponentID EXPANSION_COMPONENT_ID;
 
 typedef struct resourceParticle {
     ResourceType type;

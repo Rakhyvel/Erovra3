@@ -6,7 +6,7 @@
 
 /*
 	Creates a airfield entity */
-EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity)
+EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID airfieldID = Scene_NewEntity(scene);
     // pos parameter will be slightly towards the home city, hopefully
@@ -58,6 +58,12 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
         FACTORY_READY_FOCUSED_GUI
     };
     Scene_Assign(scene, airfieldID, FOCUSABLE_COMPONENT_ID, &focusable);
+
+    Expansion expansion = {
+        homeCity,
+        dir
+    };
+    Scene_Assign(scene, airfieldID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, airfieldID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, airfieldID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

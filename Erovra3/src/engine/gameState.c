@@ -3,8 +3,8 @@ game.c
 */
 #pragma once
 #include "gameState.h"
-#include "scene.h"
 #include "../util/debug.h"
+#include "scene.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -104,7 +104,7 @@ void Game_Run()
             lag -= g->dt;
             g->ticks++;
         }
-        if (elapsedFrames >= g->dt) {
+        if (elapsedFrames >= 16.0f) {
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
             SDL_RenderClear(g->rend);
