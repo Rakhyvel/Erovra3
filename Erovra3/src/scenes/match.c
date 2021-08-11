@@ -45,7 +45,7 @@ EntityID orderLabel;
 EntityID timeLabel;
 EntityID autoReOrderRockerSwitch;
 
-static const int cityPop = 2;
+static const int cityPop = 3;
 static const float taxRate = 0.25f;
 static const int ticksPerLabor = 350;
 
@@ -107,7 +107,7 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     }
     // Set order duration
     if (type == UnitType_INFANTRY) {
-        producer->orderTicksRemaining = 18000;
+        producer->orderTicksRemaining = 15 * ticksPerLabor; // CHANGE ONCE YOU GET BARRACKS CREATED OR SOMETHING, SHOULD ONLY BE 5 MINUTES
     } else {
         producer->orderTicksRemaining = nation->costs[ResourceType_COIN][type] * ticksPerLabor;
     }
@@ -298,6 +298,7 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
 
 void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
 {
+	// FIXME: Access violation?
     nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize] = min(nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize], value);
 }
 
@@ -411,6 +412,18 @@ void Match_DetectHit(struct scene* scene)
             }
 
             switch (unit->type) {
+            case UnitType_INFANTRY:
+            case UnitType_CAVALRY:
+            case UnitType_ARTILLERY:
+                nation->land--;
+                break;
+            case UnitType_FIGHTER:
+                nation->fighters--;
+            case UnitType_ATTACKER: // Intentional fallthrough
+            case UnitType_BOMBER:
+                nation->air--;
+                break;
+                // TODO: Add same thing for sea units
             case UnitType_WALL:
                 terrain_setWallAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
                 break;
@@ -910,7 +923,10 @@ void Match_AIGroundUnitTarget(struct scene* scene)
                 if (foundEnemy && !enemySpace)
                     continue;
 
-                float score = Vector_Dist(motion->pos, point) + (float)rand() / (float)RAND_MAX;
+                Motion* capital = (City*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+
+
+                float score = Vector_Dist(motion->pos, point) + 64 * Vector_Dist(motion->pos, capital->pos) + (float)rand() / (float)RAND_MAX;
 
                 // Must have direct line of sight to tile center
                 if ((score < tempDist || (!foundEnemy && enemySpace)) && terrain_lineOfSight(terrain, motion->pos, point, motion->z)) {
@@ -947,17 +963,6 @@ void Match_AIGroundUnitTarget(struct scene* scene)
             }
         }
     }
-}
-
-void Match_AIPlaneTarget()
-{
-    /*
-	Fighters:
-		Go to unknown squares
-		There should be a system, or a modification to the already exisiting system, that makes it so that the larger square with the fighters is realized with AI visited square data system
-	Attackers:
-		They should target their units, and they should
-	*/
 }
 
 /*
@@ -1246,30 +1251,37 @@ void Match_AIOrderUnits(struct scene* scene)
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (producer->orderTicksRemaining > 0) {
             continue;
         }
         switch (unit->type) {
         case UnitType_FACTORY: {
-            bool haveAirSurpemacy = true;
-            if (!haveAirSurpemacy && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
+            bool haveAirSurpemacy = nation->fighters >= max(1, enemyNation->air);
+            bool shouldBuildPlane = nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] > 1;
+            // NO air supremacy
+            if (shouldBuildPlane & !haveAirSurpemacy && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
                 ;
-            } else if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 3 > nation->land) {
+            }
+            //
+            if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 2 > nation->land) {
+                if (rand() % 2 == 0) {
+                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ARTILLERY);
+                } else {
+                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_INFANTRY);
+                }
+            } else if (shouldBuildPlane && (nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 2 > nation->air) {
                 if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_BOMBER)) {
                     ;
                 } else if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ATTACKER)) {
                     ;
-                } else if (rand() % 2 == 0) {
-                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ARTILLERY);
-                } else {
-                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_INFANTRY);
                 }
             }
             break;
         }
         case UnitType_PORT:
-            if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 3 > nation->sea) {
+            if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 2 > nation->sea) {
                 Match_PlaceOrder(scene, nation, producer, expansion, UnitType_DESTROYER);
             }
             break;
@@ -1285,7 +1297,7 @@ void Match_CombatantAttack(struct scene* scene)
     const ComponentMask renderMask = Scene_CreateMask(5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
-		// Exclude planes
+        // Exclude planes
         if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, PATROL_COMPONENT_ID), id)) {
             continue;
         }
@@ -1480,6 +1492,11 @@ void Match_AirplaneScout(struct scene* scene)
             if (Vector_Dist(motion->pos, otherMotion->pos) < 128) {
                 Match_SetUnitEngagedTicks(motion, unit);
                 Match_SetUnitEngagedTicks(otherMotion, otherUnit);
+                if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, PATROL_COMPONENT_ID), otherID) && !Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), otherID)) {
+                    Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, -1);
+                } else {
+                    Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, 0);
+                }
             }
         }
     }
@@ -1492,7 +1509,7 @@ void Match_ProduceResources(struct scene* scene)
     const ComponentMask mask = Scene_CreateMask(1, RESOURCE_PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // Gives error that component doesnt exist
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
@@ -1551,22 +1568,32 @@ void Match_ProduceUnits(struct scene* scene)
             if (producer->orderTicksRemaining == 0) {
                 if (producer->order == UnitType_INFANTRY) {
                     Infantry_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->land++;
                 } else if (producer->order == UnitType_CAVALRY) {
                     Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->land++;
                 } else if (producer->order == UnitType_ARTILLERY) {
                     Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->land++;
                 } else if (producer->order == UnitType_DESTROYER) {
                     Destroyer_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->sea++;
                 } else if (producer->order == UnitType_CRUISER) {
                     Cruiser_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->sea++;
                 } else if (producer->order == UnitType_BATTLESHIP) {
                     Battleship_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->sea++;
                 } else if (producer->order == UnitType_FIGHTER) {
                     Fighter_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->air++;
+                    nation->fighters++;
                 } else if (producer->order == UnitType_ATTACKER) {
                     Attacker_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->air++;
                 } else if (producer->order == UnitType_BOMBER) {
                     Bomber_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->air++;
                 } else {
                     PANIC("Producer's can't build that UnitType");
                 }
@@ -1603,7 +1630,7 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
         if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, SIMPLE_RENDERABLE_COMPONENT_ID), expansion->homeCity)) {
             SimpleRenderable* homeCitySimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID);
             if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
-                Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
+                Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID); // Mask is 0 error
                 simpleRenderable->nation = homeCitySimpleRenderable->nation;
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 if (unit->type == UnitType_FACTORY) {
@@ -1629,7 +1656,7 @@ void Match_SimpleRender(struct scene* scene)
     for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        SDL_FRect rect = { 0, 0, 0, 0 };
+        SDL_Rect rect = { 0, 0, 0, 0 };
         if (simpleRenderable->hidden) {
             continue;
         }
@@ -1638,17 +1665,17 @@ void Match_SimpleRender(struct scene* scene)
 
         // Shadow
         terrain_translate(&rect, motion->pos.x, motion->pos.y, simpleRenderable->width, simpleRenderable->height);
-        Texture_Draw(simpleRenderable->shadow, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
+        Texture_Draw(simpleRenderable->shadow, rect.x, rect.y, rect.w, rect.h, motion->angle);
 
         // Outline
         if (simpleRenderable->showOutline) {
             Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)255);
             terrain_translate(&rect, motion->pos.x, motion->pos.y - shadowZ, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
-            Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
+            Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, rect.w, rect.h, motion->angle);
         } else if (simpleRenderable->hitTicks > 0) {
             Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
             terrain_translate(&rect, motion->pos.x, motion->pos.y - shadowZ, simpleRenderable->outlineWidth, simpleRenderable->outlineHeight);
-            Texture_Draw(simpleRenderable->spriteOutline, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
+            Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, rect.w, rect.h, motion->angle);
         }
 
         // Base image
@@ -1656,7 +1683,7 @@ void Match_SimpleRender(struct scene* scene)
         if (!motion->destroyOnBounds) {
             Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
         }
-        Texture_Draw(simpleRenderable->sprite, (int)rect.x, (int)rect.y, rect.w, rect.h, motion->angle);
+        Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, rect.w, rect.h, motion->angle);
     }
 }
 
@@ -1685,6 +1712,30 @@ void Match_UpdateGUIElements(struct scene* scene)
                 GUI_SetLabelText(scene, orderLabel, "Order: %d", producer->order);
                 GUI_SetLabelText(scene, timeLabel, "Time remaining: %d", producer->orderTicksRemaining);
                 GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
+            }
+        }
+    }
+}
+
+void Match_DrawVisitedSquares(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(1, NATION_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+        SDL_FRect rect = { 0, 0, 0, 0 };
+        for (int x = 0; x < nation->visitedSpacesSize; x++) {
+            for (int y = 0; y < nation->visitedSpacesSize; y++) {
+                float urgency = nation->visitedSpaces[x + y * nation->visitedSpacesSize];
+                if (urgency < 0 && g->ticks % 60 < 30) {
+                    terrain_translate(&rect, 16 + x * 32, 16 + y * 32, 32, 32);
+                    SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 150);
+                    SDL_RenderFillRect(g->rend, &rect);
+                } else if (urgency == 0) {
+                    terrain_translate(&rect, 16 + x * 32, 16 + y * 32, 32, 32);
+                    SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 50);
+                    SDL_RenderFillRect(g->rend, &rect);
+                }
             }
         }
     }
@@ -1762,6 +1813,7 @@ void matchRender(Scene* match)
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match);
     Match_UpdateGUIElements(match);
+    Match_DrawVisitedSquares(match);
     GUI_Render(match);
 }
 
@@ -2095,8 +2147,6 @@ Scene* Match_Init()
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
-
-	Fighter_Create(match, homeVector, homeNation);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, true);
     terrain_setBuildingAt(terrain, homeCapital, homeVector.x, homeVector.y);

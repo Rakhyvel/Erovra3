@@ -131,7 +131,7 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
 	%s - inserts the text at the given character pointer into the label text */
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
 {
-    Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID);
+    Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID); // Get error that Entity 2 does not have component 37, mask is 0
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, labelID, GUI_COMPONENT_ID);
 
     memset(label->text, 0, 255);
@@ -236,7 +236,7 @@ void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
 	parents. Returns height and width of component */
 Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
 {
-    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID); // FIXME: Mask is 0 bug here too
     if (!gui->shown) {
         return (Vector) { -1, -1 };
     }

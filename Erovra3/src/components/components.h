@@ -174,8 +174,10 @@ typedef struct nation {
     int cities;
     int factories;
     int mines;
-    int land;
+    int land;  // These are incremented when an order is fulfilled, and decremented when a unit dies 
     int sea;
+    int air;
+    int fighters;
 } Nation;
 ComponentID NATION_COMPONENT_ID;
 ComponentID HOME_NATION_FLAG_COMPONENT_ID;

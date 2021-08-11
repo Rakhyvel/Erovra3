@@ -164,10 +164,14 @@ x Add airfields
 	x Can only build planes if the city has an airfield, will take off from city's airfield
 x Planes should scout when not engaged
 - Make AI build airfields and airplanes
-	- If no air supremacy, build fighters
-	- Else, build attackers/bombers
-	- Fighters should target other fighters, else other planes, else scout
+	x If no air supremacy, build fighters
+		x Should have at least 1 fighter, and then have the same number of fighters as the other team has planes
+		x Should have half of units be ground, and the rest be air
+	x Else, build attackers/bombers
+	x Fighters should target other fighters, else other planes, else scout
 	- Attackers and bombers go after their respective targets, like ground units do
+		- Bombers are seriously screwed up
+- Make units favor tiles closer to their capital
 
 
 3.8.x- Prettify
@@ -220,6 +224,7 @@ x Planes should scout when not engaged
 - Planes should originate from airfields
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 - Vector graphics for every texture (no bitmaps!)
+- Should be able to destroy building
 
 
 3.9.x- Cool stuff
@@ -248,12 +253,16 @@ x Planes should scout when not engaged
 - Holding shift while selecting multiple units will change between "goto point" and "center of mass"
 	- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
 - Circle search for tiles rather than searching all tiles
+- AI should cancel orders if needs have drastically changed
+	- Along the same lines, should destroy buildings if no longer needed
 
 3.10.x- Multiplayer
 - Multiplayer
 
 
 ??? save game files
+	- MAKE SURE that all component id's and stuff that might get serialized are final
+	- Don't be like intel
 
 
 misc.

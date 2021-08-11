@@ -154,15 +154,14 @@ void terrain_update(struct terrain* terrain)
 	Renders the terrain's texture to the screen, and some grid lines */
 void terrain_render(struct terrain* terrain)
 {
-    SDL_FRect frect = (SDL_FRect) { 0, 0, 0, 0 };
-    terrain_translate(&frect, 0, 0, 0, 0);
-    frect.w = frect.h = (int)(terrain_zoom * terrain->size);
-    SDL_Rect rect = (SDL_Rect) { frect.x, frect.y, frect.w, frect.h };
+    SDL_Rect rect = { 0, 0, 0, 0 };
+    terrain_translate(&rect, 0, 0, 0, 0);
+    rect.w = rect.h = (int)(terrain_zoom * terrain->size);
     SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
 
     SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 50);
     SDL_FPoint gridLineStart = { 32, 32 };
-    SDL_FRect gridLineRect = { 0, 0, 0, 0 };
+    SDL_Rect gridLineRect = { 0, 0, 0, 0 };
     terrain_translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
     for (int x = 0; x <= terrain->tileSize; x++) {
         SDL_RenderDrawLine(g->rend,
@@ -676,7 +675,7 @@ EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct te
 /*
 	Takes in a pointer to an FRect struct, the position and size of a sprite. 
 	Translates and scales the rect based on the offset and zoom */
-void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height)
+void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height)
 {
     newPos->x = ((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
     newPos->y = ((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);

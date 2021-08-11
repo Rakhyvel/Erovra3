@@ -67,7 +67,7 @@ EntityID terrain_getWallAt(struct terrain*, int x, int y);
 void terrain_setWallAt(struct terrain*, EntityID id, int x, int y);
 
 // Map affine transformations
-void terrain_translate(SDL_FRect* newPos, float x, float y, float width, float height);
+void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height);
 struct vector Terrain_MousePos();
 struct vector terrain_translateVector(float x, float y);
 
