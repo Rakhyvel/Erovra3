@@ -108,7 +108,7 @@ void Game_Run()
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
             SDL_RenderClear(g->rend);
-            scene->render(scene);
+            scene->render(scene); // FIXME: freeHeap() failure?
             SDL_RenderPresent(g->rend);
             frames++;
         }

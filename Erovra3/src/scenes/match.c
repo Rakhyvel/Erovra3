@@ -45,7 +45,7 @@ EntityID orderLabel;
 EntityID timeLabel;
 EntityID autoReOrderRockerSwitch;
 
-static const int cityPop = 3;
+static const int cityPop = 4;
 static const float taxRate = 0.25f;
 static const int ticksPerLabor = 350;
 
@@ -184,7 +184,7 @@ bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
 
     EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
     if (terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_getBuildingAt(terrain, pos.x, pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID);
+        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Mask is 0 error
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
@@ -298,7 +298,10 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
 
 void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
 {
-	// FIXME: Access violation?
+    // FIXME: Access violation?
+    if (x < 0 || y < 0 || x / 32 >= nation->visitedSpacesSize || y / 32 >= nation->visitedSpacesSize) {
+        return; // This might have fixed it.
+    }
     nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize] = min(nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize], value);
 }
 
@@ -365,7 +368,6 @@ void Match_DetectHit(struct scene* scene)
                     splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
                 }
                 health->health -= projectile->attack * splashDamageModifier / unit->defense;
-                motion->speed *= 0.9999f;
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), id) || Scene_EntityHasComponent(scene, Scene_CreateMask(1, WALL_FLAG_COMPONENT_ID), id)) {
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
@@ -388,6 +390,7 @@ void Match_DetectHit(struct scene* scene)
         }
 
         if (deadFlag) {
+            printf("Dead.\n");
             // Cities don't get destroyed, they're captured
             City* homeCity = NULL;
             if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), id)) {
@@ -593,7 +596,7 @@ void Match_Patrol(struct scene* scene)
         float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
 
         // Only make targetAlignment better
-        if (targetAlignment > -0.99 && targetAlignment < 0) {
+        if (targetAlignment < 0) {
             float diff = Vector_Dot(perpVel, innerCircle);
             diff *= 0.5f;
             diff += diff >= 0 ? 0.5 : -0.5;
@@ -603,12 +606,13 @@ void Match_Patrol(struct scene* scene)
             patrol->angle += motion->speed * diff / 35.0f;
         }
         // If not going directly away, and distance is greater than 64
-        else if (targetAlignment >= 0 && Vector_Dist(motion->pos, patrol->focalPoint) > 64) {
+        else if (targetAlignment >= 0 && Vector_Dist(motion->pos, patrol->focalPoint) > 72) {
             patrol->angle += motion->speed / 35.0f;
         }
 
         target->tar = Vector_Add(motion->pos, Vector_Scalar((Vector) { sinf(patrol->angle), cosf(patrol->angle) }, 2 * motion->speed));
         target->lookat = target->tar;
+
         Vector displacement = Vector_Sub(motion->pos, target->lookat);
         motion->angle = Vector_Angle(displacement); // atan2
     }
@@ -925,8 +929,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
 
                 Motion* capital = (City*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
-
-                float score = Vector_Dist(motion->pos, point) + 64 * Vector_Dist(motion->pos, capital->pos) + (float)rand() / (float)RAND_MAX;
+                float score = Vector_Dist(motion->pos, point) + 64 * 5 * Vector_Dist(motion->pos, capital->pos) + (float)rand() / (float)RAND_MAX;
 
                 // Must have direct line of sight to tile center
                 if ((score < tempDist || (!foundEnemy && enemySpace)) && terrain_lineOfSight(terrain, motion->pos, point, motion->z)) {
@@ -1258,20 +1261,19 @@ void Match_AIOrderUnits(struct scene* scene)
         }
         switch (unit->type) {
         case UnitType_FACTORY: {
-            bool haveAirSurpemacy = nation->fighters >= max(1, enemyNation->air);
-            bool shouldBuildPlane = nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] > 1;
+            bool haveAirSurpemacy = nation->fighters > enemyNation->fighters;
             // NO air supremacy
-            if (shouldBuildPlane & !haveAirSurpemacy && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
+            if (!haveAirSurpemacy && nation->fighters < nation->land / 10.0f && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
                 ;
             }
             //
-            if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 2 > nation->land) {
+            if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) > nation->land) {
                 if (rand() % 2 == 0) {
                     Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ARTILLERY);
                 } else {
                     Match_PlaceOrder(scene, nation, producer, expansion, UnitType_INFANTRY);
                 }
-            } else if (shouldBuildPlane && (nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) / 2 > nation->air) {
+            } else if (haveAirSurpemacy && nation->air - nation->fighters < nation->land / 20.0f) {
                 if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_BOMBER)) {
                     ;
                 } else if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ATTACKER)) {
@@ -1396,8 +1398,8 @@ void Match_CombatantAttack(struct scene* scene)
             deflection += M_PI * 2;
         }
         if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - motion->angle) < 0.2 * motion->speed || !combatant->faceEnemy)) {
-            float homeFieldAdvantage = 0.6 * (Vector_Dist(capital->pos, motion->pos) / sqrtf(terrain->size * terrain->size)) + 1;
-            float manPower = health->health / 100.0f;
+            float homeFieldAdvantage = 1.0f; //0.6 * (Vector_Dist(capital->pos, motion->pos) / sqrtf(terrain->size * terrain->size)) + 1;
+            float manPower = 1.0f; //health->health / 100.0f;
             combatant->projConstructor(scene, motion->pos, lead, manPower * homeFieldAdvantage * combatant->attack, simpleRenderable->nation);
         }
     }
@@ -1425,6 +1427,7 @@ void Match_AirplaneAttack(Scene* scene)
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
         Vector closestVel = { -1, -1 };
+        float closestZ = -1;
         const ComponentMask otherMask = Scene_CreateMask(1, MOTION_COMPONENT_ID) | combatant->enemyMask;
         EntityID otherID;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
@@ -1441,6 +1444,7 @@ void Match_AirplaneAttack(Scene* scene)
                 closest = otherID;
                 closestPos = otherMotion->pos;
                 closestVel = otherMotion->vel;
+                closestZ = otherMotion->z;
             }
         }
 
@@ -1449,25 +1453,31 @@ void Match_AirplaneAttack(Scene* scene)
             patrol->focalPoint = patrol->patrolPoint;
         } else if (health->aliveTicks % combatant->attackTime == 0) {
             // Find lead angle
-            patrol->focalPoint = closestPos;
-            if (fabs(Vector_Dot(Vector_Normalize(closestVel), Vector_Normalize(motion->vel))) < 0.9f) {
-                for (int i = 0; i < 10000; i++) {
-                    // t := time it takes for a bullet to travel to target
-                    //	 := distance / bullet speed
-                    float ticksToTarget = closestDist / 2;
-                    // target pos += velocity * t
-                    patrol->focalPoint = Vector_Add(closestPos, Vector_Scalar(closestVel, ticksToTarget));
-                    closestDist = Vector_Dist(patrol->focalPoint, motion->pos);
-                    // Repeat for new target pos a few times
-                }
-            }
+            /*
+			Special thanks to: https://www.gamedev.net/forums/topic/457840-calculating-target-lead/4020764/
+			Solve quadratic: ((P - O) + V * t)^2 - (w*w) * t^2 = 0
+			*/
+            Vector toEnemy = Vector_Sub(closestPos, motion->pos);
+            float a = Vector_Dot(closestVel, closestVel) - 16;
+            float b = Vector_Dot(toEnemy, closestVel) * 2.0f;
+            float c = Vector_Dot(toEnemy, toEnemy);
+            float d = b * b - 4 * a * c;
+
+            float t0 = (-b - sqrt(d)) / (2 * a);
+            float t1 = (-b + sqrt(d)) / (2 * a);
+            float t = (t0 < 0.0f) ? t1 : (t1 < 0.0f) ? t0
+                                                     : min(t0, t1);
+
+            patrol->focalPoint = Vector_Add(closestPos, Vector_Scalar(closestVel, t));
+
             Match_SetUnitEngagedTicks(motion, unit);
 
             // Shoot enemy units if found
-            Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, motion->pos)); // Points from pos to patrol
-            float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
+            Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, motion->pos)); // Points from pos to focal
+            Vector facing = Vector_Normalize(Vector_Sub(target->lookat, motion->pos));
+            float targetAlignment = Vector_Dot(facing, innerCircle);
 
-            if (targetAlignment > 0.9) {
+            if (targetAlignment > 0.95) {
                 combatant->projConstructor(scene, motion->pos, target->lookat, combatant->attack, simpleRenderable->nation);
             }
         }
@@ -1509,7 +1519,7 @@ void Match_ProduceResources(struct scene* scene)
     const ComponentMask mask = Scene_CreateMask(1, RESOURCE_PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // FIXME: Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
@@ -1598,6 +1608,7 @@ void Match_ProduceUnits(struct scene* scene)
                     PANIC("Producer's can't build that UnitType");
                 }
                 nation->resources[ResourceType_POPULATION]++;
+                printf("Birth.\n");
 
                 if (!producer->repeat) {
                     producer->order = INVALID_ENTITY_INDEX;
@@ -1813,8 +1824,9 @@ void matchRender(Scene* match)
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match);
     Match_UpdateGUIElements(match);
-    Match_DrawVisitedSquares(match);
+    //Match_DrawVisitedSquares(match);
     GUI_Render(match);
+    SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 255);
 }
 
 /*
@@ -2048,7 +2060,7 @@ void Match_ProducerReOrder(Scene* scene, bool value)
 Scene* Match_Init()
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(16 * 64, 0.5f, 4);
+    terrain = terrain_create(12 * 64, 0.5f, 4);
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });

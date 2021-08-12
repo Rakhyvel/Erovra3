@@ -61,7 +61,7 @@ void* Arraylist_Pop(struct arraylist* list)
 void Arraylist_Add(struct arraylist* list, void* data)
 {
     if (list->size >= list->capacity) {
-        void* res = realloc(list->data, 2 * list->size * list->typeSize);
+        void* res = realloc(list->data, 2 * list->size * list->typeSize); // FIXME: heap error
         if (res != NULL && res != list->data) {
             list->data = res;
         }

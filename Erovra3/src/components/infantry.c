@@ -53,12 +53,12 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_INFANTRY,
-        0.5f
+        1.0f // 1 damage every 30 ticks -> 300 ticks
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.5f,
+        0.07f,
         68.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,

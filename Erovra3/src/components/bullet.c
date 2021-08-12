@@ -60,6 +60,6 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
     Scene_Unassign(scene, airBulletID, BULLET_COMPONENT_ID);
     Scene_Assign(scene, airBulletID, AIR_BULLET_COMPONENT_ID, NULL);
     ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = 1.0f;
-    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->aZ = -0.0001f;
+    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->aZ = 0;
     return airBulletID;
 }

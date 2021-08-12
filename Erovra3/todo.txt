@@ -169,9 +169,11 @@ x Planes should scout when not engaged
 		x Should have half of units be ground, and the rest be air
 	x Else, build attackers/bombers
 	x Fighters should target other fighters, else other planes, else scout
-	- Attackers and bombers go after their respective targets, like ground units do
-		- Bombers are seriously screwed up
-- Make units favor tiles closer to their capital
+	x Attackers and bombers go after their respective targets, like ground units do
+		- Bombers are seriously screwed up, no bombers yet
+x Make units favor tiles closer to their capital
+- Make plane scout more tiles
+- Make units stronger
 
 
 3.8.x- Prettify
