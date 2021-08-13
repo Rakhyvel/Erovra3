@@ -58,7 +58,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.07f,
+        0.416f,
         68.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,
@@ -77,16 +77,9 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, infantryID, HOVERABLE_COMPONENT_ID, &hoverable);
 
-    Focusable focusable = {
-        false,
-        INFANTRY_FOCUSED_GUI
-    };
-    Scene_Assign(scene, infantryID, FOCUSABLE_COMPONENT_ID, &focusable);
-
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, infantryID, INFANTRY_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return infantryID;

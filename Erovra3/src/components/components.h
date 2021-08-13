@@ -15,6 +15,7 @@ typedef enum unitType {
     UnitType_INFANTRY,
     UnitType_CAVALRY,
     UnitType_ARTILLERY,
+	UnitType_ENGINEER,
     UnitType_CITY,
     UnitType_MINE,
     UnitType_FACTORY,
@@ -132,7 +133,7 @@ ComponentID COMBATANT_COMPONENT_ID;
 
 ComponentID LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
 ComponentID GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
-ComponentID INFANTRY_UNIT_FLAG_COMPONENT_ID;
+ComponentID ENGINEER_UNIT_FLAG_COMPONENT_ID;
 ComponentID BUILDING_FLAG_COMPONENT_ID;
 ComponentID WALL_FLAG_COMPONENT_ID;
 
@@ -178,6 +179,8 @@ typedef struct nation {
     int sea;
     int air;
     int fighters;
+    int airInProd;
+    int fightersInProd;
 } Nation;
 ComponentID NATION_COMPONENT_ID;
 ComponentID HOME_NATION_FLAG_COMPONENT_ID;

@@ -206,7 +206,15 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\engineer.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\factory.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\components\farm.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -313,7 +321,9 @@
     <ClInclude Include="src\components\coin.h" />
     <ClInclude Include="src\components\cruiser.h" />
     <ClInclude Include="src\components\destroyer.h" />
+    <ClInclude Include="src\components\engineer.h" />
     <ClInclude Include="src\components\factory.h" />
+    <ClInclude Include="src\components\farm.h" />
     <ClInclude Include="src\components\fighter.h" />
     <ClInclude Include="src\components\bomb.h" />
     <ClInclude Include="src\components\port.h" />

@@ -21,8 +21,8 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.resources[ResourceType_POPULATION_CAPACITY] = 4;
 
 	// Coin costs
-    nation.costs[ResourceType_COIN][UnitType_CITY] = 10;
-    nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
+    nation.costs[ResourceType_COIN][UnitType_CITY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_FACTORY] = 5;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
     nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 25;
@@ -51,7 +51,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_ORE][UnitType_ATTACKER] = 5;
     nation.costs[ResourceType_ORE][UnitType_BOMBER] = 5;
 
-    nation.visitedSpacesSize = mapSize / 32;
+    nation.visitedSpacesSize = mapSize / 32 + 1;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));
     Scene_Assign(scene, nationID, controlFlag, NULL);
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);
@@ -70,7 +70,7 @@ void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (int)(2.56 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32 + 16, y * 32 + 16 }) + 500);
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (int)(2.56 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32 + 16, y * 32 + 16 }) + 1000);
         }
     }
 }

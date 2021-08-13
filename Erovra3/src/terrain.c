@@ -64,7 +64,7 @@ struct terrain* terrain_create(int mapSize, float biome, int scale)
         }
     }
     printf("Updated biomes\n");
-    terrain_erode(retval);
+    //terrain_erode(retval);
     printf("Eroded\n");
     paintMap(retval);
     printf("Painted\n");
@@ -452,7 +452,7 @@ void terrain_erode(struct terrain* terrain)
 
     int* erosionBrushIndices = NULL;
     float* erosionBrushWeights = NULL;
-    for (int i = 0; i < terrain->size * terrain->size * 0.5; i++) {
+    for (int i = 0; i < terrain->size * terrain->size * 5; i++) {
         // Create random droplet
         float posX = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
         float posY = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);

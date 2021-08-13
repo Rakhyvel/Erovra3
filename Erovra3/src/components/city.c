@@ -52,7 +52,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        0.75,
+        1.0f,
         &Coin_Create
     };
     Scene_Assign(scene, cityID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

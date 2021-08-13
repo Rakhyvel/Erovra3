@@ -43,6 +43,7 @@ void Textures_Init()
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     CAVALRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     ARTILLERY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
+    ENGINEER_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     GROUND_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/ground_outline.png");
     GROUND_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/shadow.png");
 
@@ -90,6 +91,9 @@ void Textures_Init()
     Texture_FillPolygon(ARTILLERY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(ARTILLERY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(ARTILLERY_TEXTURE_ID, Polygon_Create("res/artillery.gon"), (SDL_Color) { 0, 0, 0, 255 });
+    Texture_FillPolygon(ENGINEER_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(ENGINEER_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(ENGINEER_TEXTURE_ID, Polygon_Create("res/engineer.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_CreateShadow(GROUND_SHADOW_TEXTURE_ID, INFANTRY_TEXTURE_ID);
 
     Texture_FillBezier(BATTLESHIP_TEXTURE_ID, shipPoly, (SDL_Color) { 255, 255, 255, 255 });

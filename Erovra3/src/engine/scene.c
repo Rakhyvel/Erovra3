@@ -75,7 +75,7 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
         PANIC("Component id not registered yet");
     } else if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, componentID), id)) {
         struct entity* entt = ARRAYLIST_GET(scene->entities, id, struct entity);
-        PANIC("Entity %d does not have component %d, mask is %d", id >> 16, componentID, entt->mask); // Sometimes entt is an invalid address and throws access violation
+        PANIC("Entity %d does not have component %d, mask is %d", id >> 16, componentID, entt->mask); // Sometimes entt is an invalid address and throws access violation, from BuyX(), from AIInfantryBuild(). Also from ProduceResources()
     } else {
         return Arraylist_Get(scene->components[componentID], getIndex(id));
     }
@@ -214,7 +214,7 @@ bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID 
 {
     EntityIndex index = getIndex(id);
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
-    return (entt->mask & mask) == mask;
+    return (entt->mask & mask) == mask; // Read access violation terrain_adjacentMask <- BuyAirfield <- AIInfantryBuild
 }
 
 /*

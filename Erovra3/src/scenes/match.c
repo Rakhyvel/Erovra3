@@ -12,6 +12,7 @@
 #include "../components/components.h"
 #include "../components/cruiser.h"
 #include "../components/destroyer.h"
+#include "../components/engineer.h"
 #include "../components/factory.h"
 #include "../components/fighter.h"
 #include "../components/infantry.h"
@@ -47,7 +48,8 @@ EntityID autoReOrderRockerSwitch;
 
 static const int cityPop = 4;
 static const float taxRate = 0.25f;
-static const int ticksPerLabor = 350;
+static const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
+static bool buildPorts = false;
 
 // UTILITY FUNCTIONS
 
@@ -107,9 +109,9 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     }
     // Set order duration
     if (type == UnitType_INFANTRY) {
-        producer->orderTicksRemaining = 15 * ticksPerLabor; // CHANGE ONCE YOU GET BARRACKS CREATED OR SOMETHING, SHOULD ONLY BE 5 MINUTES
+        producer->orderTicksRemaining = 2 * 15 * ticksPerLabor; // CHANGE ONCE YOU GET BARRACKS CREATED OR SOMETHING, SHOULD ONLY BE 5 MINUTES
     } else {
-        producer->orderTicksRemaining = nation->costs[ResourceType_COIN][type] * ticksPerLabor;
+        producer->orderTicksRemaining = 2 * nation->costs[ResourceType_COIN][type] * ticksPerLabor;
     }
     producer->order = type;
     return true;
@@ -302,7 +304,7 @@ void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
     if (x < 0 || y < 0 || x / 32 >= nation->visitedSpacesSize || y / 32 >= nation->visitedSpacesSize) {
         return; // This might have fixed it.
     }
-    nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize] = min(nation->visitedSpaces[(int)(x / 32) + (int)(y / 32) * nation->visitedSpacesSize], value);
+    nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize] = min(nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize], value);
 }
 
 void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
@@ -431,12 +433,25 @@ void Match_DetectHit(struct scene* scene)
                 terrain_setWallAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
                 break;
             case UnitType_FACTORY:
+                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                nation->costs[ResourceType_COIN][unit->type] /= 2;
+                break;
             case UnitType_AIRFIELD:
+                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                nation->costs[ResourceType_COIN][unit->type] /= 2;
+                break;
             case UnitType_PORT:
+                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                nation->costs[ResourceType_COIN][unit->type] /= 2;
+                break;
             case UnitType_MINE:
                 terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                nation->costs[ResourceType_COIN][unit->type] /= 2;
+                nation->mines--;
+                break;
             case UnitType_CITY: // Intentional fall through
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
+                break;
             }
         }
     }
@@ -479,7 +494,7 @@ void Match_SetVisitedSpace(struct scene* scene)
         Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (!unit->stuckIn && !unit->engaged && motion->speed > 0) {
-            nation->visitedSpaces[(int)(motion->pos.x / 32) + (int)(motion->pos.y / 32) * nation->visitedSpacesSize] = 11000;
+            nation->visitedSpaces[(int)((motion->pos.x + 16) / 32) + (int)((motion->pos.y + 16) / 32) * nation->visitedSpacesSize] = 11000;
             Match_SetAlertedTile(enemyNation, motion->pos.x, motion->pos.y, 4000);
         }
     }
@@ -913,7 +928,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
                 if (cityDefense) {
                     continue;
                 }
-                Vector point = { x * 32 + 16, y * 32 + 16 };
+                Vector point = { x * 32, y * 32 };
                 // Tile must be unvisited
                 if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > 0)
                     continue;
@@ -972,9 +987,9 @@ void Match_AIGroundUnitTarget(struct scene* scene)
 	Checks each infantry unit to see if they can build either a city, a mine, or 
 	a factory in that order. If an infantry can build something, no other 
 	infantry is taken into account */
-void Match_AIInfantryBuild(struct scene* scene)
+void Match_AIEngineerBuild(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, INFANTRY_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
+    const ComponentMask mask = Scene_CreateMask(2, ENGINEER_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
     EntityID id;
     ComponentMask nationsDone = 0;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
@@ -992,6 +1007,19 @@ void Match_AIInfantryBuild(struct scene* scene)
         if (unit->stuckIn) {
             continue;
         }
+
+        // How many ticks does it take to make an ore
+        const float averageTicksPerOreMade = nation->mines == 0 ? 54000.0f : ticksPerLabor / nation->mines;
+        // How many ticks does it take to use an ore
+        const float averageTicksPerOreUsed = nation->factories == 0 ? 54000.0f : (ticksPerLabor * 20.0f) / (1.0f * nation->factories);
+        // Build a mine if it takes more ticks to make an ore than it does to use one (Different from coins below)
+
+        // How many ticks does it take to make a coin
+        const float averageTicksPerCoinMade = nation->cities == 0 ? 54000.0f : ticksPerLabor / nation->cities;
+        // How many ticks does it take to use a coin
+        const float averageTicksPerCoinUsed = nation->factories == 0 ? 54000.0f : (ticksPerLabor * 15.0f) / (15.0f * nation->factories);
+        // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
+        // makeCoinTicks < useCoinTicks
 
         // Find closest city point, build city if on point
         if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
@@ -1042,11 +1070,11 @@ void Match_AIInfantryBuild(struct scene* scene)
                     Match_BuyCity(scene, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
-                break;
+                continue;
             }
         }
         // Find closest mine point, build mine if on mine point
-        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 1 && nation->mines < max(1, nation->factories / 3)) {
+        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 1 && averageTicksPerOreMade >= averageTicksPerOreUsed) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1082,11 +1110,11 @@ void Match_AIInfantryBuild(struct scene* scene)
                         continue;
                     }
                 }
-                break;
+                continue;
             }
         }
         // Find closest factory point, build factory if on factory point
-        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && nation->factories < max(1, 4 * nation->cities / 3)) {
+        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && averageTicksPerCoinMade <= averageTicksPerCoinUsed) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1132,11 +1160,11 @@ void Match_AIInfantryBuild(struct scene* scene)
                     Match_BuyFactory(scene, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
-                break;
+                continue;
             }
         }
         // Find closest airfield point, build factory if on airfield point
-        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && nation->factories < max(1, 4 * nation->cities / 3)) {
+        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1183,11 +1211,11 @@ void Match_AIInfantryBuild(struct scene* scene)
                     Match_BuyAirfield(scene, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
-                break;
+                continue;
             }
         }
         // Find closest port point, build factory if on port point
-        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && nation->factories < max(1, 4 * nation->cities / 3)) {
+        else if (buildPorts && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && averageTicksPerCoinMade <= averageTicksPerCoinUsed) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1235,8 +1263,14 @@ void Match_AIInfantryBuild(struct scene* scene)
                     }
                 }
                 nationsDone |= simpleRenderable->nation;
-                break;
             }
+        }
+        // Do nothing and stay at capital
+        else {
+            Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+            target->tar = capitalMotion->pos;
+            target->lookat = capitalMotion->pos;
+            nationsDone |= simpleRenderable->nation;
         }
     }
 }
@@ -1261,23 +1295,23 @@ void Match_AIOrderUnits(struct scene* scene)
         }
         switch (unit->type) {
         case UnitType_FACTORY: {
-            bool haveAirSurpemacy = nation->fighters > enemyNation->fighters;
+            bool haveAirSurpemacy = (nation->fighters + nation->fightersInProd) > max(1, enemyNation->air);
             // NO air supremacy
-            if (!haveAirSurpemacy && nation->fighters < nation->land / 10.0f && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
-                ;
+            if (!haveAirSurpemacy && (nation->fighters + nation->fightersInProd) < nation->land / 10.0f && Match_PlaceOrder(scene, nation, producer, expansion, UnitType_FIGHTER)) {
+                nation->fightersInProd++;
             }
             //
             if ((nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION]) > nation->land) {
                 if (rand() % 2 == 0) {
                     Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ARTILLERY);
                 } else {
-                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_INFANTRY);
+                    Match_PlaceOrder(scene, nation, producer, expansion, UnitType_CAVALRY);
                 }
-            } else if (haveAirSurpemacy && nation->air - nation->fighters < nation->land / 20.0f) {
+            } else if (haveAirSurpemacy && (nation->air + nation->airInProd) < nation->land / 10.0f) {
                 if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_BOMBER)) {
-                    ;
+                    nation->airInProd++;
                 } else if (Match_PlaceOrder(scene, nation, producer, expansion, UnitType_ATTACKER)) {
-                    ;
+                    nation->airInProd++;
                 }
             }
             break;
@@ -1320,8 +1354,11 @@ void Match_CombatantAttack(struct scene* scene)
         const ComponentMask otherMask = Scene_CreateMask(1, MOTION_COMPONENT_ID) | combatant->enemyMask;
         EntityID otherID;
         bool groundUnit = false;
-        bool onlyBuildings = false;
+        bool onlyBuildings = true;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+            if (!onlyBuildings && Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), otherID)) {
+                continue;
+            }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             float dist = Vector_Dist(otherMotion->pos, motion->pos);
 
@@ -1330,14 +1367,10 @@ void Match_CombatantAttack(struct scene* scene)
                 int x = (int)otherMotion->pos.x;
                 int y = (int)otherMotion->pos.y;
                 Match_SetAlertedTile(nation, x, y, -1);
-                if (x > 0)
-                    Match_SetAlertedTile(nation, x - 32, y, 0);
-                if (y > 0)
-                    Match_SetAlertedTile(nation, x, y - 32, 0);
-                if (x < (terrain->tileSize * 2) - 1)
-                    Match_SetAlertedTile(nation, x + 32, y, 0);
-                if (y < (terrain->tileSize * 2) - 1)
-                    Match_SetAlertedTile(nation, x, y + 32, 0);
+                Match_SetAlertedTile(nation, x - 32, y, 0);
+                Match_SetAlertedTile(nation, x, y - 32, 0);
+                Match_SetAlertedTile(nation, x + 32, y, 0);
+                Match_SetAlertedTile(nation, x, y + 32, 0);
             }
 
             if (dist < closestDist || (dist < combatant->attackDist && onlyBuildings && !Scene_EntityHasComponent(scene, Scene_CreateMask(1, BUILDING_FLAG_COMPONENT_ID), otherID))) {
@@ -1356,7 +1389,7 @@ void Match_CombatantAttack(struct scene* scene)
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
             if (unit->stuckIn) {
-                target->lookat = target->tar;
+                target->tar = target->lookat;
             }
             unit->stuckIn = false;
             unit->engaged = false;
@@ -1368,23 +1401,14 @@ void Match_CombatantAttack(struct scene* scene)
             target->tar = motion->pos;
         }
         Vector lead = closestPos;
-        // Find lead angle
-        for (int i = 0; i < 1000; i++) {
-            // t := time it takes for a bullet to travel to target
-            //	 := distance / bullet speed
-            float ticksToTarget = closestDist / 4;
-            // target pos += velocity * t
-            lead = Vector_Add(closestPos, Vector_Scalar(closestVel, ticksToTarget));
-            closestDist = Vector_Dist(lead, motion->pos);
-            // Repeat for new target pos a few times
-        }
         if (combatant->faceEnemy) {
+            if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, AI_FLAG_COMPONENT_ID), id)) {
+                target->tar = motion->pos;
+            }
             target->lookat = lead;
             unit->stuckIn = true; // Useless?
         }
-        if (!onlyBuildings) {
-            unit->engaged = true;
-        }
+        unit->engaged = true;
         Match_SetUnitEngagedTicks(motion, unit);
 
         // Shoot enemy units if found
@@ -1516,9 +1540,10 @@ void Match_AirplaneScout(struct scene* scene)
 	Creates a resource particle every time a production period has passed */
 void Match_ProduceResources(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(1, RESOURCE_PRODUCER_COMPONENT_ID);
+    const ComponentMask mask = Scene_CreateMask(4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        // I made change to mask, did that work?
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // FIXME: Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Health* health = (Motion*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
@@ -1598,12 +1623,15 @@ void Match_ProduceUnits(struct scene* scene)
                     Fighter_Create(scene, motion->pos, simpleRenderable->nation);
                     nation->air++;
                     nation->fighters++;
+                    nation->fightersInProd--;
                 } else if (producer->order == UnitType_ATTACKER) {
                     Attacker_Create(scene, motion->pos, simpleRenderable->nation);
                     nation->air++;
+                    nation->airInProd--;
                 } else if (producer->order == UnitType_BOMBER) {
                     Bomber_Create(scene, motion->pos, simpleRenderable->nation);
                     nation->air++;
+                    nation->airInProd--;
                 } else {
                     PANIC("Producer's can't build that UnitType");
                 }
@@ -1739,11 +1767,11 @@ void Match_DrawVisitedSquares(Scene* scene)
             for (int y = 0; y < nation->visitedSpacesSize; y++) {
                 float urgency = nation->visitedSpaces[x + y * nation->visitedSpacesSize];
                 if (urgency < 0 && g->ticks % 60 < 30) {
-                    terrain_translate(&rect, 16 + x * 32, 16 + y * 32, 32, 32);
+                    terrain_translate(&rect, x * 32, y * 32, 32, 32);
                     SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 150);
                     SDL_RenderFillRect(g->rend, &rect);
                 } else if (urgency == 0) {
-                    terrain_translate(&rect, 16 + x * 32, 16 + y * 32, 32, 32);
+                    terrain_translate(&rect, x * 32, y * 32, 32, 32);
                     SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 50);
                     SDL_RenderFillRect(g->rend, &rect);
                 }
@@ -1787,7 +1815,7 @@ void matchUpdate(Scene* match)
 
     Match_AIGroundUnitTarget(match);
     Match_AIOrderUnits(match);
-    Match_AIInfantryBuild(match);
+    Match_AIEngineerBuild(match);
 
     Match_Patrol(match);
     Match_Target(match);
@@ -1824,7 +1852,7 @@ void matchRender(Scene* match)
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match);
     Match_UpdateGUIElements(match);
-    //Match_DrawVisitedSquares(match);
+    Match_DrawVisitedSquares(match);
     GUI_Render(match);
     SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 255);
 }
@@ -2060,7 +2088,7 @@ void Match_ProducerReOrder(Scene* scene, bool value)
 Scene* Match_Init()
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(12 * 64, 0.5f, 4);
+    terrain = terrain_create(16 * 64, 0.4f, 4);
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
@@ -2073,16 +2101,16 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
 
-    INFANTRY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
-    GUI_ContainerAdd(match, container, INFANTRY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_InfantryAddCity));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_InfantryAddMine));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_InfantryAddFactory));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_InfantryAddWall));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_InfantryAddPort));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", 0, &Match_InfantryAddAirfield));
-    GUI_ContainerAdd(match, INFANTRY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_InfantryTestSoil));
-    GUI_SetContainerShown(match, INFANTRY_FOCUSED_GUI, false);
+    ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, ENGINEER_FOCUSED_GUI);
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_InfantryAddCity));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_InfantryAddMine));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_InfantryAddFactory));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_InfantryAddWall));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_InfantryAddPort));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", 0, &Match_InfantryAddAirfield));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_InfantryTestSoil));
+    GUI_SetContainerShown(match, ENGINEER_FOCUSED_GUI, false);
 
     FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, FACTORY_READY_FOCUSED_GUI);
@@ -2169,8 +2197,8 @@ Scene* Match_Init()
     terrain_setBuildingAt(terrain, enemyCapital, enemyVector.x, enemyVector.y);
 
     // Create home and enemy infantry
-    EntityID homeInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    EntityID enemyInfantry = Infantry_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+    EntityID homeInfantry = Engineer_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+    EntityID enemyInfantry = Engineer_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
 
     // Set enemy nations to each other
     SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
