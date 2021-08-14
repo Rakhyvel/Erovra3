@@ -58,7 +58,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 	// -0.25 a second -> 5 * 400 seconds of being alive
 
     Combatant combatant = {
-        0.416f,
+        0.2f,
         68.0f,
         Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,

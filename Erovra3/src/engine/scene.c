@@ -191,7 +191,7 @@ void Scene_Purge(struct scene* scene)
 
 /*
 	Creates a component bit mask based on given a list of component ids */
-ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
+const ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 {
     ComponentID component = components;
     ComponentMask retval = 0;
@@ -205,12 +205,12 @@ ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 
     va_end(args);
 
-    return retval;
+    return (const ComponentMask)retval;
 }
 
 /*
 	Returns whether or not the entity matches a component mask */
-bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID id)
+bool Scene_EntityHasComponent(struct scene* scene, const ComponentMask mask, EntityID id)
 {
     EntityIndex index = getIndex(id);
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
@@ -219,7 +219,7 @@ bool Scene_EntityHasComponent(struct scene* scene, ComponentMask mask, EntityID 
 
 /*
 	Returns whether or not the entity mathces some of the components in a mask */
-bool Scene_EntityHasAnyComponents(struct scene* scene, ComponentMask mask, EntityID id)
+bool Scene_EntityHasAnyComponents(struct scene* scene, const ComponentMask mask, EntityID id)
 {
     EntityIndex index = getIndex(id);
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
@@ -228,7 +228,7 @@ bool Scene_EntityHasAnyComponents(struct scene* scene, ComponentMask mask, Entit
 
 /*
 	Finds and returns first index of a mask matching an entity */
-EntityID Scene_Begin(struct scene* scene, ComponentMask mask)
+EntityID Scene_Begin(struct scene* scene, const ComponentMask mask)
 {
     return Scene_Next(scene, -1, mask);
 }
@@ -242,7 +242,7 @@ bool Scene_End(struct scene* scene, EntityID id)
 
 /*
 	Returns the next entity id given a previous entity id, and a component mask */
-EntityID Scene_Next(struct scene* scene, EntityID prev, ComponentMask mask)
+EntityID Scene_Next(struct scene* scene, EntityID prev, const ComponentMask mask)
 {
     EntityIndex index;
     int i = 0;

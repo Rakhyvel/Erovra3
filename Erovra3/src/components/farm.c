@@ -2,13 +2,13 @@
 #include "../components/components.h"
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./airfield.h"
+#include "./farm.h"
 
 /*
-	Creates a airfield entity */
-EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+	Creates a farm entity */
+EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
-    EntityID airfieldID = Scene_NewEntity(scene);
+    EntityID farmID = Scene_NewEntity(scene);
     // pos parameter will be slightly towards the home city, hopefully
     Motion motion = {
         pos,
@@ -18,10 +18,10 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
         0,
         false
     };
-    Scene_Assign(scene, airfieldID, MOTION_COMPONENT_ID, &motion);
+    Scene_Assign(scene, farmID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
-        AIRFIELD_TEXTURE_ID,
+        FARM_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         false,
@@ -32,7 +32,7 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
         36,
         36
     };
-    Scene_Assign(scene, airfieldID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+    Scene_Assign(scene, farmID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,
@@ -40,34 +40,34 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
         0.0f,
         Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
-    Scene_Assign(scene, airfieldID, HEALTH_COMPONENT_ID, &health);
+    Scene_Assign(scene, farmID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
-        UnitType_AIRFIELD,
+        UnitType_FARM,
         1
     };
-    Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
+    Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
     Hoverable hoverable = {
         false,
     };
-    Scene_Assign(scene, airfieldID, HOVERABLE_COMPONENT_ID, &hoverable);
+    Scene_Assign(scene, farmID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,
         FACTORY_READY_FOCUSED_GUI
     };
-    Scene_Assign(scene, airfieldID, FOCUSABLE_COMPONENT_ID, &focusable);
+    Scene_Assign(scene, farmID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Expansion expansion = {
         homeCity,
         dir
     };
-    Scene_Assign(scene, airfieldID, EXPANSION_COMPONENT_ID, &expansion);
+    Scene_Assign(scene, farmID, EXPANSION_COMPONENT_ID, &expansion);
 
-    Scene_Assign(scene, airfieldID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, airfieldID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
-    Scene_Assign(scene, airfieldID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, farmID, BUILDING_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, farmID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
+    Scene_Assign(scene, farmID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
-    return airfieldID;
+    return farmID;
 }

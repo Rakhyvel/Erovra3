@@ -234,6 +234,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\components\academy.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\components\ore.c">
       <SubType>
       </SubType>
@@ -326,6 +330,7 @@
     <ClInclude Include="src\components\farm.h" />
     <ClInclude Include="src\components\fighter.h" />
     <ClInclude Include="src\components\bomb.h" />
+    <ClInclude Include="src\components\academy.h" />
     <ClInclude Include="src\components\port.h" />
     <ClInclude Include="src\components\infantry.h" />
     <ClInclude Include="src\components\mine.h" />

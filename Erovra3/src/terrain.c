@@ -144,7 +144,7 @@ void terrain_update(struct terrain* terrain)
         mousePos.x = (float)(((float)g->mouseX - (float)g->width / 2.0f) / terrain_zoom) - offset.x;
         mousePos.y = (float)(((float)g->mouseY - (float)g->height / 2.0f) / terrain_zoom) - offset.y;
     }
-    if (g->mouseDrag) {
+    if (g->mouseDrag && !g->shift) {
         offset.x = (g->mouseX - g->mouseInitX) / terrain_zoom + oldOffset.x;
         offset.y = (g->mouseY - g->mouseInitY) / terrain_zoom + oldOffset.y;
     }
@@ -673,8 +673,10 @@ EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct te
 }
 
 /*
-	Takes in a pointer to an FRect struct, the position and size of a sprite. 
-	Translates and scales the rect based on the offset and zoom */
+	Takes in a pointer to an SDL_Rect struct, the position and size of a sprite. 
+	Translates and scales the rect based on the offset and zoom 
+	
+	Converts map coords to screen coords*/
 void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height)
 {
     newPos->x = ((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
@@ -687,6 +689,7 @@ struct vector Terrain_MousePos()
     return mousePos;
 }
 
+// Converts screen coords to map coords
 SDL_FPoint terrain_inverseTranslate(int x, int y)
 {
     SDL_FPoint newPos;

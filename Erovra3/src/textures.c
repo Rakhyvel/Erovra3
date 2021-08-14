@@ -30,6 +30,8 @@ void Textures_Init()
     MINE_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
     PORT_TEXTURE_ID = Texture_RegisterTexture("res/port.png");
     AIRFIELD_TEXTURE_ID = Texture_RegisterTexture("res/airfield.png");
+    FARM_TEXTURE_ID = Texture_RegisterTexture("res/farm.png");
+    ACADEMY_TEXTURE_ID = Texture_RegisterTexture("res/academy.png");
     BUILDING_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/hit.png");
     CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
     WALL_TEXTURE_ID = Texture_RegisterTexture("res/wall.png");
@@ -39,6 +41,7 @@ void Textures_Init()
     FACTORY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
     PORT_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
     MINE_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
+    ACADEMY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
 
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     CAVALRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
@@ -78,6 +81,7 @@ void Textures_Init()
     Texture_CreateShadow(FACTORY_SHADOW_TEXTURE_ID, FACTORY_TEXTURE_ID);
     Texture_CreateShadow(PORT_SHADOW_TEXTURE_ID, PORT_TEXTURE_ID);
     Texture_CreateShadow(MINE_SHADOW_TEXTURE_ID, MINE_TEXTURE_ID);
+    Texture_CreateShadow(ACADEMY_SHADOW_TEXTURE_ID, ACADEMY_TEXTURE_ID);
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);

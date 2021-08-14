@@ -21,6 +21,8 @@ typedef enum unitType {
     UnitType_FACTORY,
     UnitType_PORT,
     UnitType_AIRFIELD,
+    UnitType_FARM,
+    UnitType_ACADEMY,
     UnitType_WALL,
 	UnitType_LANDING_CRAFT,
 	UnitType_DESTROYER,

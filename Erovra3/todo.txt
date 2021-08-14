@@ -175,22 +175,19 @@ x Make units favor tiles closer to their capital
 x Make units stronger
 x Ground units cannot target buildings if near enemies!
 x Offset visited squares so that cities are in the center, add extra row/column, shift up/left 16 pxls
-- AutoRebuild doesnt work
 
 
 3.8.x- Cool stuff
-- Farms, food (?)
-	- Each farm gives 1 to pop cap
-	- Cities give default 4 to pop cap
-	- Really cheap, maybe don't get expensiver like everything else
-		- Maybe 30 coins each? flat rate
-- Barracks needed to recruit people, cities don't make infantry anymore
-	- Can also recruit engineers
-- In addition to pop cap, have a number of unemployed unskilled, unemployed skilled, etc
-- Something to increase city tax revenue (maybe a market or a plaza or idk)
-- Box select
+x Farms, food (?)
+	x Each farm gives 1 to pop cap
+	x Cities give default 3 to pop cap
+x Academy needed to recruit people, cities don't make infantry anymore
+	x Can also recruit engineers
+x Box select
 - Holding shift while selecting multiple units will change between "goto point" and "center of mass"
 	- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
+! Factory focused loses progress if you have two factories producing, and switch from a newer one to an older one
+! Auto rebuild doesnt work
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 - FULL GAME META AND BALANCING SOLIDIFIED HERE! -
 - Projectiles should scan walls and see if they're hitting them, even at oblique angles

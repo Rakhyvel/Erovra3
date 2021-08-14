@@ -35,8 +35,8 @@ struct game {
         mouseMoved,
         mouseLeftDown,
         mouseRightDown,
-        mouseLeftUp,
-        mouseRightUp,
+        mouseLeftUp, // Left mouse button previously pressed, on this tick is released.
+        mouseRightUp, // Right mouse button previously pressed, on this tick is released.
         mouseDrag,
         mouseDragged;
 
