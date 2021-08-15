@@ -184,10 +184,6 @@ x Farms, food (?)
 x Academy needed to recruit people, cities don't make infantry anymore
 	x Can also recruit engineers
 x Box select
-- Holding shift while selecting multiple units will change between "goto point" and "center of mass"
-	- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
-! Factory focused loses progress if you have two factories producing, and switch from a newer one to an older one
-! Auto rebuild doesnt work
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 - FULL GAME META AND BALANCING SOLIDIFIED HERE! -
 - Projectiles should scan walls and see if they're hitting them, even at oblique angles
@@ -236,6 +232,8 @@ x Box select
 - Add animations
 	- GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
 - Add arrow when moving a unit
+	- Holding shift while selecting multiple units will change between "goto point" and "center of mass"
+		- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
 - Add death animation
 - Give coins a shadow, arc, and change their velocity based on their path
 - Update coin sprite, ore sprite to be HD

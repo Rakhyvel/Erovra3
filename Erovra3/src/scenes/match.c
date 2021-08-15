@@ -771,7 +771,7 @@ void Match_Hover(struct scene* scene)
     } else {
         boxTL = (Vector) { -1, -1 };
         selectBox = false;
-	}
+    }
 
     EntityID id;
     EntityID hoveredID = INVALID_ENTITY_INDEX;
@@ -857,8 +857,8 @@ void Match_Select(struct scene* scene)
                 Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
                 if (selectable->selected) {
                     centerOfMass = Vector_Add(centerOfMass, motion->pos);
+                    numSelected++;
                 }
-                numSelected++;
             }
             if (numSelected != 0) {
                 centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
@@ -932,31 +932,27 @@ void Match_Select(struct scene* scene)
 void Match_Focus(struct scene* scene)
 {
     if (g->mouseRightUp) {
-        EntityID focusedEntity = INVALID_ENTITY_INDEX;
         const ComponentMask focusMask = Scene_CreateMask(4, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
         EntityID id;
-        // Go through all focusable entities, find the last one that is hovered, set focusedEntity to it
+        Focusable* focusableComp = NULL;
+        EntityID containerID = INVALID_ENTITY_INDEX;
+        // Hide all containers, keep track of the focusables that are hovered. The last one will be the one shown.
         for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            GUI_SetContainerShown(scene, focusable->guiContainer, false);
+            focusable->focused = false;
             if (hoverable->isHovered) {
-                focusedEntity = id;
+                containerID = focusable->guiContainer;
+                focusableComp = focusable;
             }
         }
-        // The focused entity's gui container should be shown, all others should not be. If the focused entity is none, all should be hidden
-        EntityID containerID = INVALID_ENTITY_INDEX;
-        for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
-            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-            if (containerID != INVALID_ENTITY_INDEX && focusable->guiContainer == containerID) {
-                focusable->focused = false;
-                continue;
-            }
-            if (focusedEntity == id) {
-                containerID = focusable->guiContainer;
-            }
-            focusable->focused = focusedEntity == id;
-            GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
+
+        // Shared GUI entities may have been hidden. Show the right one here.
+        if (containerID != INVALID_ENTITY_INDEX && focusableComp != NULL) {
+            GUI_SetContainerShown(scene, containerID, true);
+            focusableComp->focused = true;
         }
     }
 }
@@ -1842,16 +1838,13 @@ void Match_ProduceUnits(struct scene* scene)
                 nation->resources[ResourceType_POPULATION]++;
                 printf("Birth.\n");
 
-                if (!producer->repeat) {
+                if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
                     producer->order = INVALID_ENTITY_INDEX;
+                    producer->repeat = false;
                     GUI_SetContainerShown(scene, focusable->guiContainer, false);
                     focusable->guiContainer = producer->readyGUIContainer;
                     GUI_SetContainerShown(scene, focusable->guiContainer, focusable->focused);
-                } else {
-                    Match_PlaceOrder(scene, nation, producer, expansion, producer->order);
                 }
-            } else if (producer->repeat && producer->orderTicksRemaining < 0) {
-                Match_PlaceOrder(scene, nation, producer, expansion, producer->order);
             }
         }
     }
@@ -1949,18 +1942,18 @@ void Match_UpdateGUIElements(struct scene* scene)
         GUI_SetLabelText(scene, goldLabel, "Coins: %d", nation->resources[ResourceType_COIN]);
         GUI_SetLabelText(scene, oreLabel, "Ore: %d", nation->resources[ResourceType_ORE]);
         GUI_SetLabelText(scene, populationLabel, "Population: %d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
+    }
 
-        const ComponentMask focusMask = Scene_CreateMask(1, FOCUSABLE_COMPONENT_ID);
-        EntityID focusID;
-        for (focusID = Scene_Begin(scene, focusMask); Scene_End(scene, focusID); focusID = Scene_Next(scene, focusID, focusMask)) {
-            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, focusID, FOCUSABLE_COMPONENT_ID);
+    const ComponentMask focusMask = Scene_CreateMask(2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
+    EntityID focusID;
+    for (focusID = Scene_Begin(scene, focusMask); Scene_End(scene, focusID); focusID = Scene_Next(scene, focusID, focusMask)) {
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, focusID, FOCUSABLE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
 
-            if (focusable->focused && Scene_EntityHasComponent(scene, Scene_CreateMask(1, PRODUCER_COMPONENT_ID), focusID)) {
-                Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
-                GUI_SetLabelText(scene, orderLabel, "Order: %d", producer->order);
-                GUI_SetLabelText(scene, timeLabel, "Time remaining: %d", producer->orderTicksRemaining);
-                GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
-            }
+        if (focusable->focused) {
+            GUI_SetLabelText(scene, orderLabel, "Order: %d", producer->order);
+            GUI_SetLabelText(scene, timeLabel, "Time remaining: %d", producer->orderTicksRemaining);
+            GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
         }
     }
 }
@@ -2322,8 +2315,9 @@ void Match_ProducerCancelOrder(Scene* scene)
 /*
 	RockerSwitch callback that updates the repeat value of a producer based on the
 	value of the rocker switch */
-void Match_ProducerReOrder(Scene* scene, bool value)
+void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 {
+    RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, rockerID, GUI_ROCKER_SWITCH_COMPONENT_ID);
     const ComponentMask focusMask = Scene_CreateMask(2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
@@ -2331,7 +2325,7 @@ void Match_ProducerReOrder(Scene* scene, bool value)
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
         if (focusable->focused) {
-            producer->repeat = value;
+            producer->repeat = rockerSwitch->value;
         }
     }
 }
@@ -2350,6 +2344,7 @@ Scene* Match_Init()
     populationLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
+    autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder);
     GUI_ContainerAdd(match, container, goldLabel);
     GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
@@ -2378,7 +2373,7 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetContainerShown(match, ACADEMY_BUSY_FOCUSED_GUI, false);
 
     FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2395,7 +2390,7 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetContainerShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
     CITY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2408,7 +2403,7 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetContainerShown(match, CITY_BUSY_FOCUSED_GUI, false);
 
     PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2425,12 +2420,12 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder));
+    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetContainerShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
-    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
+    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
 
     // Create and register home city
     Vector homeVector = findBestLocation(terrain, (Vector) { terrain->size, terrain->size });

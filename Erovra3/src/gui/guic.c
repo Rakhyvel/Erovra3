@@ -96,7 +96,7 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
     };
     strncpy_s(rockerSwitch.text, 255, text, 255);
     Scene_Assign(scene, rockerSwitchID, GUI_ROCKER_SWITCH_COMPONENT_ID, &rockerSwitch);
-
+    printf("0x%X\n", rockerSwitchID);
     return rockerSwitchID;
 }
 
@@ -177,9 +177,9 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
 
 /*
 	 Sets the value of a rocker switch GUI entity */
-void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value)
+void GUI_SetRockerSwitchValue(Scene* scene, EntityID id, bool value)
 {
-    RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, labelID, GUI_ROCKER_SWITCH_COMPONENT_ID);
+    RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
     rockerSwitch->value = value;
 }
 
