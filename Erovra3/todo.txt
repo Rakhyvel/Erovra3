@@ -186,7 +186,7 @@ x Academy needed to recruit people, cities don't make infantry anymore
 x Box select
 x Cities give no population, must build farms to get more population. Farms and cities are 10/15 each
 	x Each farm gives 3 population
-- Bulldoze building option, disband unit option
+x Bulldoze building option, disband unit option
 
 
 3.9.x- Prettify

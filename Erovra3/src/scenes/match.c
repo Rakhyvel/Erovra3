@@ -475,6 +475,13 @@ void Match_DetectHit(struct scene* scene)
                 homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
             }
 
+            if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, FOCUSABLE_COMPONENT_ID), id)) {
+                Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+                if (focusable->focused) {
+                    GUI_SetContainerShown(scene, focusable->focused, false);
+                }
+            }
+
 			// TODO: Check for focusable, hide container
 
             switch (unit->type) {
@@ -1879,6 +1886,13 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                     if (unit->type == UnitType_FACTORY || unit->type == UnitType_ACADEMY) {
                         nation->factories--;
                         newNation->factories++;
+                    }
+                }
+
+                if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, FOCUSABLE_COMPONENT_ID), id)) {
+                    Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+                    if (focusable->focused) {
+                        GUI_SetContainerShown(scene, focusable->focused, false);
                     }
                 }
 
