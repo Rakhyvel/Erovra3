@@ -76,6 +76,12 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, artilleryID, HOVERABLE_COMPONENT_ID, &hoverable);
 
+    Focusable focusable = {
+        false,
+        UNIT_FOCUSED_GUI
+    };
+    Scene_Assign(scene, artilleryID, FOCUSABLE_COMPONENT_ID, &focusable);
+
     Scene_Assign(scene, artilleryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);

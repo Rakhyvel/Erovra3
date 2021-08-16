@@ -76,6 +76,12 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, battleshipID, HOVERABLE_COMPONENT_ID, &hoverable);
 
+    Focusable focusable = {
+        false,
+        UNIT_FOCUSED_GUI
+    };
+    Scene_Assign(scene, battleshipID, FOCUSABLE_COMPONENT_ID, &focusable);
+
     Scene_Assign(scene, battleshipID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, battleshipID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, battleshipID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

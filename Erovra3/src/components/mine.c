@@ -65,6 +65,12 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, mineID, HOVERABLE_COMPONENT_ID, &hoverable);
 
+    Focusable focusable = {
+        false,
+        BUILDING_FOCUSED_GUI
+    };
+    Scene_Assign(scene, mineID, FOCUSABLE_COMPONENT_ID, &focusable);
+
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);

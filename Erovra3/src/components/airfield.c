@@ -55,7 +55,7 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
 
     Focusable focusable = {
         false,
-        FACTORY_READY_FOCUSED_GUI
+        BUILDING_FOCUSED_GUI
     };
     Scene_Assign(scene, airfieldID, FOCUSABLE_COMPONENT_ID, &focusable);
 

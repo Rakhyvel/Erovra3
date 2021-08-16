@@ -55,7 +55,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Focusable focusable = {
         false,
-        FACTORY_READY_FOCUSED_GUI
+        BUILDING_FOCUSED_GUI
     };
     Scene_Assign(scene, farmID, FOCUSABLE_COMPONENT_ID, &focusable);
 

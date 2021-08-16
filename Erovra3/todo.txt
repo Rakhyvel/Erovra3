@@ -177,29 +177,22 @@ x Ground units cannot target buildings if near enemies!
 x Offset visited squares so that cities are in the center, add extra row/column, shift up/left 16 pxls
 
 
-3.8.x- Cool stuff
+3.8.x- Economy, general tidying up of logic
 x Farms, food (?)
 	x Each farm gives 1 to pop cap
 	x Cities give default 3 to pop cap
 x Academy needed to recruit people, cities don't make infantry anymore
 	x Can also recruit engineers
 x Box select
-- Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
-- FULL GAME META AND BALANCING SOLIDIFIED HERE! -
-- Projectiles should scan walls and see if they're hitting them, even at oblique angles
-- Circle search for tiles rather than searching all tiles
-- Medic units
+x Cities give no population, must build farms to get more population. Farms and cities are 10/15 each
+	x Each farm gives 3 population
 - Bulldoze building option, disband unit option
-- Mines (as in anti personel mines, not mines for ore)
-- Units have a queue of targets instead of just one, can give them a path to follow
-	- cycles can be achived by enqueueing after dequieing a target, which would be kinda neat!
-- Land and repair at airfields
-- AI should cancel orders if needs have drastically changed
-	- Along the same lines, should destroy buildings if no longer needed
 
 
 3.9.x- Prettify
 - "Layers" to order elements on screen based on depth
+	- Use a sorted list, iterate through sorted list
+	- List item struct has priority and ID attributes
 - Make GUI look better
 	- Container background colors
 	- Borders around elements
@@ -217,6 +210,8 @@ x Box select
 		- Show a small preview
 		- Paramters for size, density, erosion (add erosion control)
 	- Loading bar for real terrain generation
+- Add pause menu
+	- Pulled up if hit esc, no units were active, or whatever esc does later on down the line
 - Update action button text in real time
 	- Add resources needed for each cost
 	- Gray out invalid ones, with red text as to why
@@ -224,8 +219,8 @@ x Box select
 	- A mini map in the corner, with ore and oil data represented
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well
 - Add sound
-	- SOUND ANY TIME AN ORDER IS GIVEN
-	- SOUND ANY TIME AN ENTITY IS SPAWNED
+	- SOUND ANY TIME AN ORDER IS GIVEN!
+	- SOUND ANY TIME AN ENTITY IS SPAWNED!
 	- sound should get quieter as it gets farther from the camera, inverse square
 - Add particles
 	- Shell explosion particles, maybe particles on its trajectory
@@ -253,9 +248,12 @@ x Box select
 - Defensive armament for bombers
 - Planes should originate from airfields
 - Vector graphics for every texture (no bitmaps!)
+- If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
 
 3.10.x- Multiplayer
 - Multiplayer
+- More than one nation (Maybe an array of enemy nations)
+- Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 
 
 ??? save game files

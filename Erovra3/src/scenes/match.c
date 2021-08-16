@@ -53,7 +53,7 @@ Vector boxTL = { -1, -1 };
 Vector boxBR = { -1, -1 };
 bool selectBox = false;
 
-static const int cityPop = 3;
+static const int cityPop = 4;
 static const float taxRate = 0.25f;
 static const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
 static bool buildPorts = false;
@@ -152,7 +152,7 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
         terrain_setBuildingAt(terrain, city, pos.x, pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_CITY];
         nation->costs[ResourceType_COIN][UnitType_CITY] *= 2;
-        nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
+        // nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
         nation->cities++;
         return true;
     }
@@ -271,7 +271,7 @@ bool Match_BuyFarm(struct scene* scene, EntityID nationID, Vector pos)
     pos.y = (int)(pos.y / 64) * 64 + 32;
 
     EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
-    if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && terrain_getBuildingAt(terrain, pos.x, pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, pos.x, pos.y) > 0.5 && terrain_getBuildingAt(terrain, pos.x, pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
@@ -281,8 +281,7 @@ bool Match_BuyFarm(struct scene* scene, EntityID nationID, Vector pos)
         terrain_setBuildingAt(terrain, farm, pos.x, pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FARM];
         nation->costs[ResourceType_COIN][UnitType_FARM] *= 2;
-        nation->resources[ResourceType_POPULATION] += 1;
-        nation->resources[ResourceType_POPULATION_CAPACITY] += 2;
+        nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
         return true;
     }
     return false;
@@ -414,7 +413,6 @@ void Match_DetectHit(struct scene* scene)
         EntityID otherID;
         Nation* otherNation = NULL;
         SimpleRenderable* otherSimpleRenderable = NULL;
-        bool deadFlag = false;
         for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
             if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
                 continue;
@@ -448,23 +446,21 @@ void Match_DetectHit(struct scene* scene)
 
                 // If dead don't bother checking the rest of the particles
                 if (health->health <= 0) {
-                    deadFlag = true;
                     break;
                 }
             }
         }
 
-        if (deadFlag) {
-            printf("Dead.\n");
+        if (health->health <= 0) {
             // Cities don't get destroyed, they're captured
             City* homeCity = NULL;
             if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), id)) {
                 Scene_MarkPurged(scene, id);
-                nation->resources[ResourceType_POPULATION]--;
+                if (unit->type != UnitType_FARM) {
+                    nation->resources[ResourceType_POPULATION]--;
+                }
             } else if (otherNation != NULL && otherSimpleRenderable != NULL) {
-                nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
                 nation->cities--;
-                otherNation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
                 simpleRenderable->nation = otherSimpleRenderable->nation;
                 Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
                 Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
@@ -478,6 +474,8 @@ void Match_DetectHit(struct scene* scene)
                 homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                 homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
             }
+
+			// TODO: Check for focusable, hide container
 
             switch (unit->type) {
             case UnitType_INFANTRY:
@@ -511,7 +509,7 @@ void Match_DetectHit(struct scene* scene)
                 break;
             case UnitType_FARM:
                 terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
-                nation->resources[ResourceType_POPULATION_CAPACITY] -= 2;
+                nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
                 break;
             case UnitType_PORT:
                 terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
@@ -1114,8 +1112,59 @@ void Match_AIEngineerBuild(struct scene* scene)
         // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
         // makeCoinTicks < useCoinTicks
 
-        // Find closest city point, build city if on point
-        if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
+        // Find closest farm point, build farm if on point
+        if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM]) {
+            float tempDistance = FLT_MAX;
+            Vector tempTarget = (Vector) { -1, -1 };
+            for (int y = 0; y < terrain->tileSize; y++) {
+                for (int x = 0; x < terrain->tileSize; x++) {
+                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                        continue;
+
+                    // Only go to squares near friendly cities
+                    Vector point = { x * 64 + 32, y * 64 + 32 };
+                    const ComponentMask cityMask = Scene_CreateMask(2, CITY_COMPONENT_ID, nation->ownNationFlag);
+                    EntityID cityID;
+                    bool foundFlag = false;
+                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                        Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+                        City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
+
+                        if (Vector_CabDist(point, cityMotion->pos) == 64) {
+                            foundFlag = true;
+                            break;
+                        }
+                    }
+                    if (!foundFlag)
+                        continue;
+
+                    if (terrain_getHeight(terrain, point.x, point.y) < 0.5)
+                        continue;
+
+                    float distance = Vector_Dist(motion->pos, point);
+                    if (distance > tempDistance)
+                        continue;
+
+                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                        continue;
+
+                    tempTarget = point;
+                    tempDistance = distance;
+                }
+            }
+            // Factory point found, build factory
+            if (tempTarget.x != -1) {
+                target->tar = tempTarget;
+                target->lookat = tempTarget;
+                if (Vector_Dist(motion->pos, target->tar) < 32) {
+                    Match_BuyFarm(scene, simpleRenderable->nation, motion->pos);
+                }
+                nationsDone |= simpleRenderable->nation;
+                continue;
+            }
+        }
+        // Find closest city point, build city if on city point
+        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1166,7 +1215,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 continue;
             }
         }
-        // Find closest farm point, build far if on farm point
+        // Find closest academy point, build academy if on academy point
         else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 2 && averageTicksPerCoinMade <= averageTicksPerCoinUsed) {
             float tempDistance = FLT_MAX;
             Vector tempTarget = (Vector) { -1, -1 };
@@ -1212,57 +1261,6 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
                     Match_BuyAcademy(scene, simpleRenderable->nation, motion->pos);
-                }
-                nationsDone |= simpleRenderable->nation;
-                continue;
-            }
-        }
-        // Find closest farm point, build far if on farm point
-        else if (nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM] && nation->resources[ResourceType_POPULATION_CAPACITY] - nation->resources[ResourceType_POPULATION] >= 1) {
-            float tempDistance = FLT_MAX;
-            Vector tempTarget = (Vector) { -1, -1 };
-            for (int y = 0; y < terrain->tileSize; y++) {
-                for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
-                        continue;
-
-                    // Only go to squares near friendly cities
-                    Vector point = { x * 64 + 32, y * 64 + 32 };
-                    const ComponentMask cityMask = Scene_CreateMask(2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
-                    bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
-                        Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
-                        City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
-
-                        if (Vector_CabDist(point, cityMotion->pos) == 64) {
-                            foundFlag = true;
-                            break;
-                        }
-                    }
-                    if (!foundFlag)
-                        continue;
-
-                    if (terrain_getHeight(terrain, point.x, point.y) < 0.5)
-                        continue;
-
-                    float distance = Vector_Dist(motion->pos, point);
-                    if (distance > tempDistance)
-                        continue;
-
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
-                        continue;
-
-                    tempTarget = point;
-                    tempDistance = distance;
-                }
-            }
-            // Factory point found, build factory
-            if (tempTarget.x != -1) {
-                target->tar = tempTarget;
-                target->lookat = tempTarget;
-                if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    Match_BuyFarm(scene, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
                 continue;
@@ -1868,16 +1866,22 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
             if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
                 Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
                 simpleRenderable->nation = homeCitySimpleRenderable->nation;
-                nation->resources[ResourceType_POPULATION]--;
-                newNation->resources[ResourceType_POPULATION]++;
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
-                if (unit->type == UnitType_FACTORY || unit->type == UnitType_ACADEMY) {
-                    nation->factories--;
-                    newNation->factories++;
-                } else if (unit->type == UnitType_FARM) {
-                    nation->resources[ResourceType_POPULATION_CAPACITY]--;
-                    newNation->resources[ResourceType_POPULATION_CAPACITY]++;
+                newNation->costs[ResourceType_COIN][unit->type] *= 2;
+
+                if (unit->type == UnitType_FARM) {
+                    nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
+                    newNation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
+                } else {
+                    nation->resources[ResourceType_POPULATION]--;
+                    newNation->resources[ResourceType_POPULATION]++;
+
+                    if (unit->type == UnitType_FACTORY || unit->type == UnitType_ACADEMY) {
+                        nation->factories--;
+                        newNation->factories++;
+                    }
                 }
+
                 Scene_Unassign(scene, id, AI_FLAG_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
@@ -2005,7 +2009,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2064,14 +2068,14 @@ void matchRender(Scene* match)
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match);
     Match_UpdateGUIElements(match);
-    Match_DrawVisitedSquares(match);
+    //Match_DrawVisitedSquares(match);
     Match_DrawBoxSelect(match);
     GUI_Render(match);
 }
 
 /*
 	Called when infantry build city button is pressed. Builds a city */
-void Match_InfantryAddCity(Scene* scene)
+void Match_EngineerAddCity(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2088,7 +2092,7 @@ void Match_InfantryAddCity(Scene* scene)
 
 /*
 	Called by the infantry's "Build Factory" button. Builds a mine */
-void Match_InfantryAddMine(Scene* scene)
+void Match_EngineerAddMine(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2105,7 +2109,7 @@ void Match_InfantryAddMine(Scene* scene)
 
 /*
 	Called by the infantry's "Build Factory" button. Builds a factory */
-void Match_InfantryAddFactory(Scene* scene)
+void Match_EngineerAddFactory(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2124,7 +2128,7 @@ void Match_InfantryAddFactory(Scene* scene)
 	Called by the infantry's "Build Wall" button. Builds a wall on the gridline 
 	segment that the infantry is closest to. Doesn't add a wall if there is 
 	already a wall in place. */
-void Match_InfantryAddWall(Scene* scene)
+void Match_EngineerAddWall(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2179,7 +2183,7 @@ void Match_InfantryAddWall(Scene* scene)
 
 /*
 	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_InfantryAddPort(Scene* scene)
+void Match_EngineerAddPort(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2195,8 +2199,8 @@ void Match_InfantryAddPort(Scene* scene)
 }
 
 /*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_InfantryAddAirfield(Scene* scene)
+	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
+void Match_EngineerAddAirfield(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2212,8 +2216,8 @@ void Match_InfantryAddAirfield(Scene* scene)
 }
 
 /*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_InfantryAddFarm(Scene* scene)
+	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
+void Match_EngineerAddFarm(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2230,7 +2234,7 @@ void Match_InfantryAddFarm(Scene* scene)
 
 /*
 	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_InfantryAddAcademy(Scene* scene)
+void Match_EngineerAddAcademy(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2246,8 +2250,8 @@ void Match_InfantryAddAcademy(Scene* scene)
 }
 
 /*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_InfantryTestSoil(Scene* scene)
+	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
+void Match_EngineerTestSoil(Scene* scene)
 {
     const ComponentMask focusMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
@@ -2284,6 +2288,19 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
             GUI_SetContainerShown(scene, focusable->guiContainer, false);
             focusable->guiContainer = producer->busyGUIContainer;
             GUI_SetContainerShown(scene, focusable->guiContainer, true);
+        }
+    }
+}
+
+void Match_DestroyUnit(Scene* scene, EntityID buttonID) {
+    const ComponentMask focusMask = Scene_CreateMask(2, HEALTH_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+
+        if (focusable->focused) {
+            health->health = -100; // Lol this basically "kills" the unit
         }
     }
 }
@@ -2351,21 +2368,33 @@ Scene* Match_Init()
 
     ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, ENGINEER_FOCUSED_GUI);
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_InfantryAddCity));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_InfantryAddMine));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_InfantryAddFactory));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_InfantryAddPort));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", 0, &Match_InfantryAddAirfield));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Farm", 0, &Match_InfantryAddFarm));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Academy", 0, &Match_InfantryAddAcademy));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_InfantryAddWall));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_InfantryTestSoil));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_EngineerAddCity));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_EngineerAddMine));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_EngineerAddFactory));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_EngineerAddPort));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", 0, &Match_EngineerAddAirfield));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Farm", 0, &Match_EngineerAddFarm));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Academy", 0, &Match_EngineerAddAcademy));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_EngineerAddWall));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_EngineerTestSoil));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetContainerShown(match, ENGINEER_FOCUSED_GUI, false);
+
+    BUILDING_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, BUILDING_FOCUSED_GUI);
+    GUI_ContainerAdd(match, BUILDING_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
+    GUI_SetContainerShown(match, BUILDING_FOCUSED_GUI, false);
+
+    UNIT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
+    GUI_ContainerAdd(match, container, UNIT_FOCUSED_GUI);
+    GUI_ContainerAdd(match, UNIT_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
+    GUI_SetContainerShown(match, UNIT_FOCUSED_GUI, false);
 
     ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, ACADEMY_READY_FOCUSED_GUI);
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Infantry", UnitType_INFANTRY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Engineer", UnitType_ENGINEER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetContainerShown(match, ACADEMY_READY_FOCUSED_GUI, false);
 
     ACADEMY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2383,6 +2412,7 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Figher", UnitType_FIGHTER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Attacker", UnitType_ATTACKER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Bomber", UnitType_BOMBER, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetContainerShown(match, FACTORY_READY_FOCUSED_GUI, false);
 
     FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2393,19 +2423,6 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetContainerShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
-    CITY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
-    GUI_ContainerAdd(match, container, CITY_READY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, CITY_READY_FOCUSED_GUI, GUI_CreateLabel(match, (Vector) { 0, 0 }, "Unimplemented. Will eventually have options to recruit engineers/infantry/train laborers"));
-    GUI_SetContainerShown(match, CITY_READY_FOCUSED_GUI, false);
-
-    CITY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
-    GUI_ContainerAdd(match, container, CITY_BUSY_FOCUSED_GUI);
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, orderLabel);
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, timeLabel);
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, CITY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
-    GUI_SetContainerShown(match, CITY_BUSY_FOCUSED_GUI, false);
-
     PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
     GUI_ContainerAdd(match, container, PORT_READY_FOCUSED_GUI);
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", 0, &Match_ProducerOrder));
@@ -2413,6 +2430,7 @@ Scene* Match_Init()
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", UnitType_CRUISER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Battleship", UnitType_BATTLESHIP, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Air Craft Carrier", 0, &Match_ProducerOrder));
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetContainerShown(match, PORT_READY_FOCUSED_GUI, false);
 
     PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 });
@@ -2425,7 +2443,7 @@ Scene* Match_Init()
 
     // Create home and enemy nations
     EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
-    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+    EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
 
     // Create and register home city
     Vector homeVector = findBestLocation(terrain, (Vector) { terrain->size, terrain->size });

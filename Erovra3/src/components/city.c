@@ -57,17 +57,6 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, cityID, HOVERABLE_COMPONENT_ID, &hoverable);
-
-    Focusable focusable = {
-        false,
-		CITY_READY_FOCUSED_GUI
-    };
-    Scene_Assign(scene, cityID, FOCUSABLE_COMPONENT_ID, &focusable);
-
     char name[20] = "Name";
     City city = {
         name
