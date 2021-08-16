@@ -10,6 +10,11 @@ void Components_Init(struct scene* scene)
     TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
     PATROL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Patrol));
     SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
+    BUILDING_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    SURFACE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    AIR_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    PLANE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    PARTICLE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
     HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
 
     UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));

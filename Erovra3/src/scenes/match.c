@@ -31,14 +31,12 @@
 #include "../terrain.h"
 #include "../textures.h"
 #include "../util/debug.h"
-#include "../util/sortedlist.h"
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
 
 Terrain* terrain;
 EntityID container;
-SortedList renderList;
 
 // Nation labels
 EntityID goldLabel;
@@ -445,7 +443,6 @@ void Match_DetectHit(struct scene* scene)
                 }
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
-                SortedList_Remove(&renderList, id);
 
                 // If dead don't bother checking the rest of the particles
                 if (health->health <= 0) {
@@ -459,7 +456,6 @@ void Match_DetectHit(struct scene* scene)
             City* homeCity = NULL;
             if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), id)) {
                 Scene_MarkPurged(scene, id);
-                SortedList_Remove(&renderList, id);
                 if (unit->type != UnitType_FARM) {
                     nation->resources[ResourceType_POPULATION]--;
                 }
@@ -554,7 +550,6 @@ void Match_Motion(struct scene* scene)
         float height = terrain_getHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
         if (motion->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
-            SortedList_Remove(&renderList, id);
         }
     }
 }
@@ -735,7 +730,6 @@ void Match_ShellMove(struct scene* scene)
                 projectile->armed = true;
             } else {
                 Scene_MarkPurged(scene, id);
-                SortedList_Remove(&renderList, id);
             }
         }
     }
@@ -757,7 +751,6 @@ void Match_BombMove(struct scene* scene)
                 projectile->armed = true;
             } else {
                 Scene_MarkPurged(scene, id);
-                SortedList_Remove(&renderList, id);
             }
         }
     }
@@ -1788,7 +1781,6 @@ void Match_DestroyResourceParticles(struct scene* scene)
 
         if (Vector_Dist(motion->pos, capital->pos) < 6) {
             Scene_MarkPurged(scene, id);
-            SortedList_Remove(&renderList, id);
             nation->resources[resourceParticle->type]++;
         }
     }
@@ -1916,15 +1908,11 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 	Takes in a scene, iterates through all entities with SimpleRenderable and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
 	colorizes based on the nation color, and renders texture to screen. */
-void Match_SimpleRender(struct scene* scene)
+void Match_SimpleRender(struct scene* scene, ComponentID layer)
 {
-    const ComponentMask renderMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
+    const ComponentMask renderMask = Scene_CreateMask(3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, layer);
     EntityID id;
-    for (int i = 0; i < renderList.size; i++) {
-        id = (EntityID)renderList.list[i].data;
-        if (!Scene_EntityHasComponent(scene, renderMask, id)) {
-            continue;
-        }
+    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         SDL_Rect rect = { 0, 0, 0, 0 };
@@ -2092,7 +2080,11 @@ void matchRender(Scene* match)
 {
     terrain_render(terrain);
     Match_UpdateFogOfWar(match);
-    Match_SimpleRender(match);
+    Match_SimpleRender(match, BUILDING_LAYER_COMPONENT_ID);
+    Match_SimpleRender(match, SURFACE_LAYER_COMPONENT_ID);
+    Match_SimpleRender(match, AIR_LAYER_COMPONENT_ID);
+    Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
+    Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
     //Match_DrawVisitedSquares(match);
     Match_DrawBoxSelect(match);
@@ -2381,8 +2373,6 @@ Scene* Match_Init()
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
     terrain = terrain_create(18 * 64, 0.4f, 4);
     GUI_Init(match);
-
-    renderList = SortedList_Create();
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
     goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");

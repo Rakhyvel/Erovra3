@@ -38,7 +38,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         36,
         36
     };
-    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, mineID);
+    Scene_Assign(scene, mineID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, mineID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

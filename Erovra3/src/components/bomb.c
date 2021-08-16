@@ -26,7 +26,6 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         0.001, // Vel
         -0.0001f // Acc due to gravity
     };
-    SortedList_Add(&renderList, RenderPriority_HIGH_SURFACE_LAYER, bombID);
     Scene_Assign(scene, bombID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
@@ -41,6 +40,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         0,
         0
     };
+    Scene_Assign(scene, bombID, AIR_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, bombID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Projectile projectile = {

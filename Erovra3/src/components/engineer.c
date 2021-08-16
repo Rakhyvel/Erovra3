@@ -41,7 +41,7 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
         36,
         20
     };
-    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, engineerID);
+    Scene_Assign(scene, engineerID, SURFACE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, engineerID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

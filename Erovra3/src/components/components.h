@@ -97,9 +97,16 @@ typedef struct simpleRenderable {
     int height;
     int outlineWidth;
     int outlineHeight;
+    unsigned int priority;
     int hitTicks;
 } SimpleRenderable;
 ComponentID SIMPLE_RENDERABLE_COMPONENT_ID;
+
+ComponentID BUILDING_LAYER_COMPONENT_ID;
+ComponentID SURFACE_LAYER_COMPONENT_ID;
+ComponentID AIR_LAYER_COMPONENT_ID;
+ComponentID PLANE_LAYER_COMPONENT_ID;
+ComponentID PARTICLE_LAYER_COMPONENT_ID;
 
 /*
 		Contains data used for determining the health of a unit, how long the

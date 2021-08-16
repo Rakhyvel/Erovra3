@@ -46,6 +46,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
         84,
         54
     };
+    Scene_Assign(scene, bomberID, PLANE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, bomberID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
@@ -54,7 +55,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
         0.0f,
         Scene_CreateMask(1, AIR_BULLET_COMPONENT_ID)
     };
-    SortedList_Add(&renderList, RenderPriorirty_AIR_LAYER, bomberID);
     Scene_Assign(scene, bomberID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {

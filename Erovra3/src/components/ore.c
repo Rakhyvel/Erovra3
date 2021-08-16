@@ -24,7 +24,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         0.2f,
         true
     };
-    SortedList_Add(&renderList, RenderPriorirty_PARTICLE_LAYER, oreID);
+    Scene_Assign(scene, oreID, PARTICLE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, oreID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {

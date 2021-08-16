@@ -40,7 +40,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         36,
         20
     };
-    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, artilleryID);
+    Scene_Assign(scene, artilleryID, SURFACE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, artilleryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

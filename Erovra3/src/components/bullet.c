@@ -41,7 +41,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
         0,
         0
     };
-    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, bulletID);
+    Scene_Assign(scene, bulletID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, bulletID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Projectile projectile = {
@@ -61,6 +61,8 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
     EntityID airBulletID = Bullet_Create(scene, pos, tar, attack, nation);
     Scene_Unassign(scene, airBulletID, BULLET_COMPONENT_ID);
     Scene_Assign(scene, airBulletID, AIR_BULLET_COMPONENT_ID, NULL);
+    Scene_Unassign(scene, airBulletID, BUILDING_LAYER_COMPONENT_ID);
+    Scene_Assign(scene, airBulletID, AIR_LAYER_COMPONENT_ID, NULL);
     ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = 1.0f;
     ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->aZ = 0;
     return airBulletID;

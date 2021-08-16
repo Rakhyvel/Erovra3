@@ -31,7 +31,7 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         36,
         36
     };
-    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, academyID);
+    Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, academyID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

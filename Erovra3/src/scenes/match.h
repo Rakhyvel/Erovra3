@@ -1,7 +1,6 @@
 #pragma once
 #include "../engine/scene.h"
 #include "../terrain.h"
-#include "../util/sortedlist.h"
 
 enum RenderPriority {
     RenderPriorirty_BUILDING_LAYER,
@@ -12,8 +11,6 @@ enum RenderPriority {
 };
 
 extern Terrain* terrain;
-
-extern SortedList renderList;
 
 EntityID ENGINEER_FOCUSED_GUI;
 

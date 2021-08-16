@@ -46,7 +46,7 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
         42,
         41
     };
-    SortedList_Add(&renderList, RenderPriorirty_AIR_LAYER, fighterID);
+    Scene_Assign(scene, fighterID, PLANE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, fighterID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

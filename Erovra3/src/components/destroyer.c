@@ -41,7 +41,7 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
         16,
         46
     };
-    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, destroyerID);
+    Scene_Assign(scene, destroyerID, SURFACE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, destroyerID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

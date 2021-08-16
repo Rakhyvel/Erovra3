@@ -308,10 +308,6 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\util\sortedlist.c">
-      <SubType>
-      </SubType>
-    </ClCompile>
     <ClCompile Include="src\util\vector.c">
       <SubType>
       </SubType>
@@ -357,7 +353,6 @@
     <ClInclude Include="src\textures.h" />
     <ClInclude Include="src\util\lexicon.h" />
     <ClInclude Include="src\util\polygon.h" />
-    <ClInclude Include="src\util\sortedlist.h" />
     <ClInclude Include="src\util\vector.h" />
   </ItemGroup>
   <ItemGroup>

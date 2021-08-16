@@ -37,7 +37,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         36,
         36
     };
-    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, portID);
+    Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, portID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
