@@ -46,6 +46,7 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
         58,
         48
     };
+    SortedList_Add(&renderList, RenderPriorirty_AIR_LAYER, attackerID);
     Scene_Assign(scene, attackerID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

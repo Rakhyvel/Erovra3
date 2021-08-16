@@ -32,6 +32,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
         36,
         36
     };
+    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, wallID);
     Scene_Assign(scene, wallID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

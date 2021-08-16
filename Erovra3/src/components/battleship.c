@@ -40,6 +40,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
         16,
         46
     };
+    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, battleshipID);
     Scene_Assign(scene, battleshipID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

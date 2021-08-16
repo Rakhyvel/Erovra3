@@ -31,6 +31,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         36,
         36
     };
+    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, factoryID);
     Scene_Assign(scene, factoryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

@@ -147,6 +147,9 @@
     <ClCompile Include="src\components\academy.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\sortedlist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -267,6 +270,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\academy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\sortedlist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

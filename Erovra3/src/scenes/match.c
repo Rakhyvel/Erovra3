@@ -31,12 +31,14 @@
 #include "../terrain.h"
 #include "../textures.h"
 #include "../util/debug.h"
+#include "../util/sortedlist.h"
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
 
 Terrain* terrain;
 EntityID container;
+SortedList renderList;
 
 // Nation labels
 EntityID goldLabel;
@@ -443,6 +445,7 @@ void Match_DetectHit(struct scene* scene)
                 }
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
+                SortedList_Remove(&renderList, id);
 
                 // If dead don't bother checking the rest of the particles
                 if (health->health <= 0) {
@@ -456,6 +459,7 @@ void Match_DetectHit(struct scene* scene)
             City* homeCity = NULL;
             if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, CITY_COMPONENT_ID), id)) {
                 Scene_MarkPurged(scene, id);
+                SortedList_Remove(&renderList, id);
                 if (unit->type != UnitType_FARM) {
                     nation->resources[ResourceType_POPULATION]--;
                 }
@@ -482,7 +486,7 @@ void Match_DetectHit(struct scene* scene)
                 }
             }
 
-			// TODO: Check for focusable, hide container
+            // TODO: Check for focusable, hide container
 
             switch (unit->type) {
             case UnitType_INFANTRY:
@@ -550,6 +554,7 @@ void Match_Motion(struct scene* scene)
         float height = terrain_getHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
         if (motion->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
+            SortedList_Remove(&renderList, id);
         }
     }
 }
@@ -730,6 +735,7 @@ void Match_ShellMove(struct scene* scene)
                 projectile->armed = true;
             } else {
                 Scene_MarkPurged(scene, id);
+                SortedList_Remove(&renderList, id);
             }
         }
     }
@@ -751,6 +757,7 @@ void Match_BombMove(struct scene* scene)
                 projectile->armed = true;
             } else {
                 Scene_MarkPurged(scene, id);
+                SortedList_Remove(&renderList, id);
             }
         }
     }
@@ -1781,6 +1788,7 @@ void Match_DestroyResourceParticles(struct scene* scene)
 
         if (Vector_Dist(motion->pos, capital->pos) < 6) {
             Scene_MarkPurged(scene, id);
+            SortedList_Remove(&renderList, id);
             nation->resources[resourceParticle->type]++;
         }
     }
@@ -1912,7 +1920,11 @@ void Match_SimpleRender(struct scene* scene)
 {
     const ComponentMask renderMask = Scene_CreateMask(2, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID);
     EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    for (int i = 0; i < renderList.size; i++) {
+        id = (EntityID)renderList.list[i].data;
+        if (!Scene_EntityHasComponent(scene, renderMask, id)) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         SDL_Rect rect = { 0, 0, 0, 0 };
@@ -2023,7 +2035,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2306,7 +2318,8 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
     }
 }
 
-void Match_DestroyUnit(Scene* scene, EntityID buttonID) {
+void Match_DestroyUnit(Scene* scene, EntityID buttonID)
+{
     const ComponentMask focusMask = Scene_CreateMask(2, HEALTH_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
     EntityID id;
     for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
@@ -2368,6 +2381,8 @@ Scene* Match_Init()
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
     terrain = terrain_create(18 * 64, 0.4f, 4);
     GUI_Init(match);
+
+    renderList = SortedList_Create();
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
     goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
@@ -2456,7 +2471,7 @@ Scene* Match_Init()
     GUI_SetContainerShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations
-    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
 
     // Create and register home city

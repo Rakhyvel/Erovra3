@@ -2,6 +2,7 @@
 #include "../engine/textureManager.h"
 #include "../textures.h"
 #include "shell.h"
+#include "../scenes/match.h"
 #include "components.h"
 
 /*
@@ -38,6 +39,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         0,
         0
     };
+    SortedList_Add(&renderList, RenderPriority_HIGH_SURFACE_LAYER, shellID);
     Scene_Assign(scene, shellID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Shell shell = {

@@ -41,6 +41,7 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
         16,
         46
     };
+    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, cruiserID);
     Scene_Assign(scene, cruiserID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

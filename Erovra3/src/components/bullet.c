@@ -5,6 +5,7 @@
 #include "../textures.h"
 #include "../util/arraylist.h"
 #include "components.h"
+#include "../scenes/match.h"
 
 /*
 	Creates a bullet entity, that starts at a given position, moves towards 
@@ -40,6 +41,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
         0,
         0
     };
+    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, bulletID);
     Scene_Assign(scene, bulletID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Projectile projectile = {

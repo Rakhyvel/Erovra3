@@ -1,9 +1,10 @@
 #pragma once
+#include "bomb.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
+#include "../scenes/match.h"
 #include "../textures.h"
 #include "../util/arraylist.h"
-#include "bomb.h"
 #include "components.h"
 
 /*
@@ -13,7 +14,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
 {
     EntityID bombID = Scene_NewEntity(scene);
 
-	float angle = Vector_Angle(Vector_Sub(pos, tar));
+    float angle = Vector_Angle(Vector_Sub(pos, tar));
     angle += 3.1415926 / 2.0;
     Motion motion = {
         pos,
@@ -22,9 +23,10 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         angle,
         4,
         true,
-        0.001,       // Vel
+        0.001, // Vel
         -0.0001f // Acc due to gravity
     };
+    SortedList_Add(&renderList, RenderPriority_HIGH_SURFACE_LAYER, bombID);
     Scene_Assign(scene, bombID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {

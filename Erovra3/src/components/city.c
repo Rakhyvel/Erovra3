@@ -34,6 +34,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         36,
         36
     };
+    SortedList_Add(&renderList, RenderPriorirty_BUILDING_LAYER, cityID);
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {

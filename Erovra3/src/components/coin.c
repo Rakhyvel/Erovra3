@@ -1,5 +1,6 @@
 #pragma once
 #include "coin.h"
+#include "../scenes/match.h"
 #include "../textures.h"
 #include "components.h"
 
@@ -37,9 +38,10 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0,
         0
     };
+    SortedList_Add(&renderList, RenderPriorirty_PARTICLE_LAYER, coinID);
     Scene_Assign(scene, coinID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
-	ResourceParticle resourceParticle = {
+    ResourceParticle resourceParticle = {
         ResourceType_COIN
     };
     Scene_Assign(scene, coinID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);

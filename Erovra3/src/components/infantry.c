@@ -41,6 +41,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
         36,
         20
     };
+    SortedList_Add(&renderList, RenderPriorirty_SURFACE_LAYER, infantryID);
     Scene_Assign(scene, infantryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
