@@ -27,4 +27,4 @@ EntityID PORT_BUSY_FOCUSED_GUI;
 EntityID ACADEMY_READY_FOCUSED_GUI;
 EntityID ACADEMY_BUSY_FOCUSED_GUI;
 
-Scene* Match_Init();
+Scene* Match_Init(int tileSize);

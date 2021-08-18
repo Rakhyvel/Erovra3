@@ -207,7 +207,7 @@ static Polygon spliceBezier(Polygon polygon)
     Polygon rendval;
     rendval.numVertices = 0;
     int rendVertexIndex = 0;
-    const float detail = 8.0f;
+    const float detail = 16.0f;
     for (int i = 0; i < polygon.numVertices; i += 3) {
         // Fill temp with the four points from the polygon
         for (int j = 0; j < 4; j++) {
@@ -278,7 +278,6 @@ void Texture_CreateShadow(TextureID dstID, TextureID srcID)
             area++;
         }
     }
-    printf("%d\n", area);
     SDL_SetRenderTarget(g->rend, NULL);
 }
 

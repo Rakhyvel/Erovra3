@@ -5,7 +5,7 @@
 #include "gui.h"
 #include <string.h>
 
-#define GUI_PADDING 4
+#define GUI_PADDING 6
 
 /*
 	Call this before using GUI. Registers GUI ECS components, and fonts */
@@ -15,7 +15,13 @@ void GUI_Init(Scene* scene)
     GUI_BUTTON_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Button));
     GUI_LABEL_ID = Scene_RegisterComponent(scene, sizeof(Label));
     GUI_ROCKER_SWITCH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RockerSwitch));
+    GUI_RADIO_BUTTONS_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RadioButtons));
+    GUI_SLIDER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Slider));
     GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
+
+    radioUnchecked = Texture_RegisterTexture("res/gui/radio.png");
+    radioChecked = Texture_RegisterTexture("res/gui/radioFill.png");
+
     Font_Init();
 }
 
@@ -29,21 +35,23 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
     int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
 
     GUIComponent gui = {
+        false,
+        false,
         pos,
-        textWidth,
+        width,
         height,
         true,
-        INVALID_ENTITY_INDEX
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
     };
     Scene_Assign(scene, buttonID, GUI_COMPONENT_ID, &gui);
 
     Button button = {
-        false,
-        false,
         onclick,
-		meta
+        meta
     };
-    strncpy_s(button.text, 255, text, 255);
+    strncpy_s(button.text, 32, text, 32);
     Scene_Assign(scene, buttonID, GUI_BUTTON_COMPONENT_ID, &button);
 
     return buttonID;
@@ -58,15 +66,19 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
     int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
 
     GUIComponent gui = {
+        false,
+        false,
         pos,
         textWidth,
         16,
         true,
-        INVALID_ENTITY_INDEX
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
     };
     Scene_Assign(scene, labelID, GUI_COMPONENT_ID, &gui);
     Label label;
-    strncpy_s(label.text, 255, text, 255);
+    strncpy_s(label.text, 32, text, 32);
     Scene_Assign(scene, labelID, GUI_LABEL_ID, &label);
     return labelID;
 }
@@ -80,24 +92,87 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
     int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
 
     GUIComponent gui = {
+        false,
+        false,
         pos,
         textWidth,
         50,
         true,
-        INVALID_ENTITY_INDEX
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
     };
     Scene_Assign(scene, rockerSwitchID, GUI_COMPONENT_ID, &gui);
 
     RockerSwitch rockerSwitch = {
-        false,
-        false,
         value,
         onchange
     };
     strncpy_s(rockerSwitch.text, 255, text, 255);
     Scene_Assign(scene, rockerSwitchID, GUI_ROCKER_SWITCH_COMPONENT_ID, &rockerSwitch);
-    printf("0x%X\n", rockerSwitchID);
     return rockerSwitchID;
+}
+
+EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        100,
+        nSelections * (32 + 12) + 16,
+        true,
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    RadioButtons radioButtons = {
+        defaultSelection,
+        nSelections
+    };
+    strncpy_s(radioButtons.groupLabel, 32, groupLabel, 32);
+
+    va_list args;
+    va_start(args, options);
+    strncpy_s(radioButtons.options[0], 32, options, 32);
+    for (int i = 1; i < nSelections; i++) {
+        strncpy_s(radioButtons.options[i], 32, va_arg(args, char*), 32);
+    }
+    va_end(args);
+    Scene_Assign(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID, &radioButtons);
+
+    return id;
+}
+
+EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, GUICallback onupdate)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        width,
+        16 + 6 + 24 + 6,
+        true,
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    Slider slider = {
+        onupdate,
+        defaultValue
+    };
+    strncpy_s(slider.label, 32, label, 32);
+    Scene_Assign(scene, id, GUI_SLIDER_COMPONENT_ID, &slider);
+
+    return id;
 }
 
 /*
@@ -108,11 +183,15 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
     EntityID containerID = Scene_NewEntity(scene);
 
     GUIComponent gui = {
+        false,
+        false,
         pos,
         500,
         500,
         true,
-        INVALID_ENTITY_INDEX
+        INVALID_ENTITY_INDEX,
+        (SDL_Color) { 40, 40, 40, 180 },
+        (SDL_Color) { 128, 128, 128, 180 }
     };
     Scene_Assign(scene, containerID, GUI_COMPONENT_ID, &gui);
 
@@ -134,7 +213,7 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
     Label* label = (Label*)Scene_GetComponent(scene, labelID, GUI_LABEL_ID); // Get error that Entity 2 does not have component 37, mask is 0
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, labelID, GUI_COMPONENT_ID);
 
-    memset(label->text, 0, 255);
+    memset(label->text, 0, 32);
     int labelPos = 0;
     int formatPos;
     va_list args;
@@ -158,7 +237,7 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
             } else {
                 labelPos += offset;
             }
-            strcat_s(label->text, 255, temp);
+            strcat_s(label->text, 32, temp);
             label->text[labelPos + 1] = '\0';
             formatPos++;
         } else {
@@ -228,7 +307,7 @@ void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
             GUI_SetContainerShown(scene, childID, shown);
         }
     }
-    GUI_UpdateLayout(scene, GUI_GetRoot(scene, containerID), 50, 50);
+    GUI_UpdateLayout(scene, GUI_GetRoot(scene, containerID), 0, 0);
 }
 
 /*
@@ -241,8 +320,10 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
         return (Vector) { -1, -1 };
     }
 
-    gui->pos.x = parentX + GUI_PADDING;
-    gui->pos.y = parentY + GUI_PADDING;
+    if (gui->parent != INVALID_ENTITY_INDEX) {
+        gui->pos.x = parentX + GUI_PADDING;
+        gui->pos.y = parentY + GUI_PADDING;
+    }
     if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CONTAINER_COMPONENT_ID), id)) {
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector retval = { 0, 0 };
@@ -264,6 +345,12 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
     }
 }
 
+void GUI_SetBackgroundColor(Scene* scene, EntityID id, SDL_Color color)
+{
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID); // FIXME: Mask is 0 bug here too
+    gui->backgroundColor = color;
+}
+
 // UPDATING
 /*
 	Updates a button. Checks to see if it's hovered, and then clicked */
@@ -274,18 +361,18 @@ static void updateButton(Scene* scene)
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
-        button->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
-        if (button->isHovered && g->mouseLeftDown) {
-            button->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (gui->isHovered && g->mouseLeftDown) {
+            gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
         if (g->mouseLeftUp) {
-            if (button->clickedIn && button->isHovered) {
+            if (gui->clickedIn && gui->isHovered) {
                 if (button->onclick == NULL) {
                     PANIC("Button onclick is NULL for button %s", button->text);
                 }
                 button->onclick(scene, id);
             }
-            button->clickedIn = false;
+            gui->clickedIn = false;
         }
     }
 }
@@ -301,19 +388,73 @@ static void updateRockerSwitch(Scene* scene)
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         RockerSwitch* rockerSwitch = (Button*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
-        rockerSwitch->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
-        if (rockerSwitch->isHovered && g->mouseLeftDown) {
-            rockerSwitch->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (gui->isHovered && g->mouseLeftDown) {
+            gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
         if (g->mouseLeftUp) {
-            if (rockerSwitch->clickedIn && rockerSwitch->isHovered) {
+            if (gui->clickedIn && gui->isHovered) {
                 if (rockerSwitch->onchange == NULL) {
                     PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
                 }
                 rockerSwitch->value = !rockerSwitch->value;
                 rockerSwitch->onchange(scene, id);
             }
-            rockerSwitch->clickedIn = false;
+            gui->clickedIn = false;
+        }
+    }
+}
+
+void updateRadioButtons(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    const int buttonHeight = 32;
+    const int buttonPadding = 12;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        // int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        RadioButtons* radioButtons = (RadioButtons*)Scene_GetComponent(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID);
+
+        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 34 && g->mouseY < gui->pos.y + gui->height;
+        if (gui->isHovered && g->mouseLeftDown) {
+            gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        }
+        if (g->mouseLeftUp) {
+            if (gui->clickedIn && gui->isHovered) {
+                radioButtons->selection = (g->mouseY - gui->pos.y - 22) / 44;
+            }
+            gui->clickedIn = false;
+        }
+    }
+}
+
+void updateSlider(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    const int buttonHeight = 32;
+    const int buttonPadding = 12;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        // int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        Slider* slider = (Slider*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
+
+        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 6 + 16 && g->mouseY < gui->pos.y + gui->height;
+        if ((gui->isHovered || gui->clickedIn) && g->mouseLeftDown) {
+            float val = (g->mouseX - gui->pos.x) / gui->width;
+            slider->value = max(0.0f, min(1.0f, val));
+            gui->clickedIn = true;
+        }
+        if (gui->clickedIn && !g->mouseLeftDown) {
+            slider->onupdate(scene, id);
+            gui->clickedIn = false;
         }
     }
 }
@@ -324,6 +465,8 @@ void GUI_Update(Scene* scene)
 {
     updateButton(scene);
     updateRockerSwitch(scene);
+    updateRadioButtons(scene);
+    updateSlider(scene);
 }
 
 // RENDERING
@@ -339,13 +482,20 @@ static void renderButton(Scene* scene)
             continue;
         }
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
-        SDL_SetRenderDrawColor(g->rend, 40, 40, 40, 180);
+        SDL_SetRenderDrawColor(g->rend, gui->backgroundColor.r, gui->backgroundColor.g, gui->backgroundColor.b, gui->backgroundColor.a);
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
         SDL_RenderFillRect(g->rend, &rect);
-        if (button->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, 128, 128, 128, 180);
+        if (gui->isHovered) {
+            SDL_SetRenderDrawColor(g->rend, gui->hoverColor.r, gui->hoverColor.g, gui->hoverColor.b, gui->hoverColor.a);
             SDL_RenderFillRect(g->rend, &rect);
         }
+        SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        SDL_RenderDrawRect(g->rend, &rect);
+        rect.x -= 1;
+        rect.y -= 1;
+        rect.w += 2;
+        rect.h += 2;
+        SDL_RenderDrawRect(g->rend, &rect);
         Font_DrawString(button->text, gui->pos.x + (gui->width - Font_GetWidth(button->text)) / 2, gui->pos.y + gui->height / 2 - 8);
     }
 }
@@ -363,19 +513,20 @@ static void renderRockerSwitch(Scene* scene)
         }
         RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
         if (rockerSwitch->value) {
-            SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 180);
+            SDL_SetRenderDrawColor(g->rend, gui->hoverColor.r, gui->hoverColor.g, gui->hoverColor.b, gui->hoverColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, 40, 40, 40, 180);
+            SDL_SetRenderDrawColor(g->rend, gui->backgroundColor.r, gui->backgroundColor.g, gui->backgroundColor.b, gui->backgroundColor.a);
         }
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
         SDL_RenderFillRect(g->rend, &rect);
-        if (rockerSwitch->isHovered) {
+        if (gui->isHovered) {
             SDL_SetRenderDrawColor(g->rend, 128, 128, 128, 180);
             SDL_RenderFillRect(g->rend, &rect);
         }
         Font_DrawString(rockerSwitch->text, gui->pos.x + (gui->width - Font_GetWidth(rockerSwitch->text)) / 2, gui->pos.y + gui->height / 2 - 8);
     }
 }
+
 /*
 	Draws a label */
 static void renderLabel(Scene* scene)
@@ -393,6 +544,78 @@ static void renderLabel(Scene* scene)
 }
 
 /*
+	Draws a set of radio buttons */
+static void renderRadioButtons(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    const int buttonHeight = 32;
+    const int buttonPadding = 12;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        RadioButtons* radioButtons = (RadioButtons*)Scene_GetComponent(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID);
+        Font_DrawString(radioButtons->groupLabel, gui->pos.x, gui->pos.y);
+        for (int i = 0; i < radioButtons->nSelections; i++) {
+            int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
+            if (i == radioButtons->selection) {
+                Texture_ColorMod(radioUnchecked, (SDL_Color) { 60, 100, 250, 255 });
+                Texture_ColorMod(radioChecked, (SDL_Color) { 60, 100, 250, 255 });
+                Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
+                Texture_Draw(radioChecked, gui->pos.x, buttonY, 20, 20, 0);
+            } else {
+                Texture_ColorMod(radioUnchecked, (SDL_Color) { 255, 255, 255, 255 });
+                Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
+            }
+            Font_DrawString(radioButtons->options[i], gui->pos.x + 28, buttonY + 3);
+        }
+    }
+}
+
+/*
+	Draws a slider */
+static void renderSlider(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        Slider* slider = (RadioButtons*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
+        Font_DrawString(slider->label, gui->pos.x, gui->pos.y);
+
+        // Draw full slider track
+        if (gui->isHovered) {
+            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        } else {
+            SDL_SetRenderDrawColor(g->rend, gui->hoverColor.r, gui->hoverColor.g, gui->hoverColor.b, gui->hoverColor.a);
+        }
+        SDL_Rect rect = { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width, 2 };
+        SDL_RenderFillRect(g->rend, &rect);
+
+        // Draw filled slider track
+        SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 255);
+        rect = (SDL_Rect) { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width * slider->value, 2 };
+        SDL_RenderFillRect(g->rend, &rect);
+
+        // Draw knob
+        if (gui->isHovered && !g->mouseLeftDown) {
+            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        } else if (gui->isHovered) {
+            SDL_SetRenderDrawColor(g->rend, gui->hoverColor.r, gui->hoverColor.g, gui->hoverColor.b, gui->hoverColor.a);
+        } else {
+            SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 255);
+        }
+        rect = (SDL_Rect) { gui->pos.x + gui->width * slider->value - 4, gui->pos.y + 6 + 16, 8, 24 };
+        SDL_RenderFillRect(g->rend, &rect);
+    }
+}
+
+/*
 	Draws a container to the screen */
 static void renderContainer(Scene* scene)
 {
@@ -403,9 +626,12 @@ static void renderContainer(Scene* scene)
         if (!gui->shown) {
             continue;
         }
-        SDL_SetRenderDrawColor(g->rend, 40, 40, 40, 180);
+        SDL_SetRenderDrawColor(g->rend, gui->backgroundColor.r, gui->backgroundColor.g, gui->backgroundColor.b, gui->backgroundColor.a);
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
         SDL_RenderFillRect(g->rend, &rect);
+        rect = (SDL_Rect) { gui->pos.x, gui->pos.y, gui->width, gui->height };
+        SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        SDL_RenderDrawRect(g->rend, &rect);
     }
 }
 
@@ -417,4 +643,6 @@ void GUI_Render(Scene* scene)
     renderButton(scene);
     renderLabel(scene);
     renderRockerSwitch(scene);
+    renderRadioButtons(scene);
+    renderSlider(scene);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_VERTICES 64
+#define MAX_VERTICES 128
 
 typedef struct polygon_t {
     int x, y;

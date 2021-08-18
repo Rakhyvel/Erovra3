@@ -2368,10 +2368,10 @@ void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
-Scene* Match_Init()
+Scene* Match_Init(int tileSize)
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(18 * 64, 0.4f, 4);
+    terrain = terrain_create(tileSize * 64, 0.4f, 4);
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 });
