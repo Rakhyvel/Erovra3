@@ -5,6 +5,7 @@ game.c
 #include "gameState.h"
 #include "../util/debug.h"
 #include "scene.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -106,7 +107,7 @@ void Game_Run()
         }
         if (elapsedFrames >= 16.0f) {
             elapsedFrames = 0;
-            SDL_SetRenderDrawColor(g->rend, 50, 50, 50, 255);
+            SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 255);
             SDL_RenderClear(g->rend);
             scene->render(scene); // FIXME: freeHeap() failure?
             SDL_RenderPresent(g->rend);
@@ -124,6 +125,60 @@ void Game_Run()
     }
 }
 
+static char toshifted(SDL_KeyCode c)
+{
+    if (c < 0) {
+        return -1;
+    }
+    if (c >= 'a' && c <= 'z') {
+        return c + 'A' - 'a';
+    }
+    switch (c) {
+    case '`':
+        return '~';
+    case '1':
+        return '!';
+    case '2':
+        return '@';
+    case '3':
+        return '#';
+    case '4':
+        return '$';
+    case '5':
+        return '%';
+    case '6':
+        return '^';
+    case '7':
+        return '&';
+    case '8':
+        return '*';
+    case '9':
+        return '(';
+    case '0':
+        return ')';
+    case '-':
+        return '+';
+    case '=':
+        return '_';
+    case '[':
+        return '{';
+    case ']':
+        return '}';
+    case '\\':
+        return '|';
+    case ';':
+        return ':';
+    case '\'':
+        return '"';
+    case ',':
+        return '<';
+    case '.':
+        return '>';
+    case '/':
+        return '?';
+    }
+}
+
 /*
 	Polls and handles input from SDL event queue, updates game's state struct */
 void Game_PollInput()
@@ -134,6 +189,7 @@ void Game_PollInput()
     g->mouseMoved = false;
     g->lt = false;
     g->gt = false;
+    g->keyDown = '\0';
 
     // DIRECT INPUT
     SDL_Event event;
@@ -147,16 +203,16 @@ void Game_PollInput()
             break;
         case SDL_KEYDOWN:
             switch (event.key.keysym.scancode) {
-            case SDL_SCANCODE_W:
+            case SDL_SCANCODE_UP:
                 g->up = 1;
                 break;
-            case SDL_SCANCODE_S:
+            case SDL_SCANCODE_DOWN:
                 g->down = 1;
                 break;
-            case SDL_SCANCODE_A:
+            case SDL_SCANCODE_LEFT:
                 g->left = 1;
                 break;
-            case SDL_SCANCODE_D:
+            case SDL_SCANCODE_RIGHT:
                 g->right = 1;
                 break;
             case SDL_SCANCODE_LCTRL:
@@ -172,20 +228,29 @@ void Game_PollInput()
                 g->gt = 1;
                 break;
             }
-            g->keys[event.key.keysym.scancode] = 1;
+            if (!g->keys[event.key.keysym.scancode] || g->keys[event.key.keysym.scancode] < g->ticks + 60) {
+                if (g->up || g->down || g->left || g->right) {
+                    g->keyDown = 1;
+                } else if (g->shift) {
+                    g->keyDown = toshifted(SDL_GetKeyFromScancode(event.key.keysym.scancode));
+                } else {
+                    g->keyDown = SDL_GetKeyFromScancode(event.key.keysym.scancode);
+                }
+            }
+            g->keys[event.key.keysym.scancode] = g->ticks;
             break;
         case SDL_KEYUP:
             switch (event.key.keysym.scancode) {
-            case SDL_SCANCODE_W:
+            case SDL_SCANCODE_UP:
                 g->up = 0;
                 break;
-            case SDL_SCANCODE_S:
+            case SDL_SCANCODE_DOWN:
                 g->down = 0;
                 break;
-            case SDL_SCANCODE_A:
+            case SDL_SCANCODE_LEFT:
                 g->left = 0;
                 break;
-            case SDL_SCANCODE_D:
+            case SDL_SCANCODE_RIGHT:
                 g->right = 0;
                 break;
             case SDL_SCANCODE_LCTRL:

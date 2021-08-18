@@ -1,7 +1,7 @@
 #pragma once
 #include "../engine/scene.h"
-#include "../util/vector.h"
 #include "../engine/textureManager.h"
+#include "../util/vector.h"
 
 TextureID radioUnchecked;
 TextureID radioChecked;
@@ -14,6 +14,7 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
 EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...);
 EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, GUICallback);
+EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
 EntityID GUI_CreateContainer(Scene* scene, Vector pos);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
@@ -32,9 +33,6 @@ typedef struct guiComponent {
     int height;
     bool shown;
     EntityID parent;
-    SDL_Color backgroundColor;
-    SDL_Color hoverColor;
-    SDL_Color activeColor;
 } GUIComponent;
 ComponentID GUI_COMPONENT_ID;
 
@@ -62,6 +60,7 @@ typedef struct radioButtons {
     int nSelections; // Should be around 3-8.
     char groupLabel[32];
     char options[8][32];
+    int selectionHovered;
 } RadioButtons;
 ComponentID GUI_RADIO_BUTTONS_COMPONENT_ID;
 
@@ -71,6 +70,16 @@ typedef struct slider {
     char label[32];
 } Slider;
 ComponentID GUI_SLIDER_COMPONENT_ID;
+
+typedef struct textBox {
+    bool active;
+    GUICallback onupdate; // Called whenever the text box is clicked out if
+    char label[32];
+    char text[32];
+    int cursorPos;
+    int length;
+} TextBox;
+ComponentID GUI_TEXT_BOX_COMPONENT_ID;
 
 typedef struct container {
     Arraylist children;

@@ -53,8 +53,9 @@ void Menu_Update(Scene* scene)
     GUI_SetContainerShown(scene, mainMenu, true);
 
     GUIComponent* newGameGUI = (GUIComponent*)Scene_GetComponent(scene, newGame, GUI_COMPONENT_ID);
+    Container* newGameContainer = (Container*)Scene_GetComponent(scene, newGame, GUI_CONTAINER_COMPONENT_ID);
     newGameGUI->pos.x = g->width / 2 - 350 / 2 - camera.x + 1200;
-    newGameGUI->pos.y = g->height / 2 - 87 - camera.y;
+    newGameGUI->pos.y = g->height / 2 - 280 - camera.y;
     GUI_SetContainerShown(scene, newGame, true);
 
     GUI_Update(scene);
@@ -88,8 +89,8 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, newGame, GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)"));
     GUI_ContainerAdd(scene, newGame, GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.75f, &Menu_SeaLevelCallback));
     GUI_ContainerAdd(scene, newGame, GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.75f, &Menu_ErosionCallback));
-    // Textbox: Nation name
-    // Textbox: Map seed
+    GUI_ContainerAdd(scene, newGame, GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", &Menu_ErosionCallback));
+    GUI_ContainerAdd(scene, newGame, GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Map seed", "", &Menu_ErosionCallback));
     // Checkbox: AI controlled
     GUI_ContainerAdd(scene, newGame, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start!", 0, &Menu_Back));
     GUI_ContainerAdd(scene, newGame, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Back", 0, &Menu_Back));

@@ -36,13 +36,35 @@ int Font_GetWidth(char* str)
     return retval;
 }
 
+int Font_GetSubStringWidth(char* str, int length)
+{
+    int retval = 0;
+    for (int i = 0; i < length && str[i] != '\0'; i++) {
+        retval += kern16[str[i]] + 1;
+    }
+    return retval;
+}
+
+int Font_GetCharIndex(char* str, int x)
+{
+    int total = 0;
+    int i;
+    for (i = 0; str[i] != '\0'; i++) {
+        total += kern16[str[i]] + 1;
+        if (total > x + (kern16[str[i]] + 1) / 2) {
+            return i;
+        }
+    }
+    return i;
+}
+
 /*
 	Draws a string to the screen */
 void Font_DrawString(char* str, int x, int y)
 {
     SDL_SetTextureColorMod(font, 255, 255, 255, 255);
     int i = 0;
-    SDL_Rect src = {0, 0, 16, 16};
+    SDL_Rect src = { 0, 0, 16, 16 };
     SDL_Rect dest = { x, y, 16, 16 };
     while (str[i] != '\0') {
         src.x = (str[i] % 16) * 16;

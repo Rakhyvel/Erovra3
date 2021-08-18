@@ -39,6 +39,7 @@ struct game {
         mouseRightUp, // Right mouse button previously pressed, on this tick is released.
         mouseDrag,
         mouseDragged;
+    char keyDown;
 
     float dt;
 
