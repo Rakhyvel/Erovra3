@@ -44,14 +44,13 @@ Code guidelines:
 #include "./scenes/menu.h"
 #include "engine/gameState.h"
 #include "textures.h"
-#include "./util/lexicon.h"
 
 /*
 	Inits the game, then starts the game loop */
 int main(int argc, char** argv)
 {
     Game_Init("Erovra", 1166, 640);
-    Textures_Init();
+    Textures_Init(); // TODO: Do this in another thread, have a progress "loading" bar
     Menu_Init();
     Game_Run();
     return 0;

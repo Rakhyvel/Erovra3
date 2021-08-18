@@ -5,6 +5,7 @@
 
 TextureID radioUnchecked;
 TextureID radioChecked;
+TextureID check;
 
 typedef void (*GUICallback)(struct scene*, EntityID);
 
@@ -15,7 +16,9 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
 EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...);
 EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, GUICallback);
 EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
-EntityID GUI_CreateContainer(Scene* scene, Vector pos);
+EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue);
+EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture);
+EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
 void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object);
@@ -81,7 +84,19 @@ typedef struct textBox {
 } TextBox;
 ComponentID GUI_TEXT_BOX_COMPONENT_ID;
 
+typedef struct checkBox {
+    bool value;
+    char label[32];
+} CheckBox;
+ComponentID GUI_CHECK_BOX_COMPONENT_ID;
+
+typedef struct image {
+    SDL_Texture* texture;
+} Image;
+ComponentID GUI_IMAGE_COMPONENT_ID;
+
 typedef struct container {
     Arraylist children;
+    int maxHeight;
 } Container;
 ComponentID GUI_CONTAINER_COMPONENT_ID;

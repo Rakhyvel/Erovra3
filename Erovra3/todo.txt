@@ -193,20 +193,25 @@ x Bulldoze building option, disband unit option
 x "Layers" to order elements on screen based on depth
 	x Use a sorted list, iterate through sorted list
 	x List item struct has priority and ID attributes
-- Make GUI elements look better
+x Make GUI elements look better
 	x Container background colors
-		- Other colors should be modifiable too
-	- Borders around buttons
-	- Copy Microsoft design doc
+	x Borders around buttons
+	x Copy Microsoft design doc
 - Add main menu
-	- Should "Swoosh" to other containers like in the old VeloCorsairs game
+	x Should "Swoosh" to other containers like in the old VeloCorsairs game
 	- Paramters for bulding a map
-		- Show a small preview
-		- Paramters for size, density, erosion (add erosion control)
+		x Show a small preview
+		x Paramters for size, density, erosion (add erosion control)
+		- Map size control
+		- Nation name auto using a lexicon
+		- AI controlled flag control
 	- Loading bar for real terrain generation
+	- Add placeholder logo (but actually take some time on it (It likely wont be a placeholder))
+	- Place version number under logo
+	- Loading screen for textures
 - Add pause menu
 	- Pulled up if hit esc, no units were active, or whatever esc does later on down the line
-	- Can end match, go back to main menu (FREE MEMORY!!)
+	- Can end match (surrender), go back to main menu (FREE MEMORY!!)
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well

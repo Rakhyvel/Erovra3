@@ -25,10 +25,14 @@ void GUI_Init(Scene* scene)
     GUI_RADIO_BUTTONS_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RadioButtons));
     GUI_SLIDER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Slider));
     GUI_TEXT_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(TextBox));
+    GUI_CHECK_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(CheckBox));
+    GUI_IMAGE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Image));
     GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
 
     radioUnchecked = Texture_RegisterTexture("res/gui/radio.png");
     radioChecked = Texture_RegisterTexture("res/gui/radioFill.png");
+    check = Texture_RegisterTexture("res/gui/check.png");
+    Texture_DrawPolygon(check, Polygon_Create("res/gui/check.gon"), hoverColor, 10);
 
     Font_Init();
 }
@@ -194,7 +198,55 @@ EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, cha
     };
     strncpy_s(textBox.label, 32, label, 32);
     strncpy_s(textBox.text, 32, defaultText, 32);
+    textBox.length = strlen(textBox.text);
     Scene_Assign(scene, id, GUI_TEXT_BOX_COMPONENT_ID, &textBox);
+
+    return id;
+}
+
+EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        20 + 9 + Font_GetWidth(label),
+        20,
+        true,
+        INVALID_ENTITY_INDEX,
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    CheckBox checkBox = {
+        defaultValue
+    };
+    strncpy_s(checkBox.label, 32, label, 32);
+    Scene_Assign(scene, id, GUI_CHECK_BOX_COMPONENT_ID, &checkBox);
+
+    return id;
+}
+
+EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        width,
+        height,
+        true,
+        INVALID_ENTITY_INDEX,
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    Image image = {
+        texture
+    };
+    Scene_Assign(scene, id, GUI_IMAGE_COMPONENT_ID, &image);
 
     return id;
 }
@@ -202,7 +254,7 @@ EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, cha
 /*
 	Creates a container, which holds other GUI components. You can give it a pos,
 	but will be overriden if added to another container*/
-EntityID GUI_CreateContainer(Scene* scene, Vector pos)
+EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
 {
     EntityID containerID = Scene_NewEntity(scene);
 
@@ -210,14 +262,15 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos)
         false,
         false,
         pos,
-        500,
-        500,
+        0,
+        0,
         true,
         INVALID_ENTITY_INDEX,
     };
     Scene_Assign(scene, containerID, GUI_COMPONENT_ID, &gui);
 
     Container container;
+    container.maxHeight = maxHeight;
     (container.children) = *Arraylist_Create(1, sizeof(EntityID));
     Scene_Assign(scene, containerID, GUI_CONTAINER_COMPONENT_ID, &container);
     return containerID;
@@ -348,20 +401,29 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
     }
     if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CONTAINER_COMPONENT_ID), id)) {
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
-        Vector retval = { 0, 0 };
+        Vector size = { 0, 0 }; // The working size of the container. Will be returned.
+        Vector placement = { 0, 0 }; // Offset from containers top-left corner, where children will be placed.
         for (int i = 0; i < container->children.size; i++) {
             EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
-            Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x, gui->pos.y + retval.y);
+            Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
             if (newSize.x != -1) {
-                retval.x = max(retval.x, newSize.x);
-                retval.y += newSize.y + GUI_PADDING;
+                if (placement.y + newSize.y > container->maxHeight) {
+                    placement.y = 0;
+                    placement.x = size.x + GUI_PADDING;
+                    size.y = max(size.y, placement.y + newSize.y + GUI_PADDING);
+                    i--; // Repeat item
+                } else {
+                    placement.y += newSize.y + GUI_PADDING;
+                    size.y = max(size.y, placement.y);
+                }
+                size.x = max(size.x, placement.x + newSize.x);
             }
         }
-        retval.x += 2 * GUI_PADDING;
-        retval.y += GUI_PADDING;
-        gui->width = retval.x;
-        gui->height = retval.y;
-        return retval;
+        size.x += 2 * GUI_PADDING;
+        size.y += GUI_PADDING;
+        gui->width = size.x;
+        gui->height = size.y;
+        return size;
     } else {
         return (Vector) { gui->width, gui->height };
     }
@@ -503,6 +565,9 @@ void updateTextBox(Scene* scene)
         }
         if (!gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = false;
+            if (textBox->active && textBox->onupdate != NULL) {
+                textBox->onupdate(scene, id);
+            }
             textBox->active = false;
         }
         if (gui->clickedIn && !g->mouseLeftDown) {
@@ -512,6 +577,9 @@ void updateTextBox(Scene* scene)
         }
         if (textBox->active && g->keyDown != '\0') {
             if (g->keyDown >= ' ' && g->keyDown <= '~' && textBox->length < 31) {
+                for (int i = textBox->length; i > textBox->cursorPos; i--) {
+                    textBox->text[i] = textBox->text[i - 1];
+                }
                 textBox->text[textBox->cursorPos] = g->keyDown;
                 textBox->cursorPos++;
                 textBox->length++;
@@ -524,10 +592,30 @@ void updateTextBox(Scene* scene)
                 textBox->length--;
                 textBox->text[textBox->length] = '\0';
             } else if (g->left && textBox->cursorPos > 0) {
-				textBox->cursorPos--;
+                textBox->cursorPos--;
             } else if (g->right && textBox->cursorPos < textBox->length) {
                 textBox->cursorPos++;
             }
+        }
+    }
+}
+
+static void updateCheckBox(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
+        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (gui->isHovered && g->mouseLeftDown) {
+            gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
+        }
+        if (g->mouseLeftUp) {
+            if (gui->clickedIn && gui->isHovered) {
+                checkBox->value = !checkBox->value;
+            }
+            gui->clickedIn = false;
         }
     }
 }
@@ -541,6 +629,7 @@ void GUI_Update(Scene* scene)
     updateRadioButtons(scene);
     updateSlider(scene);
     updateTextBox(scene);
+    updateCheckBox(scene);
 }
 
 // RENDERING
@@ -637,7 +726,7 @@ static void renderRadioButtons(Scene* scene)
             int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
             if (i == radioButtons->selection) {
                 Texture_ColorMod(radioUnchecked, activeColor);
-                Texture_ColorMod(radioChecked, activeColor);
+                Texture_ColorMod(radioChecked, hoverColor);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
                 Texture_Draw(radioChecked, gui->pos.x, buttonY, 20, 20, 0);
             } else if (i == radioButtons->selectionHovered) {
@@ -736,6 +825,54 @@ static void renderTextBox(Scene* scene)
 }
 
 /*
+	Draws a text box */
+static void renderCheckBox(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
+        Font_DrawString(checkBox->label, gui->pos.x + 20 + 9, gui->pos.y + 2);
+
+        // Draw the box
+        if (checkBox->value) {
+            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+        } else if (gui->isHovered) {
+            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        } else {
+            SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        }
+        SDL_Rect rect = { gui->pos.x, gui->pos.y, 20, 20 };
+        SDL_RenderFillRect(g->rend, &rect);
+        if (checkBox->value) {
+            Texture_Draw(check, gui->pos.x, gui->pos.y, 20, 20, 0);
+        }
+    }
+}
+
+/*
+	Draws a text box */
+static void renderImage(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_IMAGE_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        Image* image = (Image*)Scene_GetComponent(scene, id, GUI_IMAGE_COMPONENT_ID);
+
+        SDL_Rect dest = { gui->pos.x, gui->pos.y, gui->width, gui->height };
+        SDL_RenderCopyEx(g->rend, image->texture, NULL, &dest, 0, NULL, SDL_FLIP_NONE);
+    }
+}
+
+/*
 	Draws a container to the screen */
 static void renderContainer(Scene* scene)
 {
@@ -746,9 +883,9 @@ static void renderContainer(Scene* scene)
         if (!gui->shown) {
             continue;
         }
-        /*SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-        SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderFillRect(g->rend, &rect);*/
+        //SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        //SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
+        //SDL_RenderDrawRect(g->rend, &rect);
     }
 }
 
@@ -763,4 +900,6 @@ void GUI_Render(Scene* scene)
     renderRadioButtons(scene);
     renderSlider(scene);
     renderTextBox(scene);
+    renderCheckBox(scene);
+    renderImage(scene);
 }

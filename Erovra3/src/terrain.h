@@ -24,8 +24,8 @@ typedef struct gradient {
     float z; // Optional
 } Gradient;
 
-struct terrain* terrain_create(int tileSize, float biome, int scale);
-void paintMap(struct terrain* terrain);
+struct terrain* terrain_create(int tileSize, float biome, int scale, unsigned int seed, float erosion);
+void paintMap(int size, float* map, SDL_Texture* texture);
 void terrain_render(struct terrain* terrain);
 
 // Interpolations
@@ -36,17 +36,17 @@ float terrain_cosineInterpolation(int x0, float y0, int x1, float y1, float x2);
 float terrain_bicosineInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
 
 // Height map generators
-float* terrain_generate(int mapSize, int cellSize, float amplitude);
-float* terrain_perlin(int mapSize, int cellSize);
+float* terrain_generate(int mapSize, int cellSize, float amplitude, unsigned int seed);
+float* terrain_perlin(int mapSize, int cellSize, unsigned int seed);
 
 // Map modifications
 void terrain_normalize(float* map, int mapSize);
-void terrain_erode(struct terrain* terrain);
+void terrain_erode(int size, float* map, float intensity);
 
 // Some map functions
 float terrain_getHeight(struct terrain*, int x, int y);
 void terrain_setOffset(struct vector);
-Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY);
+Gradient terrain_getGradient(int size, float* map, float posX, float posY);
 float terrain_getZoom();
 bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
 Vector terrain_lineOfSightPoint(struct terrain* terrain, Vector from, Vector to);

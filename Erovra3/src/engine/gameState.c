@@ -52,6 +52,7 @@ void Game_Init(char* windowName, int width, int height)
     g->running = 1;
     g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = g->ticks = 0;
     g->sceneStack = Arraylist_Create(100, sizeof(Scene));
+    printf("Started.");
 }
 
 /*

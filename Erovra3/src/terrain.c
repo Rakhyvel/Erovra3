@@ -27,9 +27,8 @@ static int oldWheel = 0;
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
 	texture. */
-struct terrain* terrain_create(int mapSize, float biome, int scale)
+struct terrain* terrain_create(int mapSize, float biome, int scale, unsigned int seed, float erosion)
 {
-    srand(0);
     struct terrain* retval = calloc(1, sizeof(struct terrain));
     if (!retval) {
         fprintf(stderr, "Memory error terrain_create() creating the terrain\n");
@@ -37,9 +36,9 @@ struct terrain* terrain_create(int mapSize, float biome, int scale)
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / scale);
+    retval->map = terrain_perlin(retval->size, retval->size / scale, seed);
     printf("Generated noise\n");
-    retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8);
+    retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8, seed);
     retval->buildings = (EntityID*)malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -64,9 +63,10 @@ struct terrain* terrain_create(int mapSize, float biome, int scale)
         }
     }
     printf("Updated biomes\n");
-    //terrain_erode(retval);
+    terrain_erode(retval->size, retval->map, erosion);
     printf("Eroded\n");
-    paintMap(retval);
+    retval->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, retval->size, retval->size);
+    paintMap(retval->size, retval->map, retval->texture);
     printf("Painted\n");
     return retval;
 }
@@ -74,25 +74,24 @@ struct terrain* terrain_create(int mapSize, float biome, int scale)
 /*
 	Takes in a terrain struct, initializes the texture for it, and sets the pixels
 	based on the heightmap and a color function */
-void paintMap(struct terrain* terrain)
+void paintMap(int size, float* map, SDL_Texture* texture)
 {
-    terrain->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, terrain->size, terrain->size);
-    Uint8* pixels = malloc(terrain->size * terrain->size * 4);
+    Uint8* pixels = malloc(max(16, size * size) * 4);
     if (!pixels) {
         fprintf(stderr, "Memory error paintMap() creating pixels\n");
         exit(1);
     }
-    for (int x = 0; x < terrain->size; x++) {
-        for (int y = 0; y < terrain->size; y++) {
-            const unsigned int offset = (terrain->size * 4 * y) + x * 4;
+    for (int x = 0; x < size; x++) {
+        for (int y = 0; y < size; y++) {
+            const unsigned int offset = (size * 4 * y) + x * 4;
             SDL_Color terrainColor;
-            float i = terrain_getHeight(terrain, x, y);
+            float i = map[y * size + x];
             i = i * 2 - 0.5f;
             float g = 0;
-            if (x < terrain->size - 2 && y < terrain->size - 2) {
+            /*if (x < size - 2 && y < size - 2) {
                 Gradient grad = terrain_getGradient(terrain, x, y);
                 g = sqrtf(grad.gradX * grad.gradX + grad.gradY * grad.gradY);
-            }
+            }*/
             if (i < 0.5) {
                 // water
                 i *= 2;
@@ -105,7 +104,7 @@ void paintMap(struct terrain* terrain)
                 i = sqrtf(i);
                 terrainColor = terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.2f) + 0.2f, 0.96f - i * 0.6f);
             }
-            if (terrain_isBorder(terrain->map, terrain->size, terrain->size, x, y, 0.5f, 1)) {
+            if (size > 256.0f && terrain_isBorder(map, size, size, x, y, 0.5f, 1)) {
                 terrainColor = (SDL_Color) { 255, 255, 255 };
             }
 
@@ -115,7 +114,9 @@ void paintMap(struct terrain* terrain)
             pixels[offset + 3] = SDL_ALPHA_OPAQUE;
         }
     }
-    SDL_UpdateTexture(terrain->texture, NULL, pixels, terrain->size * 4);
+    if (SDL_UpdateTexture(texture, NULL, pixels, size * 4) == -1) {
+        PANIC("%s", SDL_GetError());
+    }
     free(pixels);
 }
 
@@ -292,9 +293,9 @@ Parameters: int mapSize - Height and width of map (maps are squares)
 Returns: A pointer to the begining of the map. Map is row major ordered as an array of floats of size mapSize * mapSize.
 		 Callee is responsible for freeing map.
 */
-float* terrain_generate(int mapSize, int cellSize, float amplitude)
+float* terrain_generate(int mapSize, int cellSize, float amplitude, unsigned int seed)
 {
-    srand((unsigned)time(0));
+    srand(seed);
     // Allocate map
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
@@ -354,15 +355,15 @@ Parameters: int mapSize - Height and width of the map (maps are squares)
 
 Returns: a pointer to a float array, with size of mapSize * mapSize, in row major order.
 */
-float* terrain_perlin(int mapSize, int cellSize)
+float* terrain_perlin(int mapSize, int cellSize, unsigned int seed)
 {
     float amplitude = 0.5;
-    float* retval = terrain_generate(mapSize, cellSize, amplitude);
+    float* retval = terrain_generate(mapSize, cellSize, amplitude, seed);
     cellSize /= 2;
     amplitude /= 2;
 
-    while (mapSize > 64 ? cellSize > 8 : cellSize > 1) {
-        float* map = terrain_generate(mapSize, cellSize, amplitude);
+    while (mapSize > 64 * 8 ? cellSize > 8 : cellSize > 1) {
+        float* map = terrain_generate(mapSize, cellSize, amplitude, seed);
         for (int i = 0; i < mapSize * mapSize; i++) {
             retval[i] += map[i];
         }
@@ -415,7 +416,7 @@ void terrain_normalize(float* map, int mapSize)
 
 /*
 	Finds the gradient on the map at a given point */
-Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY)
+Gradient terrain_getGradient(int size, float* map, float posX, float posY)
 {
     int nodeX = (int)posX;
     int nodeY = (int)posY;
@@ -423,11 +424,11 @@ Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY)
     float x = posX - nodeX;
     float y = posY - nodeY;
 
-    int nodeIndexNW = nodeY * terrain->size + nodeX;
-    float heightNW = terrain->map[nodeIndexNW];
-    float heightNE = terrain->map[nodeIndexNW + 1];
-    float heightSW = terrain->map[nodeIndexNW + terrain->size];
-    float heightSE = terrain->map[nodeIndexNW + terrain->size + 1];
+    int nodeIndexNW = nodeY * size + nodeX;
+    float heightNW = map[nodeIndexNW];
+    float heightNE = map[nodeIndexNW + 1];
+    float heightSW = map[nodeIndexNW + size];
+    float heightSE = map[nodeIndexNW + size + 1];
 
     // Calculate droplet's direction of flow with bilinear interpolation of height difference along the edges
     float gradientX = (heightNE - heightNW) * (1 - y) + (heightSE - heightSW) * y;
@@ -440,7 +441,8 @@ Gradient terrain_getGradient(struct terrain* terrain, float posX, float posY)
     return grad;
 }
 
-void terrain_erode(struct terrain* terrain)
+// Intensity should range from 0 to 3
+void terrain_erode(int size, float* map, float intensity)
 {
     float inertia = 0.05f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
@@ -452,23 +454,23 @@ void terrain_erode(struct terrain* terrain)
 
     int* erosionBrushIndices = NULL;
     float* erosionBrushWeights = NULL;
-    for (int i = 0; i < terrain->size * terrain->size * 5; i++) {
+    for (int i = 0; i < size * size * intensity; i++) {
         // Create random droplet
-        float posX = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
-        float posY = ((float)rand() / (float)RAND_MAX) * (terrain->size - 2);
+        float posX = ((float)rand() / (float)RAND_MAX) * (size - 2);
+        float posY = ((float)rand() / (float)RAND_MAX) * (size - 2);
         float dirX = 0;
         float dirY = 0;
         float speed = 1;
         float water = 0;
         float sediment = 0;
-        for (int j = 0; j < terrain->tileSize * 2; j++) {
+        for (int j = 0; j < size / 64.0f * 3; j++) {
             int nodeX = (int)posX;
             int nodeY = (int)posY;
-            int dropletIndex = nodeX + nodeY * terrain->size;
+            int dropletIndex = nodeX + nodeY * size;
             float cellOffsetX = posX - nodeX;
             float cellOffsetY = posY - nodeY;
 
-            Gradient grad = terrain_getGradient(terrain, posX, posY);
+            Gradient grad = terrain_getGradient(size, map, posX, posY);
 
             // Update the droplet's movement
             dirX = (dirX * inertia - grad.gradX * (1 - inertia));
@@ -483,12 +485,12 @@ void terrain_erode(struct terrain* terrain)
             posY += dirY;
 
             // Stop simulating droplet if it's not moving or has flowed over edge of map
-            if ((dirX == 0 && dirY == 0) || posX < 0 || posX >= terrain->size - 1 || posY < 0 || posY >= terrain->size - 1) {
+            if ((dirX == 0 && dirY == 0) || posX < 0 || posX >= size - 1 || posY < 0 || posY >= size - 1) {
                 break;
             }
 
             // Find the droplet's new height and calculate the deltaHeight
-            float newHeight = terrain_getGradient(terrain, posX, posY).z;
+            float newHeight = terrain_getGradient(size, map, posX, posY).z;
             float deltaHeight = newHeight - grad.z;
 
             // Calculate the droplet's sediment capacity (higher when moving fast down a slope and contains lots of water)
@@ -502,10 +504,10 @@ void terrain_erode(struct terrain* terrain)
 
                 // Add the sediment to the four nodes of the current cell using bilinear interpolation
                 // Deposition is not distributed over a radius (like erosion) so that it can fill small pits
-                terrain->map[dropletIndex] += amountToDeposit * (1 - cellOffsetX) * (1 - cellOffsetY);
-                terrain->map[dropletIndex + 1] += amountToDeposit * cellOffsetX * (1 - cellOffsetY);
-                terrain->map[dropletIndex + terrain->size] += amountToDeposit * (1 - cellOffsetX) * cellOffsetY;
-                terrain->map[dropletIndex + terrain->size + 1] += amountToDeposit * cellOffsetX * cellOffsetY;
+                map[dropletIndex] += amountToDeposit * (1 - cellOffsetX) * (1 - cellOffsetY);
+                map[dropletIndex + 1] += amountToDeposit * cellOffsetX * (1 - cellOffsetY);
+                map[dropletIndex + size] += amountToDeposit * (1 - cellOffsetX) * cellOffsetY;
+                map[dropletIndex + size + 1] += amountToDeposit * cellOffsetX * cellOffsetY;
             } else {
                 // Erode a fraction of the droplet's current carry capacity.
                 // Clamp the erosion to the change in height so that it doesn't dig a hole in the terrain behind the droplet
@@ -513,10 +515,10 @@ void terrain_erode(struct terrain* terrain)
                 sediment += amountToErode;
 
                 // Use erosion brush to erode from all nodes inside the droplet's erosion radius
-                terrain->map[dropletIndex] -= amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
-                terrain->map[dropletIndex + 1] -= amountToErode * cellOffsetX * (1 - cellOffsetY);
-                terrain->map[dropletIndex + terrain->size] -= amountToErode * (1 - cellOffsetX) * cellOffsetY;
-                terrain->map[dropletIndex + terrain->size + 1] -= amountToErode * cellOffsetX * cellOffsetY;
+                map[dropletIndex] -= amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
+                map[dropletIndex + 1] -= amountToErode * cellOffsetX * (1 - cellOffsetY);
+                map[dropletIndex + size] -= amountToErode * (1 - cellOffsetX) * cellOffsetY;
+                map[dropletIndex + size + 1] -= amountToErode * cellOffsetX * cellOffsetY;
             }
 
             // Update droplet's speed and water content
