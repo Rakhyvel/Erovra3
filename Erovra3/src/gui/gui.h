@@ -49,7 +49,7 @@ typedef struct button {
 ComponentID GUI_BUTTON_COMPONENT_ID;
 
 typedef struct label {
-    char text[32];
+    char text[255];
 } Label;
 ComponentID GUI_LABEL_ID;
 
@@ -94,6 +94,7 @@ ComponentID GUI_CHECK_BOX_COMPONENT_ID;
 
 typedef struct image {
     SDL_Texture* texture;
+    double angle;
 } Image;
 ComponentID GUI_IMAGE_COMPONENT_ID;
 

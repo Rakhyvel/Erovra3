@@ -50,7 +50,7 @@ Code guidelines:
 int main(int argc, char** argv)
 {
     Game_Init("Erovra", 1166, 640);
-    Textures_Init(); // TODO: Do this in another thread, have a progress "loading" bar
+    Textures_Init();
     Menu_Init();
     Game_Run();
     return 0;

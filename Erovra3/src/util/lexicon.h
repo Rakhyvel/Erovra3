@@ -33,7 +33,7 @@ struct lexicon_node {
 };
 typedef struct lexicon_node Lexicon;
 
-Lexicon* Lexicon_Create(char* filename);
+Lexicon* Lexicon_Create(char* filename, int* status);
 void Lexicon_GenerateWord(Lexicon* lex, char* buffer, int maxLength);
 
 #endif

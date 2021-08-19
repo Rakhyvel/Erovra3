@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
+EntityID loadingAssets;
 EntityID mainMenu;
 EntityID newGame;
 EntityID newGameForm;
@@ -33,6 +34,10 @@ SDL_Texture* logo;
 
 EntityID statusText;
 EntityID progressBar;
+
+EntityID loadingAssetsHints;
+EntityID loadingAssetsImage;
+SDL_Texture* loadingCircle = NULL;
 
 // Pan position of the camera
 Vector camera;
@@ -60,14 +65,13 @@ enum state {
 enum state state;
 // Incremented by functions to asyncly get status for progress bar
 int status = 0;
+bool assetsLoaded;
 // Set by generatePreview thread, map is updated, previewTexture needs to be repainted
 bool needsRepaint = false;
 // Set by generateFullTerrain, full map is generating, show progress bar
 bool generating = false;
 // Set by generatedFullTerrain, full map is done, start match
 bool done = false;
-
-
 
 /*	Calculates seed based on seed text box
 * 
@@ -81,6 +85,17 @@ static int getSeed(Scene* scene)
         seed = seed + seedBox->text[i] * 33;
     }
     return seed;
+}
+
+/*	Loads in the lexicon. Flips the assetsLoaded flag to true when done.
+ *
+ *	@param scene	This should be a pointer to the current scene
+ */
+static int loadAssets(Scene* scene)
+{
+    status = 0;
+    lexicon = Lexicon_Create("res/countryNames.txt", &status);
+    assetsLoaded = true;
 }
 
 /*	A thread that is called whenever a map setting is modified by the user. 
@@ -191,8 +206,8 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
-	/* Reset slider positions */
-	seaLevel->value = 0.5f;
+    /* Reset slider positions */
+    seaLevel->value = 0.5f;
     erosion->value = 0.2f;
 
     /* Randomize name */
@@ -272,8 +287,13 @@ void Menu_UpdateContainerPos(Scene* scene, EntityID id, int x, int y)
  */
 void Menu_Update(Scene* scene)
 {
+	// Check to see if the main menu is currently loading in assets
+    if (!assetsLoaded) {
+        Image* image = (Image*)Scene_GetComponent(scene, loadingAssetsImage, GUI_IMAGE_COMPONENT_ID);
+        image->angle += 6.28f;
+    }
     // Check to see if the main menu is currently generating a full map
-    if (generating) {
+	else if (generating) {
         // Check if the generateFullMatch thread has finished generating the map
         if (done) {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
@@ -319,6 +339,10 @@ void Menu_Update(Scene* scene)
         camera = Vector_Add(camera, vel);
         acc = Vector_Scalar(acc, 0.9);
         vel = Vector_Scalar(vel, 0.9);
+        if (camera.x < -2000) {
+            camera.x = 0;
+            camera.y = 0;
+        }
 
         GUI_Update(scene);
     }
@@ -327,6 +351,7 @@ void Menu_Update(Scene* scene)
     Menu_UpdateContainerPos(scene, mainMenu, 0, 0);
     Menu_UpdateContainerPos(scene, newGame, 2000, 0);
     Menu_UpdateContainerPos(scene, loadingMatch, -2000, -2000);
+    Menu_UpdateContainerPos(scene, loadingAssets, -4000, -4000);
 }
 
 /*	Calls GUI draw function.
@@ -346,14 +371,17 @@ Scene* Menu_Init()
     Scene* scene = Scene_Create(Components_Init, &Menu_Update, &Menu_Render);
     GUI_Init(scene);
 
-    camera = (Vector) { 0, 0 };
+    logo = loadTexture("res/logo.png");
+    loading = loadTexture("res/loading.png");
+    loadingCircle = loadTexture("res/loadingCircle.png");
+
+    assetsLoaded = false;
+    SDL_Thread* assetLoadingThread = SDL_CreateThread(loadAssets, "Load assets", scene);
+    previewTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
+
+    camera = (Vector) { -4000, -4000 };
     vel = (Vector) { 0, 0 };
     acc.y = 0;
-
-    logo = loadTexture("res/logo.png");
-    lexicon = Lexicon_Create("res/countryNames.txt");
-    previewTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
-    loading = loadTexture("res/loading.png");
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
@@ -365,6 +393,14 @@ Scene* Menu_Init()
 
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
     progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7);
+
+    loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "You can click on units to click on them!");
+    loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
+
+    loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
+    GUI_ContainerAdd(scene, loadingAssets, loadingAssetsImage);
+    GUI_ContainerAdd(scene, loadingAssets, loadingAssetsHints);
 
     mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, mainMenu, GUI_CENTERED_COMPONENT_ID, NULL);

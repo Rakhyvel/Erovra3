@@ -85,7 +85,7 @@ Lexicon* addNode(Lexicon* graph, char* buffer)
 	Pull 3 characters from file for the graph
 	Pull another character from file, concat onto last 2 characters 
 	*/
-Lexicon* Lexicon_Create(char* filename)
+Lexicon* Lexicon_Create(char* filename, int* status)
 {
     FILE* file;
     // Adjacency list head
@@ -140,6 +140,7 @@ Lexicon* Lexicon_Create(char* filename)
             Lexicon* newNode = addNode(graph, buffer);
             addEdge(workingNode, newNode);
             workingNode = newNode;
+            (*status)++;
         }
     } while (1);
 

@@ -88,7 +88,7 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
     };
     Scene_Assign(scene, labelID, GUI_COMPONENT_ID, &gui);
     Label label;
-    strncpy_s(label.text, 32, text, 32);
+    strncpy_s(label.text, 255, text, 255);
     Scene_Assign(scene, labelID, GUI_LABEL_ID, &label);
     return labelID;
 }
@@ -246,7 +246,8 @@ EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Te
     Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
 
     Image image = {
-        texture
+        texture,
+		0
     };
     Scene_Assign(scene, id, GUI_IMAGE_COMPONENT_ID, &image);
 
@@ -929,7 +930,7 @@ static void renderImage(Scene* scene)
         Image* image = (Image*)Scene_GetComponent(scene, id, GUI_IMAGE_COMPONENT_ID);
 
         SDL_Rect dest = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderCopyEx(g->rend, image->texture, NULL, &dest, 0, NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(g->rend, image->texture, NULL, &dest, image->angle, NULL, SDL_FLIP_NONE);
     }
 }
 
