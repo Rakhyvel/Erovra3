@@ -34,8 +34,8 @@ typedef struct guiComponent {
     bool isHovered;
     bool clickedIn;
     Vector pos;
-    int width;
-    int height;
+    float width;
+    float height;
     bool shown;
     EntityID parent;
 } GUIComponent;

@@ -39,7 +39,7 @@ struct terrain* terrain_create(int mapSize, float* map, SDL_Texture* texture)
     retval->map = map;
     retval->texture = texture;
 
-	int status = 0;
+    int status = 0;
     retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8, 0, &status);
     retval->buildings = (EntityID*)malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     if (!retval->buildings) {
@@ -580,6 +580,7 @@ void terrain_setBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
     y -= 32;
     x /= 64;
     y /= 64;
+    printf("%d\n", (id >> 16) & 0xFFFF);
     terrain->buildings[x + y * (terrain->tileSize)] = id;
 }
 
@@ -646,13 +647,13 @@ EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct te
 {
     x /= 64;
     y /= 64;
-    if (x >= 0) {
+    if (x > 0) {
         EntityID buildingID = terrain->buildings[(x - 1) + y * terrain->tileSize];
         if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
             return buildingID;
         }
     }
-    if (y >= 0) {
+    if (y > 0) {
         EntityID buildingID = terrain->buildings[x + (y - 1) * terrain->tileSize];
         if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
             return buildingID;

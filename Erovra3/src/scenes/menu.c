@@ -30,6 +30,7 @@ EntityID nationNameTextBox;
 EntityID mapSeedTextBox;
 EntityID AIControlledCheckBox;
 EntityID terrainImage;
+EntityID logoSpacer;
 SDL_Texture* logo;
 
 EntityID statusText;
@@ -45,6 +46,9 @@ Vector camera;
 Vector vel;
 // Change in velocity over time
 Vector acc;
+
+float logoSpacerVel;
+float logoSpacerAcc;
 
 // Preview map size
 const int size = 4 * 64;
@@ -287,13 +291,13 @@ void Menu_UpdateContainerPos(Scene* scene, EntityID id, int x, int y)
  */
 void Menu_Update(Scene* scene)
 {
-	// Check to see if the main menu is currently loading in assets
+    // Check to see if the main menu is currently loading in assets
     if (!assetsLoaded) {
         Image* image = (Image*)Scene_GetComponent(scene, loadingAssetsImage, GUI_IMAGE_COMPONENT_ID);
         image->angle += 6.28f;
     }
     // Check to see if the main menu is currently generating a full map
-	else if (generating) {
+    else if (generating) {
         // Check if the generateFullMatch thread has finished generating the map
         if (done) {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
@@ -334,6 +338,12 @@ void Menu_Update(Scene* scene)
             printf("Done.\n");
         }
 
+        GUIComponent* logoSpacerGUI = (GUIComponent*)Scene_GetComponent(scene, logoSpacer, GUI_COMPONENT_ID);
+        logoSpacerVel += logoSpacerAcc;
+        logoSpacerGUI->height += logoSpacerVel;
+        logoSpacerAcc *= 0.9;
+        logoSpacerVel *= 0.9;
+
         /* Update camera physics */
         vel = Vector_Add(vel, acc);
         camera = Vector_Add(camera, vel);
@@ -351,7 +361,7 @@ void Menu_Update(Scene* scene)
     Menu_UpdateContainerPos(scene, mainMenu, 0, 0);
     Menu_UpdateContainerPos(scene, newGame, 2000, 0);
     Menu_UpdateContainerPos(scene, loadingMatch, -2000, -2000);
-    Menu_UpdateContainerPos(scene, loadingAssets, -4000, -4000);
+    Menu_UpdateContainerPos(scene, loadingAssets, -4000, -3876);
 }
 
 /*	Calls GUI draw function.
@@ -383,6 +393,9 @@ Scene* Menu_Init()
     vel = (Vector) { 0, 0 };
     acc.y = 0;
 
+	logoSpacerVel = 0;
+    logoSpacerAcc = -20;
+
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
     erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.5f, &Menu_ReconstructMap);
@@ -397,16 +410,19 @@ Scene* Menu_Init()
     loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "You can click on units to click on them!");
     loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
 
+    logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
+
     loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsImage);
+    GUI_ContainerAdd(scene, loadingAssets, GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 204));
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsHints);
 
     mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, mainMenu, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_SetBackgroundColor(scene, mainMenu, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateImage(scene, (Vector) { 0, 0 }, 560, 123, logo));
-    GUI_ContainerAdd(scene, mainMenu, GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 50));
+    GUI_ContainerAdd(scene, mainMenu, logoSpacer);
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start New Game", 0, &Menu_GotoMapForm));
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Report a Bug", 0, NULL));
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, NULL));

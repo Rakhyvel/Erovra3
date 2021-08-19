@@ -438,8 +438,8 @@ void Match_DetectHit(struct scene* scene)
                 }
                 if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, TARGET_COMPONENT_ID), id)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-                    Vector displacement = Vector_Sub(motion->pos, otherMotion->pos);
-                    health->health -= projectile->attack * (-Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(target->lookat)) / 2.0 + 0.5);
+                    Vector displacement = Vector_Sub(motion->pos, otherMotion->pos); // From other to me
+                    health->health -= projectile->attack * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, motion->pos))) + 1.5);
                 }
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
