@@ -199,13 +199,13 @@ x Make GUI elements look better
 	x Copy Microsoft design doc
 - Add main menu
 	x Should "Swoosh" to other containers like in the old VeloCorsairs game
-	- Paramters for bulding a map
+	x Paramters for bulding a map
 		x Show a small preview
 		x Paramters for size, density, erosion (add erosion control)
-		- Map size control
-		- Nation name auto using a lexicon
-		- AI controlled flag control
-	- Loading bar for real terrain generation
+		x Map size control
+		x Nation name auto using a lexicon
+		x AI controlled flag control
+	x Loading bar for real terrain generation
 	- Add placeholder logo (but actually take some time on it (It likely wont be a placeholder))
 	- Place version number under logo
 	- Loading screen for textures

@@ -49,7 +49,7 @@ struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(s
 	Cannot register on same componentID more than once. */
 const ComponentID Scene_RegisterComponent(struct scene* scene, size_t componentSize)
 {
-    const ComponentID componentID = scene->numComponents + 1;
+    const ComponentID componentID = scene->numComponents;
     if (scene->numComponents > MAX_COMPONENTS) {
         PANIC("Component overflow");
     } else if (scene->numEntities > 0) {
@@ -108,6 +108,9 @@ EntityID Scene_NewEntity(struct scene* scene)
         struct entity newEntity = { ((EntityID)index << 16), 0 };
         Arraylist_Add(scene->entities, &newEntity);
         scene->numEntities++;
+        for (int i = 0; i < scene->numComponents; i++) {
+            Arraylist_AssertSize(scene->components[i], 2 * index + 1);
+        }
         return newEntity.id;
     }
 }
@@ -214,7 +217,7 @@ bool Scene_EntityHasComponent(struct scene* scene, const ComponentMask mask, Ent
 {
     EntityIndex index = getIndex(id);
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
-    return (entt->mask & mask) == mask; // Read access violation terrain_adjacentMask <- BuyAirfield <- AIInfantryBuild
+    return (entt->mask & mask) == mask; // FIXME: Read access violation terrain_adjacentMask <- BuyAirfield <- AIInfantryBuild (really?)
 }
 
 /*

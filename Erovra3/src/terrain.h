@@ -24,7 +24,7 @@ typedef struct gradient {
     float z; // Optional
 } Gradient;
 
-struct terrain* terrain_create(int tileSize, float biome, int scale, unsigned int seed, float erosion);
+struct terrain* terrain_create(int tileSize, float* map, SDL_Texture* texture);
 void paintMap(int size, float* map, SDL_Texture* texture);
 void terrain_render(struct terrain* terrain);
 
@@ -37,11 +37,11 @@ float terrain_bicosineInterpolation(int x0, int y0, int cellSize, float* map, in
 
 // Height map generators
 float* terrain_generate(int mapSize, int cellSize, float amplitude, unsigned int seed);
-float* terrain_perlin(int mapSize, int cellSize, unsigned int seed);
+float* terrain_perlin(int mapSize, int cellSize, unsigned int seed, int* status);
 
 // Map modifications
 void terrain_normalize(float* map, int mapSize);
-void terrain_erode(int size, float* map, float intensity);
+void terrain_erode(int size, float* map, float intensity, int* status);
 
 // Some map functions
 float terrain_getHeight(struct terrain*, int x, int y);

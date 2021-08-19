@@ -2052,10 +2052,10 @@ void matchUpdate(Scene* match)
     Match_Motion(match);
     Match_ShellMove(match);
     Match_BombMove(match);
-    Match_SetVisitedSpace(match);
     Match_CombatantAttack(match);
     Match_AirplaneAttack(match);
     Match_AirplaneScout(match);
+    Match_SetVisitedSpace(match);
 
     Match_ProduceResources(match);
     Match_DestroyResourceParticles(match);
@@ -2368,10 +2368,10 @@ void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
-Scene* Match_Init(int tileSize, float seaLevel, int seed, float erosion)
+Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControlled)
 {
     Scene* match = Scene_Create(Components_Init, &matchUpdate, &matchRender);
-    terrain = terrain_create(tileSize * 64, seaLevel, 4, seed, erosion);
+    terrain = terrain_create(mapSize, map, texture);
     GUI_Init(match);
 
     container = GUI_CreateContainer(match, (Vector) { 100, 100 }, 1080);
@@ -2462,7 +2462,12 @@ Scene* Match_Init(int tileSize, float seaLevel, int seed, float erosion)
     GUI_SetContainerShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations
-    EntityID homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+    EntityID homeNation;
+    if (AIControlled) {
+        homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
+    } else {
+        homeNation = Nation_Create(match, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+    }
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
 
     // Create and register home city

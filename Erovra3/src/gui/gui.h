@@ -18,6 +18,8 @@ EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, floa
 EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
 EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue);
 EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture);
+EntityID GUI_CreateProgressBar(Scene* scene, Vector pos, int width, float defaultValue);
+EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height);
 EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
@@ -95,8 +97,14 @@ typedef struct image {
 } Image;
 ComponentID GUI_IMAGE_COMPONENT_ID;
 
+typedef struct progressBar {
+    float value;
+} ProgressBar;
+ComponentID GUI_PROGRESS_BAR_COMPONENT_ID;
+
 typedef struct container {
     Arraylist children;
     int maxHeight;
 } Container;
 ComponentID GUI_CONTAINER_COMPONENT_ID;
+ComponentID GUI_CENTERED_COMPONENT_ID;

@@ -27,7 +27,7 @@ static int oldWheel = 0;
 /*
 	Creates the terrain struct, with the height map, ore map, and terrain 
 	texture. */
-struct terrain* terrain_create(int mapSize, float biome, int scale, unsigned int seed, float erosion)
+struct terrain* terrain_create(int mapSize, float* map, SDL_Texture* texture)
 {
     struct terrain* retval = calloc(1, sizeof(struct terrain));
     if (!retval) {
@@ -36,9 +36,11 @@ struct terrain* terrain_create(int mapSize, float biome, int scale, unsigned int
     }
     retval->size = mapSize;
     retval->tileSize = mapSize / 64;
-    retval->map = terrain_perlin(retval->size, retval->size / scale, seed);
-    printf("Generated noise\n");
-    retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8, seed);
+    retval->map = map;
+    retval->texture = texture;
+
+	int status = 0;
+    retval->ore = terrain_perlin(retval->tileSize, retval->tileSize / 8, 0, &status);
     retval->buildings = (EntityID*)malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -56,18 +58,6 @@ struct terrain* terrain_create(int mapSize, float biome, int scale, unsigned int
         retval->walls[i] = INVALID_ENTITY_INDEX;
     }
     terrain_normalize(retval->ore, retval->tileSize);
-    // Scale down for land:water ratio
-    for (int y = 0; y < retval->size; y++) {
-        for (int x = 0; x < retval->size; x++) {
-            retval->map[x + y * retval->size] = retval->map[x + y * retval->size] * 0.5 + biome; // islands
-        }
-    }
-    printf("Updated biomes\n");
-    terrain_erode(retval->size, retval->map, erosion);
-    printf("Eroded\n");
-    retval->texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, retval->size, retval->size);
-    paintMap(retval->size, retval->map, retval->texture);
-    printf("Painted\n");
     return retval;
 }
 
@@ -88,10 +78,10 @@ void paintMap(int size, float* map, SDL_Texture* texture)
             float i = map[y * size + x];
             i = i * 2 - 0.5f;
             float g = 0;
-            /*if (x < size - 2 && y < size - 2) {
-                Gradient grad = terrain_getGradient(terrain, x, y);
+            if (x < size - 2 && y < size - 2) {
+                Gradient grad = terrain_getGradient(size, map, x, y);
                 g = sqrtf(grad.gradX * grad.gradX + grad.gradY * grad.gradY);
-            }*/
+            }
             if (i < 0.5) {
                 // water
                 i *= 2;
@@ -104,7 +94,7 @@ void paintMap(int size, float* map, SDL_Texture* texture)
                 i = sqrtf(i);
                 terrainColor = terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.2f) + 0.2f, 0.96f - i * 0.6f);
             }
-            if (size > 256.0f && terrain_isBorder(map, size, size, x, y, 0.5f, 1)) {
+            if (size >= 256.0f && terrain_isBorder(map, size, size, x, y, 0.5f, 1)) {
                 terrainColor = (SDL_Color) { 255, 255, 255 };
             }
 
@@ -178,6 +168,13 @@ void terrain_render(struct terrain* terrain)
             (int)(gridLineRect.x + (terrain->size * terrain_zoom)),
             (int)(gridLineRect.y + y * 64.0 * terrain_zoom));
     }
+
+    SDL_RenderDrawRect(g->rend, &rect);
+    rect.x += 1;
+    rect.y += 1;
+    rect.w -= 2;
+    rect.h -= 2;
+    SDL_RenderDrawRect(g->rend, &rect);
 }
 
 /*
@@ -355,7 +352,7 @@ Parameters: int mapSize - Height and width of the map (maps are squares)
 
 Returns: a pointer to a float array, with size of mapSize * mapSize, in row major order.
 */
-float* terrain_perlin(int mapSize, int cellSize, unsigned int seed)
+float* terrain_perlin(int mapSize, int cellSize, unsigned int seed, int* status)
 {
     float amplitude = 0.5;
     float* retval = terrain_generate(mapSize, cellSize, amplitude, seed);
@@ -368,6 +365,7 @@ float* terrain_perlin(int mapSize, int cellSize, unsigned int seed)
             retval[i] += map[i];
         }
         free(map);
+        (*status)++;
 
         cellSize *= 0.5f;
         amplitude *= 0.5f;
@@ -442,7 +440,7 @@ Gradient terrain_getGradient(int size, float* map, float posX, float posY)
 }
 
 // Intensity should range from 0 to 3
-void terrain_erode(int size, float* map, float intensity)
+void terrain_erode(int size, float* map, float intensity, int* status)
 {
     float inertia = 0.05f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
@@ -525,6 +523,7 @@ void terrain_erode(int size, float* map, float intensity)
             speed = sqrtf(speed * speed + deltaHeight * gravity);
             water *= (1 - evaporateSpeed);
         }
+        (*status)++;
     }
 }
 

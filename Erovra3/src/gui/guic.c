@@ -27,7 +27,9 @@ void GUI_Init(Scene* scene)
     GUI_TEXT_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(TextBox));
     GUI_CHECK_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(CheckBox));
     GUI_IMAGE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Image));
+    GUI_PROGRESS_BAR_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ProgressBar));
     GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
+    GUI_CENTERED_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
 
     radioUnchecked = Texture_RegisterTexture("res/gui/radio.png");
     radioChecked = Texture_RegisterTexture("res/gui/radioFill.png");
@@ -251,6 +253,47 @@ EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Te
     return id;
 }
 
+EntityID GUI_CreateProgressBar(Scene* scene, Vector pos, int width, float defaultValue)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        width,
+        2,
+        true,
+        INVALID_ENTITY_INDEX,
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    ProgressBar progressBar = {
+        defaultValue
+    };
+    Scene_Assign(scene, id, GUI_PROGRESS_BAR_COMPONENT_ID, &progressBar);
+
+    return id;
+}
+
+EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height)
+{
+    EntityID id = Scene_NewEntity(scene);
+
+    GUIComponent gui = {
+        false,
+        false,
+        pos,
+        width,
+        height,
+        true,
+        INVALID_ENTITY_INDEX,
+    };
+    Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
+
+    return id;
+}
+
 /*
 	Creates a container, which holds other GUI components. You can give it a pos,
 	but will be overriden if added to another container*/
@@ -400,23 +443,41 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
         gui->pos.y = parentY + GUI_PADDING;
     }
     if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CONTAINER_COMPONENT_ID), id)) {
-        Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector size = { 0, 0 }; // The working size of the container. Will be returned.
+        Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector placement = { 0, 0 }; // Offset from containers top-left corner, where children will be placed.
-        for (int i = 0; i < container->children.size; i++) {
-            EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
-            Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
-            if (newSize.x != -1) {
-                if (placement.y + newSize.y > container->maxHeight) {
-                    placement.y = 0;
-                    placement.x = size.x + GUI_PADDING;
-                    size.y = max(size.y, placement.y + newSize.y + GUI_PADDING);
-                    i--; // Repeat item
-                } else {
-                    placement.y += newSize.y + GUI_PADDING;
-                    size.y = max(size.y, placement.y);
+        if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CENTERED_COMPONENT_ID), id)) {
+            for (int i = 0; i < container->children.size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+                Vector newSize = GUI_UpdateLayout(scene, childID, 0, 0);
+                if (newSize.x != -1) {
+                    size.x = max(size.x, newSize.x);
+                    size.y += newSize.y + GUI_PADDING;
                 }
-                size.x = max(size.x, placement.x + newSize.x);
+            }
+            // Size is now defined
+            for (int i = 0; i < container->children.size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+                Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
+                GUI_UpdateLayout(scene, childID, gui->pos.x + size.x / 2 - newSize.x / 2, gui->pos.y + placement.y);
+                placement.y += newSize.y + GUI_PADDING;
+            }
+        } else {
+            for (int i = 0; i < container->children.size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+                Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
+                if (newSize.x != -1) {
+                    if (placement.y + newSize.y > container->maxHeight) {
+                        placement.y = 0;
+                        placement.x = size.x + GUI_PADDING;
+                        size.y = max(size.y, placement.y + newSize.y + GUI_PADDING);
+                        i--; // Repeat item
+                    } else {
+                        placement.y += newSize.y + GUI_PADDING;
+                        size.y = max(size.y, placement.y);
+                    }
+                    size.x = max(size.x, placement.x + newSize.x);
+                }
             }
         }
         size.x += 2 * GUI_PADDING;
@@ -873,6 +934,28 @@ static void renderImage(Scene* scene)
 }
 
 /*
+	Draws a text box */
+static void renderProgressBar(Scene* scene)
+{
+    const ComponentMask mask = Scene_CreateMask(2, GUI_PROGRESS_BAR_COMPONENT_ID, GUI_COMPONENT_ID);
+    EntityID id;
+    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+        ProgressBar* progressBar = (ProgressBar*)Scene_GetComponent(scene, id, GUI_PROGRESS_BAR_COMPONENT_ID);
+
+        SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, 6 };
+        SDL_RenderFillRect(g->rend, &rect);
+        SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+        rect = (SDL_Rect) { gui->pos.x, gui->pos.y, gui->width * progressBar->value, 6 };
+        SDL_RenderFillRect(g->rend, &rect);
+    }
+}
+
+/*
 	Draws a container to the screen */
 static void renderContainer(Scene* scene)
 {
@@ -902,4 +985,5 @@ void GUI_Render(Scene* scene)
     renderTextBox(scene);
     renderCheckBox(scene);
     renderImage(scene);
+    renderProgressBar(scene);
 }

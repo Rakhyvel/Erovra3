@@ -1,6 +1,7 @@
 #pragma once
 #include "lexicon.h"
 #include "debug.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,11 +88,11 @@ Lexicon* addNode(Lexicon* graph, char* buffer)
 Lexicon* Lexicon_Create(char* filename)
 {
     FILE* file;
-	// Adjacency list head
+    // Adjacency list head
     Lexicon* graph;
-	// Used for comparing text read in from file
+    // Used for comparing text read in from file
     char buffer[PARTICLE_SIZE + 1];
-	// Current visited node in adjacency list
+    // Current visited node in adjacency list
     Lexicon* workingNode;
 
     fopen_s(&file, filename, "r");
@@ -154,6 +155,17 @@ Lexicon* Lexicon_Create(char* filename)
 	are chosen more frequently. */
 void Lexicon_GenerateWord(Lexicon* lex, char* out, int maxLength)
 {
+    memset(out, 0, (size_t)maxLength + 1);
+    int length;
+    Lexicon* curr = lex;
+    for (length = 0; curr != NULL; curr = curr->next, length++)
+        ;
+    int randIndex = rand();
+    for (int i = 0; 1; lex = lex->next, i++) {
+        if (i > randIndex % length && lex->text[0] >= 'A' && lex->text[0] <= 'Z') {
+            break;
+        }
+    }
     char buffer[PARTICLE_SIZE + 1];
     memset(buffer, 0, PARTICLE_SIZE + 1);
     int outIndex = 0;
@@ -178,7 +190,7 @@ void Lexicon_GenerateWord(Lexicon* lex, char* out, int maxLength)
                     }
                     edge = edge->next;
                 }
-				// Reset buffer, add character to out string, and set curr to the new node
+                // Reset buffer, add character to out string, and set curr to the new node
                 Lexicon* next = edge->to;
                 for (int i = 0; i < PARTICLE_SIZE; i++) {
                     buffer[i] = next->text[i];

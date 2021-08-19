@@ -25,12 +25,14 @@ struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
     struct arraylist* retval = malloc(sizeof(struct arraylist));
     if (!retval) {
         PANIC("Memory error");
-        exit(1);
     }
     retval->typeSize = typeSize;
     retval->size = 0;
     retval->capacity = initSize;
     retval->data = calloc(retval->capacity * retval->typeSize, sizeof(char));
+    if (!retval->data) {
+        PANIC("Memory error");
+    }
     return retval;
 }
 
@@ -38,6 +40,13 @@ struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
 	Returns a pointer to within the arraylist at a given index */
 void* Arraylist_Get(struct arraylist* list, int index)
 {
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (index > list->size) {
+        PANIC("List index out of bounds. List size is %d, index was %d", list->size, index);
+    } else if (index < 0) {
+        PANIC("Negative index. Index was %d", index);
+    }
     return list->data + (index * list->typeSize);
 }
 
@@ -47,12 +56,14 @@ void* Arraylist_Get(struct arraylist* list, int index)
 	Doesn't reduce memory pool size on purpose */
 void* Arraylist_Pop(struct arraylist* list)
 {
-    if (list->size == 0) {
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (list->size == 0) {
         PANIC("List is too small to be popped");
-    } else {
-        list->size--;
-        return list->data + ((long long)list->size) * list->typeSize;
     }
+
+    list->size--;
+    return list->data + ((long long)list->size) * list->typeSize;
 }
 
 /* 
@@ -60,10 +71,18 @@ void* Arraylist_Pop(struct arraylist* list)
 	also functions as a push method */
 void Arraylist_Add(struct arraylist* list, void* data)
 {
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (data == NULL) {
+        PANIC("Data is NULL");
+    }
+
     if (list->size >= list->capacity) {
         void* res = realloc(list->data, 2 * list->size * list->typeSize); // FIXME: heap error
-        if (res != NULL && res != list->data) {
+        if (res != NULL) {
             list->data = res;
+        } else {
+            PANIC("Mem err, asked to reallocate %d", 2 * list->size * list->typeSize);
         }
         list->capacity = list->size * 2;
     }
@@ -75,15 +94,60 @@ void Arraylist_Add(struct arraylist* list, void* data)
 	Copies data to an index */
 void Arraylist_Put(struct arraylist* list, int index, void* data)
 {
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (data == NULL) {
+        PANIC("Data is NULL");
+    } else if (index > list->size) {
+        PANIC("Index out of bounds. Index was %d, list size is %d", index, list->size);
+    } else if (index < 0) {
+        PANIC("Negative index. Index was %d", index);
+    }
+
     memcpy(list->data + index * list->typeSize, data, list->typeSize);
 }
 
 bool Arraylist_Contains(struct arraylist* list, void* data)
 {
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (data == NULL) {
+        PANIC("Data is NULL");
+    }
+
     for (int i = 0; i < list->size; i++) {
         if (!memcmp(list->data + (list->typeSize * i), data, list->typeSize)) {
             return true;
         }
     }
     return false;
+}
+
+/*	Sets the size of the arraylist. Resizes the arraylist if it is too small. 
+ *	Does nothing if list type size is 0. Does nothing if list size is already 
+ *	larger than given size.
+ *
+ *	@param list	List to assert size of
+ *  @param size	Size to assert.
+ */
+void Arraylist_AssertSize(struct arraylist* list, int size)
+{
+    if (list == NULL) {
+        PANIC("List is NULL");
+    }
+    // Exit if list is ethereal
+    if (list->typeSize == 0) {
+        return;
+    }
+
+    if (size > list->size) {
+        list->size = size;
+        list->capacity = list->size * 2;
+        void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error
+        if (res != NULL) {
+            list->data = res;
+        } else {
+            PANIC("Mem err, asked to reallocate %d %d", list->capacity, list->typeSize);
+        }
+    }
 }

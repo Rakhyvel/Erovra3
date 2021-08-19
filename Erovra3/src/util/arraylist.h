@@ -27,3 +27,4 @@ void Arraylist_Put(struct arraylist* list, int index, void* data);
 void* Arraylist_Get(struct arraylist* list, int index);
 void* Arraylist_Pop(struct arraylist* list);
 bool Arraylist_Contains(struct arraylist* list, void* data);
+void Arraylist_AssertSize(struct arraylist* list, int size);
