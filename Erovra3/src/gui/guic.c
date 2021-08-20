@@ -6,6 +6,10 @@
 #include <ctype.h>
 #include <string.h>
 
+TextureID radioUnchecked = NULL;
+TextureID radioChecked = NULL;
+TextureID check = NULL;
+
 #define GUI_PADDING 14
 
 SDL_Color backgroundColor = { 57, 63, 68, 255 };
@@ -14,29 +18,54 @@ SDL_Color hoverColor = { 255, 255, 255, 255 };
 SDL_Color activeColor = { 43, 154, 243, 255 };
 SDL_Color errorColor = { 205, 25, 11, 255 };
 
-/*
-	Call this before using GUI. Registers GUI ECS components, and fonts */
-void GUI_Init(Scene* scene)
+/*	 */
+void GUI_Init()
 {
-    GUI_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(GUIComponent));
-    GUI_BUTTON_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Button));
-    GUI_LABEL_ID = Scene_RegisterComponent(scene, sizeof(Label));
-    GUI_ROCKER_SWITCH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RockerSwitch));
-    GUI_RADIO_BUTTONS_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(RadioButtons));
-    GUI_SLIDER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Slider));
-    GUI_TEXT_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(TextBox));
-    GUI_CHECK_BOX_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(CheckBox));
-    GUI_IMAGE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Image));
-    GUI_PROGRESS_BAR_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ProgressBar));
-    GUI_CONTAINER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Container));
-    GUI_CENTERED_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    GUI_COMPONENT_ID = rand();
+    GUI_BUTTON_COMPONENT_ID = rand();
+    GUI_LABEL_ID = rand();
+    GUI_ROCKER_SWITCH_COMPONENT_ID = rand();
+    GUI_RADIO_BUTTONS_COMPONENT_ID = rand();
+    GUI_SLIDER_COMPONENT_ID = rand();
+    GUI_TEXT_BOX_COMPONENT_ID = rand();
+    GUI_CHECK_BOX_COMPONENT_ID = rand();
+    GUI_IMAGE_COMPONENT_ID = rand();
+    GUI_PROGRESS_BAR_COMPONENT_ID = rand();
+    GUI_CONTAINER_COMPONENT_ID = rand();
+    GUI_CENTERED_COMPONENT_ID = rand();
 
     radioUnchecked = Texture_RegisterTexture("res/gui/radio.png");
+
     radioChecked = Texture_RegisterTexture("res/gui/radioFill.png");
+
     check = Texture_RegisterTexture("res/gui/check.png");
     Texture_DrawPolygon(check, Polygon_Create("res/gui/check.gon"), hoverColor, 10);
+}
 
-    Font_Init();
+/*	 */
+void GUI_Register(Scene* scene)
+{
+    Scene_RegisterComponent(scene, GUI_COMPONENT_ID, sizeof(GUIComponent));
+    Scene_RegisterComponent(scene, GUI_BUTTON_COMPONENT_ID, sizeof(Button));
+    Scene_RegisterComponent(scene, GUI_LABEL_ID, sizeof(Label));
+    Scene_RegisterComponent(scene, GUI_ROCKER_SWITCH_COMPONENT_ID, sizeof(RockerSwitch));
+    Scene_RegisterComponent(scene, GUI_RADIO_BUTTONS_COMPONENT_ID, sizeof(RadioButtons));
+    Scene_RegisterComponent(scene, GUI_SLIDER_COMPONENT_ID, sizeof(Slider));
+    Scene_RegisterComponent(scene, GUI_TEXT_BOX_COMPONENT_ID, sizeof(TextBox));
+    Scene_RegisterComponent(scene, GUI_CHECK_BOX_COMPONENT_ID, sizeof(CheckBox));
+    Scene_RegisterComponent(scene, GUI_IMAGE_COMPONENT_ID, sizeof(Image));
+    Scene_RegisterComponent(scene, GUI_PROGRESS_BAR_COMPONENT_ID, sizeof(ProgressBar));
+    Scene_RegisterComponent(scene, GUI_CONTAINER_COMPONENT_ID, sizeof(Container));
+    Scene_RegisterComponent(scene, GUI_CENTERED_COMPONENT_ID, 0);
+}
+
+void GUI_Destroy(Scene* scene)
+{
+    system(scene, id, GUI_CONTAINER_COMPONENT_ID)
+    {
+        Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
+        Arraylist_Destroy(&container->children);
+    }
 }
 
 /*
@@ -247,7 +276,7 @@ EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Te
 
     Image image = {
         texture,
-		0
+        0
     };
     Scene_Assign(scene, id, GUI_IMAGE_COMPONENT_ID, &image);
 
@@ -422,7 +451,7 @@ void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
         EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
         GUIComponent* childGUI = (GUIComponent*)Scene_GetComponent(scene, childID, GUI_COMPONENT_ID);
         childGUI->shown = shown;
-        if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CONTAINER_COMPONENT_ID), childID)) {
+        if (Scene_EntityHasComponents(scene, childID, GUI_CONTAINER_COMPONENT_ID)) {
             GUI_SetContainerShown(scene, childID, shown);
         }
     }
@@ -443,11 +472,11 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
         gui->pos.x = parentX + GUI_PADDING;
         gui->pos.y = parentY + GUI_PADDING;
     }
-    if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CONTAINER_COMPONENT_ID), id)) {
+    if (Scene_EntityHasComponents(scene, id, GUI_CONTAINER_COMPONENT_ID)) {
         Vector size = { 0, 0 }; // The working size of the container. Will be returned.
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector placement = { 0, 0 }; // Offset from containers top-left corner, where children will be placed.
-        if (Scene_EntityHasComponent(scene, Scene_CreateMask(1, GUI_CENTERED_COMPONENT_ID), id)) {
+        if (Scene_EntityHasComponents(scene, id, GUI_CENTERED_COMPONENT_ID)) {
             for (int i = 0; i < container->children.size; i++) {
                 EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
                 Vector newSize = GUI_UpdateLayout(scene, childID, 0, 0);
@@ -502,9 +531,8 @@ void GUI_SetBackgroundColor(Scene* scene, EntityID id, SDL_Color color)
 	Updates a button. Checks to see if it's hovered, and then clicked */
 static void updateButton(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Button* button = (Button*)Scene_GetComponent(scene, id, GUI_BUTTON_COMPONENT_ID);
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
@@ -529,9 +557,8 @@ static void updateButton(Scene* scene)
 	passed */
 static void updateRockerSwitch(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
@@ -553,11 +580,10 @@ static void updateRockerSwitch(Scene* scene)
 
 void updateRadioButtons(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
     const int buttonHeight = 32;
     const int buttonPadding = 12;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         // int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
@@ -585,11 +611,10 @@ void updateRadioButtons(Scene* scene)
 
 void updateSlider(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
     const int buttonHeight = 32;
     const int buttonPadding = 12;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         // int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
@@ -612,9 +637,8 @@ void updateSlider(Scene* scene)
 
 void updateTextBox(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_TEXT_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_TEXT_BOX_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -664,9 +688,8 @@ void updateTextBox(Scene* scene)
 
 static void updateCheckBox(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
@@ -699,9 +722,8 @@ void GUI_Update(Scene* scene)
 	Draws a button to the screen */
 static void renderButton(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -730,9 +752,8 @@ static void renderButton(Scene* scene)
 	Draws a rocker switch to the screen */
 static void renderRockerSwitch(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -757,9 +778,8 @@ static void renderRockerSwitch(Scene* scene)
 	Draws a label */
 static void renderLabel(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_LABEL_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_LABEL_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -773,11 +793,10 @@ static void renderLabel(Scene* scene)
 	Draws a set of radio buttons */
 static void renderRadioButtons(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
     const int buttonHeight = 32;
     const int buttonPadding = 12;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -807,9 +826,8 @@ static void renderRadioButtons(Scene* scene)
 	Draws a slider */
 static void renderSlider(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -848,9 +866,8 @@ static void renderSlider(Scene* scene)
 	Draws a text box */
 static void renderTextBox(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_TEXT_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_TEXT_BOX_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -890,9 +907,8 @@ static void renderTextBox(Scene* scene)
 	Draws a text box */
 static void renderCheckBox(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_CHECK_BOX_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -920,9 +936,8 @@ static void renderCheckBox(Scene* scene)
 	Draws a text box */
 static void renderImage(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_IMAGE_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_IMAGE_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -938,9 +953,8 @@ static void renderImage(Scene* scene)
 	Draws a text box */
 static void renderProgressBar(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_PROGRESS_BAR_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_PROGRESS_BAR_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
@@ -960,9 +974,8 @@ static void renderProgressBar(Scene* scene)
 	Draws a container to the screen */
 static void renderContainer(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(2, GUI_CONTAINER_COMPONENT_ID, GUI_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, GUI_CONTAINER_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;

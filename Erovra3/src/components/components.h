@@ -6,7 +6,8 @@
 #include "../engine/textureManager.h"
 #include "../util/vector.h"
 
-void Components_Init(struct scene*);
+void Components_Init();
+void Components_Register(struct scene*);
 
 /*
 General guideline: Use flags for system iterations, and unit type for if statements
@@ -63,7 +64,7 @@ typedef struct motion {
     float dZ; // Change in z (height)
     float aZ; // Change in dZ (vertical acceleration)
 } Motion;
-ComponentID MOTION_COMPONENT_ID;
+ComponentKey MOTION_COMPONENT_ID;
 
 /*
 	Used by ground units and ships. These units go directly towards their target. */
@@ -71,7 +72,7 @@ typedef struct target {
     struct vector tar;
     struct vector lookat;
 } Target;
-ComponentID TARGET_COMPONENT_ID;
+ComponentKey TARGET_COMPONENT_ID;
 
 /*
 	Used by air units only. Player specifies a patrol point, and unit moves 
@@ -81,7 +82,7 @@ typedef struct patrol {
     struct vector focalPoint; // Where the patroller will actually go. Changed by systems that check for enemies. If no enemies, will likely be patrolPoint.
     float angle;
 } Patrol;
-ComponentID PATROL_COMPONENT_ID;
+ComponentKey PATROL_COMPONENT_ID;
 
 /*
 		Contains data for rendering an entity to the screen, like it's sprite,
@@ -100,13 +101,13 @@ typedef struct simpleRenderable {
     unsigned int priority;
     int hitTicks;
 } SimpleRenderable;
-ComponentID SIMPLE_RENDERABLE_COMPONENT_ID;
+ComponentKey SIMPLE_RENDERABLE_COMPONENT_ID;
 
-ComponentID BUILDING_LAYER_COMPONENT_ID;
-ComponentID SURFACE_LAYER_COMPONENT_ID;
-ComponentID AIR_LAYER_COMPONENT_ID;
-ComponentID PLANE_LAYER_COMPONENT_ID;
-ComponentID PARTICLE_LAYER_COMPONENT_ID;
+ComponentKey BUILDING_LAYER_COMPONENT_ID;
+ComponentKey SURFACE_LAYER_COMPONENT_ID;
+ComponentKey AIR_LAYER_COMPONENT_ID;
+ComponentKey PLANE_LAYER_COMPONENT_ID;
+ComponentKey PARTICLE_LAYER_COMPONENT_ID;
 
 /*
 		Contains data used for determining the health of a unit, how long the
@@ -117,7 +118,7 @@ typedef struct health {
     int deathTicks;
     ComponentMask sensedProjectiles;
 } Health;
-ComponentID HEALTH_COMPONENT_ID;
+ComponentKey HEALTH_COMPONENT_ID;
 
 typedef struct unit {
     UnitType type;
@@ -127,7 +128,7 @@ typedef struct unit {
     bool stuckIn;
     bool engaged;
 } Unit;
-ComponentID UNIT_COMPONENT_ID;
+ComponentKey UNIT_COMPONENT_ID;
 
 typedef struct combatant {
     const float attack;
@@ -138,20 +139,20 @@ typedef struct combatant {
     bool faceEnemy;
     int randShoot;
 } Combatant;
-ComponentID COMBATANT_COMPONENT_ID;
+ComponentKey COMBATANT_COMPONENT_ID;
 
-ComponentID LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
-ComponentID GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
-ComponentID ENGINEER_UNIT_FLAG_COMPONENT_ID;
-ComponentID BUILDING_FLAG_COMPONENT_ID;
-ComponentID WALL_FLAG_COMPONENT_ID;
+ComponentKey LAND_UNIT_FLAG_COMPONENT_ID; // For buildings and ground units
+ComponentKey GROUND_UNIT_FLAG_COMPONENT_ID; // For infantry, cav, artill
+ComponentKey ENGINEER_UNIT_FLAG_COMPONENT_ID;
+ComponentKey BUILDING_FLAG_COMPONENT_ID;
+ComponentKey WALL_FLAG_COMPONENT_ID;
 
-ComponentID BULLET_ATTACK_FLAG_COMPONENT_ID;
-ComponentID SHELL_ATTACK_FLAG_COMPONENT_ID;
+ComponentKey BULLET_ATTACK_FLAG_COMPONENT_ID;
+ComponentKey SHELL_ATTACK_FLAG_COMPONENT_ID;
 
-ComponentID SHIP_FLAG_COMPONENT_ID;
+ComponentKey SHIP_FLAG_COMPONENT_ID;
 
-ComponentID AIRCRAFT_FLAG_COMPONENT_ID;
+ComponentKey AIRCRAFT_FLAG_COMPONENT_ID;
 
 // TODO: Add "origin" vector for projectiles, so that units can mark those areas as hostile
 typedef struct projectile {
@@ -159,22 +160,22 @@ typedef struct projectile {
     bool armed;
     const float splash;
 } Projectile;
-ComponentID PROJECTILE_COMPONENT_ID;
+ComponentKey PROJECTILE_COMPONENT_ID;
 
-ComponentID AIR_BULLET_COMPONENT_ID;
-ComponentID BULLET_COMPONENT_ID;
+ComponentKey AIR_BULLET_COMPONENT_ID;
+ComponentKey BULLET_COMPONENT_ID;
 typedef struct shell {
     struct vector tar;
 } Shell;
-ComponentID SHELL_COMPONENT_ID;
+ComponentKey SHELL_COMPONENT_ID;
 
-ComponentID BOMB_COMPONENT_ID;
+ComponentKey BOMB_COMPONENT_ID;
 
 typedef struct nation {
     SDL_Color color;
-    ComponentID ownNationFlag; // Flag that determines if an entity belongs to this nation
-    ComponentID enemyNationFlag; // Flag that determines if an entity belongs to enemy nation
-    ComponentID controlFlag;
+    ComponentKey ownNationFlag; // Flag that determines if an entity belongs to this nation
+    ComponentKey enemyNationFlag; // Flag that determines if an entity belongs to enemy nation
+    ComponentKey controlFlag;
     int resources[_ResourceType_Length];
     int costs[_ResourceType_Length][_UnitType_Length];
     EntityID capital;
@@ -191,18 +192,18 @@ typedef struct nation {
     int airInProd;
     int fightersInProd;
 } Nation;
-ComponentID NATION_COMPONENT_ID;
-ComponentID HOME_NATION_FLAG_COMPONENT_ID;
-ComponentID ENEMY_NATION_FLAG_COMPONENT_ID;
-ComponentID PLAYER_FLAG_COMPONENT_ID;
-ComponentID AI_FLAG_COMPONENT_ID;
+ComponentKey NATION_COMPONENT_ID;
+ComponentKey HOME_NATION_FLAG_COMPONENT_ID;
+ComponentKey ENEMY_NATION_FLAG_COMPONENT_ID;
+ComponentKey PLAYER_FLAG_COMPONENT_ID;
+ComponentKey AI_FLAG_COMPONENT_ID;
 
 typedef struct city {
     char name[20];
     bool isCapital;
     EntityID expansions[4]; // Corresponds to NWSE CardinalDirection id
 } City;
-ComponentID CITY_COMPONENT_ID;
+ComponentKey CITY_COMPONENT_ID;
 
 typedef struct producer {
     int orderTicksRemaining;
@@ -211,37 +212,37 @@ typedef struct producer {
     const EntityID readyGUIContainer;
     const EntityID busyGUIContainer;
 } Producer;
-ComponentID PRODUCER_COMPONENT_ID;
+ComponentKey PRODUCER_COMPONENT_ID;
 
 typedef struct expansion {
     EntityID homeCity;
     CardinalDirection dir; // N=0 E=1 S=2 W=3
 } Expansion;
-ComponentID EXPANSION_COMPONENT_ID;
+ComponentKey EXPANSION_COMPONENT_ID;
 
 typedef struct resourceParticle {
     ResourceType type;
 } ResourceParticle;
-ComponentID RESOURCE_PARTICLE_COMPONENT_ID;
+ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
 
 typedef struct resourceProducer {
     float produceRate;
     void (*particleConstructor)(struct scene* scene, Vector pos, EntityID nationID);
 } ResourceProducer;
-ComponentID RESOURCE_PRODUCER_COMPONENT_ID;
+ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
 
 typedef struct hoverable {
     bool isHovered;
 } Hoverable;
-ComponentID HOVERABLE_COMPONENT_ID;
+ComponentKey HOVERABLE_COMPONENT_ID;
 
 typedef struct selectable {
     bool selected;
 } Selectable;
-ComponentID SELECTABLE_COMPONENT_ID;
+ComponentKey SELECTABLE_COMPONENT_ID;
 
 typedef struct focusable {
     bool focused;
     EntityID guiContainer;
 } Focusable;
-ComponentID FOCUSABLE_COMPONENT_ID;
+ComponentKey FOCUSABLE_COMPONENT_ID;

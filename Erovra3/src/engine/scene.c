@@ -19,9 +19,13 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef Uint8 ComponentID;
+#define INVALID_COMPONENT_ID 0
+
 static EntityIndex getIndex(EntityID);
 static EntityVersion getVersion(EntityID);
 static struct entity* getEntityStruct(struct scene*, EntityID);
+ComponentID getComponentID(struct scene* scene, ComponentKey globalKey);
 
 /*
 	Initializes the memory pools for a scene */
@@ -38,6 +42,10 @@ struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(s
     retval->update = update;
     retval->render = render;
     retval->destructor = destructor;
+
+    for (int i = 0; i < MAX_COMPONENTS; i++) {
+        retval->lookupTable[i] = INVALID_COMPONENT_ID;
+    }
 
     initComponents(retval);
 
@@ -65,39 +73,39 @@ void Scene_Destroy(struct scene* scene)
     free(scene);
 }
 
-/*
-	Assigns a size to a component, allocates memory pool for component data.
-	
-	Cannot register on same componentID more than once. */
-const ComponentID Scene_RegisterComponent(struct scene* scene, size_t componentSize)
+/*	Takes in a global component key, and maps it to a free ComponentID for this particular scene. */
+void Scene_RegisterComponent(struct scene* scene, ComponentKey globalKey, size_t componentSize)
 {
-    const ComponentID componentID = scene->numComponents;
-    if (componentID >= 64 || componentID < 0) {
-        PANIC("Component overflow");
-    } else if (scene->numEntities > 0) {
-        PANIC("Cannot create component if entities exist in scene %d", scene->numEntities);
-    } else {
-        scene->components[componentID] = Arraylist_Create(MAX_ENTITIES, componentSize);
-        scene->numComponents++;
+    for (int i = 0; i < MAX_COMPONENTS; i++) {
+        if (scene->lookupTable[i] == INVALID_COMPONENT_ID) {
+            scene->lookupTable[i] = globalKey;
+            scene->components[i] = Arraylist_Create(MAX_ENTITIES, componentSize);
+            scene->numComponents++;
+            return;
+        }
     }
-    return componentID;
+    PANIC("All out of components!\n");
 }
 
 /*
 	Returns a pointer to the component data for a given entity and a given component.
 	
 	EntityID must be valid, componentID must be valid, and entity must have component  */
-void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID componentID)
+void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
+    ComponentID componentID = getComponentID(scene, globalKey);
     if (getIndex(id) == INVALID_ENTITY_INDEX) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
         PANIC("Invalid entity index");
     } else if (scene->components[componentID] == NULL) {
-        PANIC("Component id not registered yet");
-    } else if (!Scene_EntityHasComponent(scene, Scene_CreateMask(1, componentID), id)) {
+        PANIC("Component not registered yet");
+    } else if (!Scene_EntityHasComponents(scene, id, globalKey)) {
+        for (int i = 0; i < scene->numEntities; i++) {
+            struct entity* entt = ARRAYLIST_GET(scene->entities, i, struct entity);
+        }
         struct entity* entt = ARRAYLIST_GET(scene->entities, getIndex(id), struct entity);
-        PANIC("Entity %d does not have component %d, mask is %d", id >> 16, componentID, entt->mask); // Sometimes entt is an invalid address and throws access violation, from BuyX(), from AIInfantryBuild(). Also from ProduceResources()
+        PANIC("Entity %d does not have component %d, mask is %d. Scene: %p", id >> 16, componentID, entt->mask, scene); // Sometimes entt is an invalid address and throws access violation, from BuyX(), from AIInfantryBuild(). Also from ProduceResources()
     } else if (getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id) != getVersion(id)) {
         PANIC("Outdated EntityID. Version is %d, given version was %d", getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id), getVersion(id));
     } else {
@@ -147,8 +155,9 @@ EntityID Scene_NewEntity(struct scene* scene)
 	If given componentData argument is not NULL, component must be registered.
 	Data will then be copied from dereference of pointer to component data
 	memory pool. */
-void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, void* componentData)
+void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void* componentData)
 {
+    ComponentID componentID = getComponentID(scene, globalKey);
     if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
@@ -156,7 +165,7 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
     } else if (componentData == NULL) {
         getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
     } else if (scene->components[componentID] == NULL) {
-        PANIC("Component id not registered yet");
+        PANIC("Component not registered yet %d", globalKey);
     } else {
         getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
         Arraylist_Put(scene->components[componentID], getIndex(id), componentData);
@@ -170,14 +179,15 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentID componentID, voi
 	Sequential unassigns of the same entity and component id are allowed. This
 	means you can unassign a component to an entity that does not have the 
 	component assigned. (Might change?) */
-void Scene_Unassign(struct scene* scene, EntityID id, ComponentID componentID)
+void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
+    ComponentID componentID = getComponentID(scene, globalKey);
     if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
         PANIC("Invalid entity index");
     } else if (scene->components[componentID] == NULL) {
-        PANIC("Component id not registered yet");
+        PANIC("Component not registered yet");
     } else {
         getEntityStruct(scene, id)->mask &= ~((ComponentMask)1 << componentID);
     }
@@ -217,16 +227,16 @@ void Scene_Purge(struct scene* scene)
 
 /*
 	Creates a component bit mask based on given a list of component ids */
-const ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
+const ComponentMask Scene_CreateMask(struct scene* scene, int number, ComponentKey components, ...)
 {
-    ComponentID component = components;
+    ComponentKey component = components;
     ComponentMask retval = 0;
     va_list args;
     va_start(args, components);
 
     for (int i = 0; i < number; i++) {
-        retval |= ((ComponentMask)1 << (ComponentMask)component);
-        component = va_arg(args, ComponentID);
+        retval |= ((ComponentMask)1 << (ComponentMask)getComponentID(scene, component));
+        component = va_arg(args, ComponentKey);
     }
 
     va_end(args);
@@ -236,7 +246,7 @@ const ComponentMask Scene_CreateMask(int number, ComponentID components, ...)
 
 /*
 	Returns whether or not the entity matches a component mask */
-bool Scene_EntityHasComponent(struct scene* scene, const ComponentMask mask, EntityID id)
+bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask, EntityID id)
 {
     EntityIndex index = getIndex(id);
     if (index > scene->entities->size) {
@@ -302,4 +312,14 @@ EntityVersion getVersion(EntityID id)
 struct entity* getEntityStruct(struct scene* scene, EntityID id)
 {
     return ARRAYLIST_GET(scene->entities, getIndex(id), struct entity);
+}
+
+ComponentID getComponentID(struct scene* scene, ComponentKey globalKey)
+{
+    for (int i = 0; i < MAX_COMPONENTS; i++) {
+        if (scene->lookupTable[i] == globalKey) {
+            return i;
+        }
+    }
+    PANIC("Component key not registered %d\n", globalKey);
 }

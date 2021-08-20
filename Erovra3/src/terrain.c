@@ -624,7 +624,7 @@ int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terr
     for (int x = 0; x < terrain->tileSize; x++) {
         for (int y = 0; y < terrain->tileSize; y++) {
             EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
-            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, mask)) {
                 int dist = abs(x1 - x) + abs(y1 - y);
                 if (dist < retval) {
                     retval = dist;
@@ -645,25 +645,25 @@ EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct te
     y /= 64;
     if (x > 0) {
         EntityID buildingID = terrain->buildings[(x - 1) + y * terrain->tileSize];
-        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, mask)) {
             return buildingID;
         }
     }
     if (y > 0) {
         EntityID buildingID = terrain->buildings[x + (y - 1) * terrain->tileSize];
-        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, mask)) {
             return buildingID;
         }
     }
     if (x < terrain->tileSize) {
         EntityID buildingID = terrain->buildings[(x + 1) + y * terrain->tileSize];
-        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, mask)) {
             return buildingID;
         }
     }
     if (y < terrain->tileSize) {
         EntityID buildingID = terrain->buildings[x + (y + 1) * terrain->tileSize];
-        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponent(scene, mask, buildingID)) {
+        if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, mask)) {
             return buildingID;
         }
     }

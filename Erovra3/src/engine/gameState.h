@@ -10,6 +10,8 @@ game.h
 
 #define GAME_POP_SCENE(i) Game_PopScene(i); return;
 
+extern bool sceneStale;
+
 struct game {
     SDL_Window* window;
     SDL_Renderer* rend;

@@ -2,54 +2,102 @@
 #include "../components/components.h"
 #include "../engine/scene.h"
 
-/*
-	Takes in a scene, registers components used in the game for that scene */
-void Components_Init(struct scene* scene)
+void Components_Init()
 {
-    MOTION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Motion));
-    TARGET_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Target));
-    PATROL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Patrol));
-    SIMPLE_RENDERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(SimpleRenderable));
-    BUILDING_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    SURFACE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    AIR_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    PLANE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    PARTICLE_LAYER_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    HEALTH_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Health));
+    MOTION_COMPONENT_ID = rand();
+    TARGET_COMPONENT_ID = rand();
+    PATROL_COMPONENT_ID = rand();
+    SIMPLE_RENDERABLE_COMPONENT_ID = rand();
+    BUILDING_LAYER_COMPONENT_ID = rand();
+    SURFACE_LAYER_COMPONENT_ID = rand();
+    AIR_LAYER_COMPONENT_ID = rand();
+    PLANE_LAYER_COMPONENT_ID = rand();
+    PARTICLE_LAYER_COMPONENT_ID = rand();
+    HEALTH_COMPONENT_ID = rand();
 
-    UNIT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Unit));
-    COMBATANT_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Combatant));
-    GROUND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    LAND_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    ENGINEER_UNIT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    BUILDING_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    WALL_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    BULLET_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    SHELL_ATTACK_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    SHIP_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    AIRCRAFT_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    UNIT_COMPONENT_ID = rand();
+    COMBATANT_COMPONENT_ID = rand();
+    GROUND_UNIT_FLAG_COMPONENT_ID = rand();
+    LAND_UNIT_FLAG_COMPONENT_ID = rand();
+    ENGINEER_UNIT_FLAG_COMPONENT_ID = rand();
+    BUILDING_FLAG_COMPONENT_ID = rand();
+    WALL_FLAG_COMPONENT_ID = rand();
+    BULLET_ATTACK_FLAG_COMPONENT_ID = rand();
+    SHELL_ATTACK_FLAG_COMPONENT_ID = rand();
+    SHIP_FLAG_COMPONENT_ID = rand();
+    AIRCRAFT_FLAG_COMPONENT_ID = rand();
 
-    PROJECTILE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Projectile));
-    BULLET_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    AIR_BULLET_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    BOMB_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    SHELL_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Shell));
+    PROJECTILE_COMPONENT_ID = rand();
+    BULLET_COMPONENT_ID = rand();
+    AIR_BULLET_COMPONENT_ID = rand();
+    BOMB_COMPONENT_ID = rand();
+    SHELL_COMPONENT_ID = rand();
 
-    CITY_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(City));
-    PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Producer));
-    EXPANSION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Expansion));
+    CITY_COMPONENT_ID = rand();
+    PRODUCER_COMPONENT_ID = rand();
+    EXPANSION_COMPONENT_ID = rand();
 
-    RESOURCE_PARTICLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceParticle));
-    RESOURCE_PRODUCER_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(ResourceProducer));
+    RESOURCE_PARTICLE_COMPONENT_ID = rand();
+    RESOURCE_PRODUCER_COMPONENT_ID = rand();
 
-    NATION_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Nation));
-    HOME_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    ENEMY_NATION_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    PLAYER_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
-    AI_FLAG_COMPONENT_ID = Scene_RegisterComponent(scene, 0);
+    NATION_COMPONENT_ID = rand();
+    HOME_NATION_FLAG_COMPONENT_ID = rand();
+    ENEMY_NATION_FLAG_COMPONENT_ID = rand();
+    PLAYER_FLAG_COMPONENT_ID = rand();
+    AI_FLAG_COMPONENT_ID = rand();
 
-    HOVERABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Hoverable));
-    SELECTABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Selectable));
-    FOCUSABLE_COMPONENT_ID = Scene_RegisterComponent(scene, sizeof(Focusable));
+    HOVERABLE_COMPONENT_ID = rand();
+    SELECTABLE_COMPONENT_ID = rand();
+    FOCUSABLE_COMPONENT_ID = rand();
 }
 
+/*
+	Takes in a scene, registers components used in the game for that scene */
+void Components_Register(struct scene* scene)
+{
+    Scene_RegisterComponent(scene, MOTION_COMPONENT_ID, sizeof(Motion));
+    Scene_RegisterComponent(scene, TARGET_COMPONENT_ID, sizeof(Target));
+    Scene_RegisterComponent(scene, PATROL_COMPONENT_ID, sizeof(Patrol));
+    Scene_RegisterComponent(scene, SIMPLE_RENDERABLE_COMPONENT_ID, sizeof(SimpleRenderable));
+    Scene_RegisterComponent(scene, BUILDING_LAYER_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, SURFACE_LAYER_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, AIR_LAYER_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, PLANE_LAYER_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, PARTICLE_LAYER_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, HEALTH_COMPONENT_ID, sizeof(Health));
+
+    Scene_RegisterComponent(scene, UNIT_COMPONENT_ID, sizeof(Unit));
+    Scene_RegisterComponent(scene, COMBATANT_COMPONENT_ID, sizeof(Combatant));
+    Scene_RegisterComponent(scene, GROUND_UNIT_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, LAND_UNIT_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, ENGINEER_UNIT_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, BUILDING_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, WALL_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, BULLET_ATTACK_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, SHELL_ATTACK_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, SHIP_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, AIRCRAFT_FLAG_COMPONENT_ID, 0);
+
+    Scene_RegisterComponent(scene, PROJECTILE_COMPONENT_ID, sizeof(Projectile));
+    Scene_RegisterComponent(scene, BULLET_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, AIR_BULLET_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, BOMB_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, SHELL_COMPONENT_ID, sizeof(Shell));
+
+    Scene_RegisterComponent(scene, CITY_COMPONENT_ID, sizeof(City));
+    Scene_RegisterComponent(scene, PRODUCER_COMPONENT_ID, sizeof(Producer));
+    Scene_RegisterComponent(scene, EXPANSION_COMPONENT_ID, sizeof(Expansion));
+
+    Scene_RegisterComponent(scene, RESOURCE_PARTICLE_COMPONENT_ID, sizeof(ResourceParticle));
+    Scene_RegisterComponent(scene, RESOURCE_PRODUCER_COMPONENT_ID, sizeof(ResourceProducer));
+
+    Scene_RegisterComponent(scene, NATION_COMPONENT_ID, sizeof(Nation));
+    Scene_RegisterComponent(scene, HOME_NATION_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, ENEMY_NATION_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, AI_FLAG_COMPONENT_ID, 0);
+
+    Scene_RegisterComponent(scene, HOVERABLE_COMPONENT_ID, sizeof(Hoverable));
+    Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));
+    Scene_RegisterComponent(scene, FOCUSABLE_COMPONENT_ID, sizeof(Focusable));
+}

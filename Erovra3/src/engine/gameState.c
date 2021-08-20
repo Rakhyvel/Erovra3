@@ -10,7 +10,7 @@ game.c
 #include <stdlib.h>
 #include <time.h>
 
-static bool sceneStale = false;
+bool sceneStale = false;
 
 /*
 	Takes in a window title, width, and height. Initializes the global game struct

@@ -46,7 +46,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
         100.0f,
         0,
         0,
-        Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, cavalryID, HEALTH_COMPONENT_ID, &health);
 
@@ -61,7 +61,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         0.2f,
         68.0f,
-        Scene_CreateMask(2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         30,
         &Bullet_Create,
 		true

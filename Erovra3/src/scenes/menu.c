@@ -212,7 +212,7 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Reset slider positions */
-    seaLevel->value = 0.5f;
+    seaLevel->value = 0.63f;
     erosion->value = 0.2f;
 
     /* Randomize name */
@@ -378,8 +378,7 @@ void Menu_Render(Scene* scene)
  */
 Scene* Menu_Init()
 {
-    Scene* scene = Scene_Create(Components_Init, &Menu_Update, &Menu_Render, NULL);
-    GUI_Init(scene);
+    Scene* scene = Scene_Create(GUI_Register, &Menu_Update, &Menu_Render, NULL);
 
     logo = loadTexture("res/logo.png");
     loading = loadTexture("res/loading.png");

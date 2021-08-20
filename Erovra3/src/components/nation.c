@@ -5,7 +5,7 @@
 /*
 	Takes in a scene and color, registers a nation entity, assigns components 
 	relevant to a nation. Return nation's EntityID */
-EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, ComponentID ownNation, ComponentID enemyNation, ComponentID controlFlag)
+EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, ComponentKey ownNation, ComponentKey enemyNation, ComponentKey controlFlag)
 {
     EntityID nationID = Scene_NewEntity(scene);
     Nation nation = {

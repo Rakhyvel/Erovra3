@@ -210,7 +210,11 @@ x Make GUI elements look better
 	x Loading screen for textures
 - Add pause menu
 	x Pulled up if hit esc, no units were active, or whatever esc does later on down the line
-	- Can end match (surrender), go back to main menu (FREE MEMORY!!)
+	x Can end match (surrender), go back to main menu (FREE MEMORY!!)
+	x Implement new hashmap system for scene
+		x Randomized global keys
+	x Add macro for Scene_HasComponents(scene, ComponentKey, ...), would be convenient
+	- Go through and change all systems to use the system keyword
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well

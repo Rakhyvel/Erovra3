@@ -47,7 +47,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
         100.0f,
         0,
         0,
-        Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, battleshipID, HEALTH_COMPONENT_ID, &health);
 
@@ -60,7 +60,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         4.0f,
         250.0f,
-        Scene_CreateMask(2, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 2, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         120,
         &Shell_Create,
 		false

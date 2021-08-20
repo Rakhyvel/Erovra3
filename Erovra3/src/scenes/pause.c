@@ -2,14 +2,11 @@
 #include "../components/components.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
+#include "../gui/gui.h"
 #include "../util/debug.h"
 #include "./match.h"
 
 static Scene* matchScene = NULL;
-
-void Pause_Components(Scene* scene)
-{
-}
 
 void Pause_Update(Scene* scene)
 {
@@ -33,9 +30,14 @@ void Pause_Render(Scene* scene)
     SDL_RenderFillRect(g->rend, NULL);
 }
 
+void Pause_Destroy(Scene* scene)
+{
+    GUI_Destroy(scene);
+}
+
 Scene* Pause_Init(Scene* mScene)
 {
-    Scene* scene = Scene_Create(&Pause_Components, &Pause_Update, &Pause_Render, NULL);
+    Scene* scene = Scene_Create(&GUI_Register, &Pause_Update, &Pause_Render, &Pause_Destroy);
     matchScene = mScene;
 
     Game_PushScene(scene);

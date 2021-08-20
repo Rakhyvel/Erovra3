@@ -48,7 +48,7 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
         100.0f,
         0,
         0,
-        Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, engineerID, HEALTH_COMPONENT_ID, &health);
 

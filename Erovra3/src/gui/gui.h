@@ -3,13 +3,12 @@
 #include "../engine/textureManager.h"
 #include "../util/vector.h"
 
-TextureID radioUnchecked;
-TextureID radioChecked;
-TextureID check;
-
 typedef void (*GUICallback)(struct scene*, EntityID);
 
-void GUI_Init(Scene* scene);
+void GUI_Init();
+void GUI_Register(Scene* scene);
+void GUI_Destroy(Scene* scene);
+
 EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, int meta, GUICallback);
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
@@ -39,26 +38,26 @@ typedef struct guiComponent {
     bool shown;
     EntityID parent;
 } GUIComponent;
-ComponentID GUI_COMPONENT_ID;
+ComponentKey GUI_COMPONENT_ID;
 
 typedef struct button {
     GUICallback onclick;
     int meta;
     char text[32];
 } Button;
-ComponentID GUI_BUTTON_COMPONENT_ID;
+ComponentKey GUI_BUTTON_COMPONENT_ID;
 
 typedef struct label {
     char text[255];
 } Label;
-ComponentID GUI_LABEL_ID;
+ComponentKey GUI_LABEL_ID;
 
 typedef struct rockerSwitch {
     bool value;
     GUICallback onchange;
     char text[255];
 } RockerSwitch;
-ComponentID GUI_ROCKER_SWITCH_COMPONENT_ID;
+ComponentKey GUI_ROCKER_SWITCH_COMPONENT_ID;
 
 typedef struct radioButtons {
     int selection;
@@ -67,14 +66,14 @@ typedef struct radioButtons {
     char options[8][32];
     int selectionHovered;
 } RadioButtons;
-ComponentID GUI_RADIO_BUTTONS_COMPONENT_ID;
+ComponentKey GUI_RADIO_BUTTONS_COMPONENT_ID;
 
 typedef struct slider {
     GUICallback onupdate; // Called whenever the user changes the slider value
     float value;
     char label[32];
 } Slider;
-ComponentID GUI_SLIDER_COMPONENT_ID;
+ComponentKey GUI_SLIDER_COMPONENT_ID;
 
 typedef struct textBox {
     bool active;
@@ -84,28 +83,28 @@ typedef struct textBox {
     int cursorPos;
     int length;
 } TextBox;
-ComponentID GUI_TEXT_BOX_COMPONENT_ID;
+ComponentKey GUI_TEXT_BOX_COMPONENT_ID;
 
 typedef struct checkBox {
     bool value;
     char label[32];
 } CheckBox;
-ComponentID GUI_CHECK_BOX_COMPONENT_ID;
+ComponentKey GUI_CHECK_BOX_COMPONENT_ID;
 
 typedef struct image {
     SDL_Texture* texture;
     double angle;
 } Image;
-ComponentID GUI_IMAGE_COMPONENT_ID;
+ComponentKey GUI_IMAGE_COMPONENT_ID;
 
 typedef struct progressBar {
     float value;
 } ProgressBar;
-ComponentID GUI_PROGRESS_BAR_COMPONENT_ID;
+ComponentKey GUI_PROGRESS_BAR_COMPONENT_ID;
 
 typedef struct container {
     Arraylist children;
     int maxHeight;
 } Container;
-ComponentID GUI_CONTAINER_COMPONENT_ID;
-ComponentID GUI_CENTERED_COMPONENT_ID;
+ComponentKey GUI_CONTAINER_COMPONENT_ID;
+ComponentKey GUI_CENTERED_COMPONENT_ID;

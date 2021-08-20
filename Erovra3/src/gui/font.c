@@ -3,7 +3,7 @@
 #include "../engine/gameState.h"
 #include "../engine/textureManager.h"
 
-SDL_Texture* font;
+SDL_Texture* font = NULL;
 
 int kern16[] = {
     0, 0, 4, 4, 4, 1, 7, 16, 7, 0, 0, 6, 5, 0, 6, 5,
@@ -20,7 +20,9 @@ int kern16[] = {
 	Inits the font spritsheet */
 void Font_Init()
 {
-    font = loadTexture("res/font16.png");
+    if (!font) {
+        font = loadTexture("res/font16.png");
+    }
 }
 
 /*

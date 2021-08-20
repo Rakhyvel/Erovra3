@@ -41,7 +41,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
         100.0f,
         0,
         0,
-        Scene_CreateMask(2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
+        Scene_CreateMask(scene, 2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
     };
     Scene_Assign(scene, cityID, HEALTH_COMPONENT_ID, &health);
 

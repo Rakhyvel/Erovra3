@@ -37,19 +37,24 @@ Code guidelines:
 
 */
 
+#include "./components/components.h"
+#include "./gui/font.h"
+#include "./gui/gui.h"
+#include "./scenes/menu.h"
+#include "engine/gameState.h"
+#include "textures.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "./scenes/menu.h"
-#include "engine/gameState.h"
-#include "textures.h"
-
 /*
 	Inits the game, then starts the game loop */
-int main(int argc, char** argv)
+int SDL_main(int argc, char** argv)
 {
-    Game_Init("Erovra", 1166, 640);
+    Game_Init("Erovra 3.9.1", 1166, 640);
+    GUI_Init();
+    Components_Init();
+    Font_Init();
     Textures_Init();
     Menu_Init();
     Game_Run();
