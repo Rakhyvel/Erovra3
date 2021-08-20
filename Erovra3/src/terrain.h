@@ -60,8 +60,8 @@ float terrain_getHeightForBuilding(struct terrain*, int x, int y);
 EntityID terrain_getBuildingAt(struct terrain*, int x, int y);
 void terrain_setBuildingAt(struct terrain*, EntityID id, int x, int y);
 int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1);
-int terrain_closestMaskDist(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
-EntityID terrain_adjacentMask(struct scene* scene, ComponentMask mask, struct terrain* terrain, int x1, int y1);
+int terrain_closestMaskDist(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
+EntityID terrain_adjacentMask(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
 
 // Wall functions
 EntityID terrain_getWallAt(struct terrain*, int x, int y);

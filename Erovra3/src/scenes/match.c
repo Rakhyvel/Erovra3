@@ -150,7 +150,7 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
-    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_closestMaskDist(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y) > 2 && terrain_closestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
+    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_closestMaskDist(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y) > 2 && terrain_closestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
         EntityID city = City_Create(scene, (Vector) { pos.x, pos.y }, nationID, false);
         terrain_setBuildingAt(terrain, city, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_CITY];
@@ -194,7 +194,7 @@ bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
+    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Mask is 0 error
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
@@ -218,7 +218,7 @@ bool Match_BuyPort(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
+    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID);
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
@@ -246,7 +246,7 @@ bool Match_BuyAirfield(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
+    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
@@ -273,7 +273,7 @@ bool Match_BuyFarm(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
+    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
@@ -300,7 +300,7 @@ bool Match_BuyAcademy(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, Scene_CreateMask(scene, 1, CITY_COMPONENT_ID), terrain, (int)pos.x, (int)pos.y);
+    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
@@ -396,9 +396,8 @@ void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
 	either the wall or building map in the terrain struct */
 void Match_DetectHit(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -413,11 +412,10 @@ void Match_DetectHit(struct scene* scene)
         ComponentKey otherNationID = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
 
         // Find closest enemy projectile
-        const ComponentMask otherMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, otherNationID, PROJECTILE_COMPONENT_ID);
-        EntityID otherID;
         Nation* otherNation = NULL;
         SimpleRenderable* otherSimpleRenderable = NULL;
-        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+        system(scene, otherID, MOTION_COMPONENT_ID, otherNationID, PROJECTILE_COMPONENT_ID)
+        {
             if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
                 continue;
             }
@@ -544,9 +542,8 @@ void Match_DetectHit(struct scene* scene)
 	Their position is then incremented by their velocity. */
 void Match_Motion(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 1, MOTION_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         motion->pos = Vector_Add(motion->pos, motion->vel);
         motion->dZ += motion->aZ;
@@ -566,9 +563,8 @@ void Match_Motion(struct scene* scene)
 	passes*/
 void Match_SetVisitedSpace(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -590,9 +586,8 @@ void Match_SetVisitedSpace(struct scene* scene)
 	Stops units if they go through an enemy wall */
 void Match_Target(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
@@ -639,9 +634,8 @@ void Match_Target(struct scene* scene)
                 // Check for enemy walls
                 SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
                 Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-                const ComponentMask wallMask = Scene_CreateMask(scene, 2, WALL_FLAG_COMPONENT_ID, nation->enemyNationFlag);
-                EntityID wallID;
-                for (wallID = Scene_Begin(scene, wallMask); Scene_End(scene, wallID); wallID = Scene_Next(scene, wallID, wallMask)) {
+                system(scene, wallID, WALL_FLAG_COMPONENT_ID, nation->enemyNationFlag)
+                {
                     Motion* wallMotion = (Motion*)Scene_GetComponent(scene, wallID, MOTION_COMPONENT_ID);
                     float beforeDiff = 0;
                     float afterDiff = 0;
@@ -681,9 +675,8 @@ if enemy is behind you, keep flying until you're far enough away, then turn arou
 */
 void Match_Patrol(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -721,9 +714,8 @@ void Match_Patrol(struct scene* scene)
 	destroys the shell entity. */
 void Match_ShellMove(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID, SHELL_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID, SHELL_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
         Shell* shell = (Shell*)Scene_GetComponent(scene, id, SHELL_COMPONENT_ID);
@@ -744,9 +736,8 @@ TODO: combine this with shells so that any time an aloft projectile hits the gro
 */
 void Match_BombMove(struct scene* scene)
 {
-    const ComponentMask motionMask = Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, motionMask); Scene_End(scene, id); id = Scene_Next(scene, id, motionMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
 
@@ -782,10 +773,9 @@ void Match_Hover(struct scene* scene)
         selectBox = false;
     }
 
-    EntityID id;
     EntityID hoveredID = INVALID_ENTITY_INDEX;
-    const ComponentMask hoverMask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
-    for (id = Scene_Begin(scene, hoverMask); Scene_End(scene, id); id = Scene_Next(scene, id, hoverMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -859,13 +849,13 @@ void Match_Select(struct scene* scene)
     bool targeted = false;
     // If ctrl is not clicked, go through entities, if they are selected, set their target
     if (!g->ctrl && g->mouseLeftUp && !g->mouseDragged) {
-        const ComponentMask transformMask = Scene_CreateMask(scene, 4, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
         EntityID id;
         Vector centerOfMass = { 0, 0 };
         // If shift is held down, find center of mass of selected units
         if (g->shift) {
             int numSelected = 0;
-            for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+            system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+            {
                 Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
                 Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
                 if (selectable->selected) {
@@ -877,7 +867,8 @@ void Match_Select(struct scene* scene)
                 centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
             }
         }
-        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        {
             Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
             Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
@@ -906,10 +897,9 @@ void Match_Select(struct scene* scene)
     // If no unit targets were set previously
     if (!targeted) {
         // Go thru entities, check to see if they are now hovered and selected
-        const ComponentMask transformMask = Scene_CreateMask(scene, 3, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID);
-        EntityID id;
         bool anySelected = false;
-        for (id = Scene_Begin(scene, transformMask); Scene_End(scene, id); id = Scene_Next(scene, id, transformMask)) {
+        system(scene, id, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID)
+        {
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -925,8 +915,8 @@ void Match_Select(struct scene* scene)
         }
         // Defocus entities if others are selected and not them
         if (anySelected) {
-            const ComponentMask selectFocusMask = Scene_CreateMask(scene, 2, SELECTABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-            for (id = Scene_Begin(scene, selectFocusMask); Scene_End(scene, id); id = Scene_Next(scene, id, selectFocusMask)) {
+            system(scene, id, SELECTABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+            {
                 Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
                 Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
 
@@ -945,12 +935,10 @@ void Match_Select(struct scene* scene)
 void Match_Focus(struct scene* scene)
 {
     if (g->mouseRightUp) {
-        const ComponentMask focusMask = Scene_CreateMask(scene, 4, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
-        EntityID id;
         Focusable* focusableComp = NULL;
         EntityID containerID = INVALID_ENTITY_INDEX;
-        // Hide all containers, keep track of the focusables that are hovered. The last one will be the one shown.
-        for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+        system(scene, id, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -980,9 +968,8 @@ void Match_Focus(struct scene* scene)
 	These are reset every tick. */
 void Match_AIUpdateVisitedSpaces(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 2, NATION_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, NATION_COMPONENT_ID, AI_FLAG_COMPONENT_ID)
+    {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
         for (int y = 0; y < nation->visitedSpacesSize; y++) {
@@ -1003,9 +990,8 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 	position around the unit */
 void Match_AIGroundUnitTarget(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, AI_FLAG_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1095,10 +1081,9 @@ void Match_AIGroundUnitTarget(struct scene* scene)
 	infantry is taken into account */
 void Match_AIEngineerBuild(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 2, ENGINEER_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
-    EntityID id;
     ComponentMask nationsDone = 0;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1138,10 +1123,9 @@ void Match_AIEngineerBuild(struct scene* scene)
 
                     // Only go to squares near friendly cities
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
                     bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    system(scene, cityID, CITY_COMPONENT_ID, nation->ownNationFlag)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
                         City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
@@ -1188,10 +1172,9 @@ void Match_AIEngineerBuild(struct scene* scene)
                         continue;
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
                     // Find if there is a city with cabdist less than 3 tiles
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 1, CITY_COMPONENT_ID);
-                    EntityID cityID;
                     bool exitFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    system(scene, cityID, CITY_COMPONENT_ID)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
                         if (Vector_CabDist(point, cityMotion->pos) < 3 * 64) {
                             exitFlag = true;
@@ -1241,10 +1224,9 @@ void Match_AIEngineerBuild(struct scene* scene)
 
                     // Only go to squares near friendly cities
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
                     bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    system(scene, cityID, CITY_COMPONENT_ID, nation->ownNationFlag)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
                         City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
@@ -1332,10 +1314,9 @@ void Match_AIEngineerBuild(struct scene* scene)
 
                     // Only go to squares near friendly cities
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
                     bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    system(scene, cityID, CITY_COMPONENT_ID, nation->ownNationFlag)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
 
                         if (Vector_CabDist(point, cityMotion->pos) == 64) {
@@ -1382,10 +1363,9 @@ void Match_AIEngineerBuild(struct scene* scene)
 
                     // Only go to squares near friendly cities
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
-                    bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    bool foundFlag = true;
+                    system(scene, cityID, CITY_COMPONENT_ID, nation->ownNationFlag)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
                         City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
@@ -1433,10 +1413,9 @@ void Match_AIEngineerBuild(struct scene* scene)
 
                     // Only go to empty squares
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    const ComponentMask cityMask = Scene_CreateMask(scene, 2, CITY_COMPONENT_ID, nation->ownNationFlag);
-                    EntityID cityID;
                     bool foundFlag = false;
-                    for (cityID = Scene_Begin(scene, cityMask); Scene_End(scene, cityID); cityID = Scene_Next(scene, cityID, cityMask)) {
+                    system(scene, cityID, CITY_COMPONENT_ID, nation->ownNationFlag)
+                    {
                         Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
                         if (Vector_CabDist(point, cityMotion->pos) == 64) {
                             foundFlag = true;
@@ -1487,10 +1466,8 @@ void Match_AIEngineerBuild(struct scene* scene)
 	Goes through each producer. If they are not producing anything, sets the order randomly */
 void Match_AIOrderUnits(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 3, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
-    EntityID id;
-    ComponentMask nationsDone = 0;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, AI_FLAG_COMPONENT_ID)
+    {
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
@@ -1543,9 +1520,8 @@ void Match_AIOrderUnits(struct scene* scene)
 	enemy to them, and finally shoot a projectile at them. */
 void Match_CombatantAttack(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(scene, 5, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    {
         // Exclude planes
         if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
             continue;
@@ -1564,11 +1540,10 @@ void Match_CombatantAttack(struct scene* scene)
         EntityID closest = INVALID_ENTITY_INDEX;
         Vector closestPos = { -1, -1 };
         Vector closestVel = { -1, -1 };
-        const ComponentMask otherMask = Scene_CreateMask(scene, 1, MOTION_COMPONENT_ID) | combatant->enemyMask;
-        EntityID otherID;
         bool groundUnit = false;
         bool onlyBuildings = true;
-        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+        system(scene, otherID, MOTION_COMPONENT_ID, combatant->enemyMask)
+        {
             if (!onlyBuildings && Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                 continue;
             }
@@ -1646,9 +1621,8 @@ void Match_CombatantAttack(struct scene* scene)
 	Actually just for fighters and attackers really */
 void Match_AirplaneAttack(Scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(scene, 3, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    system(scene, id, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
@@ -1665,9 +1639,8 @@ void Match_AirplaneAttack(Scene* scene)
         Vector closestPos = { -1, -1 };
         Vector closestVel = { -1, -1 };
         float closestZ = -1;
-        const ComponentMask otherMask = Scene_CreateMask(scene, 1, MOTION_COMPONENT_ID) | combatant->enemyMask;
-        EntityID otherID;
-        for (otherID = Scene_Begin(scene, otherMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, otherMask)) {
+        system(scene, otherID, MOTION_COMPONENT_ID, combatant->enemyMask)
+        {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
             float patrolDist = Vector_Dist(otherMotion->pos, patrol->patrolPoint);
@@ -1723,17 +1696,15 @@ void Match_AirplaneAttack(Scene* scene)
 
 void Match_AirplaneScout(struct scene* scene)
 {
-    const ComponentMask renderMask = Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
-        EntityID otherID;
-        const ComponentMask scoutMask = Scene_CreateMask(scene, 2, UNIT_COMPONENT_ID, nation->enemyNationFlag);
-        for (otherID = Scene_Begin(scene, scoutMask); Scene_End(scene, otherID); otherID = Scene_Next(scene, otherID, scoutMask)) {
+        system(scene, otherID, UNIT_COMPONENT_ID, nation->enemyNationFlag)
+        {
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             if (Vector_Dist(motion->pos, otherMotion->pos) < 128) {
@@ -1753,9 +1724,8 @@ void Match_AirplaneScout(struct scene* scene)
 	Creates a resource particle every time a production period has passed */
 void Match_ProduceResources(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
+    {
         // I made change to mask, did that work?
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // FIXME: Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1778,9 +1748,8 @@ void Match_ProduceResources(struct scene* scene)
 	increase that resource for the nations resource array */
 void Match_DestroyResourceParticles(struct scene* scene)
 {
-    ComponentMask mask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1801,9 +1770,8 @@ void Match_DestroyResourceParticles(struct scene* scene)
 	If the producer's "repeat" flag is set, repeats the order a second time. */
 void Match_ProduceUnits(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -1867,9 +1835,8 @@ void Match_ProduceUnits(struct scene* scene)
 	producer to be the nation of the homeCity */
 void Match_UpdateExpansionAllegiance(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 1, EXPANSION_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, EXPANSION_COMPONENT_ID)
+    {
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -1917,9 +1884,8 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 	colorizes based on the nation color, and renders texture to screen. */
 void Match_SimpleRender(struct scene* scene, ComponentKey layer)
 {
-    const ComponentMask renderMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, layer);
-    EntityID id;
-    for (id = Scene_Begin(scene, renderMask); Scene_End(scene, id); id = Scene_Next(scene, id, renderMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, layer)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         SDL_Rect rect = { 0, 0, 0, 0 };
@@ -1959,9 +1925,8 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
 	Updates produce GUI to reflect the time, order, and auto-order */
 void Match_UpdateGUIElements(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 2, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
         GUI_SetLabelText(scene, goldLabel, "Coins: %d", nation->resources[ResourceType_COIN]);
@@ -1969,9 +1934,8 @@ void Match_UpdateGUIElements(struct scene* scene)
         GUI_SetLabelText(scene, populationLabel, "Population: %d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
     }
 
-    const ComponentMask focusMask = Scene_CreateMask(scene, 2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID focusID;
-    for (focusID = Scene_Begin(scene, focusMask); Scene_End(scene, focusID); focusID = Scene_Next(scene, focusID, focusMask)) {
+    system(scene, focusID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, focusID, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
 
@@ -1985,9 +1949,8 @@ void Match_UpdateGUIElements(struct scene* scene)
 
 void Match_DrawVisitedSquares(Scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 1, NATION_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, NATION_COMPONENT_ID)
+    {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         SDL_Rect rect = { 0, 0, 0, 0 };
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
@@ -2022,9 +1985,8 @@ void Match_DrawBoxSelect(Scene* scene)
 	Units are hidden when their engaged ticks are less than 0. */
 void Match_UpdateFogOfWar(struct scene* scene)
 {
-    const ComponentMask mask = Scene_CreateMask(scene, 2, UNIT_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
+    system(scene, id, UNIT_COMPONENT_ID, AI_FLAG_COMPONENT_ID)
+    {
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2102,9 +2064,8 @@ void Match_Render(Scene* match)
 	Called when infantry build city button is pressed. Builds a city */
 void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2119,9 +2080,8 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 	Called by the infantry's "Build Factory" button. Builds a mine */
 void Match_EngineerAddMine(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2136,9 +2096,8 @@ void Match_EngineerAddMine(Scene* scene, EntityID guiID)
 	Called by the infantry's "Build Factory" button. Builds a factory */
 void Match_EngineerAddFactory(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2155,9 +2114,8 @@ void Match_EngineerAddFactory(Scene* scene, EntityID guiID)
 	already a wall in place. */
 void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2210,9 +2168,8 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerAddPort(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2227,9 +2184,8 @@ void Match_EngineerAddPort(Scene* scene, EntityID guiID)
 	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerAddAirfield(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2244,9 +2200,8 @@ void Match_EngineerAddAirfield(Scene* scene, EntityID guiID)
 	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerAddFarm(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2261,9 +2216,8 @@ void Match_EngineerAddFarm(Scene* scene, EntityID guiID)
 	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerAddAcademy(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2278,9 +2232,8 @@ void Match_EngineerAddAcademy(Scene* scene, EntityID guiID)
 	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2299,9 +2252,8 @@ void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 {
     UnitType type = (UnitType)((Button*)Scene_GetComponent(scene, buttonID, GUI_BUTTON_COMPONENT_ID))->meta;
-    const ComponentMask focusMask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2319,9 +2271,7 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 
 void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 2, HEALTH_COMPONENT_ID, FOCUSABLE_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, HEALTH_COMPONENT_ID, FOCUSABLE_COMPONENT_ID) {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
@@ -2335,9 +2285,7 @@ void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 	Called from producer's "Cancel Order" button. Cancels the order of the Producer that is focused */
 void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 {
-    const ComponentMask focusMask = Scene_CreateMask(scene, 4, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID) {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
@@ -2361,9 +2309,7 @@ void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 {
     RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, rockerID, GUI_ROCKER_SWITCH_COMPONENT_ID);
-    const ComponentMask focusMask = Scene_CreateMask(scene, 2, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID);
-    EntityID id;
-    for (id = Scene_Begin(scene, focusMask); Scene_End(scene, id); id = Scene_Next(scene, id, focusMask)) {
+    system(scene, id, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID) {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 

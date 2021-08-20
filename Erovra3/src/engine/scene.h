@@ -15,7 +15,7 @@ typedef Uint16 EntityIndex;
 typedef Uint16 EntityVersion;
 typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
 
-#define MAX_COMPONENTS 255
+#define MAX_COMPONENTS 64
 #define INVALID_ENTITY_INDEX ((EntityID)65535)
 #define MAX_ENTITIES 1000
 

@@ -7,6 +7,7 @@
 #include "./match.h"
 
 static Scene* matchScene = NULL;
+int fade = 0;
 
 void Pause_Update(Scene* scene)
 {
@@ -21,13 +22,20 @@ void Pause_Update(Scene* scene)
     } else {
         escDown = false;
     }
+    if (fade < 128) {
+        fade += 128 / 10;
+    }
 }
 
 void Pause_Render(Scene* scene)
 {
     Match_Render(matchScene);
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 128);
+    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, fade);
     SDL_RenderFillRect(g->rend, NULL);
+
+    SDL_Rect rect = { g->width / 2 - 50, g->height / 2 - 50 + (128.0f - fade) * 1080 / 128.0f, 100, 100 };
+    SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 255);
+    SDL_RenderFillRect(g->rend, &rect);
 }
 
 void Pause_Destroy(Scene* scene)
@@ -39,6 +47,7 @@ Scene* Pause_Init(Scene* mScene)
 {
     Scene* scene = Scene_Create(&GUI_Register, &Pause_Update, &Pause_Render, &Pause_Destroy);
     matchScene = mScene;
+    fade = 0;
 
     Game_PushScene(scene);
     return scene;

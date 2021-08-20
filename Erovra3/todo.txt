@@ -214,7 +214,9 @@ x Make GUI elements look better
 	x Implement new hashmap system for scene
 		x Randomized global keys
 	x Add macro for Scene_HasComponents(scene, ComponentKey, ...), would be convenient
-	- Go through and change all systems to use the system keyword
+	x Go through and change all systems to use the system keyword
+	- Add buttons to pause menu
+		- Put them in a container, that swooshes up and down
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well
