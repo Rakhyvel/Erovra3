@@ -11,7 +11,7 @@
 EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID destroyerID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Unit*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Motion motion = {
         pos,
@@ -46,8 +46,8 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Health health = {
         100.0f,
-        0.0f,
-        0.0f,
+        0,
+        0,
         Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, destroyerID, HEALTH_COMPONENT_ID, &health);

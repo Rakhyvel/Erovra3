@@ -73,7 +73,7 @@ void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (int)(2.56 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32 + 16, y * 32 + 16 }) + 1000);
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(2.56 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
         }
     }
 }

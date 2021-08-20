@@ -8,6 +8,9 @@ game.c
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+static bool sceneStale = false;
 
 /*
 	Takes in a window title, width, and height. Initializes the global game struct
@@ -51,7 +54,7 @@ void Game_Init(char* windowName, int width, int height)
 
     g->running = 1;
     g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = g->ticks = 0;
-    g->sceneStack = Arraylist_Create(100, sizeof(Scene));
+    g->sceneStack = Arraylist_Create(10, sizeof(Scene*));
     printf("Started.");
 }
 
@@ -59,14 +62,19 @@ void Game_Init(char* windowName, int width, int height)
 	Adds a scene to the top of the scene stack */
 void Game_PushScene(Scene* scene)
 {
-    Arraylist_Add(g->sceneStack, scene);
+    Arraylist_Add(g->sceneStack, &scene);
+    sceneStale = true;
 }
 
 /*
 	Removes the scene at the top of the scene stack */
-void Game_PopScene(Scene* scene)
+void Game_PopScene(int numScenes)
 {
-    Arraylist_Pop(g->sceneStack);
+    for (int i = 0; i < numScenes; i++) {
+        Scene* oldScene = ARRAYLIST_POP_DEREF(g->sceneStack, Scene*);
+        Scene_Destroy(oldScene);
+        sceneStale = true;
+    }
 }
 
 /*
@@ -77,10 +85,10 @@ void Game_PopScene(Scene* scene)
 void Game_Run()
 {
     long previous = clock();
-    long lag = 0;
+    double lag = 0;
     long current = clock();
     long elapsed = 0;
-    g->dt = 16.0f;
+    g->dt = 16.0;
     int elapsedFrames = 0;
 
     unsigned int frames = 0;
@@ -97,23 +105,30 @@ void Game_Run()
         if (g->sceneStack->size < 1) {
             PANIC("No scene added to game");
         }
-        Scene* scene = Arraylist_Get(g->sceneStack, g->sceneStack->size - 1);
+        Scene* scene = ARRAYLIST_GET_DEREF(g->sceneStack, g->sceneStack->size - 1, Scene*);
+        // Reset scene stack flag
+        sceneStale = false;
 
         while (lag >= g->dt) {
             Game_PollInput();
             scene->update(scene);
+            if (sceneStale) { // Do not purge entities if scene is stale
+                break;
+            }
             Scene_Purge(scene);
             lag -= g->dt;
             g->ticks++;
         }
-        if (elapsedFrames >= 16.0f) {
+
+        if (elapsedFrames >= 16.0f && !sceneStale) { // Do not render if scene is stale
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 255);
             SDL_RenderClear(g->rend);
-            scene->render(scene); // FIXME: freeHeap() failure?
+            scene->render(scene);
             SDL_RenderPresent(g->rend);
             frames++;
         }
+
         const Uint64 end = SDL_GetPerformanceCounter();
         Uint64 freq = SDL_GetPerformanceFrequency();
         const double seconds = (end - start) / (float)(freq);
@@ -178,6 +193,7 @@ static char toshifted(SDL_KeyCode c)
     case '/':
         return '?';
     }
+    return ' ';
 }
 
 /*

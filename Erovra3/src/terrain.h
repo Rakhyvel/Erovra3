@@ -26,6 +26,7 @@ typedef struct gradient {
 
 struct terrain* terrain_create(int tileSize, float* map, SDL_Texture* texture);
 void paintMap(int size, float* map, SDL_Texture* texture);
+void terrain_update(struct terrain* terrain);
 void terrain_render(struct terrain* terrain);
 
 // Interpolations

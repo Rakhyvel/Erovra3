@@ -36,8 +36,8 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     Health health = {
         100.0f,
-        0.0f,
-        0.0f,
+        0,
+        0,
         Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, factoryID, HEALTH_COMPONENT_ID, &health);

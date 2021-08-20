@@ -44,24 +44,27 @@ typedef struct scene {
 		|---|   |   |
 		|   |   |   |
 	*/
-    struct arraylist* components[MAX_COMPONENTS];
+    struct arraylist* /*<Arraylist>*/ (components[MAX_COMPONENTS]); // array of pointers
     /* List of all entities in scene */
-    struct arraylist* entities;
+    struct arraylist* /*<Entity>*/ entities;
     /* List of purged entity indices To be cleared removed later */
-    struct arraylist* purgedEntities;
+    struct arraylist* /*<EntityIndex>*/ purgedEntities;
     /* List of free indices that can be overwritten */
-    struct arraylist* freeIndices;
+    struct arraylist* /*<EntityIndex>*/ freeIndices;
     /* Number of entities in scene */
     int numEntities;
     /* Number of components in scene */
     int numComponents;
     const void (*update)(struct scene*);
     const void (*render)(struct scene*);
+    const void (*destructor)(struct scene*);
 } Scene;
 
 /*
 	Initializes the components table, entities list, and purged list */
-struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(struct Scene*), void (*render)(struct Scene*));
+struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(struct scene*), void (*render)(struct scene*), void (*destructor)(struct scene*));
+
+void Scene_Destroy(struct scene* scene);
 
 /* 
 	Sets the component size for a componentID */

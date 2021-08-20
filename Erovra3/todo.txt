@@ -209,7 +209,7 @@ x Make GUI elements look better
 	x Add placeholder logo (but actually take some time on it (It likely wont be a placeholder))
 	x Loading screen for textures
 - Add pause menu
-	- Pulled up if hit esc, no units were active, or whatever esc does later on down the line
+	x Pulled up if hit esc, no units were active, or whatever esc does later on down the line
 	- Can end match (surrender), go back to main menu (FREE MEMORY!!)
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented

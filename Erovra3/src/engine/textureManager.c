@@ -62,7 +62,7 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
 	target access. */
 void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 {
-    int nodes, pixelX, pixelY, i, j, swap;
+    int nodes, i, j, swap;
     float nodeX[255], minY = FLT_MAX, maxY = FLT_MIN;
     SDL_Texture* texture = textures[textureID];
 
@@ -73,7 +73,7 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
             maxY = polygon.vertexY[i];
     }
 
-    for (float pixelY = (int)minY; pixelY < maxY + 1; pixelY++) {
+    for (float pixelY = minY; pixelY < maxY + 1; pixelY++) {
         nodes = 0;
         j = polygon.numVertices - 1;
         // Build list of the x coords for each intersection
@@ -89,9 +89,9 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
         i = 0;
         while (i < nodes - 1) {
             if (nodeX[i] > nodeX[i + 1]) {
-                swap = nodeX[i];
+                swap = (int)nodeX[i];
                 nodeX[i] = nodeX[i + 1];
-                nodeX[i + 1] = swap;
+                nodeX[i + 1] = (float)swap;
                 if (i)
                     i--;
             } else {
@@ -111,8 +111,8 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
                 if (nodeX[i] + polygon.x < 0)
                     nodeX[i] = 0;
                 if (nodeX[i + 1] + polygon.x > g->width)
-                    nodeX[i + 1] = g->width;
-                SDL_RenderDrawLine(g->rend, nodeX[i] + polygon.x, pixelY - 1 + polygon.y, nodeX[i + 1] + polygon.x, pixelY - 1 + polygon.y);
+                    nodeX[i + 1] = (float)g->width;
+                SDL_RenderDrawLine(g->rend, (int)nodeX[i] + polygon.x, (int)pixelY - 1 + polygon.y, (int)nodeX[i + 1] + polygon.x, (int)pixelY - 1 + polygon.y);
             }
         }
         SDL_SetRenderTarget(g->rend, NULL);
@@ -189,13 +189,13 @@ void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color, 
 	
 	Returns the vector <x,y> of the point along the curve from 0-1, with 0 being
 	closer to the first point and 1 being closer to the fourth and last point.*/
-static Vector bezierCurve(int x[4], int y[4], double u)
+static Vector bezierCurve(float x[4], float y[4], double u)
 {
-    double xu = 0.0, yu = 0.0;
-    xu = pow(1 - u, 3) * x[0] + 3 * u * pow(1 - u, 2) * x[1] + 3 * pow(u, 2) * (1 - u) * x[2]
-        + pow(u, 3) * x[3];
-    yu = pow(1 - u, 3) * y[0] + 3 * u * pow(1 - u, 2) * y[1] + 3 * pow(u, 2) * (1 - u) * y[2]
-        + pow(u, 3) * y[3];
+    float xu = 0.0f, yu = 0.0f;
+    xu = (float)(pow(1 - u, 3) * x[0] + 3 * u * pow(1 - u, 2) * x[1] + 3 * pow(u, 2) * (1 - u) * x[2]
+        + pow(u, 3) * x[3]);
+    yu = (float)(pow(1 - u, 3) * y[0] + 3 * u * pow(1 - u, 2) * y[1] + 3 * pow(u, 2) * (1 - u) * y[2]
+        + pow(u, 3) * y[3]);
     return (Vector) { xu, yu };
 }
 
@@ -204,8 +204,8 @@ static Vector bezierCurve(int x[4], int y[4], double u)
 	Approximates the bezier curve with more vertices.*/
 static Polygon spliceBezier(Polygon polygon)
 {
-    int tempX[4];
-    int tempY[4];
+    float tempX[4];
+    float tempY[4];
     Polygon rendval;
     rendval.numVertices = 0;
     int rendVertexIndex = 0;

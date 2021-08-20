@@ -3,4 +3,4 @@
 #include "../util/vector.h"
 #include "./components.h"
 
-EntityID Airfield_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Farm_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);

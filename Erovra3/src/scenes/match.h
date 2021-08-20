@@ -5,7 +5,7 @@
 enum RenderPriority {
     RenderPriorirty_BUILDING_LAYER,
     RenderPriorirty_SURFACE_LAYER,
-	RenderPriority_HIGH_SURFACE_LAYER,
+    RenderPriority_HIGH_SURFACE_LAYER,
     RenderPriorirty_AIR_LAYER,
     RenderPriorirty_PARTICLE_LAYER,
 };
@@ -27,4 +27,5 @@ EntityID PORT_BUSY_FOCUSED_GUI;
 EntityID ACADEMY_READY_FOCUSED_GUI;
 EntityID ACADEMY_BUSY_FOCUSED_GUI;
 
+void Match_Render(Scene* scene);
 Scene* Match_Init(int tileSize, float* map, SDL_Texture* texture, bool AIControlled);

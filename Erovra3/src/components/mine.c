@@ -43,20 +43,20 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
 
     Health health = {
         100.0f,
-        0.0f,
-        0.0f,
+        0,
+        0,
         Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, mineID, HEALTH_COMPONENT_ID, &health);
 
     Unit type = {
         UnitType_MINE,
-        0.05
+        0.05f
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        1.0f / terrain_getOre(terrain, pos.x, pos.y),
+        (1.0f / terrain_getOre(terrain, (int)pos.x, (int)pos.y)),
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

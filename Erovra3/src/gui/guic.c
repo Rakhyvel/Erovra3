@@ -321,6 +321,18 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
 }
 
 /*
+	Returns the root of a layout tree */
+EntityID GUI_GetRoot(Scene* scene, EntityID id)
+{
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+    if (gui->parent == INVALID_ENTITY_INDEX) {
+        return id;
+    } else {
+        return GUI_GetRoot(scene, gui->parent);
+    }
+}
+
+/*
 	Changes the labels text. Takes a format string, with some convenient 
 	formatting.
 	
@@ -379,18 +391,6 @@ void GUI_SetRockerSwitchValue(Scene* scene, EntityID id, bool value)
 {
     RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
     rockerSwitch->value = value;
-}
-
-/*
-	Returns the root of a layout tree */
-EntityID GUI_GetRoot(Scene* scene, EntityID id)
-{
-    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
-    if (gui->parent == INVALID_ENTITY_INDEX) {
-        return id;
-    } else {
-        return GUI_GetRoot(scene, gui->parent);
-    }
 }
 
 /*
@@ -533,7 +533,7 @@ static void updateRockerSwitch(Scene* scene)
     EntityID id;
     for (id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask)) {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
-        RockerSwitch* rockerSwitch = (Button*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
+        RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click

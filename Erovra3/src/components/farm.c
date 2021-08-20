@@ -37,8 +37,8 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Health health = {
         100.0f,
-        0.0f,
-        0.0f,
+        0,
+        0,
         Scene_CreateMask(3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
     };
     Scene_Assign(scene, farmID, HEALTH_COMPONENT_ID, &health);

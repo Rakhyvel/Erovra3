@@ -8,6 +8,8 @@ game.h
 #include <SDL.h>
 #include <stdbool.h>
 
+#define GAME_POP_SCENE(i) Game_PopScene(i); return;
+
 struct game {
     SDL_Window* window;
     SDL_Renderer* rend;
@@ -41,7 +43,7 @@ struct game {
         mouseDragged;
     char keyDown;
 
-    float dt;
+    double dt;
 
     Arraylist* sceneStack;
 };
@@ -50,6 +52,6 @@ struct game* g;
 
 void Game_Init(char* windowName, int width, int height);
 void Game_PushScene(Scene*);
-void Game_PopScene(Scene* scene);
+void Game_PopScene(int numScenes);
 void Game_Run();
 void Game_PollInput();

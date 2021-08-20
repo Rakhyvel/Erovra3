@@ -62,7 +62,7 @@ int Font_GetCharIndex(char* str, int x)
 	Draws a string to the screen */
 void Font_DrawString(char* str, int x, int y)
 {
-    SDL_SetTextureColorMod(font, 255, 255, 255, 255);
+    SDL_SetTextureColorMod(font, 255, 255, 255);
     int i = 0;
     SDL_Rect src = { 0, 0, 16, 16 };
     SDL_Rect dest = { x, y, 16, 16 };

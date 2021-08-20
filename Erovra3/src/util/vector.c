@@ -8,7 +8,7 @@ struct vector Vector_Normalize(struct vector a)
 {
     float mag = Vector_Magnitude(a);
     if (mag == 0) {
-        return;
+        return (Vector) { 0, 0 };
     } else {
         return Vector_Scalar(a, 1.0f / mag);
     }

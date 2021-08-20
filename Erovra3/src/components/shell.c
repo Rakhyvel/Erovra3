@@ -22,7 +22,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         0.5f,
         vel,
         angle,
-        0.8,
+        0.8f,
         true
     };
     Scene_Assign(scene, shellID, MOTION_COMPONENT_ID, &motion);

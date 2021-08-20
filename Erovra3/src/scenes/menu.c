@@ -15,6 +15,7 @@
 #include "match.h"
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 EntityID loadingAssets;
 EntityID mainMenu;
@@ -100,6 +101,7 @@ static int loadAssets(Scene* scene)
     status = 0;
     lexicon = Lexicon_Create("res/countryNames.txt", &status);
     assetsLoaded = true;
+    return 0;
 }
 
 /*	A thread that is called whenever a map setting is modified by the user. 
@@ -116,11 +118,11 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = terrain_perlin(size, size / 4.0f, getSeed(scene), &status);
+    map = terrain_perlin(size, size / 4, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
-            map[x + y * size] = map[x + y * size] * 0.5 + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
         }
     }
 
@@ -143,7 +145,7 @@ static int generateFullTerrain(void* ptr)
     Scene* scene = (Scene*)ptr;
 
     RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
-    int fullMapSize = 8 * pow(2, mapSize->selection) * 64;
+    int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
@@ -155,7 +157,7 @@ static int generateFullTerrain(void* ptr)
     map = terrain_perlin(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
-            map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5 + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
         }
     }
 
@@ -191,7 +193,6 @@ void Menu_ReconstructMap(Scene* scene, EntityID id)
     // (will be reset back to new previewTexture once the following thread finishes updating the map)
 
     // Call the generatePreview to update the map
-    int threadRetval;
     SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
 
     // Resume updating GUI
@@ -218,7 +219,7 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     char randName[32];
     Lexicon_GenerateWord(lexicon, randName, 10);
     strncpy_s(nationName->text, 32, randName, 32);
-    nationName->length = strlen(randName);
+    nationName->length = (int)strlen(randName);
 
     /* Randomize seed */
     char randSeed[32];
@@ -301,8 +302,8 @@ void Menu_Update(Scene* scene)
         // Check if the generateFullMatch thread has finished generating the map
         if (done) {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
-            CheckBox* AIControlled = (Slider*)Scene_GetComponent(scene, AIControlledCheckBox, GUI_CHECK_BOX_COMPONENT_ID);
-            int fullMapSize = 8 * pow(2, mapSize->selection) * 64;
+            CheckBox* AIControlled = (CheckBox*)Scene_GetComponent(scene, AIControlledCheckBox, GUI_CHECK_BOX_COMPONENT_ID);
+            int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
 
             // Setup a new texture, call Match_Init, start game!
             SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, fullMapSize, fullMapSize);
@@ -314,7 +315,7 @@ void Menu_Update(Scene* scene)
             ProgressBar* progress = (ProgressBar*)Scene_GetComponent(scene, progressBar, GUI_PROGRESS_BAR_COMPONENT_ID);
             Label* label = (Label*)Scene_GetComponent(scene, statusText, GUI_LABEL_ID);
 
-            int fullMapSize = 8 * pow(2, mapSize->selection) * 64;
+            int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
 
             // Calculate progress bar max status counts based on state
             double denominator = 1;
@@ -335,20 +336,19 @@ void Menu_Update(Scene* scene)
             needsRepaint = false;
             Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
             terrain->texture = previewTexture;
-            printf("Done.\n");
         }
 
         GUIComponent* logoSpacerGUI = (GUIComponent*)Scene_GetComponent(scene, logoSpacer, GUI_COMPONENT_ID);
         logoSpacerVel += logoSpacerAcc;
         logoSpacerGUI->height += logoSpacerVel;
-        logoSpacerAcc *= 0.9;
-        logoSpacerVel *= 0.9;
+        logoSpacerAcc *= 0.9f;
+        logoSpacerVel *= 0.9f;
 
         /* Update camera physics */
         vel = Vector_Add(vel, acc);
         camera = Vector_Add(camera, vel);
-        acc = Vector_Scalar(acc, 0.9);
-        vel = Vector_Scalar(vel, 0.9);
+        acc = Vector_Scalar(acc, 0.9f);
+        vel = Vector_Scalar(vel, 0.9f);
         if (camera.x < -2000) {
             camera.x = 0;
             camera.y = 0;
@@ -378,7 +378,7 @@ void Menu_Render(Scene* scene)
  */
 Scene* Menu_Init()
 {
-    Scene* scene = Scene_Create(Components_Init, &Menu_Update, &Menu_Render);
+    Scene* scene = Scene_Create(Components_Init, &Menu_Update, &Menu_Render, NULL);
     GUI_Init(scene);
 
     logo = loadTexture("res/logo.png");
@@ -393,8 +393,8 @@ Scene* Menu_Init()
     vel = (Vector) { 0, 0 };
     acc.y = 0;
 
-	logoSpacerVel = 0;
-    logoSpacerAcc = -20;
+    logoSpacerVel = 0;
+    logoSpacerAcc = -10;
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
@@ -405,12 +405,12 @@ Scene* Menu_Init()
     terrainImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 447, 447, previewTexture);
 
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
-    progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7);
+    progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7f);
 
     loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "You can click on units to click on them!");
     loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
 
-    logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
+    logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 1050);
 
     loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);

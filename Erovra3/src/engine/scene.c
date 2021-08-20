@@ -25,7 +25,7 @@ static struct entity* getEntityStruct(struct scene*, EntityID);
 
 /*
 	Initializes the memory pools for a scene */
-struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(struct Scene*), void (*render)(struct Scene*))
+struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(struct scene*), void (*render)(struct scene*), void (*destructor)(struct scene*))
 {
     struct scene* retval = calloc(1, sizeof(struct scene));
     if (!retval) {
@@ -37,10 +37,32 @@ struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(s
     retval->freeIndices = Arraylist_Create(10, sizeof(EntityIndex));
     retval->update = update;
     retval->render = render;
+    retval->destructor = destructor;
 
     initComponents(retval);
 
     return retval;
+}
+
+/*	Calls a scene's destructor, then frees the memory used by a scene.*/
+void Scene_Destroy(struct scene* scene)
+{
+    if (scene == NULL) {
+        printf("WARNING: scene was NULL!");
+        return;
+    }
+    if (scene->destructor) {
+        scene->destructor(scene);
+    }
+    for (int i = 0; i < scene->numComponents; i++) {
+        if (scene->components[i] != NULL) {
+            Arraylist_Destroy(scene->components[i]);
+        }
+    }
+    Arraylist_Destroy(scene->entities);
+    Arraylist_Destroy(scene->purgedEntities);
+    Arraylist_Destroy(scene->freeIndices);
+    free(scene);
 }
 
 /*
@@ -50,7 +72,7 @@ struct scene* Scene_Create(void(initComponents)(struct Scene*), void (*update)(s
 const ComponentID Scene_RegisterComponent(struct scene* scene, size_t componentSize)
 {
     const ComponentID componentID = scene->numComponents;
-    if (scene->numComponents > MAX_COMPONENTS) {
+    if (componentID >= 64 || componentID < 0) {
         PANIC("Component overflow");
     } else if (scene->numEntities > 0) {
         PANIC("Cannot create component if entities exist in scene %d", scene->numEntities);
@@ -77,7 +99,7 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
         struct entity* entt = ARRAYLIST_GET(scene->entities, getIndex(id), struct entity);
         PANIC("Entity %d does not have component %d, mask is %d", id >> 16, componentID, entt->mask); // Sometimes entt is an invalid address and throws access violation, from BuyX(), from AIInfantryBuild(). Also from ProduceResources()
     } else if (getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id) != getVersion(id)) {
-        PANIC("Outdated EntityID");
+        PANIC("Outdated EntityID. Version is %d, given version was %d", getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id), getVersion(id));
     } else {
         return Arraylist_Get(scene->components[componentID], getIndex(id));
     }
@@ -94,8 +116,7 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentID component
 EntityID Scene_NewEntity(struct scene* scene)
 {
     if (scene->entities->size > MAX_ENTITIES) {
-        fprintf(stderr, "Entity overflow");
-        exit(1);
+        PANIC("Entity overflow");
     }
 
     if (scene->freeIndices->size != 0) {
@@ -107,7 +128,7 @@ EntityID Scene_NewEntity(struct scene* scene)
         return entity->id;
     } else {
         EntityIndex index = (EntityIndex)(scene->entities->size);
-        struct entity newEntity = { ((EntityID)index << 16), 0 };
+        struct entity newEntity = { ((EntityID)index << 16 | 1), 0 };
         Arraylist_Add(scene->entities, &newEntity);
         scene->numEntities++;
         for (int i = 0; i < scene->numComponents; i++) {
@@ -221,8 +242,8 @@ bool Scene_EntityHasComponent(struct scene* scene, const ComponentMask mask, Ent
     if (index > scene->entities->size) {
         PANIC("Malformed EntityID (i: %d | v: %d)", getIndex(id), getVersion(id));
     } else if (getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id) != getVersion(id)) {
-        PANIC("Outdated EntityID");
-    } 
+        PANIC("Outdated EntityID. Version is %d, given version was %d", getVersion(ARRAYLIST_GET(scene->entities, getIndex(id), struct entity)->id), getVersion(id));
+    }
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
     return (entt->mask & mask) == mask;
 }

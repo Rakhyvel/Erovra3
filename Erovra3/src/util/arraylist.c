@@ -20,7 +20,7 @@
 
 /*
 	Creates an arraylist with a given type size */
-struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
+struct arraylist* Arraylist_Create(int initSize, int typeSize)
 {
     struct arraylist* retval = malloc(sizeof(struct arraylist));
     if (!retval) {
@@ -34,6 +34,16 @@ struct arraylist* Arraylist_Create(int initSize, size_t typeSize)
         PANIC("Memory error");
     }
     return retval;
+}
+
+void Arraylist_Destroy(struct arraylist* list)
+{
+    if (list == NULL) {
+        printf("WARNING: list was NULL!");
+        return;
+    }
+    free(list->data);
+    free(list);
 }
 
 /*
@@ -51,7 +61,7 @@ void* Arraylist_Get(struct arraylist* list, int index)
 }
 
 /*
-	Returns a pointer to last element in arraylist, decrements size
+	Returns a POINTER TO THE DATA of the last element in arraylist, decrements size
 	
 	Doesn't reduce memory pool size on purpose */
 void* Arraylist_Pop(struct arraylist* list)

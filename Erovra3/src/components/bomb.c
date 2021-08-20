@@ -15,7 +15,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
     EntityID bombID = Scene_NewEntity(scene);
 
     float angle = Vector_Angle(Vector_Sub(pos, tar));
-    angle += 3.1415926 / 2.0;
+    angle += 3.1415f / 2.0f;
     Motion motion = {
         pos,
         1.0f,

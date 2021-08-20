@@ -20,7 +20,8 @@ typedef struct arraylist {
 	int capacity;
 } Arraylist;
 
-struct arraylist* Arraylist_Create(int initSize, size_t typeSize);
+struct arraylist* Arraylist_Create(int initSize, int typeSize);
+void Arraylist_Destroy(struct arraylist* list);
 
 void Arraylist_Add(struct arraylist* list, void* data);
 void Arraylist_Put(struct arraylist* list, int index, void* data);
