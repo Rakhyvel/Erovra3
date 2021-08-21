@@ -61,7 +61,7 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         2.0f, // Attack
         250.0f, // Dist
-        Scene_CreateMask(scene, 2, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         120, // Time
         &Shell_Create,
         false

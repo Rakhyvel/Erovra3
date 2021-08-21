@@ -23,7 +23,8 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
 void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object);
-void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown);
+void GUI_SetShown(Scene* scene, EntityID containerID, bool shown);
+void GUI_CenterElementAt(Scene* scene, EntityID id, int x, int y);
 Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY);
 void GUI_SetBackgroundColor(Scene* scene, EntityID id, SDL_Color color);
 void GUI_Update(Scene* scene);
@@ -103,7 +104,7 @@ typedef struct progressBar {
 ComponentKey GUI_PROGRESS_BAR_COMPONENT_ID;
 
 typedef struct container {
-    Arraylist children;
+    Arraylist* children;
     int maxHeight;
 } Container;
 ComponentKey GUI_CONTAINER_COMPONENT_ID;

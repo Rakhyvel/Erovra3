@@ -64,7 +64,7 @@ void GUI_Destroy(Scene* scene)
     system(scene, id, GUI_CONTAINER_COMPONENT_ID)
     {
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
-        Arraylist_Destroy(&container->children);
+        Arraylist_Destroy(container->children);
     }
 }
 
@@ -344,7 +344,7 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
 
     Container container;
     container.maxHeight = maxHeight;
-    (container.children) = *Arraylist_Create(1, sizeof(EntityID));
+    container.children = Arraylist_Create(1, sizeof(EntityID));
     Scene_Assign(scene, containerID, GUI_CONTAINER_COMPONENT_ID, &container);
     return containerID;
 }
@@ -430,8 +430,8 @@ void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object)
     Container* container = (Container*)Scene_GetComponent(scene, containerID, GUI_CONTAINER_COMPONENT_ID);
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, containerID, GUI_COMPONENT_ID);
     GUIComponent* objectGui = (GUIComponent*)Scene_GetComponent(scene, object, GUI_COMPONENT_ID);
-    Arraylist_Add(&container->children, &object);
-    EntityID id = *(EntityID*)Arraylist_Get(&container->children, 0);
+    Arraylist_Add(container->children, &object);
+    EntityID id = *(EntityID*)Arraylist_Get(container->children, 0);
     objectGui->parent = containerID;
     GUI_UpdateLayout(scene, GUI_GetRoot(scene, containerID), 50, 50);
 }
@@ -439,23 +439,34 @@ void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object)
 /*
 	Changes the whether the GUI component is shown or not. If gui component is 
 	container, will udpate all children. Will update layout tree. */
-void GUI_SetContainerShown(Scene* scene, EntityID containerID, bool shown)
+void GUI_SetShown(Scene* scene, EntityID id, bool shown)
 {
-    if (containerID == INVALID_ENTITY_INDEX) {
-        PANIC("Invalid entity id passed to setContainerShown");
-    }
-    Container* container = (Container*)Scene_GetComponent(scene, containerID, GUI_CONTAINER_COMPONENT_ID);
-    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, containerID, GUI_COMPONENT_ID);
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
     gui->shown = shown;
-    for (int i = 0; i < container->children.size; i++) {
-        EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
-        GUIComponent* childGUI = (GUIComponent*)Scene_GetComponent(scene, childID, GUI_COMPONENT_ID);
-        childGUI->shown = shown;
-        if (Scene_EntityHasComponents(scene, childID, GUI_CONTAINER_COMPONENT_ID)) {
-            GUI_SetContainerShown(scene, childID, shown);
+
+    if (Scene_EntityHasComponents(scene, id, GUI_CONTAINER_COMPONENT_ID)) {
+        Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
+        for (int i = 0; i < container->children->size; i++) {
+            EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
+            GUIComponent* childGUI = (GUIComponent*)Scene_GetComponent(scene, childID, GUI_COMPONENT_ID);
+            childGUI->shown = shown;
+            if (Scene_EntityHasComponents(scene, childID, GUI_CONTAINER_COMPONENT_ID)) {
+                GUI_SetShown(scene, childID, shown);
+            }
         }
     }
-    GUI_UpdateLayout(scene, GUI_GetRoot(scene, containerID), 0, 0);
+
+    GUI_UpdateLayout(scene, GUI_GetRoot(scene, id), 0, 0);
+}
+
+/*
+	Centers a container around the center of the screen, plus an offset */
+void GUI_CenterElementAt(Scene* scene, EntityID id, int x, int y)
+{
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+    gui->pos.x = g->width / 2 - gui->width / 2 + x;
+    gui->pos.y = g->height / 2 - gui->height / 2 + y;
+    GUI_UpdateLayout(scene, GUI_GetRoot(scene, id), gui->pos.x, gui->pos.y);
 }
 
 /*
@@ -477,8 +488,8 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector placement = { 0, 0 }; // Offset from containers top-left corner, where children will be placed.
         if (Scene_EntityHasComponents(scene, id, GUI_CENTERED_COMPONENT_ID)) {
-            for (int i = 0; i < container->children.size; i++) {
-                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+            for (int i = 0; i < container->children->size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
                 Vector newSize = GUI_UpdateLayout(scene, childID, 0, 0);
                 if (newSize.x != -1) {
                     size.x = max(size.x, newSize.x);
@@ -486,15 +497,15 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
                 }
             }
             // Size is now defined
-            for (int i = 0; i < container->children.size; i++) {
-                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+            for (int i = 0; i < container->children->size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
                 Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
                 GUI_UpdateLayout(scene, childID, gui->pos.x + size.x / 2 - newSize.x / 2, gui->pos.y + placement.y);
                 placement.y += newSize.y + GUI_PADDING;
             }
         } else {
-            for (int i = 0; i < container->children.size; i++) {
-                EntityID childID = *(EntityID*)Arraylist_Get(&container->children, i);
+            for (int i = 0; i < container->children->size; i++) {
+                EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
                 Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
                 if (newSize.x != -1) {
                     if (placement.y + newSize.y > container->maxHeight) {

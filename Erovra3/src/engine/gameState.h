@@ -54,6 +54,7 @@ struct game* g;
 
 void Game_Init(char* windowName, int width, int height);
 void Game_PushScene(Scene*);
+/* Make sure to return immediately after calling this function! */
 void Game_PopScene(int numScenes);
 void Game_Run();
 void Game_PollInput();

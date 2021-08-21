@@ -3,6 +3,12 @@
 
 #include "../engine/scene.h"
 
-Scene* Pause_Init(Scene* mScene);
+enum pauseState {
+	PAUSE,
+	VICTORY,
+	DEFEAT
+};
+
+Scene* Pause_Init(Scene* mScene, enum pauseState s);
 
 #endif

@@ -42,9 +42,11 @@ struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(s
     retval->update = update;
     retval->render = render;
     retval->destructor = destructor;
+    retval->valid = true;
 
     for (int i = 0; i < MAX_COMPONENTS; i++) {
         retval->lookupTable[i] = INVALID_COMPONENT_ID;
+        retval->components[i] = NULL;
     }
 
     initComponents(retval);
@@ -62,6 +64,7 @@ void Scene_Destroy(struct scene* scene)
     if (scene->destructor) {
         scene->destructor(scene);
     }
+    scene->valid = false;
     for (int i = 0; i < scene->numComponents; i++) {
         if (scene->components[i] != NULL) {
             Arraylist_Destroy(scene->components[i]);
@@ -76,6 +79,9 @@ void Scene_Destroy(struct scene* scene)
 /*	Takes in a global component key, and maps it to a free ComponentID for this particular scene. */
 void Scene_RegisterComponent(struct scene* scene, ComponentKey globalKey, size_t componentSize)
 {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    }
     for (int i = 0; i < MAX_COMPONENTS; i++) {
         if (scene->lookupTable[i] == INVALID_COMPONENT_ID) {
             scene->lookupTable[i] = globalKey;
@@ -94,7 +100,9 @@ void Scene_RegisterComponent(struct scene* scene, ComponentKey globalKey, size_t
 void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
-    if (getIndex(id) == INVALID_ENTITY_INDEX) {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (getIndex(id) == INVALID_ENTITY_INDEX) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
         PANIC("Invalid entity index");
@@ -123,7 +131,9 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKe
 	Entities are gauranteed to have a clear component mask. */
 EntityID Scene_NewEntity(struct scene* scene)
 {
-    if (scene->entities->size > MAX_ENTITIES) {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (scene->entities->size > MAX_ENTITIES) {
         PANIC("Entity overflow");
     }
 
@@ -158,7 +168,9 @@ EntityID Scene_NewEntity(struct scene* scene)
 void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void* componentData)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
-    if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
         PANIC("Invalid entity index");
@@ -182,7 +194,9 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void
 void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
-    if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
         PANIC("Invalid entity index");
     } else if (componentID >= MAX_COMPONENTS || componentID < 0) {
         PANIC("Invalid entity index");
@@ -201,6 +215,9 @@ void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 	call, though, has no effect. */
 void Scene_MarkPurged(struct scene* scene, EntityID id)
 {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    }
     int index = getIndex(id);
     Arraylist_Add(scene->purgedEntities, &index);
 }
@@ -248,6 +265,9 @@ const ComponentMask Scene_CreateMask(struct scene* scene, int number, ComponentK
 	Returns whether or not the entity matches a component mask */
 bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask, EntityID id)
 {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    }
     EntityIndex index = getIndex(id);
     if (index > scene->entities->size) {
         PANIC("Malformed EntityID (i: %d | v: %d)", getIndex(id), getVersion(id));
@@ -262,6 +282,9 @@ bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask,
 	Returns whether or not the entity mathces some of the components in a mask */
 bool Scene_EntityHasAnyComponents(struct scene* scene, const ComponentMask mask, EntityID id)
 {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    }
     EntityIndex index = getIndex(id);
     struct entity* entt = ARRAYLIST_GET(scene->entities, index, struct entity);
     return (entt->mask & mask) != 0;
@@ -316,6 +339,9 @@ struct entity* getEntityStruct(struct scene* scene, EntityID id)
 
 ComponentID getComponentID(struct scene* scene, ComponentKey globalKey)
 {
+    if (!scene->valid) {
+        PANIC("Scene is invalid, possibly recently destroyed.");
+    }
     for (int i = 0; i < MAX_COMPONENTS; i++) {
         if (scene->lookupTable[i] == globalKey) {
             return i;

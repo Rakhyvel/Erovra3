@@ -66,7 +66,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         50.0f, // Attack amount
         15.0f, // Attack dist
-        Scene_CreateMask(scene, 2, EXPANSION_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, EXPANSION_COMPONENT_ID, nationStruct->enemyNationFlag),
         15, // Attack time (ticks)
         &Bomb_Create,
         true

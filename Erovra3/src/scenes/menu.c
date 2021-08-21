@@ -70,12 +70,13 @@ enum state {
 enum state state;
 // Incremented by functions to asyncly get status for progress bar
 int status = 0;
-bool assetsLoaded;
-// Set by generatePreview thread, map is updated, previewTexture needs to be repainted
+// Whether or not assets are loaded. Not reset after return to menu.
+bool assetsLoaded = false;
+// Set by generatePreview thread, map is updated, previewTexture needs to be repainted. Reset on menu return.
 bool needsRepaint = false;
-// Set by generateFullTerrain, full map is generating, show progress bar
+// Set by generateFullTerrain, full map is generating, show progress bar. Reset on menu return.
 bool generating = false;
-// Set by generatedFullTerrain, full map is done, start match
+// Set by generatedFullTerrain, full map is done, start match. Reset on menu return.
 bool done = false;
 
 /*	Calculates seed based on seed text box
@@ -212,8 +213,8 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Reset slider positions */
-    seaLevel->value = 0.63f;
-    erosion->value = 0.2f;
+    seaLevel->value = 0.33f;
+    erosion->value = 0.0f;
 
     /* Randomize name */
     char randName[32];
@@ -268,22 +269,6 @@ void Menu_StartMatch(Scene* scene, EntityID id)
     camera.y = -2000;
 }
 
-/*	Shifts a GUI container relative to the position of the camera
- *
- *	@param scene	Pointer to main menu scene struct
- *	@param id		EntityID of the container to adjust
- *	@param x		X coordinate of center of GUI container
- *	@param y		Y coordinate of center of GUI container
- */
-void Menu_UpdateContainerPos(Scene* scene, EntityID id, int x, int y)
-{
-    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
-    Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
-    gui->pos.x = g->width / 2 - gui->width / 2 - camera.x + x;
-    gui->pos.y = g->height / 2 - gui->height / 2 - camera.y + y;
-    GUI_SetContainerShown(scene, id, true);
-}
-
 /*	Called every tick. Handles camera velocity and acceleration and GUI 
  *	containers positions on screen, and updates the progress bar and status
  *	text.
@@ -308,7 +293,17 @@ void Menu_Update(Scene* scene)
             // Setup a new texture, call Match_Init, start game!
             SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, fullMapSize, fullMapSize);
             paintMap(fullMapSize, map, texture);
+
+            // Reset all values to defaults before calling into Match
+            camera.x = -4000;
+            camera.y = -4000;
+            status = 0;
+            needsRepaint = false;
+            generating = false;
+            done = false;
+
             Match_Init(fullMapSize, map, texture, AIControlled->value);
+            return; // Always return after scene stack disruption!
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
             Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
@@ -358,10 +353,10 @@ void Menu_Update(Scene* scene)
     }
 
     /* Update container's position relative to camera */
-    Menu_UpdateContainerPos(scene, mainMenu, 0, 0);
-    Menu_UpdateContainerPos(scene, newGame, 2000, 0);
-    Menu_UpdateContainerPos(scene, loadingMatch, -2000, -2000);
-    Menu_UpdateContainerPos(scene, loadingAssets, -4000, -3876);
+    GUI_CenterElementAt(scene, mainMenu, -camera.x, -camera.y);
+    GUI_CenterElementAt(scene, newGame, -camera.x + 2000, -camera.y);
+    GUI_CenterElementAt(scene, loadingMatch, -camera.x - 2000, -camera.y - 2000);
+    GUI_CenterElementAt(scene, loadingAssets, -camera.x - 4000, -camera.y - 3876);
 }
 
 /*	Calls GUI draw function.
@@ -384,7 +379,6 @@ Scene* Menu_Init()
     loading = loadTexture("res/loading.png");
     loadingCircle = loadTexture("res/loadingCircle.png");
 
-    assetsLoaded = false;
     SDL_Thread* assetLoadingThread = SDL_CreateThread(loadAssets, "Load assets", scene);
     previewTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
 
@@ -393,7 +387,7 @@ Scene* Menu_Init()
     acc.y = 0;
 
     logoSpacerVel = 0;
-    logoSpacerAcc = -10;
+    logoSpacerAcc = -20;
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
@@ -409,7 +403,7 @@ Scene* Menu_Init()
     loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "You can click on units to click on them!");
     loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
 
-    logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 1050);
+    logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
 
     loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
@@ -420,7 +414,7 @@ Scene* Menu_Init()
     mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
     Scene_Assign(scene, mainMenu, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_SetBackgroundColor(scene, mainMenu, (SDL_Color) { 0, 0, 0, 0 });
-    GUI_ContainerAdd(scene, mainMenu, GUI_CreateImage(scene, (Vector) { 0, 0 }, 560, 123, logo));
+    GUI_ContainerAdd(scene, mainMenu, GUI_CreateImage(scene, (Vector) { 0, 0 }, 641, 141, logo));
     GUI_ContainerAdd(scene, mainMenu, logoSpacer);
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start New Game", 0, &Menu_GotoMapForm));
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Report a Bug", 0, NULL));

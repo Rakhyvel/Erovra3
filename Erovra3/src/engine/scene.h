@@ -33,6 +33,9 @@ typedef Uint32 EntityID; // EntitiyIndex << 16 | EntityVersion
     const ComponentMask CONCAT(mask, __LINE__) = Scene_CreateMask(scene, NUMARGS(__VA_ARGS__), __VA_ARGS__); \
     for (EntityID id = Scene_Begin(scene, CONCAT(mask, __LINE__)); Scene_End(scene, id); id = Scene_Next(scene, id, CONCAT(mask, __LINE__)))
 
+#define system_mask(scene, id, mask) \
+    for (EntityID id = Scene_Begin(scene, mask); Scene_End(scene, id); id = Scene_Next(scene, id, mask))
+
 #define Scene_EntityHasComponents(scene, id, ...) Scene_EntityHasComponentMask(scene, Scene_CreateMask(scene, NUMARGS(__VA_ARGS__), __VA_ARGS__), id)
 
 /*
@@ -60,6 +63,7 @@ typedef struct scene {
     const void (*update)(struct scene*);
     const void (*render)(struct scene*);
     const void (*destructor)(struct scene*);
+    bool valid;
 } Scene;
 
 /*

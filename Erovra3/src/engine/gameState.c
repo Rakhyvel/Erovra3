@@ -72,6 +72,7 @@ void Game_PopScene(int numScenes)
 {
     for (int i = 0; i < numScenes; i++) {
         Scene* oldScene = ARRAYLIST_POP_DEREF(g->sceneStack, Scene*);
+        printf("%p\n", oldScene);
         Scene_Destroy(oldScene);
         sceneStale = true;
     }

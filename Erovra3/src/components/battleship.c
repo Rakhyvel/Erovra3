@@ -60,7 +60,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         4.0f,
         250.0f,
-        Scene_CreateMask(scene, 2, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
         120,
         &Shell_Create,
 		false
