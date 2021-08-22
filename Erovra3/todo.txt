@@ -197,7 +197,7 @@ x Make GUI elements look better
 	x Container background colors
 	x Borders around buttons
 	x Copy Microsoft design doc
-- Add main menu
+x Add main menu
 	x Should "Swoosh" to other containers like in the old VeloCorsairs game
 	x Paramters for bulding a map
 		x Show a small preview
@@ -208,16 +208,19 @@ x Make GUI elements look better
 	x Loading bar for real terrain generation
 	x Add placeholder logo (but actually take some time on it (It likely wont be a placeholder))
 	x Loading screen for textures
-- Add pause menu
+x Add pause menu
 	x Pulled up if hit esc, no units were active, or whatever esc does later on down the line
-	x Can end match (surrender), go back to main menu (FREE MEMORY!!)
 	x Implement new hashmap system for scene
 		x Randomized global keys
 	x Add macro for Scene_HasComponents(scene, ComponentKey, ...), would be convenient
 	x Go through and change all systems to use the system keyword
-	- Add buttons to pause menu
+	x Add buttons to pause menu
 		x Put them in a container, that swooshes up and down
-		- Add defeat and victory screens
+		x Surrender button (switches to defeat state)
+		x Back to game button
+		x Main menu button (pops 2 scenes)
+		x Exit button (calls exit())
+	x Match systems that check for victory/defeat
 - Actual focus GUI menu
 	- A mini map in the corner, with ore and oil data represented
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well
@@ -228,6 +231,7 @@ x Make GUI elements look better
 	- SOUND ANY TIME AN ORDER IS GIVEN!
 	- SOUND ANY TIME AN ENTITY IS SPAWNED!
 	- sound should get quieter as it gets farther from the camera, inverse square
+	- should act as feedback, and let the user know about surroundings
 - Add particles
 	- Shell explosion particles, maybe particles on its trajectory
 - Add animations
@@ -253,6 +257,7 @@ x Make GUI elements look better
 - Defensive armament for bombers
 - Planes should originate from airfields
 - If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
+- Make the selected units the units that are rendered on top
 
 3.10.x- Multiplayer
 - Multiplayer

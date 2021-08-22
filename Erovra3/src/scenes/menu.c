@@ -269,6 +269,16 @@ void Menu_StartMatch(Scene* scene, EntityID id)
     camera.y = -2000;
 }
 
+/*	Ends the game 
+ * 
+ *	@param scene	Pointer to main menu scene struct (unused)
+ *	@param id		EntityID of button (unused) 
+ */
+void Menu_Exit(Scene* scene, EntityID id)
+{
+    exit(0);
+}
+
 /*	Called every tick. Handles camera velocity and acceleration and GUI 
  *	containers positions on screen, and updates the progress bar and status
  *	text.
@@ -418,7 +428,7 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, mainMenu, logoSpacer);
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start New Game", 0, &Menu_GotoMapForm));
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Report a Bug", 0, NULL));
-    GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, NULL));
+    GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, &Menu_Exit));
 
     newGameForm = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 450);
     GUI_SetBackgroundColor(scene, newGameForm, (SDL_Color) { 0, 0, 0, 0 });

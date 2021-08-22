@@ -537,6 +537,21 @@ void Match_DetectHit(struct scene* scene)
     }
 }
 
+void Match_CheckWin(Scene* scene)
+{
+    system(scene, id, NATION_COMPONENT_ID)
+    {
+        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+        if (!Scene_EntityHasComponents(scene, nation->capital, nation->ownNationFlag)) {
+            if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
+                Pause_Init(scene, DEFEAT);
+            } else {
+                Pause_Init(scene, VICTORY);
+			}
+        }
+    }
+}
+
 /*
 	Takes in a scene, iterates through all entites that have a motion component. 
 	Their position is then incremented by their velocity. */
@@ -831,7 +846,7 @@ void Match_EscapePressed(struct scene* scene)
             }
 
             if (!anyFlag) {
-                Pause_Init(scene, VICTORY);
+                Pause_Init(scene, PAUSE);
             }
         }
         escDown = true;
@@ -2005,6 +2020,7 @@ void Match_Update(Scene* match)
     Match_AIUpdateVisitedSpaces(match);
 
     Match_DetectHit(match);
+    Match_CheckWin(match);
 
     Match_Hover(match);
     Match_Select(match);
@@ -2456,6 +2472,10 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
+
+    for (int i = 0; i < 100; i++) {
+        Infantry_Create(match, homeVector, homeNation);
+    }
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, true);
     terrain_setBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);

@@ -17,6 +17,7 @@ bool sceneStale = false;
 	variable g by creaating an SDL window and renderer. */
 void Game_Init(char* windowName, int width, int height)
 {
+    atexit(&SDL_Quit);
     g = (struct game*)calloc(1, sizeof(struct game));
     if (!g) {
         exit(1);

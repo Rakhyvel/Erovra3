@@ -6,7 +6,10 @@
 enum pauseState {
 	PAUSE,
 	VICTORY,
-	DEFEAT
+	DEFEAT,
+	SURRENDER,
+	RETURN_MENU,
+	RETURN_MATCH
 };
 
 Scene* Pause_Init(Scene* mScene, enum pauseState s);
