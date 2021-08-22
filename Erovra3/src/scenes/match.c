@@ -150,9 +150,9 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
-    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_closestMaskDist(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y) > 2 && terrain_closestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
+    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y) > 2 && Terrain_ClosestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY]) {
         EntityID city = City_Create(scene, (Vector) { pos.x, pos.y }, nationID, false);
-        terrain_setBuildingAt(terrain, city, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, city, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_CITY];
         nation->costs[ResourceType_COIN][UnitType_CITY] *= 2;
         // nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
@@ -172,9 +172,9 @@ bool Match_BuyMine(struct scene* scene, EntityID nationID, Vector pos)
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
-    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         EntityID mine = Mine_Create(scene, (Vector) { pos.x, pos.y }, nationID);
-        terrain_setBuildingAt(terrain, mine, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, mine, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_MINE];
         nation->costs[ResourceType_COIN][UnitType_MINE] *= 2;
         nation->resources[ResourceType_POPULATION] += 1;
@@ -194,14 +194,14 @@ bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
+    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && homeCity != INVALID_ENTITY_INDEX && Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Mask is 0 error
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID factory = Factory_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
-        terrain_setBuildingAt(terrain, factory, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, factory, (int)pos.x, (int)pos.y);
         homeCityComponent->expansions[dir] = factory;
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FACTORY];
         nation->costs[ResourceType_COIN][UnitType_FACTORY] *= 2;
@@ -218,15 +218,15 @@ bool Match_BuyPort(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5 && homeCity != INVALID_ENTITY_INDEX && terrain_closestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
+    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5 && homeCity != INVALID_ENTITY_INDEX && Terrain_ClosestBuildingDist(terrain, (int)pos.x, (int)pos.y) > 0 && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID);
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID port = Port_Create(scene, (Vector) { pos.x, pos.y }, nationID, homeCity, dir);
         homeCityComponent->expansions[dir] = port;
-        terrain_setBuildingAt(terrain, port, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, port, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_PORT];
         nation->costs[ResourceType_COIN][UnitType_PORT] *= 2;
         nation->resources[ResourceType_POPULATION] += 1;
@@ -246,15 +246,15 @@ bool Match_BuyAirfield(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
+    if (homeCity != INVALID_ENTITY_INDEX && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID airfield = Airfield_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
         homeCityComponent->expansions[dir] = airfield;
-        terrain_setBuildingAt(terrain, airfield, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, airfield, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
         nation->costs[ResourceType_COIN][UnitType_AIRFIELD] *= 2;
         nation->resources[ResourceType_POPULATION] += 1;
@@ -273,15 +273,15 @@ bool Match_BuyFarm(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM]) {
+    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
+    if (homeCity != INVALID_ENTITY_INDEX && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID farm = Farm_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
         homeCityComponent->expansions[dir] = farm;
-        terrain_setBuildingAt(terrain, farm, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, farm, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FARM];
         nation->costs[ResourceType_COIN][UnitType_FARM] *= 2;
         nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
@@ -300,15 +300,15 @@ bool Match_BuyAcademy(struct scene* scene, EntityID nationID, Vector pos)
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
-    EntityID homeCity = terrain_adjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (homeCity != INVALID_ENTITY_INDEX && terrain_getHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && terrain_getBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
+    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
+    if (homeCity != INVALID_ENTITY_INDEX && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5 && Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) == INVALID_ENTITY_INDEX && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY] && nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID academy = Academy_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
         homeCityComponent->expansions[dir] = academy;
-        terrain_setBuildingAt(terrain, academy, (int)pos.x, (int)pos.y);
+        Terrain_SetBuildingAt(terrain, academy, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
         nation->costs[ResourceType_COIN][UnitType_ACADEMY] *= 2;
         nation->resources[ResourceType_POPULATION] += 1;
@@ -331,7 +331,7 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
         } else {
             angle = (float)M_PI / 2;
         }
-        if (terrain_getBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
+        if (Terrain_GetBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
             return false;
         }
     }
@@ -354,9 +354,9 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
         angle = 0;
     }
 
-    if (nation->resources[ResourceType_COIN] >= 15 && terrain_getWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
+    if (nation->resources[ResourceType_COIN] >= 15 && Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
         EntityID wall = Wall_Create(scene, cellMidPoint, angle, nationID);
-        terrain_setWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
+        Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
         nation->resources[ResourceType_COIN] -= 15;
         return true;
     } else {
@@ -500,32 +500,32 @@ void Match_DetectHit(struct scene* scene)
                 break;
                 // TODO: Add same thing for sea units
             case UnitType_WALL:
-                terrain_setWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 break;
             case UnitType_FACTORY:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 nation->factories--;
                 break;
             case UnitType_AIRFIELD:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 break;
             case UnitType_ACADEMY:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 nation->factories--;
                 break;
             case UnitType_FARM:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
                 break;
             case UnitType_PORT:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 break;
             case UnitType_MINE:
-                terrain_setBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 nation->mines--;
                 break;
@@ -563,7 +563,7 @@ void Match_Motion(struct scene* scene)
         motion->pos = Vector_Add(motion->pos, motion->vel);
         motion->dZ += motion->aZ;
         motion->z += motion->dZ;
-        float height = terrain_getHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
+        float height = Terrain_GetHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
         if (motion->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
         }
@@ -638,7 +638,7 @@ void Match_Target(struct scene* scene)
             }
 
             displacement = Vector_Add((motion->pos), (motion->vel));
-            float terrainHeight = terrain_getHeight(terrain, (int)displacement.x, (int)displacement.y);
+            float terrainHeight = Terrain_GetHeight(terrain, (int)displacement.x, (int)displacement.y);
             if (motion->z <= 0.5f) {
                 // Not in air and hit edge -> stay still
                 if (terrainHeight < motion->z || terrainHeight > motion->z + 0.5f) {
@@ -1041,7 +1041,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
                     continue;
                 bool enemySpace = nation->visitedSpaces[x + y * nation->visitedSpacesSize] <= -1;
                 // City emergency defense (drop everything and help)
-                if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] <= -10 && terrain_lineOfSight(terrain, motion->pos, point, motion->z)) {
+                if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] <= -10 && Terrain_LineOfSight(terrain, motion->pos, point, motion->z)) {
                     closestTile = point;
                     cityDefense = true;
                 }
@@ -1054,7 +1054,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
                 float score = Vector_Dist(motion->pos, point) + 64 * 5 * Vector_Dist(motion->pos, capital->pos) + (float)rand() / (float)RAND_MAX;
 
                 // Must have direct line of sight to tile center
-                if ((score < tempDist || (!foundEnemy && enemySpace)) && terrain_lineOfSight(terrain, motion->pos, point, motion->z)) {
+                if ((score < tempDist || (!foundEnemy && enemySpace)) && Terrain_LineOfSight(terrain, motion->pos, point, motion->z)) {
                     tempDist = score;
                     closestTile = point;
                     // If enemy is found
@@ -1078,7 +1078,7 @@ void Match_AIGroundUnitTarget(struct scene* scene)
             float randX = (float)(rand()) / (float)RAND_MAX - 0.5f;
             float randY = (float)(rand()) / (float)RAND_MAX - 0.5f;
             Vector newTarget = Vector_Add(motion->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
-            if (terrain_lineOfSight(terrain, motion->pos, newTarget, motion->z)) {
+            if (Terrain_LineOfSight(terrain, motion->pos, newTarget, motion->z)) {
                 if (isPatrol) {
                     patrol->patrolPoint = newTarget;
                 } else {
@@ -1133,7 +1133,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares near friendly cities
@@ -1152,14 +1152,14 @@ void Match_AIEngineerBuild(struct scene* scene)
                     if (!foundFlag)
                         continue;
 
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
 
                     tempTarget = point;
@@ -1183,7 +1183,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
                     // Find if there is a city with cabdist less than 3 tiles
@@ -1199,19 +1199,19 @@ void Match_AIEngineerBuild(struct scene* scene)
                     if (exitFlag) {
                         continue;
                     }
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
-                    float distance = Vector_Dist(motion->pos, point) - terrain_getHeight(terrain, (int)point.x, (int)point.y) * 10;
-                    float northHeight = terrain_getHeight(terrain, (int)point.x, (int)point.y - 64);
-                    float eastHeight = terrain_getHeight(terrain, (int)point.x + 64, (int)point.y);
-                    float southHeight = terrain_getHeight(terrain, (int)point.x, (int)point.y + 64);
-                    float westHeight = terrain_getHeight(terrain, (int)point.x - 64, (int)point.y);
+                    float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
+                    float northHeight = Terrain_GetHeight(terrain, (int)point.x, (int)point.y - 64);
+                    float eastHeight = Terrain_GetHeight(terrain, (int)point.x + 64, (int)point.y);
+                    float southHeight = Terrain_GetHeight(terrain, (int)point.x, (int)point.y + 64);
+                    float westHeight = Terrain_GetHeight(terrain, (int)point.x - 64, (int)point.y);
                     if ((northHeight < 0.5 && northHeight != -1) || (eastHeight < 0.5 && eastHeight != -1) || (southHeight < 0.5 && southHeight != -1) || (westHeight < 0.5 && westHeight != -1)) {
                         distance /= 10;
                     }
                     if (distance > tempDistance)
                         continue;
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
                     tempTarget = point;
                     tempDistance = distance;
@@ -1234,7 +1234,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares near friendly cities
@@ -1253,14 +1253,14 @@ void Match_AIEngineerBuild(struct scene* scene)
                     if (!foundFlag)
                         continue;
 
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
 
                     tempTarget = point;
@@ -1284,21 +1284,21 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
                     // Only go to empty squares
                     Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
-                    if (terrain_getOre(terrain, (int)point.x, (int)point.y) < 0.75)
+                    if (Terrain_GetOre(terrain, (int)point.x, (int)point.y) < 0.75)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
 
                     tempTarget = point;
@@ -1324,7 +1324,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares near friendly cities
@@ -1342,14 +1342,14 @@ void Match_AIEngineerBuild(struct scene* scene)
                     if (!foundFlag)
                         continue;
 
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
 
                     tempTarget = point;
@@ -1373,7 +1373,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares near friendly cities
@@ -1392,14 +1392,14 @@ void Match_AIEngineerBuild(struct scene* scene)
                     if (!foundFlag)
                         continue;
 
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    if (!terrain_lineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
 
                     tempTarget = point;
@@ -1423,7 +1423,7 @@ void Match_AIEngineerBuild(struct scene* scene)
             Vector tempTarget = (Vector) { -1, -1 };
             for (int y = 0; y < terrain->tileSize; y++) {
                 for (int x = 0; x < terrain->tileSize; x++) {
-                    if (terrain_getBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
+                    if (Terrain_GetBuildingAt(terrain, x * 64 + 32, y * 64 + 32) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to empty squares
@@ -1439,14 +1439,14 @@ void Match_AIEngineerBuild(struct scene* scene)
                     }
                     if (!foundFlag)
                         continue;
-                    if (terrain_getHeight(terrain, (int)point.x, (int)point.y) > 0.5)
+                    if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) > 0.5)
                         continue;
 
                     float distance = Vector_Dist(motion->pos, point);
                     if (distance > tempDistance)
                         continue;
 
-                    Vector endPoint = terrain_lineOfSightPoint(terrain, motion->pos, point);
+                    Vector endPoint = Terrain_LineOfSightPoint(terrain, motion->pos, point);
                     if (x != (int)(endPoint.x / 64) || y != (int)(endPoint.y / 64))
                         continue;
 
@@ -1911,22 +1911,22 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
 
         // Shadow
-        terrain_translate(&rect, motion->pos.x, motion->pos.y, (float)simpleRenderable->width, (float)simpleRenderable->height);
+        Terrain_Translate(&rect, motion->pos.x, motion->pos.y, (float)simpleRenderable->width, (float)simpleRenderable->height);
         Texture_Draw(simpleRenderable->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
 
         // Outline
         if (simpleRenderable->showOutline) {
             Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)255);
-            terrain_translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
+            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
             Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
         } else if (simpleRenderable->hitTicks > 0) {
             Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
-            terrain_translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
+            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
             Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
         }
 
         // Base image
-        terrain_translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->width, (float)simpleRenderable->height);
+        Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->width, (float)simpleRenderable->height);
         if (!motion->destroyOnBounds) {
             Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
         }
@@ -1972,11 +1972,11 @@ void Match_DrawVisitedSquares(Scene* scene)
             for (int y = 0; y < nation->visitedSpacesSize; y++) {
                 float urgency = nation->visitedSpaces[x + y * nation->visitedSpacesSize];
                 if (urgency < 0 && g->ticks % 60 < 30) {
-                    terrain_translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
+                    Terrain_Translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
                     SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 150);
                     SDL_RenderFillRect(g->rend, &rect);
                 } else if (urgency == 0) {
-                    terrain_translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
+                    Terrain_Translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
                     SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 50);
                     SDL_RenderFillRect(g->rend, &rect);
                 }
@@ -1989,7 +1989,7 @@ void Match_DrawBoxSelect(Scene* scene)
 {
     if (boxTL.x != -1) {
         SDL_Rect rect = { (int)boxTL.x, (int)boxTL.y, (int)boxBR.x - (int)boxTL.x, (int)boxBR.y - (int)boxTL.y };
-        terrain_translate(&rect, boxTL.x + (boxBR.x - boxTL.x) / 2, boxTL.y + (boxBR.y - boxTL.y) / 2, boxBR.x - boxTL.x, boxBR.y - boxTL.y);
+        Terrain_Translate(&rect, boxTL.x + (boxBR.x - boxTL.x) / 2, boxTL.y + (boxBR.y - boxTL.y) / 2, boxBR.x - boxTL.x, boxBR.y - boxTL.y);
         SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 50);
         SDL_RenderFillRect(g->rend, &rect);
     }
@@ -2015,7 +2015,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
 	Runs each update system, every tick */
 void Match_Update(Scene* match)
 {
-    terrain_update(terrain);
+    Terrain_Update(terrain);
 
     Match_AIUpdateVisitedSpaces(match);
 
@@ -2063,7 +2063,7 @@ void Match_Update(Scene* match)
 	Runs each render system, every screen draw */
 void Match_Render(Scene* match)
 {
-    terrain_render(terrain);
+    Terrain_Render(terrain);
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match, BUILDING_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, SURFACE_LAYER_COMPONENT_ID);
@@ -2148,7 +2148,7 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
                 } else {
                     angle = (float)M_PI / 2;
                 }
-                if (terrain_getBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
+                if (Terrain_GetBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
                     continue;
                 }
             }
@@ -2171,9 +2171,9 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
                 angle = 0;
             }
 
-            if (terrain_getWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
+            if (Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
                 EntityID wall = Wall_Create(scene, cellMidPoint, angle, simpleRenderable->nation);
-                terrain_setWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
+                Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
                 nation->resources[ResourceType_COIN] -= 15;
             }
         }
@@ -2340,7 +2340,8 @@ void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 
 void Match_Destroy(Scene* scene)
 {
-    printf("Match is destoyed, %d", scene->valid);
+    GUI_Destroy(scene);
+    Terrain_Destroy(terrain);
 }
 
 /*
@@ -2348,7 +2349,7 @@ void Match_Destroy(Scene* scene)
 Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControlled)
 {
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
-    terrain = terrain_create(mapSize, map, texture);
+    terrain = Terrain_Create(mapSize, map, texture);
     GUI_Register(match);
     printf("Match: %p\n", match);
 
@@ -2449,17 +2450,17 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     EntityID enemyNation = Nation_Create(match, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_FLAG_COMPONENT_ID);
 
     // Create and register home city
-    Vector homeVector = findBestLocation(terrain, (Vector) { (float)terrain->size, (float)terrain->size });
-    Vector enemyVector = findBestLocation(terrain, (Vector) { 0, 0 });
+    Vector homeVector = Terrain_FindBestLocation(terrain, (Vector) { (float)terrain->size, (float)terrain->size });
+    Vector enemyVector = Terrain_FindBestLocation(terrain, (Vector) { 0, 0 });
     float largestDist = 0;
     for (int i = 0; i < terrain->tileSize * terrain->tileSize - 1; i++) {
         Vector vec1 = (Vector) { (i % terrain->tileSize) * 64.0f + 32.0f, (int)(i / terrain->tileSize) * 64.0f + 32.0f };
-        if (!terrain_isSolidSquare(terrain, vec1)) {
+        if (!Terrain_IsSolidSquare(terrain, vec1)) {
             continue;
         }
         for (int j = i + 1; j < terrain->tileSize * terrain->tileSize; j++) {
             Vector vec2 = (Vector) { (j % terrain->tileSize) * 64.0f + 32.0f, (int)(j / terrain->tileSize) * 64.0f + 32.0f };
-            if (!terrain_isSolidSquare(terrain, vec2)) {
+            if (!Terrain_IsSolidSquare(terrain, vec2)) {
                 continue;
             }
             float tempDist = Vector_Dist(vec1, vec2);
@@ -2478,12 +2479,12 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     }
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, true);
-    terrain_setBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
-    terrain_setOffset(homeVector);
+    Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
+    Terrain_SetOffset(homeVector);
 
     // Create and register enemy city
     EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, true);
-    terrain_setBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);
+    Terrain_SetBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);
 
     // Create home and enemy infantry
     EntityID homeInfantry = Engineer_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);

@@ -24,57 +24,58 @@ typedef struct gradient {
     float z; // Optional
 } Gradient;
 
-struct terrain* terrain_create(int tileSize, float* map, SDL_Texture* texture);
-void paintMap(int size, float* map, SDL_Texture* texture);
-void terrain_update(struct terrain* terrain);
-void terrain_render(struct terrain* terrain);
+struct terrain* Terrain_Create(int tileSize, float* map, SDL_Texture* texture);
+void Terrain_Destroy(struct terrain*);
+
+void Terrain_PaintMap(int size, float* map, SDL_Texture* texture);
+void Terrain_Update(struct terrain* terrain);
+void Terrain_Render(struct terrain* terrain);
 
 // Interpolations
-float terrain_linearInterpolation(int x0, float y0, int x1, float y1, float x2);
-float terrain_bilinearInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
+float Terrain_LinearInterpolation(int x0, float y0, int x1, float y1, float x2);
+float Terrain_BilinearInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
 
-float terrain_cosineInterpolation(int x0, float y0, int x1, float y1, float x2);
-float terrain_bicosineInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
+float Terrain_CosineInterpolation(int x0, float y0, int x1, float y1, float x2);
+float Terrain_BicosineInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
 
 // Height map generators
-float* terrain_generate(int mapSize, int cellSize, float amplitude, unsigned int seed);
-float* terrain_perlin(int mapSize, int cellSize, unsigned int seed, int* status);
+float* Terrain_Generate(int mapSize, int cellSize, float amplitude, unsigned int seed);
+float* Terrain_Perlin(int mapSize, int cellSize, unsigned int seed, int* status);
 
 // Map modifications
-void terrain_normalize(float* map, int mapSize);
-void terrain_erode(int size, float* map, float intensity, int* status);
+void Terrain_Normalize(float* map, int mapSize);
+void Terrain_Erode(int size, float* map, float intensity, int* status);
 
 // Some map functions
-float terrain_getHeight(struct terrain*, int x, int y);
-void terrain_setOffset(struct vector);
-Gradient terrain_getGradient(int size, float* map, float posX, float posY);
-float terrain_getZoom();
-bool terrain_lineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
-Vector terrain_lineOfSightPoint(struct terrain* terrain, Vector from, Vector to);
+float Terrain_GetHeight(struct terrain*, int x, int y);
+void Terrain_SetOffset(struct vector);
+Gradient Terrain_GetGradient(int size, float* map, float posX, float posY);
+float Terrain_GetZoom();
+bool Terrain_LineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
+Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to);
 
 // Resources
-float terrain_getOre(struct terrain*, int x, int y);
+float Terrain_GetOre(struct terrain*, int x, int y);
 
 // Building map functions
-float terrain_getHeightForBuilding(struct terrain*, int x, int y);
-EntityID terrain_getBuildingAt(struct terrain*, int x, int y);
-void terrain_setBuildingAt(struct terrain*, EntityID id, int x, int y);
-int terrain_closestBuildingDist(struct terrain* terrain, int x1, int y1);
-int terrain_closestMaskDist(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
-EntityID terrain_adjacentMask(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
+float Terrain_GetHeightForBuilding(struct terrain*, int x, int y);
+EntityID Terrain_GetBuildingAt(struct terrain*, int x, int y);
+void Terrain_SetBuildingAt(struct terrain*, EntityID id, int x, int y);
+int Terrain_ClosestBuildingDist(struct terrain* terrain, int x1, int y1);
+int Terrain_ClosestMaskDist(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
+EntityID Terrain_AdjacentMask(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1);
 
 // Wall functions
-EntityID terrain_getWallAt(struct terrain*, int x, int y);
-void terrain_setWallAt(struct terrain*, EntityID id, int x, int y);
+EntityID Terrain_GetWallAt(struct terrain*, int x, int y);
+void Terrain_SetWallAt(struct terrain*, EntityID id, int x, int y);
 
 // Map affine transformations
-void terrain_translate(SDL_Rect* newPos, float x, float y, float width, float height);
+void Terrain_Translate(SDL_Rect* newPos, float x, float y, float width, float height);
 struct vector Terrain_MousePos();
-struct vector terrain_translateVector(float x, float y);
 
 // Some color mod. functions
-bool terrain_isBorder(float* terrain, int width, int height, int x, int y, float z, int i);
-SDL_Color terrain_HSVtoRGB(float hue, float sat, float val);
+bool Terrain_IsBorder(float* terrain, int width, int height, int x, int y, float z, int i);
+SDL_Color Terrain_HSVtoRGB(float hue, float sat, float val);
 
-bool terrain_isSolidSquare(struct terrain* terrain, Vector point);
-struct vector findBestLocation(struct terrain* terrain, struct vector start);
+bool Terrain_IsSolidSquare(struct terrain* terrain, Vector point);
+struct vector Terrain_FindBestLocation(struct terrain* terrain, struct vector start);

@@ -119,7 +119,7 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = terrain_perlin(size, size / 4, getSeed(scene), &status);
+    map = Terrain_Perlin(size, size / 4, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
@@ -131,7 +131,7 @@ static int generatePreview(void* ptr)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
     status = 0;
     state = EROSION;
-    terrain_erode(size, map, erosion->value * 3, &status);
+    Terrain_Erode(size, map, erosion->value * 3, &status);
 
     // Set needsRepaint flag. Menu_Update() will monitor this flag and repaint texutre, and unset this flag.
     needsRepaint = 1;
@@ -154,8 +154,8 @@ static int generateFullTerrain(void* ptr)
     free(map);
     status = 0;
     state = GENERATING;
-    // pass status integer, is incremented by terrain_perlin(). Used by update function for progress bar
-    map = terrain_perlin(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
+    // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
+    map = Terrain_Perlin(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
             map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
@@ -165,8 +165,8 @@ static int generateFullTerrain(void* ptr)
     /* Erode map */
     status = 0;
     state = EROSION;
-    // pass status integer, is incremented by terrain_perlin(). Used by update function for progress bar
-    terrain_erode(fullMapSize, map, erosion->value * 3, &status);
+    // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
+    Terrain_Erode(fullMapSize, map, erosion->value * 3, &status);
 
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
     done = true;
@@ -302,7 +302,7 @@ void Menu_Update(Scene* scene)
 
             // Setup a new texture, call Match_Init, start game!
             SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, fullMapSize, fullMapSize);
-            paintMap(fullMapSize, map, texture);
+            Terrain_PaintMap(fullMapSize, map, texture);
 
             // Reset all values to defaults before calling into Match
             camera.x = -4000;
@@ -337,7 +337,7 @@ void Menu_Update(Scene* scene)
         // needsRepaint flag is called by generatePreview thread
         // Signifies that preview map is updated and the preview needs to be redrawn
         if (needsRepaint) {
-            paintMap(size, map, previewTexture);
+            Terrain_PaintMap(size, map, previewTexture);
             needsRepaint = false;
             Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
             terrain->texture = previewTexture;
@@ -399,7 +399,7 @@ Scene* Menu_Init()
     logoSpacerVel = 0;
     logoSpacerAcc = -20;
 
-    mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 3, "Small (8x8)", "Medium (16x16)", "Large (32x32)");
+    mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
     erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.5f, &Menu_ReconstructMap);
     nationNameTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", NULL);
@@ -410,7 +410,7 @@ Scene* Menu_Init()
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
     progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7f);
 
-    loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "You can click on units to click on them!");
+    loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Hint: You can click on units to click on them!");
     loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
 
     logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);

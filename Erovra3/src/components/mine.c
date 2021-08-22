@@ -56,7 +56,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        (1.0f / terrain_getOre(terrain, (int)pos.x, (int)pos.y)),
+        (1.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)),
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
