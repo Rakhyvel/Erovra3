@@ -10,8 +10,8 @@
 #include "../engine/scene.h"
 #include "../gui/font.h"
 #include "../gui/gui.h"
-#include "../terrain.h"
 #include "../util/lexicon.h"
+#include "../util/perlin.h"
 #include "match.h"
 #include <stdio.h>
 #include <string.h>
@@ -119,7 +119,7 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = Terrain_Perlin(size, size / 4, getSeed(scene), &status);
+    map = Perlin_Generate(size, size / 4, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
@@ -131,7 +131,7 @@ static int generatePreview(void* ptr)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
     status = 0;
     state = EROSION;
-    Terrain_Erode(size, map, erosion->value * 3, &status);
+    Perlin_Erode(map, size, erosion->value, &status);
 
     // Set needsRepaint flag. Menu_Update() will monitor this flag and repaint texutre, and unset this flag.
     needsRepaint = 1;
@@ -155,7 +155,7 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Terrain_Perlin(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
+    map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
             map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
@@ -166,7 +166,7 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = EROSION;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    Terrain_Erode(fullMapSize, map, erosion->value * 3, &status);
+    Perlin_Erode(map, fullMapSize, erosion->value, &status);
 
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
     done = true;
@@ -301,8 +301,6 @@ void Menu_Update(Scene* scene)
             int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
 
             // Setup a new texture, call Match_Init, start game!
-            SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, fullMapSize, fullMapSize);
-            Terrain_PaintMap(fullMapSize, map, texture);
 
             // Reset all values to defaults before calling into Match
             camera.x = -4000;
@@ -312,7 +310,7 @@ void Menu_Update(Scene* scene)
             generating = false;
             done = false;
 
-            Match_Init(fullMapSize, map, texture, AIControlled->value);
+            Match_Init(map, fullMapSize, AIControlled->value);
             return; // Always return after scene stack disruption!
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
@@ -325,11 +323,11 @@ void Menu_Update(Scene* scene)
             // Calculate progress bar max status counts based on state
             double denominator = 1;
             if (state == GENERATING) {
-                denominator = 5.0f;
+                denominator = log(fullMapSize / 64.0f) / log(2) + 4;
                 strncpy_s(label->text, 32, "Generating...", 32);
             } else if (state == EROSION) {
                 strncpy_s(label->text, 32, "Eroding...", 32);
-                denominator = (double)(fullMapSize * fullMapSize * erosion->value * 3);
+                denominator = (double)(fullMapSize * fullMapSize * erosion->value);
             }
             progress->value = (float)((double)status / denominator);
         }
@@ -337,7 +335,7 @@ void Menu_Update(Scene* scene)
         // needsRepaint flag is called by generatePreview thread
         // Signifies that preview map is updated and the preview needs to be redrawn
         if (needsRepaint) {
-            Terrain_PaintMap(size, map, previewTexture);
+            Perlin_PaintMap(map, size, previewTexture, Terrain_RealisticColor);
             needsRepaint = false;
             Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
             terrain->texture = previewTexture;
@@ -415,13 +413,13 @@ Scene* Menu_Init()
 
     logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
 
-    loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsImage);
     GUI_ContainerAdd(scene, loadingAssets, GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 204));
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsHints);
 
-    mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, mainMenu, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_SetBackgroundColor(scene, mainMenu, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateImage(scene, (Vector) { 0, 0 }, 641, 141, logo));
@@ -446,12 +444,12 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, newGameActions, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Randomize", 0, &Menu_RandomizeValues));
     GUI_ContainerAdd(scene, newGameActions, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start!", 0, &Menu_StartMatch));
 
-    newGame = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    newGame = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, newGame, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, newGame, newGameForm);
     GUI_ContainerAdd(scene, newGame, newGameActions);
 
-    loadingMatch = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    loadingMatch = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, loadingMatch, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingMatch, GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Loading match"));
     GUI_ContainerAdd(scene, loadingMatch, statusText);

@@ -150,6 +150,9 @@
     <ClCompile Include="src\scenes\pause.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\perlin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -273,6 +276,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\pause.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\perlin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

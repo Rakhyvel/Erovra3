@@ -170,18 +170,18 @@ Scene* Pause_Init(Scene* mScene, enum pauseState s)
     victoryImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 619 * 0.75, 101 * 0.75, victoryTexture);
     defeatImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 532 * 0.75, 101 * 0.75, defeatTexture);
 
-    pauseMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    pauseMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, pauseMenuContainer, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Surrender", 0, &Pause_Surrender));
     GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Settings", 0, NULL));
     GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Back to game", 0, &Pause_BackToGame));
 
-    victoryMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    victoryMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, victoryMenuContainer, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, victoryMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Main menu", 0, &Pause_BackToMenu));
     GUI_ContainerAdd(scene, victoryMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, &Pause_Exit));
 
-    defeatMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 1080);
+    defeatMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
     Scene_Assign(scene, defeatMenuContainer, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, defeatMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Main menu", 0, &Pause_BackToMenu));
     GUI_ContainerAdd(scene, defeatMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, &Pause_Exit));

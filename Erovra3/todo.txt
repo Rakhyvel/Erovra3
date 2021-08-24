@@ -224,12 +224,14 @@ x Add pause menu
 	x Match destroy
 	x Make terrain function names match naming convention
 - Actual focus GUI menu
-	- A mini map in the corner, with ore and oil data represented
+	x A mini map in the corner, with ore map represented
+		x Around 250x250 px
 	- When a soil test is done, display on the mini map the 8 surrounding tiles as well
 	- Update action button text in real time
 		- Add resources needed for each cost
 		- Gray out invalid ones, with red text as to why
 	- Units on top should be selected
+- Add nation info menu on left side
 - Add sound
 	- SOUND ANY TIME AN ORDER IS GIVEN!
 	- SOUND ANY TIME AN ENTITY IS SPAWNED!

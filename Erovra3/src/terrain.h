@@ -18,38 +18,18 @@ typedef struct terrain {
     EntityID* walls;
 } Terrain;
 
-typedef struct gradient {
-    float gradX;
-    float gradY;
-    float z; // Optional
-} Gradient;
-
 struct terrain* Terrain_Create(int tileSize, float* map, SDL_Texture* texture);
 void Terrain_Destroy(struct terrain*);
 
-void Terrain_PaintMap(int size, float* map, SDL_Texture* texture);
+SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i);
+SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i);
+
 void Terrain_Update(struct terrain* terrain);
 void Terrain_Render(struct terrain* terrain);
-
-// Interpolations
-float Terrain_LinearInterpolation(int x0, float y0, int x1, float y1, float x2);
-float Terrain_BilinearInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
-
-float Terrain_CosineInterpolation(int x0, float y0, int x1, float y1, float x2);
-float Terrain_BicosineInterpolation(int x0, int y0, int cellSize, float* map, int mapWidth, float x2, float y2);
-
-// Height map generators
-float* Terrain_Generate(int mapSize, int cellSize, float amplitude, unsigned int seed);
-float* Terrain_Perlin(int mapSize, int cellSize, unsigned int seed, int* status);
-
-// Map modifications
-void Terrain_Normalize(float* map, int mapSize);
-void Terrain_Erode(int size, float* map, float intensity, int* status);
 
 // Some map functions
 float Terrain_GetHeight(struct terrain*, int x, int y);
 void Terrain_SetOffset(struct vector);
-Gradient Terrain_GetGradient(int size, float* map, float posX, float posY);
 float Terrain_GetZoom();
 bool Terrain_LineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
 Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to);

@@ -181,6 +181,7 @@ typedef struct nation {
     EntityID capital;
     EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces;
+    bool* showOre;
     int visitedSpacesSize;
     int cities;
     int factories;

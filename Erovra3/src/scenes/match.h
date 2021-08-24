@@ -28,4 +28,4 @@ EntityID ACADEMY_READY_FOCUSED_GUI;
 EntityID ACADEMY_BUSY_FOCUSED_GUI;
 
 void Match_Render(Scene* scene);
-Scene* Match_Init(int tileSize, float* map, SDL_Texture* texture, bool AIControlled);
+Scene* Match_Init(float* map, int mapSize, bool AIControlled);

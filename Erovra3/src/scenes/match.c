@@ -32,6 +32,7 @@
 #include "../terrain.h"
 #include "../textures.h"
 #include "../util/debug.h"
+#include "../util/perlin.h"
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,10 +55,14 @@ Vector boxTL = { -1, -1 };
 Vector boxBR = { -1, -1 };
 bool selectBox = false;
 
+static bool disappear = false;
+
 static const int cityPop = 4;
 static const float taxRate = 0.25f;
 static const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
 static bool buildPorts = false;
+
+static SDL_Texture* miniMapTexture = NULL;
 
 // UTILITY FUNCTIONS
 
@@ -547,7 +552,7 @@ void Match_CheckWin(Scene* scene)
                 Pause_Init(scene, DEFEAT);
             } else {
                 Pause_Init(scene, VICTORY);
-			}
+            }
         }
     }
 }
@@ -949,27 +954,61 @@ void Match_Select(struct scene* scene)
 	is hovered, and shows its GUI. */
 void Match_Focus(struct scene* scene)
 {
+    static EntityID currShown = INVALID_ENTITY_INDEX;
+    static EntityID currFocused;
+    static EntityID currShownEntity = INVALID_ENTITY_INDEX;
+    static EntityID currFocusedEntity;
+    static int x = 0;
+
     if (g->mouseRightUp) {
         Focusable* focusableComp = NULL;
-        EntityID containerID = INVALID_ENTITY_INDEX;
+        currFocused = INVALID_ENTITY_INDEX;
+        currFocusedEntity = INVALID_ENTITY_INDEX;
+        // Search all focusable entities
         system(scene, id, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-            GUI_SetShown(scene, focusable->guiContainer, false);
-            focusable->focused = false;
+            focusable->focused = true;
             if (hoverable->isHovered) {
-                containerID = focusable->guiContainer;
+                currFocused = focusable->guiContainer;
+                currFocusedEntity = id;
                 focusableComp = focusable;
             }
         }
-
-        // Shared GUI entities may have been hidden. Show the right one here.
-        if (containerID != INVALID_ENTITY_INDEX && focusableComp != NULL) {
-            GUI_SetShown(scene, containerID, true);
+        if (currFocusedEntity != currShownEntity) {
+            disappear = true;
+        }
+        if (focusableComp != NULL) {
             focusableComp->focused = true;
         }
+    }
+
+    // Fade down/maintain down
+    if (disappear) {
+        if (x == 0) {
+            disappear = false;
+            if (currShown != INVALID_ENTITY_INDEX) {
+                GUI_SetShown(scene, currShown, false);
+            }
+            if (currFocused != INVALID_ENTITY_INDEX) {
+                GUI_SetShown(scene, currFocused, true);
+            }
+            currShown = currFocused;
+            currShownEntity = currFocusedEntity;
+        } else {
+            x--;
+        }
+    }
+    // Fade up/maintain up
+    else if (currShown != INVALID_ENTITY_INDEX) {
+        if (x < 13) {
+            x++;
+        }
+    }
+    if (currShown != INVALID_ENTITY_INDEX) {
+        GUI_UpdateLayout(scene, currShown, 252, g->height - 200 + 200.0f * pow((13 - x) / 13.0f, 2));
     }
 }
 
@@ -1800,6 +1839,9 @@ void Match_ProduceUnits(struct scene* scene)
                 if (producer->order == UnitType_INFANTRY) {
                     Infantry_Create(scene, motion->pos, simpleRenderable->nation);
                     nation->land++;
+                } else if (producer->order == UnitType_ENGINEER) {
+                    Engineer_Create(scene, motion->pos, simpleRenderable->nation);
+                    nation->land++;
                 } else if (producer->order == UnitType_CAVALRY) {
                     Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
                     nation->land++;
@@ -2011,6 +2053,28 @@ void Match_UpdateFogOfWar(struct scene* scene)
     }
 }
 
+void Match_DrawMiniMap(Scene* scene)
+{
+
+    SDL_Rect rect = { 0, g->height - 252, 252, 252 };
+    SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+    SDL_RenderFillRect(g->rend, &rect);
+    rect = (SDL_Rect) { 0, g->height - 250, 250, 250 };
+    SDL_RenderCopy(g->rend, miniMapTexture, NULL, &rect);
+    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID)
+    {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        if (simpleRenderable->hidden) {
+            continue;
+        }
+        SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 255);
+        rect = (SDL_Rect) { motion->pos.x * 250 / (16 * 64) - 3, g->height - 250 + motion->pos.y * 250 / (16 * 64) - 3, 6, 6 };
+        SDL_RenderFillRect(g->rend, &rect);
+    }
+}
+
 /*
 	Runs each update system, every tick */
 void Match_Update(Scene* match)
@@ -2073,6 +2137,7 @@ void Match_Render(Scene* match)
     Match_UpdateGUIElements(match);
     //Match_DrawVisitedSquares(match);
     Match_DrawBoxSelect(match);
+    Match_DrawMiniMap(match);
     GUI_Render(match);
 }
 
@@ -2342,13 +2407,24 @@ void Match_Destroy(Scene* scene)
 {
     GUI_Destroy(scene);
     Terrain_Destroy(terrain);
+    SDL_DestroyTexture(miniMapTexture);
+    system(scene, id, NATION_COMPONENT_ID)
+    {
+        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+        free(nation->visitedSpaces);
+        free(nation->showOre);
+    }
 }
 
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
-Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControlled)
+Scene* Match_Init(float* map, int mapSize, bool AIControlled)
 {
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
+    SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
+    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
+    miniMapTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
+    Perlin_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
     GUI_Register(match);
     printf("Match: %p\n", match);
@@ -2365,47 +2441,43 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
 
-    ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 300);
-    GUI_ContainerAdd(match, container, ENGINEER_FOCUSED_GUI);
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build City", 0, &Match_EngineerAddCity));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Mine", 0, &Match_EngineerAddMine));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Factory", 0, &Match_EngineerAddFactory));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Port", 0, &Match_EngineerAddPort));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Airfield", 0, &Match_EngineerAddAirfield));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Farm", 0, &Match_EngineerAddFarm));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Academy", 0, &Match_EngineerAddAcademy));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Wall", 0, &Match_EngineerAddWall));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Test Soil", 0, &Match_EngineerTestSoil));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
+    ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 251, 389 }, 200);
+    GUI_SetBackgroundColor(match, ENGINEER_FOCUSED_GUI, (SDL_Color) { 0, 0, 0, 120 });
+    GUI_SetBorder(match, ENGINEER_FOCUSED_GUI, 2);
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build City", 0, &Match_EngineerAddCity));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Mine", 0, &Match_EngineerAddMine));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Factory", 0, &Match_EngineerAddFactory));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Port", 0, &Match_EngineerAddPort));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Airfield", 0, &Match_EngineerAddAirfield));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Farm", 0, &Match_EngineerAddFarm));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Academy", 0, &Match_EngineerAddAcademy));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Wall", 0, &Match_EngineerAddWall));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Test Soil", 0, &Match_EngineerTestSoil));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ENGINEER_FOCUSED_GUI, false);
 
-    BUILDING_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, BUILDING_FOCUSED_GUI);
+    BUILDING_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, BUILDING_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, BUILDING_FOCUSED_GUI, false);
 
-    UNIT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, UNIT_FOCUSED_GUI);
+    UNIT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, UNIT_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, UNIT_FOCUSED_GUI, false);
 
-    ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, ACADEMY_READY_FOCUSED_GUI);
+    ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Infantry", UnitType_INFANTRY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Engineer", UnitType_ENGINEER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ACADEMY_READY_FOCUSED_GUI, false);
 
-    ACADEMY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, ACADEMY_BUSY_FOCUSED_GUI);
+    ACADEMY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetShown(match, ACADEMY_BUSY_FOCUSED_GUI, false);
 
-    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, FACTORY_READY_FOCUSED_GUI);
+    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", UnitType_CAVALRY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", UnitType_ARTILLERY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Figher", UnitType_FIGHTER, &Match_ProducerOrder));
@@ -2414,16 +2486,14 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, FACTORY_READY_FOCUSED_GUI, false);
 
-    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, FACTORY_BUSY_FOCUSED_GUI);
+    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
-    PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, PORT_READY_FOCUSED_GUI);
+    PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", 0, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Destroyer", UnitType_DESTROYER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", UnitType_CRUISER, &Match_ProducerOrder));
@@ -2432,8 +2502,7 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, PORT_READY_FOCUSED_GUI, false);
 
-    PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 1080);
-    GUI_ContainerAdd(match, container, PORT_BUSY_FOCUSED_GUI);
+    PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, orderLabel);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, timeLabel);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
@@ -2473,10 +2542,6 @@ Scene* Match_Init(int mapSize, float* map, SDL_Texture* texture, bool AIControll
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
-
-    for (int i = 0; i < 100; i++) {
-        Infantry_Create(match, homeVector, homeNation);
-    }
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
