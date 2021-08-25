@@ -122,7 +122,7 @@ void Game_Run()
             g->ticks++;
         }
 
-        if (elapsedFrames >= 16.0f && !sceneStale) { // Do not render if scene is stale
+        if (!sceneStale) { // Do not render if scene is stale
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 255);
             SDL_RenderClear(g->rend);

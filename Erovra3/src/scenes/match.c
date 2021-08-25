@@ -45,6 +45,11 @@ EntityID goldLabel;
 EntityID oreLabel;
 EntityID populationLabel;
 
+// Unit elements
+EntityID focusedGUIContainer;
+EntityID unitNameLabel;
+EntityID unitHealthBar;
+
 // Factory gui elements
 EntityID orderLabel;
 EntityID timeLabel;
@@ -55,7 +60,7 @@ Vector boxTL = { -1, -1 };
 Vector boxBR = { -1, -1 };
 bool selectBox = false;
 
-static bool disappear = false;
+bool guiChange = false;
 
 static const int cityPop = 4;
 static const float taxRate = 0.25f;
@@ -65,6 +70,75 @@ static bool buildPorts = false;
 static SDL_Texture* miniMapTexture = NULL;
 
 // UTILITY FUNCTIONS
+
+void Match_CopyUnitName(UnitType type, char* buffer)
+{
+    switch (type) {
+    case UnitType_INFANTRY:
+        strncat_s(buffer, 32, "Infantry", 32);
+        break;
+    case UnitType_CAVALRY:
+        strncat_s(buffer, 32, "Cavalry", 32);
+        break;
+    case UnitType_ARTILLERY:
+        strncat_s(buffer, 32, "Artillery", 32);
+        break;
+    case UnitType_ENGINEER:
+        strncat_s(buffer, 32, "Engineer", 32);
+        break;
+    case UnitType_CITY:
+        strncat_s(buffer, 32, "City", 32);
+        break;
+    case UnitType_MINE:
+        strncat_s(buffer, 32, "Mine", 32);
+        break;
+    case UnitType_FACTORY:
+        strncat_s(buffer, 32, "Factory", 32);
+        break;
+    case UnitType_PORT:
+        strncat_s(buffer, 32, "Port", 32);
+        break;
+    case UnitType_AIRFIELD:
+        strncat_s(buffer, 32, "Airfield", 32);
+        break;
+    case UnitType_FARM:
+        strncat_s(buffer, 32, "Farm", 32);
+        break;
+    case UnitType_ACADEMY:
+        strncat_s(buffer, 32, "Academy", 32);
+        break;
+    case UnitType_WALL:
+        strncat_s(buffer, 32, "Wall", 32);
+        break;
+    case UnitType_LANDING_CRAFT:
+        strncat_s(buffer, 32, "Landing Craft", 32);
+        break;
+    case UnitType_DESTROYER:
+        strncat_s(buffer, 32, "Destroyer", 32);
+        break;
+    case UnitType_CRUISER:
+        strncat_s(buffer, 32, "Cruiser", 32);
+        break;
+    case UnitType_BATTLESHIP:
+        strncat_s(buffer, 32, "Battleship", 32);
+        break;
+    case UnitType_AIRCRAFT_CARRIER:
+        strncat_s(buffer, 32, "Aircraft Carrier", 32);
+        break;
+    case UnitType_FIGHTER:
+        strncat_s(buffer, 32, "Fighter", 32);
+        break;
+    case UnitType_ATTACKER:
+        strncat_s(buffer, 32, "Attacker", 32);
+        break;
+    case UnitType_BOMBER:
+        strncat_s(buffer, 32, "Bomber", 32);
+        break;
+    default:
+        strncat_s(buffer, 32, "None", 32);
+        break;
+    }
+}
 
 bool Match_Collision(Scene* scene, EntityID id, Vector pos)
 {
@@ -847,7 +921,6 @@ void Match_EscapePressed(struct scene* scene)
                 Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
                 anyFlag |= focusable->focused;
                 focusable->focused = false;
-                GUI_SetShown(scene, focusable->guiContainer, false);
             }
 
             if (!anyFlag) {
@@ -942,7 +1015,6 @@ void Match_Select(struct scene* scene)
 
                 if (focusable->focused && !selectable->selected) {
                     focusable->focused = false;
-                    GUI_SetShown(scene, focusable->guiContainer, focusable->focused);
                 }
             }
         }
@@ -954,27 +1026,33 @@ void Match_Select(struct scene* scene)
 	is hovered, and shows its GUI. */
 void Match_Focus(struct scene* scene)
 {
+    static bool disappear = false;
     static EntityID currShown = INVALID_ENTITY_INDEX;
     static EntityID currFocused;
     static EntityID currShownEntity = INVALID_ENTITY_INDEX;
     static EntityID currFocusedEntity;
+    static bool focusedIsProducer = false;
+    static UnitType type;
     static int x = 0;
 
     if (g->mouseRightUp) {
+        guiChange = false;
         Focusable* focusableComp = NULL;
         currFocused = INVALID_ENTITY_INDEX;
         currFocusedEntity = INVALID_ENTITY_INDEX;
         // Search all focusable entities
-        system(scene, id, FOCUSABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-            focusable->focused = true;
+            focusable->focused = false;
             if (hoverable->isHovered) {
                 currFocused = focusable->guiContainer;
                 currFocusedEntity = id;
                 focusableComp = focusable;
+                type = unit->type;
             }
         }
         if (currFocusedEntity != currShownEntity) {
@@ -982,6 +1060,23 @@ void Match_Focus(struct scene* scene)
         }
         if (focusableComp != NULL) {
             focusableComp->focused = true;
+        }
+        if (currFocusedEntity != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, currFocusedEntity, PRODUCER_COMPONENT_ID)) {
+            focusedIsProducer = true;
+        } else {
+            focusedIsProducer = false;
+        }
+    } else if (guiChange) {
+        focusedIsProducer = false;
+        system(scene, id, FOCUSABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        {
+            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+            if (focusable->focused) {
+                currFocused = focusable->guiContainer;
+                if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
+                    focusedIsProducer = true;
+                }
+            }
         }
     }
 
@@ -997,18 +1092,34 @@ void Match_Focus(struct scene* scene)
             }
             currShown = currFocused;
             currShownEntity = currFocusedEntity;
+
+            GUI_SetShown(scene, orderLabel, focusedIsProducer);
+            GUI_SetShown(scene, timeLabel, focusedIsProducer);
+            GUI_SetShown(scene, autoReOrderRockerSwitch, focusedIsProducer);
+			
+            char buffer[32];
+            memset(buffer, 0, 32);
+            Match_CopyUnitName(type, buffer);
+            GUI_SetLabelText(scene, unitNameLabel, buffer);
         } else {
             x--;
         }
     }
     // Fade up/maintain up
     else if (currShown != INVALID_ENTITY_INDEX) {
-        if (x < 13) {
+        if (x < 12) {
             x++;
+        }
+        if (currShown != currFocused) {
+            GUI_SetShown(scene, currShown, false);
+            GUI_SetShown(scene, currFocused, true);
+            currShown = currFocused;
         }
     }
     if (currShown != INVALID_ENTITY_INDEX) {
-        GUI_UpdateLayout(scene, currShown, 252, g->height - 200 + 200.0f * pow((13 - x) / 13.0f, 2));
+        Container* gui = (Container*)Scene_GetComponent(scene, focusedGUIContainer, GUI_CONTAINER_COMPONENT_ID);
+        gui->maxWidth = g->width - 250;
+        GUI_UpdateLayout(scene, focusedGUIContainer, 252, g->height - 198 + 200.0f * pow((12 - x) / 12.0f, 2));
     }
 }
 
@@ -1878,9 +1989,8 @@ void Match_ProduceUnits(struct scene* scene)
                 if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
                     producer->order = INVALID_ENTITY_INDEX;
                     producer->repeat = false;
-                    GUI_SetShown(scene, focusable->guiContainer, false);
                     focusable->guiContainer = producer->readyGUIContainer;
-                    GUI_SetShown(scene, focusable->guiContainer, focusable->focused);
+                    guiChange = true;
                 }
             }
         }
@@ -1982,6 +2092,7 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
 	Updates produce GUI to reflect the time, order, and auto-order */
 void Match_UpdateGUIElements(struct scene* scene)
 {
+    GUI_UpdateLayout(scene, container, -1, -1);
     system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
@@ -1991,15 +2102,20 @@ void Match_UpdateGUIElements(struct scene* scene)
         GUI_SetLabelText(scene, populationLabel, "Population: %d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
     }
 
-    system(scene, focusID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    bool focusedIsProducer = false;
+    system(scene, focusID, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, focusID, FOCUSABLE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, focusID, UNIT_COMPONENT_ID);
 
-        if (focusable->focused) {
-            GUI_SetLabelText(scene, orderLabel, "Order: %d", producer->order);
+        if (focusable->focused && Scene_EntityHasComponents(scene, focusID, PRODUCER_COMPONENT_ID)) {
+            Producer* producer = (Producer*)Scene_GetComponent(scene, focusID, PRODUCER_COMPONENT_ID);
+            char buffer[32] = "Order: ";
+            Match_CopyUnitName(producer->order, buffer);
+            GUI_SetLabelText(scene, orderLabel, buffer);
             GUI_SetLabelText(scene, timeLabel, "Time remaining: %d", producer->orderTicksRemaining);
             GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
+            focusedIsProducer = true;
         }
     }
 }
@@ -2343,9 +2459,8 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
 
         if (focusable->focused && Match_PlaceOrder(scene, nation, producer, expansion, type)) {
-            GUI_SetShown(scene, focusable->guiContainer, false);
             focusable->guiContainer = producer->busyGUIContainer;
-            GUI_SetShown(scene, focusable->guiContainer, true);
+            guiChange = true;
         }
     }
 }
@@ -2379,9 +2494,8 @@ void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
             producer->orderTicksRemaining = -10;
             producer->order = -1;
             producer->repeat = false;
-            GUI_SetShown(scene, focusable->guiContainer, false);
             focusable->guiContainer = producer->readyGUIContainer;
-            GUI_SetShown(scene, focusable->guiContainer, true);
+            guiChange = true;
         }
     }
 }
@@ -2429,7 +2543,9 @@ Scene* Match_Init(float* map, int mapSize, bool AIControlled)
     GUI_Register(match);
     printf("Match: %p\n", match);
 
-    container = GUI_CreateContainer(match, (Vector) { 100, 100 }, 1080);
+    container = GUI_CreateContainer(match, (Vector) { 100, 100 }, 140, -1);
+    GUI_SetBackgroundColor(match, container, (SDL_Color) { 21, 21, 21, 180 });
+    GUI_SetBorder(match, container, 2);
 
     goldLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     oreLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
@@ -2441,43 +2557,65 @@ Scene* Match_Init(float* map, int mapSize, bool AIControlled)
     GUI_ContainerAdd(match, container, oreLabel);
     GUI_ContainerAdd(match, container, populationLabel);
 
-    ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 251, 389 }, 200);
-    GUI_SetBackgroundColor(match, ENGINEER_FOCUSED_GUI, (SDL_Color) { 0, 0, 0, 120 });
-    GUI_SetBorder(match, ENGINEER_FOCUSED_GUI, 2);
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build City", 0, &Match_EngineerAddCity));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Mine", 0, &Match_EngineerAddMine));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Factory", 0, &Match_EngineerAddFactory));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Port", 0, &Match_EngineerAddPort));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Airfield", 0, &Match_EngineerAddAirfield));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Farm", 0, &Match_EngineerAddFarm));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Academy", 0, &Match_EngineerAddAcademy));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Build Wall", 0, &Match_EngineerAddWall));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Test Soil", 0, &Match_EngineerTestSoil));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
+    unitNameLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "Lol!");
+    unitHealthBar = GUI_CreateProgressBar(match, (Vector) { 0, 0 }, 200, 1.0f);
+
+    focusedGUIContainer = GUI_CreateContainer(match, (Vector) { 251, 389 }, 140, 202);
+    GUI_SetBackgroundColor(match, focusedGUIContainer, (SDL_Color) { 21, 21, 21, 180 });
+    GUI_SetBorder(match, focusedGUIContainer, 2);
+    GUI_ContainerAdd(match, focusedGUIContainer, unitNameLabel);
+    GUI_ContainerAdd(match, focusedGUIContainer, unitHealthBar);
+    GUI_ContainerAdd(match, focusedGUIContainer, orderLabel);
+    GUI_ContainerAdd(match, focusedGUIContainer, timeLabel);
+    GUI_ContainerAdd(match, focusedGUIContainer, autoReOrderRockerSwitch);
+    GUI_ContainerAdd(match, focusedGUIContainer, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 0, 203));
+    GUI_ContainerAdd(match, focusedGUIContainer, GUI_CreateLabel(match, (Vector) { 0, 0 }, "Actions"));
+
+    ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 251, 389 }, 140, 190);
+    GUI_ContainerAdd(match, focusedGUIContainer, ENGINEER_FOCUSED_GUI);
+    GUI_SetPadding(match, ENGINEER_FOCUSED_GUI, -2);
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build City", 0, &Match_EngineerAddCity));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Mine", 0, &Match_EngineerAddMine));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Factory", 0, &Match_EngineerAddFactory));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Port", 0, &Match_EngineerAddPort));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Airfield", 0, &Match_EngineerAddAirfield));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Farm", 0, &Match_EngineerAddFarm));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Academy", 0, &Match_EngineerAddAcademy));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Build Wall", 0, &Match_EngineerAddWall));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 158, 52));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Test Soil", 0, &Match_EngineerTestSoil));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 158, 52, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ENGINEER_FOCUSED_GUI, false);
 
-    BUILDING_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
+    BUILDING_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, BUILDING_FOCUSED_GUI);
+    GUI_SetPadding(match, BUILDING_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, BUILDING_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, BUILDING_FOCUSED_GUI, false);
 
-    UNIT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
+    UNIT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, UNIT_FOCUSED_GUI);
+    GUI_SetPadding(match, UNIT_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, UNIT_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, UNIT_FOCUSED_GUI, false);
 
-    ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
+    ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, ACADEMY_READY_FOCUSED_GUI);
+    GUI_SetPadding(match, ACADEMY_READY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Infantry", UnitType_INFANTRY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Recruit Engineer", UnitType_ENGINEER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, ACADEMY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ACADEMY_READY_FOCUSED_GUI, false);
 
-    ACADEMY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
-    GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, orderLabel);
-    GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, timeLabel);
+    ACADEMY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, ACADEMY_BUSY_FOCUSED_GUI);
+    GUI_SetPadding(match, ACADEMY_BUSY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, ACADEMY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetShown(match, ACADEMY_BUSY_FOCUSED_GUI, false);
 
-    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
+    FACTORY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, FACTORY_READY_FOCUSED_GUI);
+    GUI_SetPadding(match, FACTORY_READY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cavalry", UnitType_CAVALRY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Artillery", UnitType_ARTILLERY, &Match_ProducerOrder));
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Figher", UnitType_FIGHTER, &Match_ProducerOrder));
@@ -2486,14 +2624,15 @@ Scene* Match_Init(float* map, int mapSize, bool AIControlled)
     GUI_ContainerAdd(match, FACTORY_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, FACTORY_READY_FOCUSED_GUI, false);
 
-    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, orderLabel);
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, timeLabel);
+    FACTORY_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, FACTORY_BUSY_FOCUSED_GUI);
+    GUI_SetPadding(match, FACTORY_BUSY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, FACTORY_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetShown(match, FACTORY_BUSY_FOCUSED_GUI, false);
 
-    PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
+    PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, PORT_READY_FOCUSED_GUI);
+    GUI_SetPadding(match, PORT_READY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Landing Craft", 0, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Destroyer", UnitType_DESTROYER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Build Cruiser", UnitType_CRUISER, &Match_ProducerOrder));
@@ -2502,11 +2641,10 @@ Scene* Match_Init(float* map, int mapSize, bool AIControlled)
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, PORT_READY_FOCUSED_GUI, false);
 
-    PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, -1);
-    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, orderLabel);
-    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, timeLabel);
+    PORT_BUSY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 202);
+    GUI_ContainerAdd(match, focusedGUIContainer, PORT_BUSY_FOCUSED_GUI);
+    GUI_SetPadding(match, PORT_BUSY_FOCUSED_GUI, -2);
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 150, 50, "Cancel Order", 0, &Match_ProducerCancelOrder));
-    GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, autoReOrderRockerSwitch);
     GUI_SetShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
     // Create home and enemy nations

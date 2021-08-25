@@ -124,7 +124,7 @@ typedef struct unit {
     UnitType type;
     const float defense;
     int engagedTicks;
-    char* name;
+    char name[32];
     bool stuckIn;
     bool engaged;
 } Unit;

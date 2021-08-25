@@ -19,16 +19,17 @@ EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultV
 EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture);
 EntityID GUI_CreateProgressBar(Scene* scene, Vector pos, int width, float defaultValue);
 EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height);
-EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight);
+EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxWidth, int maxHeight);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
 void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object);
-void GUI_SetShown(Scene* scene, EntityID containerID, bool shown);
-void GUI_PlaceElementAt(Scene* scene, EntityID id, int x, int y);
+void GUI_SetShown(Scene* scene, EntityID id, bool shown);
 void GUI_CenterElementAt(Scene* scene, EntityID id, int x, int y);
 Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY);
 void GUI_SetBackgroundColor(Scene* scene, EntityID id, SDL_Color color);
+void GUI_SetPadding(Scene* scene, EntityID id, int padding);
 void GUI_SetBorder(Scene* scene, EntityID id, int border);
+void GUI_SetMargin(Scene* scene, EntityID id, int margin);
 void GUI_Update(Scene* scene);
 void GUI_Render(Scene* scene);
 
@@ -38,7 +39,9 @@ typedef struct guiComponent {
     Vector pos;
     float width;
     float height;
+    int padding;
     int border;
+    int margin;
     bool shown;
     EntityID parent;
     SDL_Color backgroundColor;
@@ -110,6 +113,7 @@ ComponentKey GUI_PROGRESS_BAR_COMPONENT_ID;
 typedef struct container {
     Arraylist* children;
     int maxHeight;
+    int maxWidth;
 } Container;
 ComponentKey GUI_CONTAINER_COMPONENT_ID;
 ComponentKey GUI_CENTERED_COMPONENT_ID;

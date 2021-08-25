@@ -100,7 +100,7 @@ static int getSeed(Scene* scene)
 static int loadAssets(Scene* scene)
 {
     status = 0;
-    lexicon = Lexicon_Create("res/countryNames.txt", &status);
+    //lexicon = Lexicon_Create("res/countryNames.txt", &status);
     assetsLoaded = true;
     return 0;
 }
@@ -217,8 +217,8 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     erosion->value = 0.0f;
 
     /* Randomize name */
-    char randName[32];
-    Lexicon_GenerateWord(lexicon, randName, 10);
+    char randName[32] = "Lol";
+    //Lexicon_GenerateWord(lexicon, randName, 10);
     strncpy_s(nationName->text, 32, randName, 32);
     nationName->length = (int)strlen(randName);
 
@@ -413,13 +413,13 @@ Scene* Menu_Init()
 
     logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
 
-    loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
+    loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsImage);
     GUI_ContainerAdd(scene, loadingAssets, GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 204));
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsHints);
 
-    mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
+    mainMenu = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, mainMenu, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_SetBackgroundColor(scene, mainMenu, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateImage(scene, (Vector) { 0, 0 }, 641, 141, logo));
@@ -428,7 +428,7 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Report a Bug", 0, NULL));
     GUI_ContainerAdd(scene, mainMenu, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, &Menu_Exit));
 
-    newGameForm = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 450);
+    newGameForm = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 450);
     GUI_SetBackgroundColor(scene, newGameForm, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, newGameForm, mapSizeRadioButtons);
     GUI_ContainerAdd(scene, newGameForm, seaLevelSlider);
@@ -438,18 +438,18 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, newGameForm, AIControlledCheckBox);
     GUI_ContainerAdd(scene, newGameForm, terrainImage);
 
-    newGameActions = GUI_CreateContainer(scene, (Vector) { 0, 0 }, 51);
+    newGameActions = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 51);
     GUI_SetBackgroundColor(scene, newGameActions, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, newGameActions, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Back", 0, &Menu_Back));
     GUI_ContainerAdd(scene, newGameActions, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Randomize", 0, &Menu_RandomizeValues));
     GUI_ContainerAdd(scene, newGameActions, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Start!", 0, &Menu_StartMatch));
 
-    newGame = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
+    newGame = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, newGame, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, newGame, newGameForm);
     GUI_ContainerAdd(scene, newGame, newGameActions);
 
-    loadingMatch = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1);
+    loadingMatch = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, loadingMatch, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingMatch, GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Loading match"));
     GUI_ContainerAdd(scene, loadingMatch, statusText);

@@ -3,6 +3,7 @@
 #include "../textures.h"
 #include "bullet.h"
 #include "components.h"
+#include <string.h>
 
 /*
 	Takes in a scene and some information relevant to engineer entities, registers
@@ -54,9 +55,10 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_ENGINEER,
-        0.005f // 1-shot kill
+        0.0005f // 1-shot kill
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
+    strncpy_s(type.name, 32, "Engineer", 32);
 
     Selectable selectable = {
         false,

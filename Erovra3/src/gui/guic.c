@@ -10,8 +10,6 @@ TextureID radioUnchecked = NULL;
 TextureID radioChecked = NULL;
 TextureID check = NULL;
 
-#define GUI_PADDING 14
-
 SDL_Color backgroundColor = { 57, 63, 68, 255 };
 SDL_Color borderColor = { 133, 136, 140, 255 };
 SDL_Color hoverColor = { 255, 255, 255, 255 };
@@ -75,7 +73,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 {
     EntityID buttonID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+    int textWidth = Font_GetWidth(text) + 2 * 14;
 
     GUIComponent gui = {
         false,
@@ -83,7 +81,9 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
         pos,
         width,
         height,
+        14,
         2,
+		0,
         true,
         INVALID_ENTITY_INDEX,
     };
@@ -105,7 +105,7 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
 {
     EntityID labelID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+    int textWidth = Font_GetWidth(text);
 
     GUIComponent gui = {
         false,
@@ -113,6 +113,8 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
         pos,
         textWidth,
         16,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -130,7 +132,7 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
 {
     EntityID rockerSwitchID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text) + 2 * GUI_PADDING;
+    int textWidth = Font_GetWidth(text) + 2 * 14;
 
     GUIComponent gui = {
         false,
@@ -138,6 +140,8 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
         pos,
         textWidth,
         50,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -163,6 +167,8 @@ EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int 
         pos,
         100,
         nSelections * (32 + 12) + 16,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -197,6 +203,8 @@ EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, floa
         pos,
         width,
         16 + 6 + 24 + 6,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -223,6 +231,8 @@ EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, cha
         pos,
         width,
         32 + 6 + 16,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -251,6 +261,8 @@ EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultV
         pos,
         20 + 9 + Font_GetWidth(label),
         20,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -276,6 +288,8 @@ EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Te
         pos,
         width,
         height,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -300,7 +314,9 @@ EntityID GUI_CreateProgressBar(Scene* scene, Vector pos, int width, float defaul
         false,
         pos,
         width,
-        2,
+        6,
+        14,
+		0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -325,6 +341,8 @@ EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height)
         pos,
         width,
         height,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -337,7 +355,7 @@ EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height)
 /*
 	Creates a container, which holds other GUI components. You can give it a pos,
 	but will be overriden if added to another container*/
-EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
+EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxWidth, int maxHeight)
 {
     EntityID containerID = Scene_NewEntity(scene);
 
@@ -347,6 +365,8 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
         pos,
         0,
         0,
+        14,
+        0,
         0,
         true,
         INVALID_ENTITY_INDEX,
@@ -355,6 +375,7 @@ EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxHeight)
 
     Container container;
     container.maxHeight = maxHeight;
+    container.maxWidth = maxWidth;
     container.children = Arraylist_Create(1, sizeof(EntityID));
     Scene_Assign(scene, containerID, GUI_CONTAINER_COMPONENT_ID, &container);
     return containerID;
@@ -418,10 +439,11 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
     va_end(args);
 
     int oldWidth = gui->width;
-    int textWidth = Font_GetWidth(label->text) + 2 * GUI_PADDING;
+    int textWidth = Font_GetWidth(label->text);
     if (oldWidth != textWidth) {
         gui->width = textWidth;
-        GUI_UpdateLayout(scene, GUI_GetRoot(scene, labelID), gui->pos.x, gui->pos.y);
+        GUIComponent* root = (GUIComponent*)Scene_GetComponent(scene, GUI_GetRoot(scene, labelID), GUI_COMPONENT_ID);
+        GUI_UpdateLayout(scene, GUI_GetRoot(scene, labelID), root->pos.x, root->pos.y);
     }
 }
 
@@ -467,7 +489,8 @@ void GUI_SetShown(Scene* scene, EntityID id, bool shown)
         }
     }
 
-    GUI_UpdateLayout(scene, GUI_GetRoot(scene, id), gui->pos.x, gui->pos.y);
+    GUIComponent* root = (GUIComponent*)Scene_GetComponent(scene, GUI_GetRoot(scene, id), GUI_COMPONENT_ID);
+    GUI_UpdateLayout(scene, GUI_GetRoot(scene, id), root->pos.x, root->pos.y);
 }
 
 /*
@@ -491,31 +514,33 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
     }
 
     if (gui->parent != INVALID_ENTITY_INDEX) {
-        gui->pos.x = parentX + GUI_PADDING;
-        gui->pos.y = parentY + GUI_PADDING;
+        gui->pos.x = parentX + gui->margin + gui->padding; // Should be margin really
+        gui->pos.y = parentY + gui->margin + gui->padding;
     } else {
         gui->pos.x = parentX;
         gui->pos.y = parentY;
-	}
+    }
     if (Scene_EntityHasComponents(scene, id, GUI_CONTAINER_COMPONENT_ID)) {
-        Vector size = { GUI_PADDING, GUI_PADDING }; // The working size of the container. Will be returned.
+        Vector size = { gui->padding, gui->padding }; // The working size of the container. Will be returned.
         Container* container = (Container*)Scene_GetComponent(scene, id, GUI_CONTAINER_COMPONENT_ID);
         Vector placement = { 0, 0 }; // Offset from containers top-left corner, where children will be placed.
         if (Scene_EntityHasComponents(scene, id, GUI_CENTERED_COMPONENT_ID)) {
             for (int i = 0; i < container->children->size; i++) {
                 EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
+                GUIComponent* childGUI = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
                 Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x, gui->pos.y);
                 if (newSize.x != -1) {
-                    size.x = max(size.x, newSize.x);
-                    size.y += newSize.y + GUI_PADDING;
+                    size.x = max(size.x, newSize.x + 2 * childGUI->margin);
+                    size.y += newSize.y + gui->padding + 2 * childGUI->margin;
                 }
             }
             // Size is now defined
             for (int i = 0; i < container->children->size; i++) {
                 EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
+                GUIComponent* childGUI = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
                 Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
-                GUI_UpdateLayout(scene, childID, gui->pos.x + size.x / 2 - newSize.x / 2, gui->pos.y + placement.y);
-                placement.y += newSize.y + GUI_PADDING;
+                GUI_UpdateLayout(scene, childID, gui->pos.x + size.x / 2 - newSize.x / 2 + childGUI->margin, gui->pos.y + placement.y);
+                placement.y += newSize.y + gui->padding + 2 * childGUI->margin;
             }
         } else {
             bool overFlow = false;
@@ -523,24 +548,27 @@ Vector GUI_UpdateLayout(Scene* scene, EntityID id, float parentX, float parentY)
                 EntityID childID = *(EntityID*)Arraylist_Get(container->children, i);
                 Vector newSize = GUI_UpdateLayout(scene, childID, gui->pos.x + placement.x, gui->pos.y + placement.y);
                 if (newSize.x != -1) {
-                    if (!overFlow && container->maxHeight != -1 && placement.y + newSize.y + GUI_PADDING > container->maxHeight) {
+                    if (!overFlow && container->maxHeight != -1 && placement.y + newSize.y + gui->padding > container->maxHeight) {
                         placement.y = 0;
-                        placement.x = size.x + GUI_PADDING;
-                        size.y = max(size.y, placement.y + newSize.y + GUI_PADDING);
+                        placement.x = size.x + gui->padding;
+                        size.y = max(size.y, placement.y + newSize.y + gui->padding);
                         i--; // Repeat item
                         overFlow = true;
                     } else {
-                        placement.y += newSize.y + GUI_PADDING;
-                        size.y = max(size.y, placement.y);
+                        placement.y += newSize.y + gui->padding;
+                        size.y = max(size.y, placement.y + gui->padding);
                         overFlow = false;
                     }
                     size.x = max(size.x, placement.x + newSize.x);
                 }
             }
         }
-        size.x += 2 * GUI_PADDING;
-        size.y += GUI_PADDING;
-        gui->width = size.x;
+        size.x += 2 * gui->padding;
+        if (container->maxWidth == -1) {
+            gui->width = size.x;
+        } else {
+            gui->width = container->maxWidth;
+        }
         if (container->maxHeight == -1) {
             gui->height = size.y;
         } else {
@@ -558,10 +586,22 @@ void GUI_SetBackgroundColor(Scene* scene, EntityID id, SDL_Color color)
     gui->backgroundColor = color;
 }
 
+void GUI_SetPadding(Scene* scene, EntityID id, int padding)
+{
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+    gui->padding = padding;
+}
+
 void GUI_SetBorder(Scene* scene, EntityID id, int border)
 {
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
     gui->border = border;
+}
+
+void GUI_SetMargin(Scene* scene, EntityID id, int margin)
+{
+    GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+    gui->margin = margin;
 }
 
 // UPDATING
@@ -1024,10 +1064,14 @@ void renderBorders(Scene* scene)
     system(scene, id, GUI_COMPONENT_ID)
     {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
-        if (!gui->shown || gui->border == 0) {
+        if (!gui->shown) {
             continue;
         }
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
+        rect.x -= 1;
+        rect.y -= 1;
+        rect.w += 2;
+        rect.h += 2;
         SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
         for (int i = 0; i < gui->border; i++) {
             SDL_RenderDrawRect(g->rend, &rect);
