@@ -32,7 +32,7 @@ float Terrain_GetHeight(struct terrain*, int x, int y);
 void Terrain_SetOffset(struct vector);
 float Terrain_GetZoom();
 bool Terrain_LineOfSight(struct terrain* terrain, Vector from, Vector to, float z);
-Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to);
+Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to, float z);
 
 // Resources
 float Terrain_GetOre(struct terrain*, int x, int y);

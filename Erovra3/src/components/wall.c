@@ -24,6 +24,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
         WALL_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         WALL_SHADOW_TEXTURE_ID,
+        RenderPriorirty_BUILDING_LAYER,
 		false,
         false,
         nation,

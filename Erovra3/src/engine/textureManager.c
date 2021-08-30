@@ -57,6 +57,38 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
 }
 
 /*
+	Draws a texture given the texture id at a position. 
+	Image width and height will be originalSize * scalar. Scalars under 0 are ignored */
+void Texture_DrawCentered(TextureID textureID, int x, int y, float w, float h, float angle)
+{
+    if (textureID == INVALID_TEXTURE_ID) {
+        return;
+    }
+    SDL_Texture* texture = textures[textureID];
+    SDL_Rect dest;
+
+    int textureWidth, textureHeight;
+    SDL_QueryTexture(texture, NULL, NULL, &textureWidth, &textureHeight);
+
+    // textureWidth=width
+    // textureHeight=(w/h)
+    if (textureWidth > textureHeight) {
+        dest.x = x;
+        dest.w = w;
+        dest.h = h * textureHeight / textureWidth;
+        dest.y = (h - dest.h) / 2 + y;
+    } else {
+        dest.y = y;
+        dest.w = w * textureWidth / textureHeight;
+        dest.h = h;
+        dest.x = (w - dest.w) / 2 + x;
+    }
+    if (SDL_RenderCopyEx(g->rend, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
+        PANIC("%s", SDL_GetError());
+    }
+}
+
+/*
 	Takes in the ID of a texture, and a polygon struct and color. Draws the 
 	polygon onto the texture with the given color. Texture must be created with
 	target access. */
@@ -64,7 +96,12 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 {
     int nodes, i, j, swap;
     float nodeX[255], minY = FLT_MAX, maxY = FLT_MIN;
-    SDL_Texture* texture = textures[textureID];
+    SDL_Texture* texture;
+    if (textureID != INVALID_TEXTURE_ID) {
+        texture = textures[textureID];
+    } else {
+        texture = NULL;
+    }
 
     for (i = 0; i < polygon.numVertices; i++) {
         if (polygon.vertexY[i] < minY)
@@ -121,7 +158,12 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
 
 static void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color color)
 {
-    SDL_Texture* texture = textures[textureID];
+    SDL_Texture* texture;
+    if (textureID != INVALID_TEXTURE_ID) {
+        texture = textures[textureID];
+    } else {
+        texture = NULL;
+    }
     if (SDL_SetRenderTarget(g->rend, texture)) {
         PANIC("%s", SDL_GetError());
     }
@@ -137,7 +179,7 @@ static void drawCircle(TextureID textureID, Vector center, float radius, SDL_Col
 /*
 	Takes two points, and a thickness. Creates a polygon representing a rectangle
 	with the thickness that spans between p1 and p2. */
-static void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color color, float thickness)
+void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color color, float thickness)
 {
     if (fabs(p1.x - p2.x) < 0.001) {
         p1.x += 0.001f;
@@ -261,12 +303,12 @@ void Texture_CreateShadow(TextureID dstID, TextureID srcID)
         PANIC("Mem err");
     }
 
-	// Set src texture as target, get array of pixels
+    // Set src texture as target, get array of pixels
     SDL_SetRenderTarget(g->rend, src);
     SDL_RenderCopy(g->rend, src, NULL, NULL);
     SDL_RenderReadPixels(g->rend, NULL, srcFormat, srcPixels, srcPitch * w);
 
-	// Set dst texture as target, if src pixel non-transparent, dst pixel is shadow colored
+    // Set dst texture as target, if src pixel non-transparent, dst pixel is shadow colored
     SDL_SetRenderTarget(g->rend, dst);
     SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 0);
     SDL_RenderClear(g->rend);

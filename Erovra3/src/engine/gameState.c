@@ -195,7 +195,7 @@ static char toshifted(SDL_KeyCode c)
     case '/':
         return '?';
     }
-    return ' ';
+    return (char)128;
 }
 
 /*
@@ -250,7 +250,7 @@ void Game_PollInput()
             if (!g->keys[event.key.keysym.scancode] || g->keys[event.key.keysym.scancode] < g->ticks + 60) {
                 if (g->up || g->down || g->left || g->right) {
                     g->keyDown = 1;
-                } else if (g->shift) {
+                } else if (g->shift && event.key.keysym.scancode != SDL_SCANCODE_LSHIFT) {
                     g->keyDown = toshifted(SDL_GetKeyFromScancode(event.key.keysym.scancode));
                 } else {
                     g->keyDown = SDL_GetKeyFromScancode(event.key.keysym.scancode);

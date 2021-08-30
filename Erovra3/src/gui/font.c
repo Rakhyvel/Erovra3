@@ -2,8 +2,11 @@
 #include "font.h"
 #include "../engine/gameState.h"
 #include "../engine/textureManager.h"
+#include "../util/debug.h"
+#include "SDL_FontCache.h"
+#include <string.h>
 
-SDL_Texture* font = NULL;
+FC_Font* font = NULL;
 
 int kern16[] = {
     0, 0, 4, 4, 4, 1, 7, 16, 7, 0, 0, 6, 5, 0, 6, 5,
@@ -21,7 +24,8 @@ int kern16[] = {
 void Font_Init()
 {
     if (!font) {
-        font = loadTexture("res/font16.png");
+        font = FC_CreateFont();
+        FC_LoadFont(font, g->rend, "res/gui/Segoe UI.ttf", 16, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
     }
 }
 
@@ -29,22 +33,20 @@ void Font_Init()
 	Gets the on-screen width of text */
 int Font_GetWidth(char* str)
 {
-    int retval = 0;
-    int i = 0;
-    while (str[i] != '\0') {
-        retval += kern16[str[i]] + 1;
-        i++;
-    }
-    return retval;
+    return FC_GetWidth(font, str);
 }
 
 int Font_GetSubStringWidth(char* str, int length)
 {
-    int retval = 0;
-    for (int i = 0; i < length && str[i] != '\0'; i++) {
-        retval += kern16[str[i]] + 1;
+    char buffer[255];
+    memset(buffer, 0, 255);
+    if (length >= 255) {
+        PANIC("Um lol?");
     }
-    return retval;
+    for (int i = 0; i < length; i++) {
+        buffer[i] = str[i];
+    }
+    return FC_GetWidth(font, buffer);
 }
 
 int Font_GetCharIndex(char* str, int x)
@@ -64,6 +66,8 @@ int Font_GetCharIndex(char* str, int x)
 	Draws a string to the screen */
 void Font_DrawString(char* str, int x, int y)
 {
+    FC_Draw(font, g->rend, x, y - 4, str);
+    /*
     SDL_SetTextureColorMod(font, 255, 255, 255);
     int i = 0;
     SDL_Rect src = { 0, 0, 16, 16 };
@@ -75,4 +79,5 @@ void Font_DrawString(char* str, int x, int y)
         dest.x += kern16[str[i]] + 1;
         i++;
     }
+	*/
 }

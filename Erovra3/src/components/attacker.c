@@ -38,6 +38,7 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
         ATTACKER_TEXTURE_ID,
         ATTACKER_OUTLINE_TEXTURE_ID,
         ATTACKER_SHADOW_TEXTURE_ID,
+        RenderPriorirty_AIR_LAYER,
         false,
         false,
         nation,

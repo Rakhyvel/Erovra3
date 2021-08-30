@@ -153,7 +153,7 @@ void Arraylist_AssertSize(struct arraylist* list, int size)
     if (size > list->size) {
         list->size = size;
         list->capacity = list->size * 2;
-        void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error
+        void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error, reading address 0xFFFFFFFFFFFFFFFF??
         if (res != NULL) {
             list->data = res;
         } else {

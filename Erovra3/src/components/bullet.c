@@ -33,6 +33,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
         BULLET_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         BULLET_SHADOW_TEXTURE_ID,
+        RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,

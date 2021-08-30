@@ -49,6 +49,8 @@ void Components_Init()
     HOVERABLE_COMPONENT_ID = rand();
     SELECTABLE_COMPONENT_ID = rand();
     FOCUSABLE_COMPONENT_ID = rand();
+
+    ORDER_BUTTON_COMPONENT_ID = rand();
 }
 
 /*
@@ -100,4 +102,6 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, HOVERABLE_COMPONENT_ID, sizeof(Hoverable));
     Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));
     Scene_RegisterComponent(scene, FOCUSABLE_COMPONENT_ID, sizeof(Focusable));
+
+    Scene_RegisterComponent(scene, ORDER_BUTTON_COMPONENT_ID, sizeof(OrderButton));
 }

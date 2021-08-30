@@ -38,6 +38,7 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation)
         FIGHTER_TEXTURE_ID,
         FIGHTER_OUTLINE_TEXTURE_ID,
         FIGHTER_SHADOW_TEXTURE_ID,
+        RenderPriorirty_AIR_LAYER,
         false,
         false,
         nation,

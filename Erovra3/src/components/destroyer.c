@@ -33,6 +33,7 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
         DESTROYER_TEXTURE_ID,
         SHIP_OUTLINE_TEXTURE_ID,
         SHIP_SHADOW_TEXTURE_ID,
+        RenderPriorirty_SURFACE_LAYER,
         false,
         false,
         nation,

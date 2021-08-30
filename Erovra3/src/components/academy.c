@@ -23,6 +23,7 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         ACADEMY_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         ACADEMY_SHADOW_TEXTURE_ID,
+		RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,

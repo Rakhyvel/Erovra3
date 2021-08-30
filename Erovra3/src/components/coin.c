@@ -32,6 +32,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         INVALID_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         nation->controlFlag == AI_FLAG_COMPONENT_ID,
+        RenderPriorirty_PARTICLE_LAYER,
         false,
         nationID,
         20,

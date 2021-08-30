@@ -24,6 +24,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         FARM_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         INVALID_TEXTURE_ID,
+        RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,

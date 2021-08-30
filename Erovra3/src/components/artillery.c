@@ -32,6 +32,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         ARTILLERY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
+        RenderPriorirty_SURFACE_LAYER,
 		false,
         false,
         nation,

@@ -38,6 +38,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
         BOMBER_TEXTURE_ID,
         BOMBER_OUTLINE_TEXTURE_ID,
         BOMBER_SHADOW_TEXTURE_ID,
+        RenderPriorirty_AIR_LAYER,
         false,
         false,
         nation,

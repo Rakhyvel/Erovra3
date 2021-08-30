@@ -2,14 +2,6 @@
 #include "../engine/scene.h"
 #include "../terrain.h"
 
-enum RenderPriority {
-    RenderPriorirty_BUILDING_LAYER,
-    RenderPriorirty_SURFACE_LAYER,
-    RenderPriority_HIGH_SURFACE_LAYER,
-    RenderPriorirty_AIR_LAYER,
-    RenderPriorirty_PARTICLE_LAYER,
-};
-
 extern Terrain* terrain;
 
 EntityID ENGINEER_FOCUSED_GUI;

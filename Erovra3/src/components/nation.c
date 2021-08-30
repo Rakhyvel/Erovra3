@@ -56,6 +56,9 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
 
     nation.visitedSpacesSize = mapSize / 32 + 1;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));
+
+	nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
+
     Scene_Assign(scene, nationID, controlFlag, NULL);
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);
     Scene_Assign(scene, nationID, ownNation, NULL);

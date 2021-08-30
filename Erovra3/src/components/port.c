@@ -29,6 +29,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         PORT_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         PORT_SHADOW_TEXTURE_ID,
+        RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,

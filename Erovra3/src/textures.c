@@ -75,6 +75,10 @@ void Textures_Init()
     BOMB_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bomb.png");
     COIN_TEXTURE_ID = Texture_RegisterTexture("res/coin.png");
     ORE_TEXTURE_ID = Texture_RegisterTexture("res/ore.png");
+    POPULATION_TEXTURE_ID = Texture_RegisterTexture("res/population.png");
+
+    ARROW_TEXTURE_ID = Texture_RegisterTexture("res/arrow.png");
+    ARROW_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/arrow.png");
 
     Texture_CreateShadow(CAPITAL_SHADOW_TEXTURE_ID, CAPITAL_TEXTURE_ID);
     Texture_CreateShadow(CITY_SHADOW_TEXTURE_ID, CITY_TEXTURE_ID);
@@ -169,4 +173,7 @@ void Textures_Init()
     Texture_FillBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_CreateShadow(BOMBER_SHADOW_TEXTURE_ID, BOMBER_TEXTURE_ID);
+
+	Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 60, 120, 250, 255 });
+    Texture_CreateShadow(ARROW_SHADOW_TEXTURE_ID, ARROW_TEXTURE_ID);
 }

@@ -153,6 +153,12 @@
     <ClCompile Include="src\util\perlin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\orderButton.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui\SDL_FontCache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -279,6 +285,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\perlin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\orderButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui\SDL_FontCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

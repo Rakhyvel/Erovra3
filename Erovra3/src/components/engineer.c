@@ -34,6 +34,7 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
         ENGINEER_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
+        RenderPriorirty_SURFACE_LAYER,
         false,
         false,
         nation,

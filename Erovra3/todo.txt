@@ -226,25 +226,31 @@ x Add pause menu
 - Actual focus GUI menu
 	x A mini map in the corner, with ore map represented
 		x Around 250x250 px
-	- Make focused GUI slide up with an animation
+	x Make focused GUI slide up with an animation
 		x Nation container moves for some reason
 		x Make all focused GUIs wide
 		x Make all focused GUIs have a background and border
 		x Add general information to all units like in 2.0
 			x Add padding attribute, not a global anymore
 		x Add basic unit names
-		- Implement rockerSwitch rendering
-		! Esc does not close focus anymore
-	- Make mini map scale units correctly
-		- Bullets and projectiles shouldnt be shown on map
-	- When a soil test is done, display on the mini map the 8 surrounding tiles as well
+		x Implement rockerSwitch rendering
+		x Implement health bar
+	x Make mini map scale units correctly
+		x Bullets and projectiles shouldnt be shown on map
+	x When a soil test is done, display on the mini map the 8 surrounding tiles as well
 	- Add specialized button with icons and resources
-		- Implement SDL_TTF and the one thing that makes it easy to use it
-		- Update action button text in real time
-		- Add resources needed for each cost
-		- Gray out invalid ones, with red text as to why
-	- Units on top should be selected
-- Add nation info menu on left side
+		x Implement SDL_TTF and the one thing that makes it easy to use it
+			x Correct all text alignment
+		x Update action button text in real time
+		x Add resources needed for each cost
+		x Gray out invalid ones, with red text as to why
+		x Add resource icon lookup array
+		x Rectangular icons are displayed non-rectangularly
+	x Units on top should be selected
+	x Make producer menu show real time rather than ticks
+x Add nation info menu on left side
+	x Add icons next to resources
+	! Nation container disappears after a while?
 - Add sound
 	- SOUND ANY TIME AN ORDER IS GIVEN!
 	- SOUND ANY TIME AN ENTITY IS SPAWNED!
@@ -252,23 +258,31 @@ x Add pause menu
 	- should act as feedback, and let the user know about surroundings
 - Add particles
 	- Shell explosion particles, maybe particles on its trajectory
-- Add animations
-	- GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
+x Add animations
+	x GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
 - Add arrow when moving a unit
-	- Holding shift while selecting multiple units will change between "goto point" and "center of mass"
-		- Scrolling in center of mass mode will let you change the distance from the center each unit will go. Default is 1:1
+	x Holding shift while selecting multiple units will change between "goto point" and "center of mass"
+	x Arrows point backwards when close to units
+	- Split shadow rendering so that arrow shadows don't overlap. Maybe do this for all units?
+	- Show unit's target/patrol when hovered and nothing is selected
+	- Add a button to toggle viewing all arrows, like in Erovra 1. Place it above the focus menu
+	- Maybe a way to rotate units?
 - Add death animation
 - Give coins a shadow, arc, and change their velocity based on their path
 - Update coin sprite, ore sprite to be HD
 - Enumerate unit divisions
 - Give names to cities randomly
-- Icons embedded in text?
 - A scrolling message box for messages about the game
-- Make producer menu show real time rather than ticks
 - Give height to shells with shadow as they go to their target
 	- Shells shouldn't care about walls
 - AirToGroundBullet for attackers, descends from the ground
 - Vector graphics for every texture (no bitmaps!)
+	- Farm
+	- Mine
+	- Fix engineer icon
+	- Airfield
+	- Port
+	- Make ships good
 - Put progress bar above factories (it looks good)
 - Fix building hover (probably should be none)
 - Completely document code, with a python script to create HTML documentation for everything
@@ -276,9 +290,14 @@ x Add pause menu
 - Planes should originate from airfields
 - If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
 
+
 3.10.x- Multiplayer
-- Multiplayer
+- Order particles
+	- Originate from nation's command post
+	- Send messages to units to change their position, etc (this ties into my plans for multiplayer!)
+	- Can upgrade command post to get faster messages
 - More than one nation (Maybe an array of enemy nations)
+- Multiplayer
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 
 

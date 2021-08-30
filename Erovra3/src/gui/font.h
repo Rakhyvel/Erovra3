@@ -1,9 +1,9 @@
 #pragma once
 #include <SDL.h>
+#include "SDL_FontCache.h"
 
-extern SDL_Texture* font;
+extern FC_Font* font;
 
-extern int kern16[];
 
 void Font_Init();
 

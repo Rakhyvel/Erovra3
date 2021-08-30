@@ -5,6 +5,14 @@
 
 typedef void (*GUICallback)(struct scene*, EntityID);
 
+extern SDL_Color backgroundColor;
+extern SDL_Color borderColor;
+extern SDL_Color hoverColor;
+extern SDL_Color activeColor;
+extern SDL_Color errorColor;
+extern SDL_Color inactiveBackgroundColor;
+extern SDL_Color inactiveTextColor;
+
 void GUI_Init();
 void GUI_Register(Scene* scene);
 void GUI_Destroy(Scene* scene);
@@ -43,6 +51,7 @@ typedef struct guiComponent {
     int border;
     int margin;
     bool shown;
+    bool active;
     EntityID parent;
     SDL_Color backgroundColor;
 } GUIComponent;
@@ -52,7 +61,8 @@ typedef struct button {
     GUICallback onclick;
     int meta;
     char text[32];
-} Button;
+} Clickable;
+ComponentKey GUI_CLICKABLE_COMPONENT_ID;
 ComponentKey GUI_BUTTON_COMPONENT_ID;
 
 typedef struct label {

@@ -30,6 +30,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         MINE_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
         MINE_SHADOW_TEXTURE_ID,
+        RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,

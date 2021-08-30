@@ -40,7 +40,7 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
     retval->texture = texture;
 
     int status = 0;
-    retval->ore = Perlin_Generate(retval->tileSize, retval->tileSize / 8, 0, &status);
+    retval->ore = Perlin_Generate(retval->tileSize, retval->tileSize / 8, (unsigned)time(0), &status);
     retval->buildings = (EntityID*)calloc(retval->tileSize * retval->tileSize, sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -84,9 +84,8 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
     } else {
         // ground
         i = (i - 0.5f) * 2;
-        i = sqrtf(i);
-        i = sqrtf(i);
-        return Terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.2f) + 0.2f, 0.96f - i * 0.6f);
+        i = powf(i, 1 / 4.0f);
+        return Terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.1f) + 0.2f, 0.9f - i * 0.5f);
     }
 }
 
@@ -95,17 +94,17 @@ SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i)
     if (Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
         return Terrain_HSVtoRGB(196, 0.25, 0.85);
     } else if (i < 0.5) {
-        return Terrain_HSVtoRGB(201, 0.13, 1);
+        return Terrain_HSVtoRGB(201, 0.05, 1);
     } else if (i < 9 / 15.0) {
-        return Terrain_HSVtoRGB(126, 0.3, 0.8);
+        return Terrain_HSVtoRGB(126, 0.15, 0.8);
     } else if (i < 10 / 15.0) {
-        return Terrain_HSVtoRGB(104, 0.25, 0.825);
+        return Terrain_HSVtoRGB(104, 0.125, 0.825);
     } else if (i < 11 / 15.0) {
-        return Terrain_HSVtoRGB(82, 0.2, 0.85);
+        return Terrain_HSVtoRGB(82, 0.1, 0.85);
     } else if (i < 12 / 15.0) {
-        return Terrain_HSVtoRGB(60, 0.15, 0.875);
+        return Terrain_HSVtoRGB(60, 0.075, 0.875);
     } else {
-        return Terrain_HSVtoRGB(38, 0.1, 0.9);
+        return Terrain_HSVtoRGB(38, 0.05, 0.9);
     }
 }
 
@@ -197,7 +196,7 @@ void Terrain_SetOffset(struct vector vector)
     oldOffset.y = offset.y;
 }
 
-inline float Terrain_GetZoom()
+float Terrain_GetZoom()
 {
     return terrain_zoom;
 }
@@ -443,16 +442,22 @@ bool Terrain_LineOfSight(struct terrain* terrain, Vector from, Vector to, float 
     return true;
 }
 
-Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to)
+Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to, float z)
 {
-    Vector increment = Vector_Normalize(Vector_Sub(to, from));
+    if (to.x < 0 || to.x >= terrain->size || to.y < 0 || to.y >= terrain->size) {
+        return from;
+    }
+    if (z > 0.5) {
+        return to;
+    }
+    Vector increment = Vector_Scalar(Vector_Normalize(Vector_Sub(to, from)), 0.5);
     Vector check = { from.x, from.y };
     float distance = Vector_Dist(from, to);
-    for (int i = 0; i < distance; i += 1) {
+    for (double i = 0; i < distance; i += 0.5) {
         check.x += increment.x;
         check.y += increment.y;
         float height = Terrain_GetHeight(terrain, (int)check.x, (int)check.y);
-        if (height > 1 || height < 0.5) {
+        if (height > z + 0.5f || height < z) {
             return check;
         }
     }

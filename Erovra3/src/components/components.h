@@ -51,6 +51,14 @@ typedef enum cardinalDir {
 	W
 } CardinalDirection;
 
+enum RenderPriority {
+    RenderPriorirty_BUILDING_LAYER,
+    RenderPriorirty_SURFACE_LAYER,
+    RenderPriority_HIGH_SURFACE_LAYER,
+    RenderPriorirty_AIR_LAYER,
+    RenderPriorirty_PARTICLE_LAYER,
+};
+
 /*
 		Contains basic data for positioning an entity in the world space, as
    well as moving the entity with a target and velocity */
@@ -91,6 +99,7 @@ typedef struct simpleRenderable {
     TextureID sprite;
     TextureID spriteOutline;
     TextureID shadow;
+    enum RenderPriority priority;
     bool hidden;
     bool showOutline;
     EntityID nation;
@@ -98,7 +107,6 @@ typedef struct simpleRenderable {
     int height;
     int outlineWidth;
     int outlineHeight;
-    unsigned int priority;
     int hitTicks;
 } SimpleRenderable;
 ComponentKey SIMPLE_RENDERABLE_COMPONENT_ID;
@@ -247,3 +255,9 @@ typedef struct focusable {
     EntityID guiContainer;
 } Focusable;
 ComponentKey FOCUSABLE_COMPONENT_ID;
+
+typedef struct orderButton {
+    TextureID icon;
+    UnitType type;
+} OrderButton;
+ComponentKey ORDER_BUTTON_COMPONENT_ID;
