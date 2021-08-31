@@ -348,6 +348,31 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
     }
 }
 
+bool Perlin_IsBorder(float* terrain, int width, int height, int x, int y, float z, int i)
+{
+    bool containsWater = terrain[x + y * width] <= z;
+    if (x > 0)
+        containsWater |= terrain[x - i + y * width] <= z;
+    if (x < width - 1)
+        containsWater |= terrain[x + i + y * width] <= z;
+    if (y > 0)
+        containsWater |= terrain[x + (y - i) * width] <= z;
+    if (y < height - 1)
+        containsWater |= terrain[x + (y + i) * width] <= z;
+
+    bool containsLand = terrain[x + y * width] >= z;
+    if (x > 0)
+        containsLand |= terrain[x - i + y * width] >= z;
+    if (x < width - 1)
+        containsLand |= terrain[x + i + y * width] >= z;
+    if (y > 0)
+        containsLand |= terrain[x + (y - i) * width] >= z;
+    if (y < height - 1)
+        containsLand |= terrain[x + (y + i) * width] >= z;
+
+    return containsLand && containsWater;
+}
+
 void Perlin_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i))
 {
     Uint8* pixels = calloc(mapSize * mapSize, 4);

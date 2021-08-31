@@ -15,7 +15,7 @@ SDL_Color borderColor = { 133, 136, 140, 255 };
 SDL_Color hoverColor = { 255, 255, 255, 255 };
 SDL_Color activeColor = { 43, 154, 243, 255 };
 SDL_Color errorColor = { 205, 25, 11, 255 };
-SDL_Color inactiveBackgroundColor = { 77, 82, 88, 255 };
+SDL_Color inactiveBackgroundColor = { 77, 82, 88, 64 };
 SDL_Color inactiveTextColor = { 200, 200, 200, 255 };
 
 /*	 */

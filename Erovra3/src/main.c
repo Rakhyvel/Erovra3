@@ -51,7 +51,7 @@ Code guidelines:
 	Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Game_Init("Erovra 3.9.2", 1166, 640);
+    Game_Init("Erovra 3.9.2", 1280, 680);
     Font_Init();
     GUI_Init();
     Components_Init();

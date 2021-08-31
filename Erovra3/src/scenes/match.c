@@ -542,7 +542,7 @@ void Match_DetectHit(struct scene* scene)
                 if (Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
                     Vector displacement = Vector_Sub(motion->pos, otherMotion->pos); // From other to me
-                    health->health -= projectile->attack * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, motion->pos))) + 1.5f);
+                    health->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, motion->pos))) + 1.0f);
                 }
                 simpleRenderable->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
@@ -1779,25 +1779,21 @@ void Match_CombatantAttack(struct scene* scene)
 
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
-            if (unit->stuckIn) {
-                target->tar = target->lookat;
-            }
             unit->stuckIn = false;
             unit->engaged = false;
             continue;
         }
 
-        // Set flags indicating that unit is engaged in battle
-        if (groundUnit && combatant->faceEnemy) {
-            target->tar = motion->pos;
-        }
         Vector lead = closestPos;
-        if (combatant->faceEnemy) {
-            if (Scene_EntityHasComponents(scene, id, AI_FLAG_COMPONENT_ID)) {
+        // Set flags indicating that unit is engaged in battle
+        if (Vector_Dot(Vector_Normalize(Vector_Sub(target->tar, motion->pos)), Vector_Normalize(Vector_Sub(closestPos, motion->pos))) > 0) {
+            if (groundUnit && combatant->faceEnemy) {
                 target->tar = motion->pos;
             }
-            target->lookat = lead;
-            unit->stuckIn = true; // Useless?
+            if (combatant->faceEnemy) {
+                target->lookat = lead;
+                unit->stuckIn = true; // Useless?
+            }
         }
         unit->engaged = true;
         Match_SetUnitEngagedTicks(motion, unit);
@@ -2124,6 +2120,23 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
     }
 }
 
+double getArrowRects(Vector from, Vector to, float z, Vector centerOfMass, SDL_Rect* rect, SDL_Rect* dest, SDL_Rect* arrow)
+{
+    Terrain_Translate(rect, from.x, from.y, 0, 0);
+
+    if (g->shift) { // Offset by center of mass, calculated earlier
+        Vector distToCenter = Vector_Sub(from, centerOfMass);
+        to = Vector_Add(to, distToCenter);
+    }
+    to = Terrain_LineOfSightPoint(terrain, from, to, z);
+    double angle = Vector_Angle(Vector_Sub(from, to));
+    Terrain_Translate(arrow, to.x, to.y, 0, 0);
+    // Walk back 8 pixels
+    to = Vector_Add(to, Vector_Scalar(Vector_Normalize(Vector_Sub(from, to)), 32.0f / Terrain_GetZoom()));
+    Terrain_Translate(dest, to.x, to.y, 0, 0);
+    return angle;
+}
+
 void Match_DrawSelectionArrows(Scene* scene)
 {
     Vector centerOfMass = { 0, 0 };
@@ -2144,37 +2157,78 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
 
+        SDL_Rect rect = { 0, 0, 0, 0 };
+        SDL_Rect dest = { 0, 0, 0, 0 };
+        SDL_Rect arrow = { 0, 0, 0, 0 };
+
+        Vector to = motion->pos;
+        Vector from = motion->pos;
         if (selectable->selected) {
-            SDL_Rect rect = { 0, 0, 0, 0 };
-            SDL_Rect dest = { 0, 0, 0, 0 };
-            SDL_Rect arrow = { 0, 0, 0, 0 };
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y, 0, 0);
-
-            Vector mouse = Terrain_MousePos();
-            if (g->shift) { // Offset by center of mass, calculated earlier
-                Vector distToCenter = Vector_Sub(motion->pos, centerOfMass);
-                mouse = Vector_Add(mouse, distToCenter);
+            if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
+                Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
+                from = patrol->patrolPoint;
+            } else {
+                from = motion->pos;
             }
-            SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 255);
-            mouse = Terrain_LineOfSightPoint(terrain, motion->pos, mouse, motion->z);
-            double angle = Vector_Angle(Vector_Sub(motion->pos, mouse));
-            Terrain_Translate(&arrow, mouse.x, mouse.y, 0, 0);
-            // Walk back 8 pixels
-            mouse = Vector_Add(mouse, Vector_Scalar(Vector_Normalize(Vector_Sub(motion->pos, mouse)), 32.0f / Terrain_GetZoom()));
-            Terrain_Translate(&dest, mouse.x, mouse.y, 0, 0);
+            to = Terrain_MousePos();
+        } else if (hoverable->isHovered) {
+            if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
+                Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
+                to = patrol->patrolPoint;
+            } else {
+                to = target->tar;
+            }
+        }
 
+        if (Vector_Dist(motion->pos, to) > 1) {
+            double angle = getArrowRects(from, to, motion->z, centerOfMass, &rect, &dest, &arrow);
+            Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32, arrow.y - 32 + 2, 64, 64, angle);
+            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8);
+        }
+    }
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+
+        SDL_Rect rect = { 0, 0, 0, 0 };
+        SDL_Rect dest = { 0, 0, 0, 0 };
+        SDL_Rect arrow = { 0, 0, 0, 0 };
+
+        Vector to = motion->pos;
+        Vector from = motion->pos;
+        if (selectable->selected) {
+            if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
+                Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
+                from = patrol->patrolPoint;
+            } else {
+                from = motion->pos;
+            }
+            to = Terrain_MousePos();
+        } else if (hoverable->isHovered) {
+            if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
+                Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
+                to = patrol->patrolPoint;
+            } else {
+                to = target->tar;
+            }
+        }
+
+        if (Vector_Dist(motion->pos, to) > 1) {
+            double angle = getArrowRects(from, to, motion->z, centerOfMass, &rect, &dest, &arrow);
             int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
-
-            Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32, arrow.y - 32 + shadowZ, 64, 64, angle);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y + shadowZ }, (Vector) { rect.x, rect.y + shadowZ }, (SDL_Color) { 0, 0, 0, 64 }, 8);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y }, (Vector) { rect.x, rect.y }, (SDL_Color) { 60, 120, 250, 180 }, 8);
+            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8);
             Texture_AlphaMod(ARROW_TEXTURE_ID, 180);
-            Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32, arrow.y - 32, 64, 64, angle);
+            Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32, arrow.y - 32 - shadowZ, 64, 64, angle);
         }
     }
 }
@@ -2449,11 +2503,11 @@ void Match_Render(Scene* match)
     Terrain_Render(terrain);
     Match_UpdateFogOfWar(match);
     Match_SimpleRender(match, BUILDING_LAYER_COMPONENT_ID);
+    Match_DrawSelectionArrows(match);
     Match_SimpleRender(match, SURFACE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, AIR_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
-    Match_DrawSelectionArrows(match);
     Match_UpdateGUIElements(match);
     //Match_DrawVisitedSquares(match);
     Match_DrawBoxSelect(match);

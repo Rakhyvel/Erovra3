@@ -24,15 +24,14 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0.2f,
         true
     };
-    Scene_Assign(scene, coinID, PARTICLE_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, coinID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
         COIN_TEXTURE_ID,
         INVALID_TEXTURE_ID,
         INVALID_TEXTURE_ID,
-        nation->controlFlag == AI_FLAG_COMPONENT_ID,
         RenderPriorirty_PARTICLE_LAYER,
+        nation->controlFlag == AI_FLAG_COMPONENT_ID,
         false,
         nationID,
         20,
@@ -41,6 +40,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0
     };
     Scene_Assign(scene, coinID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+    Scene_Assign(scene, coinID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
         ResourceType_COIN

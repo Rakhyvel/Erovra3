@@ -79,20 +79,6 @@ bool generating = false;
 // Set by generatedFullTerrain, full map is done, start match. Reset on menu return.
 bool done = false;
 
-EntityID h_m;
-EntityID h_b;
-EntityID s_m;
-EntityID s_b;
-EntityID v_m;
-EntityID v_b;
-
-float _h_m;
-float _h_b;
-float _s_m;
-float _s_b;
-float _v_m;
-float _v_b;
-
 /*	Calculates seed based on seed text box
 * 
 *	@param scene	Main menu scene
@@ -293,26 +279,6 @@ void Menu_Exit(Scene* scene, EntityID id)
     exit(0);
 }
 
-SDL_Color Menu_Test(float* map, int mapSize, int x, int y, float i)
-{
-    i = i * 2 - 0.5f;
-
-    if (mapSize >= 512.0f && Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
-        return (SDL_Color) { 255, 255, 255 };
-    } else if (i < 0.5) {
-        // water
-        i *= 2;
-        i = powf(i, 11);
-        return Terrain_HSVtoRGB(214.0f - 25.0f * i, 1.0f - 0.45f * i, 0.21f + 0.6f * i + 0.1f * powf(i, 91));
-    } else {
-        // ground
-        i = (i - 0.5f) * 2;
-        i = sqrt(i);
-        i = sqrt(i);
-        return Terrain_HSVtoRGB(_h_b + _h_m * i, _s_b + _s_m * i, _v_b + _v_m * i);
-    }
-}
-
 /*	Called every tick. Handles camera velocity and acceleration and GUI 
  *	containers positions on screen, and updates the progress bar and status
  *	text.
@@ -369,13 +335,7 @@ void Menu_Update(Scene* scene)
         // needsRepaint flag is called by generatePreview thread
         // Signifies that preview map is updated and the preview needs to be redrawn
         if (needsRepaint) {
-            _h_m = ((Slider*)Scene_GetComponent(scene, h_m, GUI_SLIDER_COMPONENT_ID))->value * 360.0f;
-            _h_b = ((Slider*)Scene_GetComponent(scene, h_b, GUI_SLIDER_COMPONENT_ID))->value * 360.0f;
-            _s_m = ((Slider*)Scene_GetComponent(scene, s_m, GUI_SLIDER_COMPONENT_ID))->value;
-            _s_b = ((Slider*)Scene_GetComponent(scene, s_b, GUI_SLIDER_COMPONENT_ID))->value;
-            _v_m = -((Slider*)Scene_GetComponent(scene, v_m, GUI_SLIDER_COMPONENT_ID))->value;
-            _v_b = ((Slider*)Scene_GetComponent(scene, v_b, GUI_SLIDER_COMPONENT_ID))->value;
-            Perlin_PaintMap(map, size, previewTexture, Menu_Test);
+            Perlin_PaintMap(map, size, previewTexture, Terrain_RealisticColor);
             needsRepaint = false;
             Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
             terrain->texture = previewTexture;
@@ -453,14 +413,6 @@ Scene* Menu_Init()
 
     logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
 
-
-    h_m = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Hue slope", 0.2361f, &Menu_ReconstructMap);
-    h_b = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Hue intercept", 0.075f, &Menu_ReconstructMap);
-    s_m = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Saturation slope", 0.15f, &Menu_ReconstructMap);
-    s_b = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Saturation intercept", 0.15f, &Menu_ReconstructMap);
-    v_m = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Value slope", 0.5f, &Menu_ReconstructMap);
-    v_b = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Value intercept", 0.9f, &Menu_ReconstructMap);
-
     loadingAssets = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, loadingAssets, GUI_CENTERED_COMPONENT_ID, NULL);
     GUI_ContainerAdd(scene, loadingAssets, loadingAssetsImage);
@@ -479,17 +431,11 @@ Scene* Menu_Init()
     newGameForm = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 450);
     GUI_SetBackgroundColor(scene, newGameForm, (SDL_Color) { 0, 0, 0, 0 });
     GUI_ContainerAdd(scene, newGameForm, mapSizeRadioButtons);
-    //GUI_ContainerAdd(scene, newGameForm, seaLevelSlider);
+    GUI_ContainerAdd(scene, newGameForm, seaLevelSlider);
     GUI_ContainerAdd(scene, newGameForm, erosionSlider);
     GUI_ContainerAdd(scene, newGameForm, nationNameTextBox);
     GUI_ContainerAdd(scene, newGameForm, mapSeedTextBox);
     GUI_ContainerAdd(scene, newGameForm, AIControlledCheckBox);
-    GUI_ContainerAdd(scene, newGameForm, h_m);
-    GUI_ContainerAdd(scene, newGameForm, h_b);
-    GUI_ContainerAdd(scene, newGameForm, s_m);
-    GUI_ContainerAdd(scene, newGameForm, s_b);
-    GUI_ContainerAdd(scene, newGameForm, v_m);
-    GUI_ContainerAdd(scene, newGameForm, v_b);
     GUI_ContainerAdd(scene, newGameForm, terrainImage);
 
     newGameActions = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 51);

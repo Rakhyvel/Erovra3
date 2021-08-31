@@ -85,7 +85,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         // ground
         i = (i - 0.5f) * 2;
         i = powf(i, 1 / 4.0f);
-        return Terrain_HSVtoRGB(27.0f + 85.0f * i, (i * 0.1f) + 0.2f, 0.9f - i * 0.5f);
+        return Terrain_HSVtoRGB(38.0f + 75.0f * i, (i * 0.1f) + 0.2f, 0.9f - i * 0.5f);
     }
 }
 
@@ -95,7 +95,9 @@ SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i)
         return Terrain_HSVtoRGB(196, 0.25, 0.85);
     } else if (i < 0.5) {
         return Terrain_HSVtoRGB(201, 0.05, 1);
-    } else if (i < 9 / 15.0) {
+    } else
+        // Land
+        if (i < 9 / 15.0) {
         return Terrain_HSVtoRGB(126, 0.15, 0.8);
     } else if (i < 10 / 15.0) {
         return Terrain_HSVtoRGB(104, 0.125, 0.825);
@@ -306,13 +308,13 @@ EntityID Terrain_AdjacentMask(struct scene* scene, ComponentKey key, struct terr
             return buildingID;
         }
     }
-    if (x < terrain->tileSize) {
+    if (x < terrain->tileSize - 1) {
         EntityID buildingID = terrain->buildings[(x + 1) + y * terrain->tileSize];
         if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, key)) {
             return buildingID;
         }
     }
-    if (y < terrain->tileSize) {
+    if (y < terrain->tileSize - 1) {
         EntityID buildingID = terrain->buildings[x + (y + 1) * terrain->tileSize];
         if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, key)) {
             return buildingID;

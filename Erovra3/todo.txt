@@ -1,4 +1,4 @@
-3.0.x
+3.0.x (4/1/21)
 x remove most global variables from terrain.h, place into terrain struct
 x can move terrain around with mouse
 x Set up framework for ECS
@@ -22,7 +22,7 @@ x Add infantry entities
 x Create release zip (copy any .dll and .exe, and everything in /res)
 
 
-3.1.x- Selection API
+3.1.x- Selection API (4/9/21)
 x Add unit selection API
 	x select units by clicking on them
 	x selected units change target
@@ -37,7 +37,7 @@ x Fancy selection methods
 	x Ctrl a selected unit should deselect it
 
 
-3.2.x- Combat
+3.2.x- Combat (4/14/21)
 x Add bullet projectiles
 	x Fix bug with purging entities
 x Add attack system
@@ -51,7 +51,7 @@ x Make vector functions make sense
 x Add hit highlight
 
 
-3.3.x- UI system
+3.3.x- UI system (4/19/21)
 x Add UI system
 x Add scene stack
 x Add focusable units
@@ -62,7 +62,7 @@ x Final finishing touches
 	x Only one unit hovered at a time
 
 
-3.4.x- Buildings, resources
+3.4.x- Buildings, resources (5/4/21)
 x Infantry can build buildings
 	x Cities should need to be built with the cross space requirement
 	x Cities should add coins to nation
@@ -88,7 +88,7 @@ x Add factories
 			x Artillery splash damage
 			x Add artillery circle polygon
 	x Auto re-order
-- Defensive walls
+x Defensive walls
 	x Built by infantry (should really add engineers!)
 	x Enemy units cannot move past wall, like water
 		x Note: since they are always orthoganal, we can check the original x or y 
@@ -100,7 +100,7 @@ x Add factories
 	x Have auto-reorder update its value based on the producer
 
 
-3.5.x- AI
+3.5.x- AI (5/17/21)
 x Add time warp (?)
 x Add AI flag, player flag
 	x AI Units cannot be selected or hovered
@@ -116,10 +116,10 @@ x Resource particle component
 x Resource generator component, for cities and mines. Generates resource particle every tick
 x Cities should be producers, of infantry
 x AI shouldn't be able to produce without population
-- Factories not adjacent to a city are sometimes counted as adjacent
+x Factories not adjacent to a city are sometimes counted as adjacent
 
 
-3.6.x- Boats
+3.6.x- Boats (6/17/21)
 - Add ports
 	x Make sand color less red, more yellow
 	x Add port button for infantry
@@ -151,7 +151,7 @@ x AI shouldn't be able to produce without population
 	- Can load and unload ships with units in a bay
 
 
-3.7.x- Airplanes
+3.7.x- Airplanes (7/17/21)
 - Add airplanes (x fighter, x attacker, x bomber)
 	x Can build in factories
 	x Can select the target of a plane if player (should have to click on sprite, not shadow!)
@@ -163,21 +163,21 @@ x AI shouldn't be able to produce without population
 x Add airfields
 	x Can only build planes if the city has an airfield, will take off from city's airfield
 x Planes should scout when not engaged
-- Make AI build airfields and airplanes
+x Make AI build airfields and airplanes
 	x If no air supremacy, build fighters
 		x Should have at least 1 fighter, and then have the same number of fighters as the other team has planes
 		x Should have half of units be ground, and the rest be air
 	x Else, build attackers/bombers
 	x Fighters should target other fighters, else other planes, else scout
 	x Attackers and bombers go after their respective targets, like ground units do
-		- Bombers are seriously screwed up, no bombers yet
+		! Bombers are seriously screwed up, no bombers yet
 x Make units favor tiles closer to their capital
 x Make units stronger
 x Ground units cannot target buildings if near enemies!
 x Offset visited squares so that cities are in the center, add extra row/column, shift up/left 16 pxls
 
 
-3.8.x- Economy, general tidying up of logic
+3.8.x- Economy, general tidying up of logic (8/13/21)
 x Farms, food (?)
 	x Each farm gives 1 to pop cap
 	x Cities give default 3 to pop cap
@@ -189,7 +189,7 @@ x Cities give no population, must build farms to get more population. Farms and 
 x Bulldoze building option, disband unit option
 
 
-3.9.x- Prettify
+3.9.x- Prettify (8/16/21)
 x "Layers" to order elements on screen based on depth
 	x Use a sorted list, iterate through sorted list
 	x List item struct has priority and ID attributes
@@ -223,7 +223,7 @@ x Add pause menu
 	x Match systems that check for victory/defeat
 	x Match destroy
 	x Make terrain function names match naming convention
-- Actual focus GUI menu
+x Actual focus GUI menu
 	x A mini map in the corner, with ore map represented
 		x Around 250x250 px
 	x Make focused GUI slide up with an animation
@@ -238,7 +238,7 @@ x Add pause menu
 	x Make mini map scale units correctly
 		x Bullets and projectiles shouldnt be shown on map
 	x When a soil test is done, display on the mini map the 8 surrounding tiles as well
-	- Add specialized button with icons and resources
+	x Add specialized button with icons and resources
 		x Implement SDL_TTF and the one thing that makes it easy to use it
 			x Correct all text alignment
 		x Update action button text in real time
@@ -250,23 +250,22 @@ x Add pause menu
 	x Make producer menu show real time rather than ticks
 x Add nation info menu on left side
 	x Add icons next to resources
-	! Nation container disappears after a while?
 - Add sound
 	- SOUND ANY TIME AN ORDER IS GIVEN!
 	- SOUND ANY TIME AN ENTITY IS SPAWNED!
 	- sound should get quieter as it gets farther from the camera, inverse square
 	- should act as feedback, and let the user know about surroundings
-- Add particles
-	- Shell explosion particles, maybe particles on its trajectory
 x Add animations
 	x GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
 - Add arrow when moving a unit
 	x Holding shift while selecting multiple units will change between "goto point" and "center of mass"
 	x Arrows point backwards when close to units
-	- Split shadow rendering so that arrow shadows don't overlap. Maybe do this for all units?
-	- Show unit's target/patrol when hovered and nothing is selected
-	- Add a button to toggle viewing all arrows, like in Erovra 1. Place it above the focus menu
-	- Maybe a way to rotate units?
+	x Split shadow rendering so that arrow shadows don't overlap. Maybe do this for all units?
+	x Show unit's target/patrol when hovered and nothing is selected
+		x Airplanes need their patrol point set
+	x Ramp up flank damage
+	x Cavalry, maybe all units, should be able to retreat as long as they are moving away from enemy units, and not closer
+	- Walls do not show their cost
 - Add death animation
 - Give coins a shadow, arc, and change their velocity based on their path
 - Update coin sprite, ore sprite to be HD
@@ -283,7 +282,7 @@ x Add animations
 	- Airfield
 	- Port
 	- Make ships good
-- Put progress bar above factories (it looks good)
+- Put progress bar above factories/ports/academies (it looks good)
 - Fix building hover (probably should be none)
 - Completely document code, with a python script to create HTML documentation for everything
 - Defensive armament for bombers
@@ -299,6 +298,10 @@ x Add animations
 - More than one nation (Maybe an array of enemy nations)
 - Multiplayer
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
+- Buff factory speed if city other factories, etc with others
+- Make mines way less lucrative
+- A way to select to snap to a grid
+- A way to reploy/retreat troops, would be a bit faster, wouldn't fight back, wouldnt be able to get closer to the enemy, but a smaller radius
 
 
 ??? save game files
