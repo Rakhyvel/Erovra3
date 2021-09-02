@@ -150,7 +150,7 @@ EntityID Scene_NewEntity(struct scene* scene)
         Arraylist_Add(scene->entities, &newEntity);
         scene->numEntities++;
         for (int i = 0; i < scene->numComponents; i++) {
-            Arraylist_AssertSize(scene->components[i], 2 * index + 1);
+            Arraylist_AssertSize(scene->components[i], index + 1);
         }
         return newEntity.id;
     }

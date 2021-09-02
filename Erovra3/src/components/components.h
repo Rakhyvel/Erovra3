@@ -123,8 +123,9 @@ ComponentKey PARTICLE_LAYER_COMPONENT_ID;
 typedef struct health {
     float health;
     int aliveTicks;
-    int deathTicks;
+    int deathTicks; // tick to 16
     ComponentMask sensedProjectiles;
+    bool isDead;
 } Health;
 ComponentKey HEALTH_COMPONENT_ID;
 
@@ -133,7 +134,6 @@ typedef struct unit {
     const float defense;
     int engagedTicks;
     char name[32];
-    bool stuckIn;
     bool engaged;
 } Unit;
 ComponentKey UNIT_COMPONENT_ID;
@@ -231,6 +231,8 @@ ComponentKey EXPANSION_COMPONENT_ID;
 
 typedef struct resourceParticle {
     ResourceType type;
+    float distToCapital;
+    Vector capitalPos;
 } ResourceParticle;
 ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
 

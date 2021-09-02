@@ -265,10 +265,10 @@ x Add animations
 		x Airplanes need their patrol point set
 	x Ramp up flank damage
 	x Cavalry, maybe all units, should be able to retreat as long as they are moving away from enemy units, and not closer
-	- Walls do not show their cost
-- Add death animation
-- Give coins a shadow, arc, and change their velocity based on their path
-- Update coin sprite, ore sprite to be HD
+	x Walls do not show their cost
+x Add death animation
+	x Make turn speed nonlinear
+x Give coins a shadow, arc, and change their velocity based on their path
 - Enumerate unit divisions
 - Give names to cities randomly
 - A scrolling message box for messages about the game
@@ -282,12 +282,14 @@ x Add animations
 	- Airfield
 	- Port
 	- Make ships good
+	- Coin and ore sprites
 - Put progress bar above factories/ports/academies (it looks good)
 - Fix building hover (probably should be none)
 - Completely document code, with a python script to create HTML documentation for everything
 - Defensive armament for bombers
 - Planes should originate from airfields
 - If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
+- Arrows should have a gradient
 
 
 3.10.x- Multiplayer
@@ -302,12 +304,15 @@ x Add animations
 - Make mines way less lucrative
 - A way to select to snap to a grid
 - A way to reploy/retreat troops, would be a bit faster, wouldn't fight back, wouldnt be able to get closer to the enemy, but a smaller radius
+- Fertility, along with ore. Affects how much food a farm gives
 
 
 ??? save game files
 	- MAKE SURE that all component id's and stuff that might get serialized are final
-	- Don't be like intel
 
 
 misc.
-- terrain should be vectorized
+- Premade maps?
+- Stats at end of game?
+- Sequential movement?
+- Hints?

@@ -64,6 +64,8 @@ bool selectBox = false;
 
 bool guiChange = false;
 bool escFocus = false;
+bool instantDefocus = false;
+static EntityID currShownEntity = INVALID_ENTITY_INDEX;
 
 static const int cityPop = 4;
 static const float taxRate = 0.25f;
@@ -549,90 +551,109 @@ void Match_DetectHit(struct scene* scene)
 
                 // If dead don't bother checking the rest of the particles
                 if (health->health <= 0) {
+                    health->isDead = true;
                     break;
                 }
             }
         }
+    }
+}
 
-        if (health->health <= 0) {
-            // Cities don't get destroyed, they're captured
-            City* homeCity = NULL;
-            if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
-                Scene_MarkPurged(scene, id);
-                if (unit->type != UnitType_FARM) {
-                    nation->resources[ResourceType_POPULATION]--;
+void Match_Death(Scene* scene)
+{
+    system(scene, id, HEALTH_COMPONENT_ID)
+    {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* otherNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
+
+        if (health->isDead) {
+            if (health->deathTicks < 16) {
+                health->deathTicks += 1;
+            } else {
+                // Cities don't get destroyed, they're captured
+                City* homeCity = NULL;
+                if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
+                    Scene_MarkPurged(scene, id);
+                    if (unit->type != UnitType_FARM) {
+                        nation->resources[ResourceType_POPULATION]--;
+                    }
+                } else if (otherNation != NULL) {
+                    nation->cities--;
+                    simpleRenderable->nation = nation->enemyNation;
+                    Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
+                    Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
+                    Scene_Assign(scene, id, otherNation->ownNationFlag, NULL);
+                    health->health = 100;
+                    health->isDead = false;
+                    health->deathTicks = 0;
                 }
-            } else if (otherNation != NULL && otherSimpleRenderable != NULL) {
-                nation->cities--;
-                simpleRenderable->nation = otherSimpleRenderable->nation;
-                Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
-                Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
-                Scene_Assign(scene, id, otherNation->ownNationFlag, NULL);
-                health->health = 100;
-            }
 
-            // Remove entry for city expansion map
-            if (Scene_EntityHasComponents(scene, id, EXPANSION_COMPONENT_ID)) {
-                Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
-                homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
-                homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
-            }
-
-            if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
-                Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-                if (focusable->focused) {
-                    GUI_SetShown(scene, focusable->focused, false);
+                // Remove entry for city expansion map
+                if (Scene_EntityHasComponents(scene, id, EXPANSION_COMPONENT_ID)) {
+                    Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
+                    homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
+                    homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
                 }
-            }
 
-            // TODO: Check for focusable, hide container
+                if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
+                    Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+                    if (focusable->focused) {
+                        focusable->focused = false;
+                        instantDefocus = true;
+                    }
+                }
 
-            switch (unit->type) {
-            case UnitType_INFANTRY:
-            case UnitType_CAVALRY:
-            case UnitType_ARTILLERY:
-                nation->land--;
-                break;
-            case UnitType_FIGHTER:
-                nation->fighters--;
-            case UnitType_ATTACKER: // Intentional fallthrough
-            case UnitType_BOMBER:
-                nation->air--;
-                break;
-                // TODO: Add same thing for sea units
-            case UnitType_WALL:
-                Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                break;
-            case UnitType_FACTORY:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                nation->factories--;
-                break;
-            case UnitType_AIRFIELD:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                break;
-            case UnitType_ACADEMY:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                nation->factories--;
-                break;
-            case UnitType_FARM:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
-                break;
-            case UnitType_PORT:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                break;
-            case UnitType_MINE:
-                Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                nation->mines--;
-                break;
-            case UnitType_CITY: // Intentional fall through
-                nation->costs[ResourceType_COIN][unit->type] /= 2;
-                break;
+                switch (unit->type) {
+                case UnitType_INFANTRY:
+                case UnitType_CAVALRY:
+                case UnitType_ARTILLERY:
+                    nation->land--;
+                    break;
+                case UnitType_FIGHTER:
+                    nation->fighters--;
+                case UnitType_ATTACKER: // Intentional fallthrough
+                case UnitType_BOMBER:
+                    nation->air--;
+                    break;
+                    // TODO: Add same thing for sea units
+                case UnitType_WALL:
+                    Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    break;
+                case UnitType_FACTORY:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    nation->factories--;
+                    break;
+                case UnitType_AIRFIELD:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    break;
+                case UnitType_ACADEMY:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    nation->factories--;
+                    break;
+                case UnitType_FARM:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
+                    break;
+                case UnitType_PORT:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    break;
+                case UnitType_MINE:
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    nation->mines--;
+                    break;
+                case UnitType_CITY: // Intentional fall through
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    break;
+                }
             }
         }
     }
@@ -687,7 +708,7 @@ void Match_SetVisitedSpace(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
-        if (!unit->stuckIn && !unit->engaged && motion->speed > 0) {
+        if (!unit->engaged && motion->speed > 0) {
             nation->visitedSpaces[(int)((motion->pos.x + 16) / 32) + (int)((motion->pos.y + 16) / 32) * nation->visitedSpacesSize] = 11000;
             Match_SetAlertedTile(enemyNation, motion->pos.x, motion->pos.y, 4000);
         }
@@ -722,9 +743,9 @@ void Match_Target(struct scene* scene)
         if (diff > motion->speed / 18.0f) {
             // Not looking in direction, turn
             if (motion->angle > tempAngle) {
-                motion->angle -= motion->speed / 18.0f;
+                motion->angle -= 5.0f * powf(motion->speed, 2) / 18.0f;
             } else {
-                motion->angle += motion->speed / 18.0f;
+                motion->angle += 5.0f * powf(motion->speed, 2) / 18.0f;
             }
             motion->vel.x = 0;
             motion->vel.y = 0;
@@ -779,6 +800,19 @@ void Match_Target(struct scene* scene)
         while (motion->angle < 0) {
             motion->angle += (float)M_PI * 2.0f;
         }
+    }
+}
+
+void Match_ResourceParticleAccelerate(Scene* scene)
+{
+    system(scene, id, MOTION_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
+    {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
+
+		// vel = vel + (vel - 6|vel|) * 0.9
+		//motion->vel = Vector_Add(motion->vel, Vector_Scalar(Vector_Normalize(Vector_Sub(Vector_Scalar(Vector_Normalize(motion->vel), 6), motion->vel)), 0.1));
+        motion->z = -2.0f * pow(Vector_Dist(motion->pos, resourceParticle->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 1.0f;
     }
 }
 
@@ -1062,7 +1096,6 @@ void Match_Select(struct scene* scene)
 /*
 	When the right mouse button is released, finds the focusable entity that
 	is hovered, and shows its GUI. */
-static EntityID currShownEntity = INVALID_ENTITY_INDEX;
 void Match_Focus(struct scene* scene)
 {
     static bool disappear = false;
@@ -1073,7 +1106,7 @@ void Match_Focus(struct scene* scene)
     static UnitType type;
     static int x = 0;
 
-    if (g->mouseRightUp || escFocus) {
+    if (g->mouseRightUp || escFocus || instantDefocus) {
         guiChange = false;
         Focusable* focusableComp = NULL;
         currFocused = INVALID_ENTITY_INDEX;
@@ -1095,7 +1128,7 @@ void Match_Focus(struct scene* scene)
                 priority = simpleRenderable->priority;
             }
         }
-        if (currFocusedEntity != currShownEntity) {
+        if (currFocusedEntity != currShownEntity || instantDefocus) {
             disappear = true;
         }
         if (focusableComp != NULL) {
@@ -1123,8 +1156,9 @@ void Match_Focus(struct scene* scene)
 
     // Fade down/maintain down
     if (disappear) {
-        if (x == 0) {
+        if (x == 0 || instantDefocus) {
             disappear = false;
+            instantDefocus = false;
             if (currShown != INVALID_ENTITY_INDEX) {
                 GUI_SetShown(scene, currShown, false);
             }
@@ -1296,9 +1330,6 @@ void Match_AIEngineerBuild(struct scene* scene)
             continue;
         }
         if (unit->engaged) {
-            continue;
-        }
-        if (unit->stuckIn) {
             continue;
         }
 
@@ -1738,6 +1769,10 @@ void Match_CombatantAttack(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
+        if (health->isDead) {
+            continue;
+        }
+
         // Find closest enemy ground unit
         float closestDist = combatant->attackDist;
         EntityID closest = INVALID_ENTITY_INDEX;
@@ -1751,6 +1786,10 @@ void Match_CombatantAttack(struct scene* scene)
                 continue;
             }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            Health* otherHealth = (Motion*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
+            if (otherHealth->isDead) {
+                continue;
+            }
             float dist = Vector_Dist(otherMotion->pos, motion->pos);
 
             // Mark out enemies
@@ -1779,20 +1818,24 @@ void Match_CombatantAttack(struct scene* scene)
 
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
-            unit->stuckIn = false;
+            if (unit->engaged) {
+                target->tar = target->lookat; // This causes units to lerch forward after defeating an enemy, is honestly useful
+            }
             unit->engaged = false;
             continue;
         }
 
         Vector lead = closestPos;
         // Set flags indicating that unit is engaged in battle
-        if (Vector_Dot(Vector_Normalize(Vector_Sub(target->tar, motion->pos)), Vector_Normalize(Vector_Sub(closestPos, motion->pos))) > 0) {
+        if (Scene_EntityHasComponents(scene, id, AI_FLAG_COMPONENT_ID) || Vector_Dot(Vector_Normalize(Vector_Sub(target->tar, motion->pos)), Vector_Normalize(Vector_Sub(closestPos, motion->pos))) > 0) {
             if (groundUnit && combatant->faceEnemy) {
                 target->tar = motion->pos;
             }
             if (combatant->faceEnemy) {
+                if (Scene_EntityHasComponents(scene, id, AI_FLAG_COMPONENT_ID)) {
+                    target->tar = motion->pos;
+                }
                 target->lookat = lead;
-                unit->stuckIn = true; // Useless?
             }
         }
         unit->engaged = true;
@@ -2095,20 +2138,24 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         }
 
         int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
+        int deathTicks = !Scene_EntityHasComponents(scene, id, HEALTH_COMPONENT_ID) ? 16 : 16 - ((Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID))->deathTicks;
 
         // Shadow
+        Texture_AlphaMod(simpleRenderable->shadow, 255.0f / 16.0f * deathTicks);
         Terrain_Translate(&rect, motion->pos.x, motion->pos.y, (float)simpleRenderable->width, (float)simpleRenderable->height);
         Texture_Draw(simpleRenderable->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
 
         // Outline
-        if (simpleRenderable->showOutline) {
-            Texture_AlphaMod(simpleRenderable->spriteOutline, 255);
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
-            Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
-        } else if (simpleRenderable->hitTicks > 0) {
-            Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
-            Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+        if (deathTicks == 16) {
+            if (simpleRenderable->showOutline) {
+                Texture_AlphaMod(simpleRenderable->spriteOutline, 255);
+                Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
+                Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+            } else if (simpleRenderable->hitTicks > 0) {
+                Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
+                Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
+                Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+            }
         }
 
         // Base image
@@ -2116,14 +2163,16 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         if (!motion->destroyOnBounds) {
             Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
         }
+        Texture_AlphaMod(simpleRenderable->sprite, 255.0f / 16.0f * deathTicks);
         Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
     }
 }
 
-double getArrowRects(Vector from, Vector to, float z, Vector centerOfMass, SDL_Rect* rect, SDL_Rect* dest, SDL_Rect* arrow)
+double getArrowRects(Vector from, Vector to, float z, Vector centerOfMass, float* scale, SDL_Rect* rect, SDL_Rect* dest, SDL_Rect* arrow)
 {
-    Terrain_Translate(rect, from.x, from.y, 0, 0);
-
+    *scale = min(1, Vector_Dist(from, to) / 64.0f * Terrain_GetZoom());
+    Vector newFrom = Vector_Add(from, Vector_Scalar(Vector_Normalize(Vector_Sub(from, to)), -16.0f / Terrain_GetZoom() * (*scale)));
+    Terrain_Translate(rect, newFrom.x, newFrom.y, 0, 0);
     if (g->shift) { // Offset by center of mass, calculated earlier
         Vector distToCenter = Vector_Sub(from, centerOfMass);
         to = Vector_Add(to, distToCenter);
@@ -2131,8 +2180,8 @@ double getArrowRects(Vector from, Vector to, float z, Vector centerOfMass, SDL_R
     to = Terrain_LineOfSightPoint(terrain, from, to, z);
     double angle = Vector_Angle(Vector_Sub(from, to));
     Terrain_Translate(arrow, to.x, to.y, 0, 0);
-    // Walk back 8 pixels
-    to = Vector_Add(to, Vector_Scalar(Vector_Normalize(Vector_Sub(from, to)), 32.0f / Terrain_GetZoom()));
+    // Walk back some pixels
+    to = Vector_Add(to, Vector_Scalar(Vector_Normalize(Vector_Sub(from, to)), 31.0f / Terrain_GetZoom() * (*scale)));
     Terrain_Translate(dest, to.x, to.y, 0, 0);
     return angle;
 }
@@ -2188,9 +2237,10 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
 
         if (Vector_Dist(motion->pos, to) > 1) {
-            double angle = getArrowRects(from, to, motion->z, centerOfMass, &rect, &dest, &arrow);
-            Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32, arrow.y - 32 + 2, 64, 64, angle);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8);
+            float scale = 1.0;
+            double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
+            Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale + 2, 64 * scale, 64 * scale, angle);
+            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
         }
     }
     system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
@@ -2224,11 +2274,12 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
 
         if (Vector_Dist(motion->pos, to) > 1) {
-            double angle = getArrowRects(from, to, motion->z, centerOfMass, &rect, &dest, &arrow);
+            float scale = 1.0;
+            double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
             int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8);
+            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8 * scale);
             Texture_AlphaMod(ARROW_TEXTURE_ID, 180);
-            Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32, arrow.y - 32 - shadowZ, 64, 64, angle);
+            Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale - shadowZ, 64 * scale, 64 * scale, angle);
         }
     }
 }
@@ -2457,6 +2508,7 @@ void Match_Update(Scene* match)
     Match_AIUpdateVisitedSpaces(match);
 
     Match_DetectHit(match);
+    Match_Death(match);
     Match_CheckWin(match);
 
     Match_Hover(match);
@@ -2470,6 +2522,7 @@ void Match_Update(Scene* match)
     Match_Patrol(match);
     Match_Target(match);
     Match_Motion(match);
+    Match_ResourceParticleAccelerate(match);
     Match_ShellMove(match);
     Match_BombMove(match);
     Match_CombatantAttack(match);
@@ -2615,7 +2668,7 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
             if (Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
                 EntityID wall = Wall_Create(scene, cellMidPoint, angle, simpleRenderable->nation);
                 Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
-                nation->resources[ResourceType_COIN] -= 15;
+                nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_WALL];
             }
         }
     }
@@ -2742,7 +2795,7 @@ void Match_DestroyUnit(Scene* scene, EntityID buttonID)
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
         if (focusable->focused) {
-            health->health = -100; // Lol this basically "kills" the unit
+            health->isDead = true;
         }
     }
 }

@@ -14,13 +14,13 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
         enemyNation,
         controlFlag,
     };
-	// Initial resources
+    // Initial resources
     nation.resources[ResourceType_COIN] = 45;
     nation.resources[ResourceType_ORE] = 0;
     nation.resources[ResourceType_POPULATION] = 1;
     nation.resources[ResourceType_POPULATION_CAPACITY] = 4;
 
-	// Coin costs
+    // Coin costs
     nation.costs[ResourceType_COIN][UnitType_CITY] = 15;
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 5;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
@@ -28,6 +28,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 25;
     nation.costs[ResourceType_COIN][UnitType_FARM] = 10;
     nation.costs[ResourceType_COIN][UnitType_ACADEMY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_WALL] = 10;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ENGINEER] = 15;
     nation.costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
@@ -39,7 +40,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.costs[ResourceType_COIN][UnitType_ATTACKER] = 20;
     nation.costs[ResourceType_COIN][UnitType_BOMBER] = 400;
 
-	// Ore costs
+    // Ore costs
     nation.costs[ResourceType_ORE][UnitType_CITY] = 0;
     nation.costs[ResourceType_ORE][UnitType_FACTORY] = 0;
     nation.costs[ResourceType_ORE][UnitType_PORT] = 0;
@@ -57,7 +58,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.visitedSpacesSize = mapSize / 32 + 1;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));
 
-	nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
+    nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
     Scene_Assign(scene, nationID, controlFlag, NULL);
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);

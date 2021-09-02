@@ -29,7 +29,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
     SimpleRenderable render = {
         ORE_TEXTURE_ID,
         INVALID_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        ORE_SHADOW_TEXTURE_ID,
         RenderPriorirty_PARTICLE_LAYER,
         nation->controlFlag == AI_FLAG_COMPONENT_ID,
         false,
@@ -43,7 +43,9 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
     Scene_Assign(scene, oreID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
-        ResourceType_ORE
+        ResourceType_ORE,
+        Vector_Dist(pos, capitalMotion->pos),
+		capitalMotion->pos
     };
     Scene_Assign(scene, oreID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 

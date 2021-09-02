@@ -22,14 +22,16 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         vel,
         0,
         0.2f,
-        true
+        true,
+		0.01, // Z vel
+        -0.0001f // z acc due to gravity
     };
     Scene_Assign(scene, coinID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
         COIN_TEXTURE_ID,
         INVALID_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        COIN_SHADOW_TEXTURE_ID,
         RenderPriorirty_PARTICLE_LAYER,
         nation->controlFlag == AI_FLAG_COMPONENT_ID,
         false,
@@ -43,7 +45,9 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
     Scene_Assign(scene, coinID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
-        ResourceType_COIN
+        ResourceType_COIN,
+        Vector_Dist(pos, capitalMotion->pos),
+		capitalMotion->pos
     };
     Scene_Assign(scene, coinID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 

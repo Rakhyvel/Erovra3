@@ -79,13 +79,13 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
     } else if (i < 0.5) {
         // water
         i *= 2;
-        i = powf(i, 11);
+        i = powf(i, 21);
         return Terrain_HSVtoRGB(214.0f - 25.0f * i, 1.0f - 0.45f * i, 0.21f + 0.6f * i + 0.1f * powf(i, 91));
     } else {
         // ground
         i = (i - 0.5f) * 2;
         i = powf(i, 1 / 4.0f);
-        return Terrain_HSVtoRGB(38.0f + 75.0f * i, (i * 0.1f) + 0.2f, 0.9f - i * 0.5f);
+        return Terrain_HSVtoRGB(50.0f + 75.0f * i, (i * 0.02f) + 0.23f, 0.82f - i * 0.4f);
     }
 }
 
