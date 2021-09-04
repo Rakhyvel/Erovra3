@@ -276,8 +276,8 @@ x A scrolling message box for messages about the game
 	x Message when unit is delivered
 	x Unify building functions
 	x Make message box y dependent on focus container
-- Give height to shells with shadow as they go to their target
-	- Shells shouldn't care about walls
+x Give height to shells with shadow as they go to their target
+	x Unify bomb move an shell move functions
 - AirToGroundBullet for attackers, descends from the ground
 - Vector graphics for every texture (no bitmaps!)
 	- Farm
@@ -287,6 +287,8 @@ x A scrolling message box for messages about the game
 	- Port
 	- Make ships good
 	- Coin and ore sprites
+	- Shells
+	- Bombs, i think?
 - Put progress bar above factories/ports/academies (it looks good)
 - Defensive armament for bombers
 - Planes should originate from airfields

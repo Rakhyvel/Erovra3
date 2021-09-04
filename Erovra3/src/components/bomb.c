@@ -24,7 +24,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         4,
         true,
         0.001, // Vel
-        -0.0001f // Acc due to gravity
+        -0.0005f // Acc due to gravity
     };
     Scene_Assign(scene, bombID, MOTION_COMPONENT_ID, &motion);
 

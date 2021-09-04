@@ -71,6 +71,7 @@ void Textures_Init()
     BULLET_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
     BULLET_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bullet.png");
     SHELL_TEXTURE_ID = Texture_RegisterTexture("res/shell.png");
+    SHELL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/shell.png");
     BOMB_TEXTURE_ID = Texture_RegisterTexture("res/bomb.png");
     BOMB_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/bomb.png");
     COIN_TEXTURE_ID = Texture_RegisterTexture("res/coin.png");
@@ -91,6 +92,7 @@ void Textures_Init()
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
+    Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
 
     Texture_FillPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);

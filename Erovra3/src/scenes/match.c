@@ -780,29 +780,6 @@ void Match_Patrol(struct scene* scene)
 }
 
 /*
-	This system checks to see if a shell has reached it's desitantion. If it has, 
-	if the shell isn't armed, arms the shell. If the shell is already armed, it 
-	destroys the shell entity. */
-void Match_ShellMove(struct scene* scene)
-{
-    system(scene, id, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID, SHELL_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
-        Shell* shell = (Shell*)Scene_GetComponent(scene, id, SHELL_COMPONENT_ID);
-
-        float dist = Vector_Dist(motion->pos, shell->tar);
-        if (dist < 8) {
-            if (!projectile->armed) {
-                projectile->armed = true;
-            } else {
-                Scene_MarkPurged(scene, id);
-            }
-        }
-    }
-}
-
-/*
 TODO: combine this with shells so that any time an aloft projectile hits the ground it becomes armed.
 */
 void Match_BombMove(struct scene* scene)
@@ -2528,7 +2505,6 @@ void Match_Update(Scene* match)
     Match_Target(match);
     Match_Motion(match);
     Match_ResourceParticleAccelerate(match);
-    Match_ShellMove(match);
     Match_BombMove(match);
     Match_CombatantAttack(match);
     Match_AirplaneAttack(match);
@@ -2924,6 +2900,10 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
+
+    Bomber_Create(match, homeVector, homeNation);
+	Artillery_Create(match, homeVector, homeNation);
+    Artillery_Create(match, Vector_Add(homeVector, (Vector) {-64, 0}), enemyNation);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
