@@ -18,7 +18,7 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
     nation.resources[ResourceType_COIN] = 45;
     nation.resources[ResourceType_ORE] = 0;
     nation.resources[ResourceType_POPULATION] = 1;
-    nation.resources[ResourceType_POPULATION_CAPACITY] = 4;
+    nation.resources[ResourceType_POPULATION_CAPACITY] = 1;
 
     // Coin costs
     nation.costs[ResourceType_COIN][UnitType_CITY] = 15;

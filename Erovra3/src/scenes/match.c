@@ -34,6 +34,7 @@
 #include "../terrain.h"
 #include "../textures.h"
 #include "../util/debug.h"
+#include "../util/misc.h"
 #include "../util/perlin.h"
 #include <float.h>
 #include <stdio.h>
@@ -83,10 +84,10 @@ const int miniMapSize = 256.0f;
 
 // UTILITY FUNCTIONS
 
-void Match_AddMessage(char* text, SDL_Color color)
+void Match_AddMessage(SDL_Color color, char* text, ...)
 {
     struct message message;
-    strcpy_s(message.text, 255, text);
+    EXTRACT_VARARGS(message.text, text);
     message.fade = 0;
     message.color = color;
     Arraylist_Add(messages, &message);
@@ -283,16 +284,16 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
     if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a city on a water tile", errorColor);
+            Match_AddMessage(errorColor, "Cannot build a city on a water tile");
     } else if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y) <= 2) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Too close to another city", errorColor);
+            Match_AddMessage(errorColor, "Too close to another city");
     } else if (Terrain_ClosestBuildingDist(terrain, (int)pos.x, (int)pos.y) == 0) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a city on top of another building", errorColor);
+            Match_AddMessage(errorColor, "Cannot build a city on top of another building");
     } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_CITY]) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a city", errorColor);
+            Match_AddMessage(errorColor, "Not enough coins for a city");
     } else {
         char nameBuffer[10];
         memset(nameBuffer, 0, 10);
@@ -306,246 +307,70 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     return false;
 }
 
-/*
-	Checks whether a mine can be built for a nation at a position. If so, creates
-	a new mine, and deducts the approriate resources.
-	
-	Returns whether a mine was/can be built  */
-bool Match_BuyMine(struct scene* scene, EntityID nationID, Vector pos)
-{
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    pos.x = (float)floor(pos.x / 64) * 64 + 32;
-    pos.y = (float)floor(pos.y / 64) * 64 + 32;
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a mine on a water tile", errorColor);
-    } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a mine on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_MINE]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a mine", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for a mine", errorColor);
-    } else {
-        EntityID mine = Mine_Create(scene, (Vector) { pos.x, pos.y }, nationID);
-        Terrain_SetBuildingAt(terrain, mine, (int)pos.x, (int)pos.y);
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_MINE];
-        nation->unitCount[UnitType_MINE]++;
-        nation->costs[ResourceType_COIN][UnitType_MINE] += 5 * nation->unitCount[UnitType_MINE];
-        nation->resources[ResourceType_POPULATION] += 1;
-        return true;
-    }
-    return false;
-}
-
-/*	Checks whether a factory can be built for a nation at a position. If so, creates
-	a new factory, and deducts the approriate resources.
-	
-	Returns whether a factory was/can be built */
-bool Match_BuyFactory(struct scene* scene, EntityID nationID, Vector pos)
+bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, Vector pos)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
+    char name[32];
+    memset(name, 0, 32);
+    Match_CopyUnitName(type, name);
     EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
+    if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a facotry on a water tile", errorColor);
+            Match_AddMessage(errorColor, "Cannot build %s on a water tile", name);
+    } else if (type == UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5) {
+        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+            Match_AddMessage(errorColor, "Cannot build %s on a land tile", name);
     } else if (homeCity == INVALID_ENTITY_INDEX) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Factory must be adjacent to a city", errorColor);
+            Match_AddMessage(errorColor, "%s must be adjacent to a city", name);
     } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a factory on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_FACTORY]) {
+            Match_AddMessage(errorColor, "Cannot build %s on top of another building", name);
+    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][type]) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a factory", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
+            Match_AddMessage(errorColor, "Not enough coins for %s", name);
+    } else if (type != UnitType_FARM && nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for a factory", errorColor);
-    } else {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Mask is 0 error
-        City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
-        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
-        CardinalDirection dir = Match_FindDir(diff);
-        EntityID factory = Factory_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
-        Terrain_SetBuildingAt(terrain, factory, (int)pos.x, (int)pos.y);
-        homeCityComponent->expansions[dir] = factory;
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FACTORY];
-        nation->unitCount[UnitType_FACTORY]++;
-        nation->costs[ResourceType_COIN][UnitType_FACTORY] += 5 * nation->unitCount[UnitType_FACTORY];
-        nation->resources[ResourceType_POPULATION] += 1;
-        return true;
-    }
-    return false;
-}
-
-bool Match_BuyPort(struct scene* scene, EntityID nationID, Vector pos)
-{
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    pos.x = (float)floor(pos.x / 64) * 64 + 32;
-    pos.y = (float)floor(pos.y / 64) * 64 + 32;
-
-    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a port on a land tile", errorColor);
-    } else if (homeCity == INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Port must be adjacent to a city", errorColor);
-    } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a port on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_PORT]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a port", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for a port", errorColor);
-    } else {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID);
-        City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
-        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
-        CardinalDirection dir = Match_FindDir(diff);
-        EntityID port = Port_Create(scene, (Vector) { pos.x, pos.y }, nationID, homeCity, dir);
-        homeCityComponent->expansions[dir] = port;
-        Terrain_SetBuildingAt(terrain, port, (int)pos.x, (int)pos.y);
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_PORT];
-        nation->unitCount[UnitType_PORT]++;
-        nation->costs[ResourceType_COIN][UnitType_PORT] += 5 * nation->unitCount[UnitType_PORT];
-        nation->resources[ResourceType_POPULATION] += 1;
-        return true;
-    }
-    return false;
-}
-
-/*	Checks whether an airfield can be built for a nation at a position. If so, creates
-	a new airfield, and deducts the approriate resources.
-	
-	Returns whether a airfield was/can be built */
-bool Match_BuyAirfield(struct scene* scene, EntityID nationID, Vector pos)
-{
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    pos.x = (float)floor(pos.x / 64) * 64 + 32;
-    pos.y = (float)floor(pos.y / 64) * 64 + 32;
-
-    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build an airfield on a water tile", errorColor);
-    } else if (homeCity == INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Airfield must be adjacent to a city", errorColor);
-    } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build an airfield on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_AIRFIELD]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a airfield", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for a airfield", errorColor);
+            Match_AddMessage(errorColor, "Not enough available citizens for %s", name);
     } else {
         Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
         Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
-        EntityID airfield = Airfield_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
-        homeCityComponent->expansions[dir] = airfield;
-        Terrain_SetBuildingAt(terrain, airfield, (int)pos.x, (int)pos.y);
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
-        nation->unitCount[UnitType_AIRFIELD]++;
-        nation->costs[ResourceType_COIN][UnitType_AIRFIELD] += 5 * nation->unitCount[UnitType_AIRFIELD];
-        nation->resources[ResourceType_POPULATION] += 1;
-        return true;
-    }
-    return false;
-}
-
-/*	Checks whether an farm can be built for a nation at a position. If so, creates
-	a new farm, and deducts the approriate resources.
-	
-	Returns whether a farm was/can be built */
-bool Match_BuyFarm(struct scene* scene, EntityID nationID, Vector pos)
-{
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    pos.x = (float)floor(pos.x / 64) * 64 + 32;
-    pos.y = (float)floor(pos.y / 64) * 64 + 32;
-
-    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a farm on a water tile", errorColor);
-    } else if (homeCity == INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Farm must be adjacent to a city", errorColor);
-    } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build a farm on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_FARM]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for a farm", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for a farm", errorColor);
-    } else {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
-        City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
-        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
-        CardinalDirection dir = Match_FindDir(diff);
-        EntityID farm = Farm_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
-        homeCityComponent->expansions[dir] = farm;
-        Terrain_SetBuildingAt(terrain, farm, (int)pos.x, (int)pos.y);
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_FARM];
-        nation->unitCount[UnitType_FARM]++;
-        nation->costs[ResourceType_COIN][UnitType_FARM] += 5 * nation->unitCount[UnitType_FARM];
-        nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
-        return true;
-    }
-    return false;
-}
-
-/*	Checks whether an farm can be built for a nation at a position. If so, creates
-	a new farm, and deducts the approriate resources.
-	
-	Returns whether a farm was/can be built */
-bool Match_BuyAcademy(struct scene* scene, EntityID nationID, Vector pos)
-{
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    pos.x = (float)floor(pos.x / 64) * 64 + 32;
-    pos.y = (float)floor(pos.y / 64) * 64 + 32;
-
-    EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build an academy on a water tile", errorColor);
-    } else if (homeCity == INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Academy must be adjacent to a city", errorColor);
-    } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Cannot build an academy on top of another building", errorColor);
-    } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_ACADEMY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough coins for an academy", errorColor);
-    } else if (nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
-            Match_AddMessage("Not enough available citizens for an academy", errorColor);
-    } else {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
-        City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
-        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
-        CardinalDirection dir = Match_FindDir(diff);
-        EntityID academy = Academy_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir); // Averages home city and tile midpoint
-        homeCityComponent->expansions[dir] = academy;
-        Terrain_SetBuildingAt(terrain, academy, (int)pos.x, (int)pos.y);
-        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
-        nation->unitCount[UnitType_ACADEMY]++;
-        nation->costs[ResourceType_COIN][UnitType_ACADEMY] += 5 * nation->unitCount[UnitType_ACADEMY];
-        nation->resources[ResourceType_POPULATION] += 1;
+        EntityID building = INVALID_ENTITY_INDEX;
+        switch (type) {
+        case UnitType_MINE:
+            building = Mine_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        case UnitType_FACTORY:
+            building = Factory_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        case UnitType_PORT:
+            building = Port_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        case UnitType_AIRFIELD:
+            building = Airfield_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        case UnitType_FARM:
+            building = Farm_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        case UnitType_ACADEMY:
+            building = Academy_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            break;
+        }
+        homeCityComponent->expansions[dir] = building;
+        Terrain_SetBuildingAt(terrain, building, (int)pos.x, (int)pos.y);
+        nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][type];
+        nation->unitCount[type]++;
+        nation->costs[ResourceType_COIN][type] += 5 * nation->unitCount[type];
+        if (type == UnitType_FARM) {
+            nation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
+        } else {
+            nation->resources[ResourceType_POPULATION] += 1;
+        }
         return true;
     }
     return false;
@@ -1486,7 +1311,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    Match_BuyFarm(scene, simpleRenderable->nation, motion->pos);
+                    Match_BuyExpansion(scene, UnitType_FARM, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
                 continue;
@@ -1587,7 +1412,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    Match_BuyAcademy(scene, simpleRenderable->nation, motion->pos);
+                    Match_BuyExpansion(scene, UnitType_ACADEMY, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
                 continue;
@@ -1625,7 +1450,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    if (Match_BuyMine(scene, simpleRenderable->nation, motion->pos)) {
+                    if (Match_BuyExpansion(scene, UnitType_MINE, simpleRenderable->nation, motion->pos)) {
                         nationsDone |= simpleRenderable->nation;
                         continue;
                     }
@@ -1676,7 +1501,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    Match_BuyFactory(scene, simpleRenderable->nation, motion->pos);
+                    Match_BuyExpansion(scene, UnitType_FACTORY, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
                 continue;
@@ -1726,7 +1551,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_Dist(motion->pos, target->tar) < 32) {
-                    Match_BuyAirfield(scene, simpleRenderable->nation, motion->pos);
+                    Match_BuyExpansion(scene, UnitType_AIRFIELD, simpleRenderable->nation, motion->pos);
                 }
                 nationsDone |= simpleRenderable->nation;
                 continue;
@@ -1774,7 +1599,7 @@ void Match_AIEngineerBuild(struct scene* scene)
                 target->tar = tempTarget;
                 target->lookat = tempTarget;
                 if (Vector_CabDist(motion->pos, target->tar) < 48) {
-                    if (Match_BuyPort(scene, simpleRenderable->nation, motion->pos)) {
+                    if (Match_BuyExpansion(scene, UnitType_PORT, simpleRenderable->nation, motion->pos)) {
                         target->tar = motion->pos;
                         target->lookat = motion->pos;
                     }
@@ -2111,8 +1936,10 @@ void Match_ProduceUnits(struct scene* scene)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        City* city = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
 
         if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
             producer->orderTicksRemaining--;
@@ -2143,7 +1970,20 @@ void Match_ProduceUnits(struct scene* scene)
                 }
                 nation->resources[ResourceType_POPULATION]++;
 
+                if (Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+                    char buffer[32];
+                    memset(buffer, 0, 32);
+                    Match_CopyUnitName(unit->type, buffer);
+                    Match_AddMessage(activeColor, "Order completed at %s %s", city->name, buffer);
+                }
+
                 if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
+                    if (producer->repeat && Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+                        char buffer[32];
+                        memset(buffer, 0, 32);
+                        Match_CopyUnitName(unit->type, buffer);
+                        Match_AddMessage(errorColor, "Insufficient resources at %s %s, auto re-order canceled", city->name, buffer);
+                    }
                     producer->order = INVALID_ENTITY_INDEX;
                     producer->repeat = false;
                     focusable->guiContainer = producer->readyGUIContainer;
@@ -2254,6 +2094,11 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         }
         Texture_AlphaMod(simpleRenderable->sprite, 255.0f / 16.0f * deathTicks);
         Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+
+        // Reset alpha mods
+        Texture_AlphaMod(simpleRenderable->shadow, 255.0f);
+        Texture_AlphaMod(simpleRenderable->spriteOutline, 255.0f);
+        Texture_AlphaMod(simpleRenderable->sprite, 255.0f);
     }
 }
 
@@ -2625,6 +2470,7 @@ void Match_RenderCityName(Scene* scene)
 void Match_RenderMessageContainer(Scene* scene)
 {
     int heightOffset = 0;
+    int focusGUIY = ((GUIComponent*)Scene_GetComponent(scene, focusedGUIContainer, GUI_COMPONENT_ID))->pos.y;
     for (int i = messages->size - 1; i >= 0; i--) {
         struct message* message = ARRAYLIST_GET(messages, i, struct message);
         float fade = message->fade < 300 ? 1.0f : (360.0f - message->fade) / 60.0f;
@@ -2636,7 +2482,7 @@ void Match_RenderMessageContainer(Scene* scene)
         heightOffset += box.h;
         // Reset x and y to normal values
         box.x = g->width - 252;
-        box.y = g->height - 252 - heightOffset + 52;
+        box.y = focusGUIY - heightOffset - 2;
 
         // Draw background
         SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 180 * fade);
@@ -2700,12 +2546,10 @@ void Match_Update(Scene* match)
     // Change game tick speed
     if (g->lt) {
         g->dt *= 2.0;
-        printf("%f\n", g->dt);
-        Match_AddMessage("Time warp", textColor);
+        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / g->dt);
     } else if (g->gt) {
         g->dt *= 0.5;
-        printf("%f\n", g->dt);
-        Match_AddMessage("Time warp", textColor);
+        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / g->dt);
     }
 
     Match_EscapePressed(match);
@@ -2751,33 +2595,19 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 }
 
 /*
-	Called by the infantry's "Build Factory" button. Builds a mine */
-void Match_EngineerAddMine(Scene* scene, EntityID guiID)
+	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
+void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 {
+    UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, guiID, GUI_CLICKABLE_COMPONENT_ID))->meta;
     system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
-            Match_BuyMine(scene, simpleRenderable->nation, motion->pos);
-        }
-    }
-}
 
-/*
-	Called by the infantry's "Build Factory" button. Builds a factory */
-void Match_EngineerAddFactory(Scene* scene, EntityID guiID)
-{
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused) {
-            Match_BuyFactory(scene, simpleRenderable->nation, motion->pos);
+            Match_BuyExpansion(scene, type, simpleRenderable->nation, motion->pos);
         }
     }
 }
@@ -2834,70 +2664,6 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
                 Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
                 nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_WALL];
             }
-        }
-    }
-}
-
-/*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_EngineerAddPort(Scene* scene, EntityID guiID)
-{
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
-            Match_BuyPort(scene, simpleRenderable->nation, motion->pos);
-        }
-    }
-}
-
-/*
-	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
-void Match_EngineerAddAirfield(Scene* scene, EntityID guiID)
-{
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
-            Match_BuyAirfield(scene, simpleRenderable->nation, motion->pos);
-        }
-    }
-}
-
-/*
-	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
-void Match_EngineerAddFarm(Scene* scene, EntityID guiID)
-{
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
-            Match_BuyFarm(scene, simpleRenderable->nation, motion->pos);
-        }
-    }
-}
-
-/*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
-void Match_EngineerAddAcademy(Scene* scene, EntityID guiID)
-{
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-    {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
-            Match_BuyAcademy(scene, simpleRenderable->nation, motion->pos);
         }
     }
 }
@@ -3055,12 +2821,12 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     GUI_ContainerAdd(match, focusedGUIContainer, ENGINEER_FOCUSED_GUI);
     GUI_SetPadding(match, ENGINEER_FOCUSED_GUI, 2);
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build City", CITY_TEXTURE_ID, UnitType_CITY, &Match_EngineerAddCity));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddMine));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Factory", FACTORY_TEXTURE_ID, UnitType_FACTORY, &Match_EngineerAddFactory));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddPort));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Airfield", AIRFIELD_TEXTURE_ID, UnitType_AIRFIELD, &Match_EngineerAddAirfield));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddFarm));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Academy", ACADEMY_TEXTURE_ID, UnitType_ACADEMY, &Match_EngineerAddAcademy));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Factory", FACTORY_TEXTURE_ID, UnitType_FACTORY, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Airfield", AIRFIELD_TEXTURE_ID, UnitType_AIRFIELD, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Academy", ACADEMY_TEXTURE_ID, UnitType_ACADEMY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Wall", WALL_TEXTURE_ID, UnitType_WALL, &Match_EngineerAddWall));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 204, 48));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Test Soil", 0, &Match_EngineerTestSoil));

@@ -371,6 +371,7 @@
     <ClInclude Include="src\engine\textureManager.h" />
     <ClInclude Include="src\textures.h" />
     <ClInclude Include="src\util\lexicon.h" />
+    <ClInclude Include="src\util\misc.h" />
     <ClInclude Include="src\util\perlin.h" />
     <ClInclude Include="src\util\polygon.h" />
     <ClInclude Include="src\util\vector.h" />

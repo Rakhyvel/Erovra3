@@ -7,7 +7,7 @@
 
 /*
 	Creates a mine */
-EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
+EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID mineID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
@@ -75,6 +75,12 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
         BUILDING_FOCUSED_GUI
     };
     Scene_Assign(scene, mineID, FOCUSABLE_COMPONENT_ID, &focusable);
+
+    Expansion expansion = {
+        homeCity,
+        dir
+    };
+    Scene_Assign(scene, mineID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);

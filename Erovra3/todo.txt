@@ -271,9 +271,11 @@ x Add death animation
 x Give coins a shadow, arc, and change their velocity based on their path
 x Enumerate unit divisions
 x Give names to cities randomly
-- A scrolling message box for messages about the game
+x A scrolling message box for messages about the game
 	x Add error messages for buying buildings
-	- Add error messages for when producers run out of resources
+	x Message when unit is delivered
+	x Unify building functions
+	x Make message box y dependent on focus container
 - Give height to shells with shadow as they go to their target
 	- Shells shouldn't care about walls
 - AirToGroundBullet for attackers, descends from the ground
@@ -286,19 +288,13 @@ x Give names to cities randomly
 	- Make ships good
 	- Coin and ore sprites
 - Put progress bar above factories/ports/academies (it looks good)
-- Completely document code, with a python script to create HTML documentation for everything
 - Defensive armament for bombers
 - Planes should originate from airfields
 - If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
 - Arrows should have a gradient
 - Don't fill minimap soil squares for water tiles
-- Scale on bottom
-	- Infantry can move 15 miles a day
-	- Cities will likely be 15 miles away
-	- A day is how long it takes to march between one city and the next
-		- 64 / 0.2 ticks = 1 day = 320 ticks ~ 5.3- seconds
-		- Day/night is 10.6- seconds then
-		- To build a tank = 896 seconds, 15 minutes
+- Completely document code, with a python script to create HTML documentation for everything
+- Simplify AI Engineer function
 - Balance a bit
 	- Population should be the core resource of the entire game
 	- Allocating people as a scare resource
@@ -306,6 +302,7 @@ x Give names to cities randomly
 	- Taxation is increased based on population
 	- Farms require one unskilled population
 	- Academies can train different kind of skilled laborers, another resource
+	- Make AI able to combat in an ever changing world
 
 3.10.x- Multiplayer
 - Order particles
