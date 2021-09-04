@@ -55,7 +55,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_INFANTRY,
-        1.0f // 1 damage every 30 ticks -> 300 ticks
+        1.0f, // 1 damage every 30 ticks -> 300 ticks,
+        nationStruct->unitCount[UnitType_INFANTRY]
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 

@@ -60,7 +60,8 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_BOMBER,
-        0.5f // Defense
+        0.5f, // Defense
+        nationStruct->unitCount[UnitType_BOMBER] 
     };
     Scene_Assign(scene, bomberID, UNIT_COMPONENT_ID, &type);
 

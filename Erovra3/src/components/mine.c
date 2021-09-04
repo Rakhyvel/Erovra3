@@ -10,6 +10,8 @@
 EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
 {
     EntityID mineID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -52,7 +54,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_MINE,
-        0.05f
+        0.05f,
+        nationStruct->unitCount[UnitType_MINE]
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 

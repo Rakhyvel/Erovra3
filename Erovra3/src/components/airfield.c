@@ -9,6 +9,8 @@
 EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID airfieldID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     // pos parameter will be slightly towards the home city, hopefully
     Motion motion = {
         pos,
@@ -46,7 +48,8 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
 
     Unit type = {
         UnitType_AIRFIELD,
-        1
+        1,
+		0
     };
     Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
 

@@ -53,7 +53,8 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_CAVALRY,
-        1.0f
+        1.0f,
+        nationStruct->unitCount[UnitType_CAVALRY]
     };
     Scene_Assign(scene, cavalryID, UNIT_COMPONENT_ID, &type);
 

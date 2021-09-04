@@ -18,7 +18,7 @@ OUT_PATH = str(Path.home()) + "\\OneDrive\\Erovra versions\\"
 def count_files(dir_path):
     count = 0
     for filename in os.listdir(dir_path):
-        if filename.startswith("Erovra3." + VERSION + "."):
+        if filename.startswith("Erovra3." + VERSION + ".") and filename.endswith(".zip"):
             count += 1
     return count
 
@@ -32,6 +32,8 @@ with ZipFile(filename, 'w') as zip:
     # Add res dir and all files in res
     for res_filename in os.listdir(IN_PATH + "Erovra3\\res"):
         zip.write(IN_PATH + "Erovra3\\res\\" + res_filename, "res\\" + res_filename)
+    for res_filename in os.listdir(IN_PATH + "Erovra3\\res\\gui"):
+        zip.write(IN_PATH + "Erovra3\\res\\gui\\" + res_filename, "res\\gui\\" + res_filename)
     # Add all .dll files
     for dll_filename in os.listdir(IN_PATH + "Erovra3\\"):
         if (dll_filename.endswith(".dll")):

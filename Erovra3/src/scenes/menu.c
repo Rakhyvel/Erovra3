@@ -100,7 +100,7 @@ static int getSeed(Scene* scene)
 static int loadAssets(Scene* scene)
 {
     status = 0;
-    //lexicon = Lexicon_Create("res/countryNames.txt", &status);
+    lexicon = Lexicon_Create("res/countryNames.txt", &status);
     assetsLoaded = true;
     return 0;
 }
@@ -216,21 +216,22 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     seaLevel->value = 0.33f;
     erosion->value = 0.0f;
 
-    /* Randomize name */
-    char randName[32] = "Lol";
-    //Lexicon_GenerateWord(lexicon, randName, 10);
-    strncpy_s(nationName->text, 32, randName, 32);
-    nationName->length = (int)strlen(randName);
-
     /* Randomize seed */
+    srand(time(0));
     char randSeed[32];
-    srand((unsigned)time(0));
     for (int i = 0; i < 32; i++) {
         randSeed[i] = rand() % 26 + 'a';
     }
     randSeed[31] = '\0';
     strncpy_s(mapSeed->text, 32, randSeed, 32);
     mapSeed->length = 32;
+
+    /* Randomize name */
+    char randName[10];
+    memset(randName, 0, 10);
+    Lexicon_GenerateWord(lexicon, randName, 10);
+    strncpy_s(nationName->text, 10, randName, 10);
+    nationName->length = (int)strlen(randName);
 
     Menu_ReconstructMap(scene, id);
 }
@@ -298,6 +299,7 @@ void Menu_Update(Scene* scene)
         if (done) {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
             CheckBox* AIControlled = (CheckBox*)Scene_GetComponent(scene, AIControlledCheckBox, GUI_CHECK_BOX_COMPONENT_ID);
+            TextBox* capitalName = (TextBox*)Scene_GetComponent(scene, nationNameTextBox, GUI_TEXT_BOX_COMPONENT_ID);
             int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
 
             // Setup a new texture, call Match_Init, start game!
@@ -310,7 +312,7 @@ void Menu_Update(Scene* scene)
             generating = false;
             done = false;
 
-            Match_Init(map, fullMapSize, AIControlled->value);
+            Match_Init(map, capitalName->text, lexicon, fullMapSize, AIControlled->value);
             return; // Always return after scene stack disruption!
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);

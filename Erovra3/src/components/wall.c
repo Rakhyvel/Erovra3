@@ -10,6 +10,8 @@
 EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
 {
     EntityID wallID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -46,7 +48,8 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
 
     Unit type = {
         UnitType_WALL,
-        2.0f
+        1.0f,
+        nationStruct->unitCount[UnitType_WALL]
     };
     Scene_Assign(scene, wallID, UNIT_COMPONENT_ID, &type);
 

@@ -132,6 +132,7 @@ ComponentKey HEALTH_COMPONENT_ID;
 typedef struct unit {
     UnitType type;
     const float defense;
+    int ordinal;
     int engagedTicks;
     char name[32];
     bool engaged;
@@ -186,20 +187,12 @@ typedef struct nation {
     ComponentKey controlFlag;
     int resources[_ResourceType_Length];
     int costs[_ResourceType_Length][_UnitType_Length];
+    int unitCount[_UnitType_Length];
     EntityID capital;
     EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces;
     bool* showOre;
     int visitedSpacesSize;
-    int cities;
-    int factories;
-    int mines;
-    int land;  // These are incremented when an order is fulfilled, and decremented when a unit dies 
-    int sea;
-    int air;
-    int fighters;
-    int airInProd;
-    int fightersInProd;
 } Nation;
 ComponentKey NATION_COMPONENT_ID;
 ComponentKey HOME_NATION_FLAG_COMPONENT_ID;

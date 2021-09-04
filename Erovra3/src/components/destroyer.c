@@ -55,7 +55,8 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_DESTROYER,
-        0.5f // Defense
+        0.5f, // Defense
+        nationStruct->unitCount[UnitType_DESTROYER]
     };
     Scene_Assign(scene, destroyerID, UNIT_COMPONENT_ID, &type);
 

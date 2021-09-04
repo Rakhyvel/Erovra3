@@ -9,6 +9,8 @@
 EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID portID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -51,7 +53,8 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Unit type = {
         UnitType_PORT,
-        1
+        1,
+        nationStruct->unitCount[UnitType_PORT]
     };
     Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
 

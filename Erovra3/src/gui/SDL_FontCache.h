@@ -287,6 +287,9 @@ void FC_SetSpacing(FC_Font* font, int LetterSpacing);
 void FC_SetLineSpacing(FC_Font* font, int LineSpacing);
 void FC_SetDefaultColor(FC_Font* font, SDL_Color color);
 
+
+void FC_DrawColumnFromBuffer(FC_Font* font, FC_Target* dest, FC_Rect box, int* total_height, FC_Scale scale, FC_AlignEnum align);
+
 #ifdef __cplusplus
 }
 #endif

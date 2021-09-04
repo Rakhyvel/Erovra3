@@ -9,6 +9,8 @@
 EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID academyID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -45,7 +47,8 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     Unit type = {
         UnitType_ACADEMY,
-        1
+        1,
+		0
     };
     Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
 

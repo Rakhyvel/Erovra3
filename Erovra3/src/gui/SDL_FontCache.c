@@ -128,11 +128,21 @@ static char* new_concat(const char* a, const char* b)
 {
     // Create new buffer
     unsigned int size = strlen(a) + strlen(b);
-    char* new_string = (char*)malloc(size + 1);
+    char* new_string = (char*)calloc(size + 1, sizeof(char));
+    if (!new_string) {
+        printf("Mem error");
+        for (;;)
+            ;
+    }
 
     // Concatenate strings in the new buffer
-    strcpy_s(new_string, size, a, size);
-    strcat_s(new_string, size, b, size);
+    int i;
+    for (i = 0; i < strlen(a); i++) {
+        new_string[i] = a[i];
+    }
+    for (int j = 0; j < strlen(b); i++, j++) {
+        new_string[i] = b[j];
+    }
 
     return new_string;
 }
@@ -1891,7 +1901,7 @@ static FC_StringList* FC_GetBufferFitToColumn(FC_Font* font, int width, FC_Scale
     return result;
 }
 
-static void FC_DrawColumnFromBuffer(FC_Font* font, FC_Target* dest, FC_Rect box, int* total_height, FC_Scale scale, FC_AlignEnum align)
+void FC_DrawColumnFromBuffer(FC_Font* font, FC_Target* dest, FC_Rect box, int* total_height, FC_Scale scale, FC_AlignEnum align)
 {
     int y = box.y;
     FC_StringList *ls, *iter;
@@ -1927,7 +1937,12 @@ FC_Rect FC_DrawBox(FC_Font* font, FC_Target* dest, FC_Rect box, const char* form
 
     set_color_for_all_caches(font, font->default_color);
 
-    FC_DrawColumnFromBuffer(font, dest, box, NULL, FC_MakeScale(1, 1), FC_ALIGN_LEFT);
+	int height;
+    FC_DrawColumnFromBuffer(font, dest, box, &height, FC_MakeScale(1, 1), FC_ALIGN_LEFT);
+
+	/* begin mod */
+    box.h = height;
+	/* end mod */
 
     if (useClip)
         set_clip(dest, &oldclip);

@@ -1,6 +1,8 @@
 #ifndef LEXICON_H
 #define LEXICON_H
 
+#include <stdbool.h>
+
 #define PARTICLE_SIZE 3
 
 /*

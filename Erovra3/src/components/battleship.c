@@ -54,7 +54,8 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_BATTLESHIP,
-        2.0f
+        2.0f,
+        nationStruct->unitCount[UnitType_BATTLESHIP]
     };
     Scene_Assign(scene, battleshipID, UNIT_COMPONENT_ID, &type);
 

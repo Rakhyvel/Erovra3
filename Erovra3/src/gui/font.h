@@ -4,6 +4,7 @@
 
 extern FC_Font* font;
 
+extern FC_Font* bigFont;
 
 void Font_Init();
 

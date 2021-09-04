@@ -190,6 +190,10 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
         cellSize /= 2;
         amplitude *= 0.5f;
     }
+    Perlin_GenerateOctave(map, mapSize, mapSize / 4, 1, seed, BICOSINE);
+    for (int i = 0; i < mapSize * mapSize; i++) {
+        retval[i] = retval[i] * 0.75 + map[i] * 0.25;
+    }
     free(map);
     return retval;
 }

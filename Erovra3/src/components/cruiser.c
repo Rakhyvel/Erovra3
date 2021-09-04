@@ -55,7 +55,8 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_CRUISER,
-        1.0f
+        1.0f,
+        nationStruct->unitCount[UnitType_CRUISER]
     };
     Scene_Assign(scene, cruiserID, UNIT_COMPONENT_ID, &type);
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /*
 	Swaps two edges data, but preserves the linked list pointers for simplicity. */
@@ -20,10 +21,11 @@ void swapEdges(struct lexicon_edge* a, struct lexicon_edge* b)
     b->weight = tempWeight;
 }
 
+/* Returns 1 if the strings are exactly the same */
 int particleCompare(char* a, char* b)
 {
     for (int i = 0; i < PARTICLE_SIZE; i++) {
-        if (a[i] != b[i]) {
+        if (tolower(a[i]) != tolower(b[i])) {
             return 0;
         }
     }
@@ -156,54 +158,67 @@ Lexicon* Lexicon_Create(char* filename, int* status)
 	are chosen more frequently. */
 void Lexicon_GenerateWord(Lexicon* lex, char* out, int maxLength)
 {
-    memset(out, 0, (size_t)maxLength + 1);
-    int length;
-    Lexicon* curr = lex;
-    for (length = 0; curr != NULL; curr = curr->next, length++)
-        ;
-    int randIndex = rand();
-    for (int i = 0; 1; lex = lex->next, i++) {
-        if (i > randIndex % length && lex->text[0] >= 'A' && lex->text[0] <= 'Z') {
-            break;
-        }
-    }
-    char buffer[PARTICLE_SIZE + 1];
-    memset(buffer, 0, PARTICLE_SIZE + 1);
-    int outIndex = 0;
-    // Set buffer[0-size) to first text of lexicon
-    for (int i = 0; i < PARTICLE_SIZE; i++, outIndex++) {
-        buffer[i] = lex->text[i];
-        out[outIndex] = buffer[i];
-    }
-    while (outIndex < maxLength) {
-        // Search through lexicon list
+    bool found = false;
+    while (!found) {
+        memset(out, 0, (size_t)maxLength + 1);
+        int length;
         Lexicon* curr = lex;
-        while (curr != NULL) {
-            // Look for particles that match the buffer
-            if (particleCompare(curr->text, buffer) && curr->edges != NULL) {
-                // Match found, choose a random edge based on weights
-                struct lexicon_edge* edge = curr->edges;
-                int randProb = rand() % curr->numConnections;
-                while (edge != NULL) {
-                    randProb -= edge->weight;
-                    if (randProb <= 0) {
-                        break;
-                    }
-                    edge = edge->next;
-                }
-                // Reset buffer, add character to out string, and set curr to the new node
-                Lexicon* next = edge->to;
-                for (int i = 0; i < PARTICLE_SIZE; i++) {
-                    buffer[i] = next->text[i];
-                }
-                out[outIndex++] = buffer[PARTICLE_SIZE - 1];
-                curr = next;
+        for (length = 0; curr != NULL; curr = curr->next, length++)
+            ;
+
+        // Choose a random particle that starts with a capital letter
+        int randIndex = rand();
+        for (int i = 0; lex->next != NULL; lex = lex->next, i++) {
+            if (i > randIndex % length && lex->text[0] >= 'A' && lex->text[0] <= 'Z') {
                 break;
             }
-            curr = curr->next;
         }
-        if (curr == NULL) {
-            break;
+        char buffer[PARTICLE_SIZE + 1];
+        memset(buffer, 0, PARTICLE_SIZE + 1);
+        int outIndex = 0;
+        // Set buffer[0-size) to first text of lexicon
+        for (int i = 0; i < PARTICLE_SIZE; i++, outIndex++) {
+            buffer[i] = lex->text[i];
+            out[outIndex] = buffer[i];
+        }
+        // Stay within string length
+        curr = lex;
+        while (outIndex < maxLength - 1) {
+            // Search through lexicon list
+            while (curr != NULL) {
+                // Look for particles that match the buffer
+                if (particleCompare(curr->text, buffer) && curr->edges != NULL) {
+                    // Match found, choose a random edge based on weights
+                    struct lexicon_edge* edge = curr->edges;
+                    int randProb = rand() % curr->numConnections;
+                    while (edge != NULL) {
+                        randProb -= edge->weight;
+                        if (randProb <= 1) {
+                            break;
+                        }
+                        edge = edge->next;
+                    }
+                    // Reset buffer, add character to out string, and set curr to the new node
+                    Lexicon* next = edge->to;
+                    for (int i = 0; i < PARTICLE_SIZE; i++) {
+                        buffer[i] = next->text[i];
+                    }
+
+                    // Determine if should keep going or not
+                    if (next->text[PARTICLE_SIZE - 1] == '\n') {
+                        curr = NULL; // End word generation
+                    } else {
+                        out[outIndex++] = buffer[PARTICLE_SIZE - 1];
+                        curr = next; // Transfer over to new particle
+                    }
+                    break;
+                }
+                curr = curr->next;
+            }
+            if (curr == NULL) {
+                found = true;
+                break;
+            }
         }
     }
 }

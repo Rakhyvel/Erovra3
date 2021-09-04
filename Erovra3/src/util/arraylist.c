@@ -100,6 +100,12 @@ void Arraylist_Add(struct arraylist* list, void* data)
     list->size++;
 }
 
+void Arraylist_Remove(struct arraylist* list, int index)
+{
+    memcpy(list->data + index * list->typeSize, list->data + (index + 1) * list->typeSize, (list->size - index - 1) * list->typeSize);
+    list->size--;
+}
+
 /*
 	Copies data to an index */
 void Arraylist_Put(struct arraylist* list, int index, void* data)

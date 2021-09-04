@@ -54,7 +54,8 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_ARTILLERY,
-        1.0f
+        1.0f, 
+        nationStruct->unitCount[UnitType_ARTILLERY]
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
 

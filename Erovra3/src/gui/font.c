@@ -7,6 +7,7 @@
 #include <string.h>
 
 FC_Font* font = NULL;
+FC_Font* bigFont = NULL;
 
 int kern16[] = {
     0, 0, 4, 4, 4, 1, 7, 16, 7, 0, 0, 6, 5, 0, 6, 5,
@@ -25,7 +26,9 @@ void Font_Init()
 {
     if (!font) {
         font = FC_CreateFont();
+        bigFont = FC_CreateFont();
         FC_LoadFont(font, g->rend, "res/gui/Segoe UI.ttf", 16, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+        FC_LoadFont(bigFont, g->rend, "res/gui/Segoe UI.ttf", 175, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
     }
 }
 

@@ -4,14 +4,17 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "./coin.h"
+#include <string.h>
 
 /*
 	Takes in a scene, and some information for a city entity. Registers a new 
 	entity, assigns components to that entity based on the given information. 
 	Returns EntityID of the created city */
-EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCapital)
+EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nameBuffer, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -49,6 +52,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     Unit type = {
         UnitType_CITY,
         1.0f,
+        0,
 		-10
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
@@ -59,10 +63,9 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, bool isCa
     };
     Scene_Assign(scene, cityID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 
-    char name[20] = "Name";
-    City city = {
-        name
-    };
+    City city;
+    strcpy_s(city.name, 20, nameBuffer, 20);
+    city.isCapital = isCapital;
     for (int i = 0; i < 4; i++) {
         city.expansions[i] = INVALID_ENTITY_INDEX;
     }

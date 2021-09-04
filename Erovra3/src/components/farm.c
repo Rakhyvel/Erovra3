@@ -9,6 +9,8 @@
 EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID farmID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     // pos parameter will be slightly towards the home city, hopefully
     Motion motion = {
         pos,
@@ -46,7 +48,8 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Unit type = {
         UnitType_FARM,
-        1
+        1,
+        nationStruct->unitCount[UnitType_FARM]
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 

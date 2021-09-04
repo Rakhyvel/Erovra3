@@ -9,6 +9,8 @@
 EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID factoryID = Scene_NewEntity(scene);
+    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+
     Motion motion = {
         pos,
         0.5f,
@@ -45,7 +47,8 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     Unit type = {
         UnitType_FACTORY,
-        1
+        1,
+        nationStruct->unitCount[UnitType_FACTORY]
     };
     Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
 

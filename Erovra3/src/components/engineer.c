@@ -56,7 +56,8 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Unit type = {
         UnitType_ENGINEER,
-        0.0005f // 1-shot kill
+        0.0005f, // 1-shot kill,
+        nationStruct->unitCount[UnitType_ENGINEER]
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
     strncpy_s(type.name, 32, "Engineer", 32);

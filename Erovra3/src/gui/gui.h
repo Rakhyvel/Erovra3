@@ -6,6 +6,7 @@
 typedef void (*GUICallback)(struct scene*, EntityID);
 
 extern SDL_Color backgroundColor;
+extern SDL_Color textColor;
 extern SDL_Color borderColor;
 extern SDL_Color hoverColor;
 extern SDL_Color activeColor;

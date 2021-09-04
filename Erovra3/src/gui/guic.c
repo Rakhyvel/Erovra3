@@ -11,10 +11,11 @@ TextureID radioChecked = NULL;
 TextureID check = NULL;
 
 SDL_Color backgroundColor = { 57, 63, 68, 255 };
+SDL_Color textColor = { 255, 255, 255, 255 };
 SDL_Color borderColor = { 133, 136, 140, 255 };
 SDL_Color hoverColor = { 255, 255, 255, 255 };
 SDL_Color activeColor = { 43, 154, 243, 255 };
-SDL_Color errorColor = { 205, 25, 11, 255 };
+SDL_Color errorColor = { 250, 80, 80, 255 };
 SDL_Color inactiveBackgroundColor = { 77, 82, 88, 64 };
 SDL_Color inactiveTextColor = { 200, 200, 200, 255 };
 

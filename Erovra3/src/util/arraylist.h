@@ -24,6 +24,7 @@ struct arraylist* Arraylist_Create(int initSize, int typeSize);
 void Arraylist_Destroy(struct arraylist* list);
 
 void Arraylist_Add(struct arraylist* list, void* data);
+void Arraylist_Remove(struct arraylist* list, int index);
 void Arraylist_Put(struct arraylist* list, int index, void* data);
 void* Arraylist_Get(struct arraylist* list, int index);
 void* Arraylist_Pop(struct arraylist* list);
