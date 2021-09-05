@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define PARTICLE_SIZE 3
+#define PARTICLE_SIZE 2
 
 /*
 

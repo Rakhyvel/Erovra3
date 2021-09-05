@@ -278,13 +278,13 @@ x A scrolling message box for messages about the game
 	x Make message box y dependent on focus container
 x Give height to shells with shadow as they go to their target
 	x Unify bomb move an shell move functions
-- AirToGroundBullet for attackers, descends from the ground
 - Vector graphics for every texture (no bitmaps!)
+	x City
 	- Farm
-	- Mine
+	x Mine
 	- Fix engineer icon
 	- Airfield
-	- Port
+	x Port
 	- Make ships good
 	- Coin and ore sprites
 	- Shells
@@ -330,3 +330,4 @@ misc.
 - Stats at end of game?
 - Sequential movement?
 - Hints?
+- AirToGroundBullet for attackers, descends from the ground

@@ -176,7 +176,7 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
     cellSize /= 2;
     amplitude /= 2;
 
-    while (cellSize >= 1) {
+    while (cellSize >= 4) {
         Perlin_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICOSINE);
         if (!map) {
             PANIC("Memory error");
@@ -241,6 +241,9 @@ void Perlin_Normalize(float* map, int mapSize)
 	Finds the gradient on the map at a given point */
 Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY)
 {
+    if (posX + 1 == mapSize || posY + 1 == mapSize) {
+        return (Gradient) { 0, 0 };
+    }
     int nodeX = (int)posX;
     int nodeY = (int)posY;
 
@@ -256,6 +259,35 @@ Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY)
     // Calculate droplet's direction of flow with bilinear interpolation of height difference along the edges
     float gradientX = (heightNE - heightNW) * (1 - y) + (heightSE - heightSW) * y;
     float gradientY = (heightSW - heightNW) * (1 - x) + (heightSE - heightNE) * x;
+
+    // Calculate height with bilinear interpolation of the heights of the nodes of the cell
+    float height = heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;
+    Gradient grad = { gradientX, gradientY, height };
+
+    return grad;
+}
+
+Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float posY)
+{
+    int offset = 16;
+    if (posX + offset >= mapSize || posY + offset >= mapSize) {
+        return (Gradient) { 0, 0 };
+    }
+    int nodeX = (int)(posX);
+    int nodeY = (int)(posY);
+
+    float x = posX - nodeX;
+    float y = posY - nodeY;
+
+    int nodeIndexNW = nodeY * mapSize + nodeX;
+    float heightNW = map[nodeIndexNW];
+    float heightNE = map[nodeIndexNW + offset];
+    float heightSW = map[nodeIndexNW + mapSize];
+    float heightSE = map[nodeIndexNW + mapSize + offset];
+
+    // Calculate droplet's direction of flow with bilinear interpolation of height difference along the edges
+    float gradientX = (heightNE - heightNW) * (offset - y) + (heightSE - heightSW) * y;
+    float gradientY = (heightSW - heightNW) * (offset - x) + (heightSE - heightNE) * x;
 
     // Calculate height with bilinear interpolation of the heights of the nodes of the cell
     float height = heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;

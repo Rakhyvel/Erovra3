@@ -1,4 +1,4 @@
-/*
+﻿/*
 terrain.c
 */
 
@@ -70,9 +70,15 @@ void Terrain_Destroy(struct terrain* terrain)
     free(terrain);
 }
 
+static float minGrad = 0;
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
 {
     i = i * 2 - 0.5f;
+
+    struct gradient grad = Perlin_GetGradient(map, mapSize, (int)(x / 2) * 2, (int)(y / 2) * 2);
+    if (grad.gradY < minGrad) {
+        minGrad = grad.gradY;
+    }
 
     if (mapSize >= 512.0f && Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
         return (SDL_Color) { 255, 255, 255 };
@@ -84,13 +90,19 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
     } else {
         // ground
         i = (i - 0.5f) * 2;
-        i = powf(i, 1 / 4.0f);
-        return Terrain_HSVtoRGB(50.0f + 75.0f * i, (i * 0.02f) + 0.23f, 0.82f - i * 0.4f);
+        i = powf(i, 0.25f);
+        float light = 15.0f * grad.gradY;
+        float hue = 45.0f + 45.0f * i;
+        float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
+        float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.4088f);
+        return Terrain_HSVtoRGB(hue - light / 16.0f, saturation - light / 4.0f, value + light);
     }
 }
 
 SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i)
 {
+    struct gradient grad = Perlin_GetGradient(map, mapSize, x, y);
+    float light = 5.0f * grad.gradY;
     if (Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
         return Terrain_HSVtoRGB(196, 0.25, 0.85);
     } else if (i < 0.5) {
@@ -98,15 +110,15 @@ SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i)
     } else
         // Land
         if (i < 9 / 15.0) {
-        return Terrain_HSVtoRGB(126, 0.15, 0.8);
+        return Terrain_HSVtoRGB(126 - light, 0.15 - light, 0.8 + light);
     } else if (i < 10 / 15.0) {
-        return Terrain_HSVtoRGB(104, 0.125, 0.825);
+        return Terrain_HSVtoRGB(104 - light, 0.125 - light, 0.825 + light);
     } else if (i < 11 / 15.0) {
-        return Terrain_HSVtoRGB(82, 0.1, 0.85);
+        return Terrain_HSVtoRGB(82 - light, 0.1 - light, 0.85 + light);
     } else if (i < 12 / 15.0) {
-        return Terrain_HSVtoRGB(60, 0.075, 0.875);
+        return Terrain_HSVtoRGB(60 - light, 0.075 - light, 0.875 + light);
     } else {
-        return Terrain_HSVtoRGB(38, 0.05, 0.9);
+        return Terrain_HSVtoRGB(38 - light, 0.05 - light, 0.9 + light);
     }
 }
 

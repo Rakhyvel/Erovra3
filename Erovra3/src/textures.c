@@ -36,12 +36,12 @@ void Textures_Init()
     CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
     WALL_TEXTURE_ID = Texture_RegisterTexture("res/wall.png");
     WALL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/wall_shadow.png");
-    CAPITAL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
-    CITY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
-    FACTORY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
-    PORT_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
-    MINE_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
-    ACADEMY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/building_shadow.png");
+    CAPITAL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
+    CITY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
+    FACTORY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/factory.png");
+    PORT_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/port.png");
+    MINE_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
+    ACADEMY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/academy.png");
 
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     CAVALRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
@@ -83,16 +83,23 @@ void Textures_Init()
     ARROW_TEXTURE_ID = Texture_RegisterTexture("res/arrow.png");
     ARROW_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/arrow.png");
 
+    Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
+    Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
+    Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
+
+    Texture_FillPolygon(CITY_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(CITY_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 0, 0, 0, 255 }, 20);
+    Texture_DrawPolygon(PORT_TEXTURE_ID, Polygon_Create("res/port_bar.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(PORT_TEXTURE_ID, Polygon_Create("res/port_hook.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(PORT_TEXTURE_ID, Polygon_Create("res/port_hole.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+
     Texture_CreateShadow(CAPITAL_SHADOW_TEXTURE_ID, CAPITAL_TEXTURE_ID);
     Texture_CreateShadow(CITY_SHADOW_TEXTURE_ID, CITY_TEXTURE_ID);
     Texture_CreateShadow(FACTORY_SHADOW_TEXTURE_ID, FACTORY_TEXTURE_ID);
     Texture_CreateShadow(PORT_SHADOW_TEXTURE_ID, PORT_TEXTURE_ID);
     Texture_CreateShadow(MINE_SHADOW_TEXTURE_ID, MINE_TEXTURE_ID);
     Texture_CreateShadow(ACADEMY_SHADOW_TEXTURE_ID, ACADEMY_TEXTURE_ID);
-
-    Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
-    Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
-    Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
 
     Texture_FillPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -181,6 +188,6 @@ void Textures_Init()
     Texture_CreateShadow(COIN_SHADOW_TEXTURE_ID, COIN_TEXTURE_ID);
     Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
 
-	Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 60, 120, 250, 255 });
+    Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 60, 120, 250, 255 });
     Texture_CreateShadow(ARROW_SHADOW_TEXTURE_ID, ARROW_TEXTURE_ID);
 }

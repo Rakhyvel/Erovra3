@@ -349,7 +349,7 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
             building = Factory_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
             break;
         case UnitType_PORT:
-            building = Port_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Port_Create(scene, pos, nationID, homeCity, dir);
             break;
         case UnitType_AIRFIELD:
             building = Airfield_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
@@ -2900,10 +2900,6 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
-
-    Bomber_Create(match, homeVector, homeNation);
-	Artillery_Create(match, homeVector, homeNation);
-    Artillery_Create(match, Vector_Add(homeVector, (Vector) {-64, 0}), enemyNation);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);

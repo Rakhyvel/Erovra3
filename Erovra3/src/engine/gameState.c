@@ -38,6 +38,7 @@ void Game_Init(char* windowName, int width, int height)
         printf("Error: Creating SDL window: %s\n", SDL_GetError());
         exit(1);
     }
+
     if (SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl") == SDL_FALSE) {
         printf("Warning: opengl not set as driver\n");
     }

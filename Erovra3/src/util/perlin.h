@@ -29,6 +29,7 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
 // Map modifications
 void Perlin_Normalize(float* map, int mapSize);
 Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY);
+Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float posY);
 void Perlin_Erode(float* map, int mapSize, float intensity, int* status);
 
 // Map painting

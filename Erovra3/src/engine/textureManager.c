@@ -219,9 +219,7 @@ void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color, 
         Vector p1 = { polygon.vertexX[i] + polygon.x, polygon.vertexY[i] + polygon.y };
         Vector p2 = { polygon.vertexX[(i + 1) % polygon.numVertices] + polygon.x, polygon.vertexY[(i + 1) % polygon.numVertices] + polygon.y };
         drawThickLine(textureID, p1, p2, color, thickness);
-        if (thickness >= 10) {
-            drawCircle(textureID, p1, thickness, color);
-        }
+        drawCircle(textureID, p1, thickness, color);
     }
 }
 
