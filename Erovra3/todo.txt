@@ -278,21 +278,17 @@ x A scrolling message box for messages about the game
 	x Make message box y dependent on focus container
 x Give height to shells with shadow as they go to their target
 	x Unify bomb move an shell move functions
-- Vector graphics for every texture (no bitmaps!)
+x Vector graphics for every texture (no bitmaps!)
 	x City
-	- Farm
+	x Farm
+	x Academy
 	x Mine
-	- Fix engineer icon
-	- Airfield
+	x Fix engineer icon
+	x Airfield
 	x Port
-	- Make ships good
-	- Coin and ore sprites
-	- Shells
-	- Bombs, i think?
+	x Make ships good
+	x Shells
 - Put progress bar above factories/ports/academies (it looks good)
-- Defensive armament for bombers
-- Planes should originate from airfields
-- If you hover over a unit it will give you some text by that unit for it's type, number, health, etc.
 - Arrows should have a gradient
 - Don't fill minimap soil squares for water tiles
 - Completely document code, with a python script to create HTML documentation for everything
@@ -305,6 +301,7 @@ x Give height to shells with shadow as they go to their target
 	- Farms require one unskilled population
 	- Academies can train different kind of skilled laborers, another resource
 	- Make AI able to combat in an ever changing world
+	- Farms better in lowlands, mines better in highlands
 
 3.10.x- Multiplayer
 - Order particles
@@ -331,3 +328,6 @@ misc.
 - Sequential movement?
 - Hints?
 - AirToGroundBullet for attackers, descends from the ground
+- Planes should originate from airfields, airfield should protect
+? Defensive armament for bombers
+- Can't stack units?

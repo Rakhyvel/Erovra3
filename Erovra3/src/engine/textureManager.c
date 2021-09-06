@@ -156,7 +156,7 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
     }
 }
 
-static void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color color)
+void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color color)
 {
     SDL_Texture* texture;
     if (textureID != INVALID_TEXTURE_ID) {
@@ -171,7 +171,7 @@ static void drawCircle(TextureID textureID, Vector center, float radius, SDL_Col
     for (double y = -radius; y < radius; y++) {
         double newY = y + center.y;
         double x = radius * (double)sqrtf(1.0 - powf(y / (double)radius, 2.0));
-        SDL_RenderDrawLineF(g->rend, max(-x + center.x, -1), y + center.y, x + center.x, y + center.y);
+        SDL_RenderDrawLine(g->rend, max(-x + center.x, -1), y + center.y, x + center.x, y + center.y);
     }
     SDL_SetRenderTarget(g->rend, NULL);
 }

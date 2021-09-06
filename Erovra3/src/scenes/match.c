@@ -711,6 +711,18 @@ void Match_Target(struct scene* scene)
                         motion->vel.y = 0;
                     }
                 }
+
+                // Check for friendly units TODO
+				if(Scene_EntityHasComponents(scene, id, GROUND_UNIT_FLAG_COMPONENT_ID)) {
+					system(scene, wallID, GROUND_UNIT_FLAG_COMPONENT_ID, nation->enemyNationFlag)
+					{
+						Motion* otherMotion = (Motion*)Scene_GetComponent(scene, wallID, MOTION_COMPONENT_ID);
+						if (Vector_Dist(motion->pos, otherMotion->pos) < 16) {
+							motion->vel.x = 0;
+							motion->vel.y = 0;
+						}
+					}
+				}
             }
         } else {
             motion->vel.x = 0;
@@ -2440,6 +2452,9 @@ void Match_RenderCityName(Scene* scene)
         int width = FC_GetWidth(bigFont, city->name) * scale.x;
         int height = FC_GetAscent(bigFont, city->name) * scale.y;
         Terrain_Translate(&rect, motion->pos.x, motion->pos.y + 16, 0, 0);
+		FC_SetDefaultColor(bigFont, (SDL_Color){0, 0, 0, 255});
+        FC_DrawScale(bigFont, g->rend, rect.x - width / 2 + 1, rect.y - height / 2 + 1, scale, city->name);
+		FC_SetDefaultColor(bigFont, (SDL_Color){255, 255, 255, 255});
         FC_DrawScale(bigFont, g->rend, rect.x - width / 2, rect.y - height / 2, scale, city->name);
     }
 }
@@ -2900,6 +2915,8 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
+
+	Artillery_Create(match, Vector_Add(homeVector, (Vector) { -100, 0 }), enemyNation);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);

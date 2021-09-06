@@ -25,7 +25,7 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
     SimpleRenderable render = {
         AIRFIELD_TEXTURE_ID,
         BUILDING_OUTLINE_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        AIRFIELD_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
         false,

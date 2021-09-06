@@ -75,7 +75,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
 {
     i = i * 2 - 0.5f;
 
-    struct gradient grad = Perlin_GetGradient(map, mapSize, (int)(x / 2) * 2, (int)(y / 2) * 2);
+    struct gradient grad = Perlin_GetSecondGradient(map, mapSize, (int)(x / 2) * 2, (int)(y / 2) * 2);
     if (grad.gradY < minGrad) {
         minGrad = grad.gradY;
     }
@@ -91,7 +91,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         // ground
         i = (i - 0.5f) * 2;
         i = powf(i, 0.25f);
-        float light = 15.0f * grad.gradY;
+        float light = 15.0f * grad.gradY * i * i * i * i * i;
         float hue = 45.0f + 45.0f * i;
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
         float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.4088f);
