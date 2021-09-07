@@ -4,8 +4,6 @@
 #include "../textures.h"
 #include "./academy.h"
 
-/*
-	Creates a academy entity */
 EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID academyID = Scene_NewEntity(scene);
@@ -23,7 +21,7 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     SimpleRenderable render = {
         ACADEMY_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        ACADEMY_OUTLINE_TEXTURE_ID,
         ACADEMY_SHADOW_TEXTURE_ID,
 		RenderPriorirty_BUILDING_LAYER,
         false,
@@ -31,8 +29,8 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, academyID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

@@ -49,7 +49,9 @@ struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(s
         retval->components[i] = NULL;
     }
 
-    initComponents(retval);
+    if (initComponents) {
+        initComponents(retval);
+    }
 
     return retval;
 }

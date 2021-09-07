@@ -5,19 +5,21 @@ game.c
 #include "gameState.h"
 #include "../util/debug.h"
 #include "scene.h"
+#include <SDL_mixer.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 bool sceneStale = false;
+bool asap = false;
 
 /*
 	Takes in a window title, width, and height. Initializes the global game struct
 	variable g by creaating an SDL window and renderer. */
 void Game_Init(char* windowName, int width, int height)
 {
-    atexit(&SDL_Quit);
+    atexit(&Game_Exit);
     g = (struct game*)calloc(1, sizeof(struct game));
     if (!g) {
         exit(1);
@@ -54,10 +56,19 @@ void Game_Init(char* windowName, int width, int height)
     }
     SDL_SetRenderDrawBlendMode(g->rend, SDL_BLENDMODE_BLEND);
 
+    Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 2, 512);
+    Mix_AllocateChannels(4);
+
     g->running = 1;
     g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = g->ticks = 0;
     g->sceneStack = Arraylist_Create(10, sizeof(Scene*));
     printf("Started.");
+}
+
+void Game_Exit()
+{
+    Mix_CloseAudio();
+    SDL_Quit();
 }
 
 /*
@@ -112,18 +123,24 @@ void Game_Run()
         // Reset scene stack flag
         sceneStale = false;
 
-        while (lag >= g->dt) {
+        while (lag >= g->dt || asap) {
             Game_PollInput();
             scene->update(scene);
             if (sceneStale) { // Do not purge entities if scene is stale
                 break;
             }
+
             Scene_Purge(scene);
             lag -= g->dt;
             g->ticks++;
+
+			// Only do one iteration each if asap
+            if (asap) {
+                break;
+            }
         }
 
-        if (!sceneStale) { // Do not render if scene is stale
+        if (!sceneStale && !asap) { // Do not render if scene is stale, nor if going asap
             elapsedFrames = 0;
             SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 255);
             SDL_RenderClear(g->rend);
@@ -137,7 +154,7 @@ void Game_Run()
         const double seconds = (end - start) / (float)(freq);
         if (seconds > 5.0) {
             // MUST be under 16,000 micro seconds
-            printf("%d frames in %f seconds = %f FPS(%f us/frame)\n", frames, seconds, frames / seconds, (seconds * 1000000.0) / frames);
+            printf("%d frames in %f seconds = %f FPS(%f us/frame), %f engine seconds\n", frames, seconds, frames / seconds, (seconds * 1000000.0) / frames, g->ticks / 60.0f);
             start = end;
             frames = 0;
         }

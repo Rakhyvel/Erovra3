@@ -29,7 +29,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     SimpleRenderable render = {
         PORT_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        PORT_OUTLINE_TEXTURE_ID,
         PORT_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
@@ -37,8 +37,8 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, portID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

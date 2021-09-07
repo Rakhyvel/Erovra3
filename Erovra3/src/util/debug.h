@@ -18,4 +18,10 @@
 void debug_panic(const char* file, int line, const char* function,
     const char* message, ...);
 
+#define ASSERT(CONDITION)                            \
+    if (CONDITION) {                                 \
+    } else {                                         \
+        PANIC("assertion '%s' failed.", #CONDITION); \
+    }
+
 #endif

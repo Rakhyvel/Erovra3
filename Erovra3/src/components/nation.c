@@ -5,7 +5,7 @@
 /*
 	Takes in a scene and color, registers a nation entity, assigns components 
 	relevant to a nation. Return nation's EntityID */
-EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, ComponentKey ownNation, ComponentKey enemyNation, ComponentKey controlFlag)
+EntityID Nation_Create(struct scene* scene, Goap* goap, SDL_Color color, int mapSize, ComponentKey ownNation, ComponentKey enemyNation, ComponentKey controlFlag)
 {
     EntityID nationID = Scene_NewEntity(scene);
     Nation nation = {
@@ -15,19 +15,19 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
         controlFlag,
     };
     // Initial resources
-    nation.resources[ResourceType_COIN] = 45;
+    nation.resources[ResourceType_COIN] = 25;
     nation.resources[ResourceType_ORE] = 0;
     nation.resources[ResourceType_POPULATION] = 1;
     nation.resources[ResourceType_POPULATION_CAPACITY] = 1;
 
     // Coin costs
-    nation.costs[ResourceType_COIN][UnitType_CITY] = 15;
-    nation.costs[ResourceType_COIN][UnitType_FACTORY] = 5;
+    nation.costs[ResourceType_COIN][UnitType_CITY] = 10;
+    nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
     nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 25;
     nation.costs[ResourceType_COIN][UnitType_FARM] = 10;
-    nation.costs[ResourceType_COIN][UnitType_ACADEMY] = 15;
+    nation.costs[ResourceType_COIN][UnitType_ACADEMY] = 10;
     nation.costs[ResourceType_COIN][UnitType_WALL] = 10;
     nation.costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
     nation.costs[ResourceType_COIN][UnitType_ENGINEER] = 15;
@@ -60,7 +60,16 @@ EntityID Nation_Create(struct scene* scene, SDL_Color color, int mapSize, Compon
 
     nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
-    Scene_Assign(scene, nationID, controlFlag, NULL);
+    nation.cities = Arraylist_Create(10, sizeof(EntityID));
+
+    if (controlFlag == AI_COMPONENT_ID) {
+        AI ai = {
+			goap
+        };
+        Scene_Assign(scene, nationID, controlFlag, &ai);
+    } else {
+        Scene_Assign(scene, nationID, controlFlag, NULL);
+    }
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);
     Scene_Assign(scene, nationID, ownNation, NULL);
     return nationID;

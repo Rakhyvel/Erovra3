@@ -30,7 +30,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     SimpleRenderable render = {
         MINE_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        MINE_OUTLINE_TEXTURE_ID,
         MINE_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
@@ -38,8 +38,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, mineID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, mineID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
@@ -60,7 +60,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        (1.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)),
+		// A good mine is roughly able to support two factories
+        (3.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)),
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

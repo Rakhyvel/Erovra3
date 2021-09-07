@@ -4,8 +4,6 @@
 #include "components.h"
 #include "shell.h"
 
-/*
-	Creates an artillery entity */
 EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID artilleryID = Scene_NewEntity(scene);

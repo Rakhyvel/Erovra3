@@ -53,11 +53,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
     };
     Scene_Assign(scene, shellID, AIR_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, shellID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
-
-    Shell shell = {
-        tar
-    };
-    Scene_Assign(scene, shellID, SHELL_COMPONENT_ID, &shell);
+    Scene_Assign(scene, shellID, SHELL_COMPONENT_ID, 0);
 
     Projectile projectile = {
         attack,

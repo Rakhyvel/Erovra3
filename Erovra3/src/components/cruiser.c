@@ -6,8 +6,6 @@
 #include "bullet.h"
 #include "components.h"
 
-/*
-	Creates an entity with cruiser components */
 EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID cruiserID = Scene_NewEntity(scene);

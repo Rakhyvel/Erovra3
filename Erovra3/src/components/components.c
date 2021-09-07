@@ -44,7 +44,7 @@ void Components_Init()
     HOME_NATION_FLAG_COMPONENT_ID = rand();
     ENEMY_NATION_FLAG_COMPONENT_ID = rand();
     PLAYER_FLAG_COMPONENT_ID = rand();
-    AI_FLAG_COMPONENT_ID = rand();
+    AI_COMPONENT_ID = rand();
 
     HOVERABLE_COMPONENT_ID = rand();
     SELECTABLE_COMPONENT_ID = rand();
@@ -84,7 +84,7 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, BULLET_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AIR_BULLET_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, BOMB_COMPONENT_ID, 0);
-    Scene_RegisterComponent(scene, SHELL_COMPONENT_ID, sizeof(Shell));
+    Scene_RegisterComponent(scene, SHELL_COMPONENT_ID, 0);
 
     Scene_RegisterComponent(scene, CITY_COMPONENT_ID, sizeof(City));
     Scene_RegisterComponent(scene, PRODUCER_COMPONENT_ID, sizeof(Producer));
@@ -97,7 +97,7 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, HOME_NATION_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, ENEMY_NATION_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
-    Scene_RegisterComponent(scene, AI_FLAG_COMPONENT_ID, 0);
+    Scene_RegisterComponent(scene, AI_COMPONENT_ID, sizeof(AI));
 
     Scene_RegisterComponent(scene, HOVERABLE_COMPONENT_ID, sizeof(Hoverable));
     Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));

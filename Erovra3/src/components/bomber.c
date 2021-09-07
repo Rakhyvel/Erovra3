@@ -5,8 +5,6 @@
 #include "bomb.h"
 #include "components.h"
 
-/*
-	Creates an bomber plane entity */
 EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID bomberID = Scene_NewEntity(scene);

@@ -1,2 +1,3 @@
 #pragma once
-extern int ticks;
+
+//#define TOURNAMENT

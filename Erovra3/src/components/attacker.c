@@ -5,8 +5,6 @@
 #include "bullet.h"
 #include "components.h"
 
-/*
-	Creates an attacker plane entity */
 EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID attackerID = Scene_NewEntity(scene);

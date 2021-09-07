@@ -78,8 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\lib\SDL2_ttf-2.0.15\include;C:\lib\SDL2-2.0.14\include;C:\lib\SDL2_image-2.0.5\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\lib\SDL2_ttf-2.0.15\lib\x64;C:\lib\SDL2-2.0.14\lib\x64;C:\lib\SDL2_image-2.0.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\lib\SDL2_ttf-2.0.15\include;C:\lib\SDL2-2.0.14\include;C:\lib\SDL2_image-2.0.5\include;C:\lib\SDL2_mixer-2.0.4\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\lib\SDL2_ttf-2.0.15\lib\x64;C:\lib\SDL2-2.0.14\lib\x64;C:\lib\SDL2_image-2.0.5\lib\x64;C:\lib\SDL2_mixer-2.0.4\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -258,6 +258,14 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\engine\goap.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\engine\soundManager.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\gui\font.c">
       <SubType>
       </SubType>
@@ -270,11 +278,19 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\scenes\ai.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\scenes\menu.c">
       <SubType>
       </SubType>
     </ClCompile>
     <ClCompile Include="src\scenes\pause.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\scenes\tournament.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -355,12 +371,16 @@
     <ClInclude Include="src\components\ore.h" />
     <ClInclude Include="src\components\shell.h" />
     <ClInclude Include="src\components\wall.h" />
+    <ClInclude Include="src\engine\goap.h" />
+    <ClInclude Include="src\engine\soundManager.h" />
     <ClInclude Include="src\gui\font.h" />
     <ClInclude Include="src\gui\gui.h" />
     <ClInclude Include="src\gui\SDL_FontCache.h" />
     <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\scenes\ai.h" />
     <ClInclude Include="src\scenes\menu.h" />
     <ClInclude Include="src\scenes\pause.h" />
+    <ClInclude Include="src\scenes\tournament.h" />
     <ClInclude Include="src\util\arraylist.h" />
     <ClInclude Include="src\components\components.h" />
     <ClInclude Include="src\util\debug.h" />

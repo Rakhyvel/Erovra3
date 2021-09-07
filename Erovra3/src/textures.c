@@ -25,32 +25,39 @@ void Textures_Init()
     Polygon bomberTail = Polygon_Create("res/bomber_tail.gon");
     Polygon bomberNacelle = Polygon_Create("res/bomber_nacelle.gon");
 
-    CITY_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
-    FACTORY_TEXTURE_ID = Texture_RegisterTexture("res/factory.png");
+    CITY_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    CITY_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    CITY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    CAPITAL_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    CAPITAL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
     MINE_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
-    PORT_TEXTURE_ID = Texture_RegisterTexture("res/port.png");
-    AIRFIELD_TEXTURE_ID = Texture_RegisterTexture("res/airfield.png");
-    FARM_TEXTURE_ID = Texture_RegisterTexture("res/farm.png");
-    ACADEMY_TEXTURE_ID = Texture_RegisterTexture("res/academy.png");
-    BUILDING_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/hit.png");
-    CAPITAL_TEXTURE_ID = Texture_RegisterTexture("res/capital.png");
+    MINE_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
+    MINE_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
+    FACTORY_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    FACTORY_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    FACTORY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    PORT_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    PORT_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    PORT_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    AIRFIELD_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    AIRFIELD_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    AIRFIELD_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    FARM_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    FARM_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    FARM_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    ACADEMY_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    ACADEMY_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
+    ACADEMY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/320x320.png");
     WALL_TEXTURE_ID = Texture_RegisterTexture("res/wall.png");
     WALL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/wall_shadow.png");
-    CAPITAL_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
-    CITY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/city.png");
-    FACTORY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/factory.png");
-    PORT_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/port.png");
-    AIRFIELD_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/airfield.png");
-    MINE_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/mine.png");
-    FARM_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/farm.png");
-    ACADEMY_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/academy.png");
 
     INFANTRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     CAVALRY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     ARTILLERY_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     ENGINEER_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
     GROUND_OUTLINE_TEXTURE_ID = Texture_RegisterTexture("res/ground_outline.png");
-    GROUND_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/shadow.png");
+    GROUND_SHADOW_TEXTURE_ID = Texture_RegisterTexture("res/infantry.png");
 
     DESTROYER_TEXTURE_ID = Texture_RegisterTexture("res/ship.png");
     CRUISER_TEXTURE_ID = Texture_RegisterTexture("res/ship.png");
@@ -92,21 +99,49 @@ void Textures_Init()
 
     Texture_FillPolygon(CITY_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(CITY_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(CITY_OUTLINE_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
+    Texture_FillPolygon(CAPITAL_TEXTURE_ID, Polygon_Create("res/capital_pole.gon"), (SDL_Color) { 0, 0, 0, 255 });
+    Texture_DrawPolygon(CAPITAL_TEXTURE_ID, Polygon_Create("res/capital_pole.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillPolygon(CAPITAL_TEXTURE_ID, Polygon_Create("res/capital_flag.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(CAPITAL_TEXTURE_ID, Polygon_Create("res/capital_flag.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_pole.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_flag.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
     Texture_DrawPolygon(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 0, 0, 0, 255 }, 20);
+    Texture_DrawPolygon(MINE_OUTLINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 60);
+
+    Texture_FillPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(FACTORY_OUTLINE_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
     Texture_DrawPolygon(PORT_TEXTURE_ID, Polygon_Create("res/port_bar.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_DrawBezier(PORT_TEXTURE_ID, Polygon_Create("res/port_hook.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_DrawBezier(PORT_TEXTURE_ID, Polygon_Create("res/port_hole.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(PORT_OUTLINE_TEXTURE_ID, Polygon_Create("res/port_bar.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(PORT_OUTLINE_TEXTURE_ID, Polygon_Create("res/port_hook.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(PORT_OUTLINE_TEXTURE_ID, Polygon_Create("res/port_hole.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
     drawThickLine(AIRFIELD_TEXTURE_ID, (Vector) { 60, 60 }, (Vector) { 270, 150 }, (SDL_Color) { 0, 0, 0, 255 }, 10);
     drawThickLine(AIRFIELD_TEXTURE_ID, (Vector) { 60, 230 }, (Vector) { 140, 40 }, (SDL_Color) { 0, 0, 0, 255 }, 10);
     drawThickLine(AIRFIELD_TEXTURE_ID, (Vector) { 30, 210 }, (Vector) { 280, 110 }, (SDL_Color) { 0, 0, 0, 255 }, 15);
+    drawThickLine(AIRFIELD_OUTLINE_TEXTURE_ID, (Vector) { 60, 60 }, (Vector) { 270, 150 }, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    drawThickLine(AIRFIELD_OUTLINE_TEXTURE_ID, (Vector) { 60, 230 }, (Vector) { 140, 40 }, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    drawThickLine(AIRFIELD_OUTLINE_TEXTURE_ID, (Vector) { 30, 210 }, (Vector) { 280, 110 }, (SDL_Color) { 255, 255, 255, 255 }, 45);
+
     Texture_FillPolygon(FARM_TEXTURE_ID, Polygon_Create("res/farm_silo.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(FARM_TEXTURE_ID, Polygon_Create("res/farm_silo.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(FARM_TEXTURE_ID, Polygon_Create("res/farm_barn.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(FARM_TEXTURE_ID, Polygon_Create("res/farm_barn.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(FARM_OUTLINE_TEXTURE_ID, Polygon_Create("res/farm_silo.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(FARM_OUTLINE_TEXTURE_ID, Polygon_Create("res/farm_barn.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
     Texture_FillPolygon(ACADEMY_TEXTURE_ID, Polygon_Create("res/academy_bldg.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(ACADEMY_TEXTURE_ID, Polygon_Create("res/academy_bldg.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(ACADEMY_TEXTURE_ID, Polygon_Create("res/academy_tower.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(ACADEMY_TEXTURE_ID, Polygon_Create("res/academy_tower.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(ACADEMY_OUTLINE_TEXTURE_ID, Polygon_Create("res/academy_bldg.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(ACADEMY_OUTLINE_TEXTURE_ID, Polygon_Create("res/academy_tower.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
 
     Texture_CreateShadow(CAPITAL_SHADOW_TEXTURE_ID, CAPITAL_TEXTURE_ID);
     Texture_CreateShadow(CITY_SHADOW_TEXTURE_ID, CITY_TEXTURE_ID);
@@ -147,21 +182,18 @@ void Textures_Init()
     Texture_CreateShadow(SHIP_SHADOW_TEXTURE_ID, DESTROYER_TEXTURE_ID);
 
     // Build fighter icon
-    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_FillBezier(FIGHTER_TEXTURE_ID, fighterWing, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(FIGHTER_TEXTURE_ID, fighterWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(FIGHTER_TEXTURE_ID, fighterTail, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(FIGHTER_TEXTURE_ID, fighterTail, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(FIGHTER_TEXTURE_ID, fighterBody, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(FIGHTER_TEXTURE_ID, fighterBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(FIGHTER_OUTLINE_TEXTURE_ID, fighterBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_CreateShadow(FIGHTER_SHADOW_TEXTURE_ID, FIGHTER_TEXTURE_ID);
 
     // Build attacker icon
-    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawPolygon(ATTACKER_OUTLINE_TEXTURE_ID, attackerTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     attackerNacelle.x = 230;
     attackerNacelle.y = 135;
     Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerNacelle, (SDL_Color) { 255, 255, 255, 255 });
@@ -175,12 +207,12 @@ void Textures_Init()
     Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(ATTACKER_TEXTURE_ID, attackerBody, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(ATTACKER_TEXTURE_ID, attackerBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(ATTACKER_OUTLINE_TEXTURE_ID, attackerTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(ATTACKER_OUTLINE_TEXTURE_ID, attackerBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_CreateShadow(ATTACKER_SHADOW_TEXTURE_ID, ATTACKER_TEXTURE_ID);
 
     // Build bomber icon
-    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawPolygon(BOMBER_OUTLINE_TEXTURE_ID, bomberTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
-    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     bomberNacelle.x = 323;
     bomberNacelle.y = 137;
     Texture_FillBezier(BOMBER_TEXTURE_ID, bomberNacelle, (SDL_Color) { 255, 255, 255, 255 });
@@ -203,6 +235,9 @@ void Textures_Init()
     Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberWing, (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawBezier(BOMBER_TEXTURE_ID, bomberBody, (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberWing, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(BOMBER_OUTLINE_TEXTURE_ID, bomberTail, (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(BOMBER_OUTLINE_TEXTURE_ID, bomberBody, (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_CreateShadow(BOMBER_SHADOW_TEXTURE_ID, BOMBER_TEXTURE_ID);
 
     Texture_CreateShadow(COIN_SHADOW_TEXTURE_ID, COIN_TEXTURE_ID);

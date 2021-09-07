@@ -4,8 +4,6 @@
 #include "../textures.h"
 #include "./airfield.h"
 
-/*
-	Creates a airfield entity */
 EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID airfieldID = Scene_NewEntity(scene);
@@ -24,7 +22,7 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
 
     SimpleRenderable render = {
         AIRFIELD_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        AIRFIELD_OUTLINE_TEXTURE_ID,
         AIRFIELD_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
@@ -32,8 +30,8 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, airfieldID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, airfieldID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

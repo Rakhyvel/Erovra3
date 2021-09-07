@@ -24,16 +24,16 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     SimpleRenderable render = {
         FARM_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        FARM_OUTLINE_TEXTURE_ID,
+        FARM_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
         false,
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, farmID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, farmID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

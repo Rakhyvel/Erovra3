@@ -41,6 +41,12 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
 
     int status = 0;
     retval->ore = Perlin_Generate(retval->tileSize, retval->tileSize / 8, (unsigned)time(0), &status);
+    Perlin_Normalize(retval->ore, retval->tileSize);
+    for (int i = 0; i < (retval->tileSize * retval->tileSize); i++) {
+        int x = (i % retval->tileSize) * 64;
+        int y = (i / retval->tileSize) * 64;
+        retval->ore[i] *= 0.5f * (retval->map[x + y * mapSize] + 1.0f);
+    }
     retval->buildings = (EntityID*)calloc(retval->tileSize * retval->tileSize, sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -56,7 +62,6 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
     for (int i = 0; i < ((mapSize + 1) * (mapSize + 1)) / (32 * 32); i++) {
         retval->walls[i] = INVALID_ENTITY_INDEX;
     }
-    Perlin_Normalize(retval->ore, retval->tileSize);
     return retval;
 }
 
@@ -85,7 +90,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
     } else if (i < 0.5) {
         // water
         i *= 2;
-        i = powf(i, 21);
+        i = powf(i, 51);
         return Terrain_HSVtoRGB(214.0f - 25.0f * i, 1.0f - 0.45f * i, 0.21f + 0.6f * i + 0.1f * powf(i, 91));
     } else {
         // ground
@@ -162,7 +167,7 @@ void Terrain_Render(struct terrain* terrain)
     rect.w = rect.h = (int)(terrain_zoom * terrain->size);
     SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
 
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 50);
+    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, min(max(50 * terrain_zoom, 12), 50));
     SDL_FPoint gridLineStart = { 32, 32 };
     SDL_Rect gridLineRect = { 0, 0, 0, 0 };
     Terrain_Translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
@@ -289,7 +294,7 @@ int Terrain_ClosestMaskDist(struct scene* scene, ComponentKey key, struct terrai
     for (int x = 0; x < terrain->tileSize; x++) {
         for (int y = 0; y < terrain->tileSize; y++) {
             EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
-            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, key)) {
+            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, key)) { // EntityHasComponents giving errors about entity version
                 int dist = abs(x1 - x) + abs(y1 - y);
                 if (dist < retval) {
                     retval = dist;

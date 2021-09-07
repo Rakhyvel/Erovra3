@@ -5,8 +5,6 @@
 #include "bullet.h"
 #include "components.h"
 
-/*
-	Creates an entity with battleship components */
 EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID battleshipID = Scene_NewEntity(scene);

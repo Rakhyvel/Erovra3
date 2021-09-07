@@ -37,10 +37,12 @@ Code guidelines:
 
 */
 
+#include "./main.h"
 #include "./components/components.h"
 #include "./gui/font.h"
 #include "./gui/gui.h"
 #include "./scenes/menu.h"
+#include "./scenes/tournament.h"
 #include "engine/gameState.h"
 #include "textures.h"
 #include <SDL.h>
@@ -51,12 +53,16 @@ Code guidelines:
 	Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Game_Init("Erovra 3.9.2", 1280, 680);
+    Game_Init("Erovra 3.9.3", 1280, 680);
     Font_Init();
     GUI_Init();
     Components_Init();
     Textures_Init();
+#ifdef TOURNAMENT
+    Tournament_Init();
+#else
     Menu_Init();
+#endif
     Game_Run();
     return 0;
 }

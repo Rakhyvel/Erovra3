@@ -4,8 +4,6 @@
 #include "components.h"
 #include "bullet.h"
 
-/*
-	Creates a cavalry entity */
 EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation)
 {
     EntityID cavalryID = Scene_NewEntity(scene);

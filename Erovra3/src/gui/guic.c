@@ -1,5 +1,6 @@
 #pragma once
 #include "../engine/gameState.h"
+#include "../engine/soundManager.h"
 #include "../util/debug.h"
 #include "font.h"
 #include "gui.h"
@@ -10,11 +11,14 @@ TextureID radioUnchecked = NULL;
 TextureID radioChecked = NULL;
 TextureID check = NULL;
 
+SoundID HOVER_SOUND_ID;
+SoundID CLICK_SOUND_ID;
+
 SDL_Color backgroundColor = { 57, 63, 68, 255 };
 SDL_Color textColor = { 255, 255, 255, 255 };
 SDL_Color borderColor = { 133, 136, 140, 255 };
 SDL_Color hoverColor = { 255, 255, 255, 255 };
-SDL_Color activeColor = { 43, 154, 243, 255 };
+SDL_Color activeColor = { 60, 100, 250, 255 };
 SDL_Color errorColor = { 250, 80, 80, 255 };
 SDL_Color inactiveBackgroundColor = { 77, 82, 88, 64 };
 SDL_Color inactiveTextColor = { 200, 200, 200, 255 };
@@ -42,6 +46,9 @@ void GUI_Init()
 
     check = Texture_RegisterTexture("res/gui/check.png");
     Texture_DrawPolygon(check, Polygon_Create("res/gui/check.gon"), hoverColor, 10);
+
+    HOVER_SOUND_ID = Sound_Register("res/hover.wav");
+    CLICK_SOUND_ID = Sound_Register("res/click.wav");
 }
 
 /*	 */
@@ -90,7 +97,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
         2,
         0,
         true,
-		true,
+        true,
         INVALID_ENTITY_INDEX,
     };
     Scene_Assign(scene, buttonID, GUI_COMPONENT_ID, &gui);
@@ -446,15 +453,14 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
             } else {
                 labelPos += offset;
             }
-            
-			// Cutom strcat THAT DOESNT CRASH!
+
+            // Cutom strcat THAT DOESNT CRASH!
             int i;
             for (i = 0; i < 32 && label->text[i] != '\0'; i++)
                 ;
-			for (int j = 0; i < 32 && temp[j] != '\0'; i++, j++)
-			{
+            for (int j = 0; i < 32 && temp[j] != '\0'; i++, j++) {
                 label->text[i] = temp[j];
-			}
+            }
 
             label->text[labelPos + 1] = '\0';
             formatPos++;
@@ -639,7 +645,11 @@ static void updateClickable(Scene* scene)
     {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Clickable* clickable = (Clickable*)Scene_GetComponent(scene, id, GUI_CLICKABLE_COMPONENT_ID);
+        bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (!prevIsHovered && gui->isHovered && gui->active) {
+            Sound_Play(HOVER_SOUND_ID);
+        }
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
@@ -648,6 +658,9 @@ static void updateClickable(Scene* scene)
             if (gui->clickedIn && gui->isHovered) {
                 if (clickable->onclick == NULL) {
                     PANIC("Button onclick is NULL for button %s", clickable->text);
+                }
+                if (gui->active) {
+                    Sound_Play(CLICK_SOUND_ID);
                 }
                 clickable->onclick(scene, id);
             }
@@ -666,7 +679,11 @@ static void updateRockerSwitch(Scene* scene)
     {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
+        bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (!prevIsHovered && gui->isHovered && gui->active) {
+            Sound_Play(HOVER_SOUND_ID);
+        }
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
@@ -674,6 +691,9 @@ static void updateRockerSwitch(Scene* scene)
             if (gui->clickedIn && gui->isHovered) {
                 if (rockerSwitch->onchange == NULL) {
                     PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
+                }
+                if (gui->active) {
+                    Sound_Play(CLICK_SOUND_ID);
                 }
                 rockerSwitch->value = !rockerSwitch->value;
                 rockerSwitch->onchange(scene, id);
@@ -697,10 +717,14 @@ void updateRadioButtons(Scene* scene)
         RadioButtons* radioButtons = (RadioButtons*)Scene_GetComponent(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID);
 
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 34 && g->mouseY < gui->pos.y + gui->height;
+        int oldSelected = radioButtons->selectionHovered;
         if (gui->isHovered) {
             radioButtons->selectionHovered = (g->mouseY - gui->pos.y - 22) / 44;
         } else {
             radioButtons->selectionHovered = -1;
+        }
+        if (radioButtons->selectionHovered != -1 && oldSelected != radioButtons->selectionHovered) {
+            Sound_Play(HOVER_SOUND_ID);
         }
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
@@ -708,6 +732,9 @@ void updateRadioButtons(Scene* scene)
         if (g->mouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 radioButtons->selection = radioButtons->selectionHovered;
+                if (gui->active) {
+                    Sound_Play(CLICK_SOUND_ID);
+                }
             }
             gui->clickedIn = false;
         }
@@ -727,14 +754,24 @@ void updateSlider(Scene* scene)
         }
         Slider* slider = (Slider*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
 
+        bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 6 + 16 && g->mouseY < gui->pos.y + gui->height;
+        if (!prevIsHovered && gui->isHovered && gui->active) {
+            Sound_Play(HOVER_SOUND_ID);
+        }
         if ((gui->isHovered || gui->clickedIn) && g->mouseLeftDown) {
             float val = (g->mouseX - gui->pos.x) / gui->width;
             slider->value = max(0.0f, min(1.0f, val));
+            if (!gui->clickedIn) {
+                Sound_Play(HOVER_SOUND_ID);
+            }
             gui->clickedIn = true;
         }
         if (gui->clickedIn && !g->mouseLeftDown) {
             slider->onupdate(scene, id);
+            if (gui->clickedIn) {
+                Sound_Play(HOVER_SOUND_ID);
+            }
             gui->clickedIn = false;
         }
     }
@@ -750,7 +787,11 @@ void updateTextBox(Scene* scene)
         }
         TextBox* textBox = (TextBox*)Scene_GetComponent(scene, id, GUI_TEXT_BOX_COMPONENT_ID);
 
+        bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 6 + 16 && g->mouseY < gui->pos.y + gui->height;
+        if (!prevIsHovered && gui->isHovered && gui->active && !textBox->active) {
+            Sound_Play(HOVER_SOUND_ID);
+        }
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true;
         }
@@ -765,6 +806,9 @@ void updateTextBox(Scene* scene)
             gui->clickedIn = false;
             textBox->active = true;
             textBox->cursorPos = max(0, min(textBox->length, Font_GetCharIndex(textBox->text, g->mouseX - gui->pos.x - 9)));
+            if (gui->active) {
+                Sound_Play(CLICK_SOUND_ID);
+            }
         }
         if (textBox->active && g->keyDown != '\0') {
             // Place character in text
@@ -805,13 +849,20 @@ static void updateCheckBox(Scene* scene)
     {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
+        bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        if (!prevIsHovered && gui->isHovered && gui->active) {
+            Sound_Play(HOVER_SOUND_ID);
+        }
         if (gui->isHovered && g->mouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
         if (g->mouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 checkBox->value = !checkBox->value;
+                if (gui->active) {
+                    Sound_Play(CLICK_SOUND_ID);
+                }
             }
             gui->clickedIn = false;
         }

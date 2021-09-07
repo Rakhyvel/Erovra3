@@ -11,6 +11,9 @@ struct message {
     SDL_Color color;
 };
 
+extern const int ticksPerLabor; // 400 = standard; 240 = unit/min
+extern bool buildPorts;
+
 EntityID ENGINEER_FOCUSED_GUI;
 
 // Default containers

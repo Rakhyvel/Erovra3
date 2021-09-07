@@ -106,6 +106,22 @@ void Arraylist_Remove(struct arraylist* list, int index)
     list->size--;
 }
 
+int Arraylist_IndexOf(struct arraylist* list, void* data)
+{
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (data == NULL) {
+        PANIC("Data is NULL");
+    }
+
+    for (int i = 0; i < list->size; i++) {
+        if (!memcmp(list->data + (list->typeSize * i), data, list->typeSize)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 /*
 	Copies data to an index */
 void Arraylist_Put(struct arraylist* list, int index, void* data)

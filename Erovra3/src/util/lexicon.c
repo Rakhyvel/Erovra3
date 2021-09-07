@@ -9,7 +9,7 @@
 
 /*
 	Swaps two edges data, but preserves the linked list pointers for simplicity. */
-void swapEdges(struct lexicon_edge* a, struct lexicon_edge* b)
+static void swapEdges(struct lexicon_edge* a, struct lexicon_edge* b)
 {
     Lexicon* tempTo = a->to;
     int tempWeight = a->weight;
@@ -22,7 +22,7 @@ void swapEdges(struct lexicon_edge* a, struct lexicon_edge* b)
 }
 
 /* Returns 1 if the strings are exactly the same */
-int particleCompare(char* a, char* b)
+static int particleCompare(char* a, char* b)
 {
     for (int i = 0; i < PARTICLE_SIZE; i++) {
         if (tolower(a[i]) != tolower(b[i])) {
@@ -32,7 +32,7 @@ int particleCompare(char* a, char* b)
     return 1;
 }
 
-void addEdge(Lexicon* from, Lexicon* to)
+static void addEdge(Lexicon* from, Lexicon* to)
 {
     struct lexicon_edge* curr = from->edges;
     // Search for edge in list
@@ -63,7 +63,7 @@ void addEdge(Lexicon* from, Lexicon* to)
     }
 }
 
-Lexicon* addNode(Lexicon* graph, char* buffer)
+static Lexicon* addNode(Lexicon* graph, char* buffer)
 {
     Lexicon* newNode = calloc(1, sizeof(Lexicon));
     if (!newNode) {

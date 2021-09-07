@@ -250,11 +250,6 @@ x Actual focus GUI menu
 	x Make producer menu show real time rather than ticks
 x Add nation info menu on left side
 	x Add icons next to resources
-- Add sound
-	- SOUND ANY TIME AN ORDER IS GIVEN!
-	- SOUND ANY TIME AN ENTITY IS SPAWNED!
-	- sound should get quieter as it gets farther from the camera, inverse square
-	- should act as feedback, and let the user know about surroundings
 x Add animations
 	x GUI animations (ex. for focus menu) should use timing specified by Microsoft design doc
 x Add arrow when moving a unit
@@ -288,20 +283,23 @@ x Vector graphics for every texture (no bitmaps!)
 	x Port
 	x Make ships good
 	x Shells
-- Put progress bar above factories/ports/academies (it looks good)
-- Arrows should have a gradient
-- Don't fill minimap soil squares for water tiles
+	x Capital
+	x Clean up res folder 
+		x Remove unneeded pngs
+		x Make all starting pngs of the same size one png)
+	x Outlines for buildings
+x Put progress bar above factories/ports/academies (it looks good)
+x Make ground units slightly slower on rougher ground
+x Don't fill minimap soil squares for water tiles
+x Balance a bit
+	x Different scales of units
+x Simplify AI Engineer function
+- Add sound
+	- SOUND ANY TIME AN ORDER IS GIVEN!
+	- SOUND ANY TIME AN ENTITY IS SPAWNED!
+	- sound should get quieter as it gets farther from the camera, inverse square
+	- should act as feedback, and let the user know about surroundings
 - Completely document code, with a python script to create HTML documentation for everything
-- Simplify AI Engineer function
-- Balance a bit
-	- Population should be the core resource of the entire game
-	- Allocating people as a scare resource
-	- Cities grow based on their current population and their number of farms
-	- Taxation is increased based on population
-	- Farms require one unskilled population
-	- Academies can train different kind of skilled laborers, another resource
-	- Make AI able to combat in an ever changing world
-	- Farms better in lowlands, mines better in highlands
 
 3.10.x- Multiplayer
 - Order particles

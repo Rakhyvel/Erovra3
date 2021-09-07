@@ -6,14 +6,11 @@
 #include "./coin.h"
 #include <string.h>
 
-/*
-	Takes in a scene, and some information for a city entity. Registers a new 
-	entity, assigns components to that entity based on the given information. 
-	Returns EntityID of the created city */
 EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nameBuffer, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
+    Arraylist_Add(nationStruct->cities, &cityID);
 
     Motion motion = {
         pos,
@@ -27,7 +24,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
 
     SimpleRenderable render = {
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
-        BUILDING_OUTLINE_TEXTURE_ID,
+        isCapital ? CAPITAL_OUTLINE_TEXTURE_ID : CITY_OUTLINE_TEXTURE_ID,
         isCapital ? CAPITAL_SHADOW_TEXTURE_ID : CITY_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
@@ -35,8 +32,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
         nation,
         32,
         32,
-        36,
-        36
+        32,
+        32
     };
     Scene_Assign(scene, cityID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

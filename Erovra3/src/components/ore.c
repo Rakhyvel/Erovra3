@@ -31,7 +31,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         INVALID_TEXTURE_ID,
         ORE_SHADOW_TEXTURE_ID,
         RenderPriorirty_PARTICLE_LAYER,
-        nation->controlFlag == AI_FLAG_COMPONENT_ID,
+        nation->controlFlag == AI_COMPONENT_ID,
         false,
         nationID,
         20,

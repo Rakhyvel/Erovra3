@@ -6,11 +6,15 @@ game.h
 #include "../util/arraylist.h"
 #include "scene.h"
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <stdbool.h>
 
-#define GAME_POP_SCENE(i) Game_PopScene(i); return;
+#define GAME_POP_SCENE(i) \
+    Game_PopScene(i);     \
+    return;
 
 extern bool sceneStale;
+extern bool asap;
 
 struct game {
     SDL_Window* window;
@@ -48,11 +52,14 @@ struct game {
     double dt;
 
     Arraylist* sceneStack;
+
+    Mix_Chunk* samples[2];
 };
 
 struct game* g;
 
 void Game_Init(char* windowName, int width, int height);
+void Game_Exit();
 void Game_PushScene(Scene*);
 /* Make sure to return immediately after calling this function! */
 void Game_PopScene(int numScenes);
