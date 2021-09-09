@@ -441,6 +441,24 @@ void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
 
 // SYSTEMS
 
+void Match_AIUpdateVisitedSpaces(struct scene* scene)
+{
+    system(scene, id, NATION_COMPONENT_ID, AI_COMPONENT_ID)
+    {
+        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+
+        for (int y = 0; y < nation->visitedSpacesSize; y++) {
+            for (int x = 0; x < nation->visitedSpacesSize; x++) {
+                if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > 0) {
+                    nation->visitedSpaces[x + y * nation->visitedSpacesSize] -= 0.1f;
+                } else if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > -1) {
+                    nation->visitedSpaces[x + y * nation->visitedSpacesSize] = 0;
+                }
+            }
+        }
+    }
+}
+
 /*
 	Checks each health entity against all projectile entites. If the two are 
 	collided, the health of the entity is reduced based on the projectile's 
@@ -1972,7 +1990,7 @@ void Match_RenderMessageContainer(Scene* scene)
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, PLAYER_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, HOME_NATION_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -1997,6 +2015,8 @@ void Match_RenderProducerBars(Scene* scene)
 void Match_Update(Scene* match)
 {
     Terrain_Update(terrain);
+
+    Match_AIUpdateVisitedSpaces(match);
 
     Match_DetectHit(match);
     Match_Death(match);
@@ -2054,7 +2074,7 @@ void Match_Render(Scene* match)
     Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
-    //Match_DrawVisitedSquares(match);
+    Match_DrawVisitedSquares(match);
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);
     Match_RenderMessageContainer(match);

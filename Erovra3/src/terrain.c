@@ -220,6 +220,12 @@ float Terrain_GetZoom()
     return terrain_zoom;
 }
 
+/*
+* Returns the ore content of the tile at the point (x / 64, y / 64)
+* 
+* @param x	X coordinate on the map
+* @param y	Y coordinate on the map
+*/
 float Terrain_GetOre(struct terrain* terrain, int x, int y)
 {
     x /= 64;

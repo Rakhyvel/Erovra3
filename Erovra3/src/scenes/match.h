@@ -1,4 +1,5 @@
 #pragma once
+#include "../components/components.h"
 #include "../engine/scene.h"
 #include "../terrain.h"
 #include "../util/lexicon.h"
@@ -28,6 +29,10 @@ EntityID PORT_BUSY_FOCUSED_GUI;
 
 EntityID ACADEMY_READY_FOCUSED_GUI;
 EntityID ACADEMY_BUSY_FOCUSED_GUI;
+
+bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansion* expansion, UnitType type);
+bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos);
+bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, Vector pos);
 
 void Match_Render(Scene* scene);
 Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled);

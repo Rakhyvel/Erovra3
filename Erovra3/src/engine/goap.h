@@ -6,6 +6,7 @@
 
 #define MAX_VARIABLES 64
 #define MAX_ACTIONS 64
+#define MAX_PRECONDITIONS 8
 
 typedef Uint8 VariableID;
 typedef Uint8 ActionID;
@@ -15,20 +16,20 @@ typedef Uint8 ActionID;
 * condition that should be true after the action runs.
 * 
 * An action's children in a graph is all actions in the graph whose effect is 
-* the first false precondition in the action's array of preconditions.
+* the false preconditions in the action's array of preconditions.
 * 
 * Actions have costs associated with them, these can be updated in real time,
 * and the Goap engine will choose the plan that has the lowest cost.
 */
 typedef struct action {
-    VariableID preconditions[8]; // Variables that action sees as preconditions before running, in order
+    VariableID preconditions[MAX_PRECONDITIONS]; // Variables that action sees as preconditions before running, in order
     int numPreconditions;
-    void (*action)(Scene* scene, ComponentKey flag); // Action to complete
+    void (*actionPtr)(Scene* scene, ComponentKey flag); // Action to complete
     int cost; // Cost of this action
 } Action;
 
 typedef struct goap {
-    // Maps variables to a list of actions that cause the variable to become true
+    // Maps variables to a list of ActionIDs of actions that cause the variable to become true
     Arraylist* effects[MAX_VARIABLES];
 
     // "Variables" should be enums
