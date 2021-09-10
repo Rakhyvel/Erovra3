@@ -148,6 +148,7 @@ typedef struct unit {
     int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Determines if other nation can see unit
     char name[32]; // Description of unit
     bool engaged; // Whether the unit is engaged and cannot receive orders
+    bool knownByEnemy;
 } Unit;
 ComponentKey UNIT_COMPONENT_ID;
 

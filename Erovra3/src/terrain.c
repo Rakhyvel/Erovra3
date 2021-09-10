@@ -96,11 +96,51 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         // ground
         i = (i - 0.5f) * 2;
         i = powf(i, 0.25f);
-        float light = 15.0f * grad.gradY * i * i * i * i * i;
-        float hue = 45.0f + 45.0f * i;
+        float light = 1.0f;
+        if (x < mapSize - 1 && y < mapSize - 1) {
+            // point a
+            int a_x = x;
+            int a_y = y;
+            float a_z = 128 * map[a_x + a_y * mapSize] * i * i * i * i * i * i;
+            // point b
+            int b_x = x + 1;
+            int b_y = y;
+            float b_z = 128 * map[b_x + b_y * mapSize] * i * i * i * i * i * i;
+            // point c
+            int c_x = x;
+            int c_y = y + 1;
+            float c_z = 128 * map[c_x + c_y * mapSize] * i * i * i * i * i * i;
+            // vector q
+            float q_x = a_x - b_x;
+            float q_y = a_y - b_y;
+            float q_z = a_z - b_z;
+            // vector r
+            float r_x = a_x - c_x;
+            float r_y = a_y - c_y;
+            float r_z = a_z - c_z;
+            // normal
+            float n_x = (q_y * r_z) - (q_z * r_y);
+            float n_y = (q_z * r_x) - (q_x * r_z);
+            float n_z = (q_x * r_y) - (q_y * r_x);
+            // normalize
+            float mag = sqrtf(n_x * n_x + n_y * n_y + n_z * n_z);
+            if (mag != 0) {
+                n_x /= mag;
+                n_y /= mag;
+                n_z /= mag;
+            }
+            light = max(0.0f, -0.707 * n_y + 0.707 * n_z);
+        }
+        for (int j = 0; j < y - 1; j++) {
+            if (map[x + (y - j) * mapSize] - j / 128.0f > map[x + y * mapSize]) {
+                light *= min(1, (float)j / 64.0f + 0.84f);
+            }
+        }
+        i *= 100;
+        float hue = 0.0000000367 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 45.3635585447;
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
-        float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.4088f);
-        return Terrain_HSVtoRGB(hue - light / 16.0f, saturation - light / 4.0f, value + light);
+        float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.0f);
+        return Terrain_HSVtoRGB(hue, min(0.3f, saturation), min(0.8f, value + 0.075f * max(0, logf(light / (1.0f - light)))));
     }
 }
 
@@ -200,7 +240,7 @@ void Terrain_Render(struct terrain* terrain)
 float Terrain_GetHeight(struct terrain* terrain, int x, int y)
 {
     if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
-        return -1;
+        return -1.0f;
     }
     return terrain->map[y * terrain->size + x];
 }
@@ -235,13 +275,14 @@ float Terrain_GetOre(struct terrain* terrain, int x, int y)
 
 float Terrain_GetHeightForBuilding(struct terrain* terrain, int x, int y)
 {
-    return Terrain_GetHeight(terrain, 64 * (int)(x / 64) + 32, 64 * (int)(y / 64) + 32);
+    return Terrain_GetHeight(terrain, 64 * (int)(x - 32) / 64 + 32, 64 * (int)(y - 32) / 64 + 32);
 }
 
 EntityID Terrain_GetBuildingAt(struct terrain* terrain, int x, int y)
 {
-    x -= 32;
-    y -= 32;
+    if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
+        return INVALID_ENTITY_INDEX;
+    }
     x /= 64;
     y /= 64;
     return terrain->buildings[x + y * (terrain->tileSize)];

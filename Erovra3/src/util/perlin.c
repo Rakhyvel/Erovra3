@@ -190,7 +190,7 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
         cellSize /= 2;
         amplitude *= 0.5f;
     }
-	/*
+    /*
     Perlin_GenerateOctave(map, mapSize, mapSize / 4, 1, seed, BICOSINE);
     for (int i = 0; i < mapSize * mapSize; i++) {
         retval[i] = retval[i] * 0.75 + map[i] * 0.25;
@@ -301,9 +301,9 @@ Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float pos
 // Intensity should range from 0 to 3
 void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
 {
-    float inertia = 0.5f; // higher/medium values produce smoother maps
+    float inertia = 0.9f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
-    float minSedimentCapacity = 0.01f; // Small values := more deposit
+    float minSedimentCapacity = 100.0f; // Small values := more deposit
     float depositSpeed = 0.1f;
     float erodeSpeed = 0.1f;
     float evaporateSpeed = 100.0f;
@@ -318,9 +318,9 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
         float dirX = 0;
         float dirY = 0;
         float speed = 1;
-        float water = 0;
+        float water = 1;
         float sediment = 0;
-        for (int j = 0; j < mapSize / 64.0f * 4; j++) {
+        for (int j = 0; j < mapSize / 16.0f; j++) {
             int nodeX = (int)posX;
             int nodeY = (int)posY;
             int dropletIndex = nodeX + nodeY * mapSize;
@@ -330,14 +330,15 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
             Gradient grad = Perlin_GetGradient(map, mapSize, posX, posY);
 
             // Update the droplet's movement
-            dirX = (dirX * inertia - grad.gradX * (1 - inertia));
-            dirY = (dirY * inertia - grad.gradY * (1 - inertia));
+            dirX = (dirX * inertia - grad.gradX * (1 - inertia)) * gravity;
+            dirY = (dirY * inertia - grad.gradY * (1 - inertia)) * gravity;
             // Normalize direction
             float len = sqrtf(dirX * dirX + dirY * dirY);
             if (len != 0) {
                 dirX /= len;
                 dirY /= len;
             }
+
             posX += dirX;
             posY += dirY;
 

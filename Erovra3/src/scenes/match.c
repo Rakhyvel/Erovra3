@@ -250,6 +250,9 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     }
     // Set order duration
     producer->orderTicksTotal = 2 * nation->costs[ResourceType_COIN][type] * ticksPerLabor;
+    if (type == UnitType_INFANTRY) {
+        producer->orderTicksTotal += 3600;
+    }
     producer->orderTicksRemaining = producer->orderTicksTotal;
     producer->order = type;
     return true;
@@ -1237,6 +1240,7 @@ void Match_CombatantAttack(struct scene* scene)
             }
         }
         unit->engaged = true;
+        unit->knownByEnemy = true;
         Match_SetUnitEngagedTicks(motion, unit);
 
         // Shoot enemy units if found
@@ -1789,7 +1793,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
