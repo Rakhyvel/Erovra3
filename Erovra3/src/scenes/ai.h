@@ -16,6 +16,7 @@ enum variables {
 	ENGINEER_ISNT_BUSY,
 
 	// "Has any # of unit" variables
+	HAS_ENGINEER,
 	HAS_INFANTRY,
 	HAS_CAVALRY,
 	HAS_FIGHTER,
@@ -27,6 +28,7 @@ enum variables {
 	HAS_ORE, // More like "has enough ore production"
     HAS_POPULATION,
 
+	SPACE_FOR_EXPANSION,
 	SPACE_FOR_AIRFIELD,
 
 	// "Can afford unit" variables
@@ -37,13 +39,16 @@ enum variables {
     AFFORD_FIGHTER_ORE,
     AFFORD_ATTACKER_COINS,
     AFFORD_ATTACKER_ORE,
+    AFFORD_ENGINEER_COINS,
     AFFORD_CITY_COINS,
     AFFORD_MINE_COINS,
     AFFORD_FACTORY_COINS,
     AFFORD_AIRFIELD_COINS,
 	AFFORD_FARM_COINS,
-	AFFORD_ACADEMY_COINS
+	AFFORD_ACADEMY_COINS,
 };
+
+void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key);
 
 void AI_Init(Goap* goap);
 

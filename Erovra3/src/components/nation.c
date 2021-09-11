@@ -21,7 +21,7 @@ EntityID Nation_Create(struct scene* scene, Goap* goap, SDL_Color color, int map
     nation.resources[ResourceType_POPULATION_CAPACITY] = 1;
 
     // Coin costs
-    nation.costs[ResourceType_COIN][UnitType_CITY] = 10;
+    nation.costs[ResourceType_COIN][UnitType_CITY] = 15;
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;

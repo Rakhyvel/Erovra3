@@ -130,13 +130,8 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
             }
             light = max(0.0f, -0.707 * n_y + 0.707 * n_z);
         }
-        for (int j = 0; j < y - 1; j++) {
-            if (map[x + (y - j) * mapSize] - j / 128.0f > map[x + y * mapSize]) {
-                light *= min(1, (float)j / 64.0f + 0.84f);
-            }
-        }
         i *= 100;
-        float hue = 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 50.3635585447;
+        float hue = min(120, 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 50.3635585447);
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
         float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.0f);
         return Terrain_HSVtoRGB(hue, min(0.3f, saturation), min(0.8f, value + 0.075f * max(0, logf(light / (1.0f - light)))));

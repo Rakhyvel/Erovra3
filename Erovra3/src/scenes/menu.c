@@ -123,7 +123,7 @@ static int generatePreview(void* ptr)
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
-            map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * size] = seaLevel->value * (map[x + y * size] - 1.0f) + 1.0f;
         }
     }
 
@@ -158,7 +158,7 @@ static int generateFullTerrain(void* ptr)
     map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
-            map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * fullMapSize] = seaLevel->value * (map[x + y * fullMapSize] - 1.0f) + 1.0f;
         }
     }
 
@@ -167,7 +167,6 @@ static int generateFullTerrain(void* ptr)
     state = EROSION;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
     Perlin_Erode(map, fullMapSize, erosion->value, &status);
-
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
     done = true;
     return 0;

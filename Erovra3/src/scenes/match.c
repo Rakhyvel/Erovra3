@@ -427,19 +427,41 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
 
 void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
 {
-    if (x < 0 || y < 0 || x / 32 >= nation->visitedSpacesSize || y / 32 >= nation->visitedSpacesSize) {
+    if ((x + 16) / 32 < 0 || (y + 16) / 32 < 0 || (x + 16) / 32 >= nation->visitedSpacesSize || (y + 16) / 32 >= nation->visitedSpacesSize) {
         return;
     }
+
     float oldValue = nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize];
     if (value < 0 && value < oldValue) {
         Vector point = { (int)((x + 16) / 32), (int)((y + 16) / 32) };
-        nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
         if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
             Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
         }
         Arraylist_Add(nation->highPrioritySpaces, &point);
     }
     nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize] = min(oldValue, value);
+}
+
+void Match_ClearVisitedSpace(Nation* nation, float x0, float y0, float radius)
+{
+    for (int x1 = -radius; x1 <= radius; x1 += 32) {
+        for (int y1 = -radius; y1 <= radius; y1 += 32) {
+            float x = x0 + x1;
+            float y = y0 + y1;
+            if ((x + 16) / 32 < 0 || (y + 16) / 32 < 0 || (x + 16) / 32 >= nation->visitedSpacesSize || (y + 16) / 32 >= nation->visitedSpacesSize) {
+                continue;
+            }
+            if (sqrtf(x1 * x1 + y1 * y1) > radius) {
+                continue;
+            }
+            float oldValue = nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize];
+            Vector point = { (int)((x + 16) / 32), (int)((y + 16) / 32) };
+            nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
+            if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
+                Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
+            }
+        }
+    }
 }
 
 void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
@@ -529,7 +551,7 @@ void Match_DetectHit(struct scene* scene)
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
                     Match_SetUnitEngagedTicks(motion, unit);
                 }
-				// GROUND UNITS: Do more damage if flanked
+                // GROUND UNITS: Do more damage if flanked
                 if (motion->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
                     Vector displacement = Vector_Sub(motion->pos, otherMotion->pos); // From other to me
@@ -579,6 +601,7 @@ void Match_Death(Scene* scene)
                     health->health = 100;
                     health->isDead = false;
                     health->deathTicks = 0;
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
                 }
 
                 // Remove entry for city expansion map
@@ -586,6 +609,7 @@ void Match_Death(Scene* scene)
                     Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
                     homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                     homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
                 }
 
                 if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
@@ -684,11 +708,7 @@ void Match_SetVisitedSpace(struct scene* scene)
         Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (!unit->engaged && motion->speed > 0) {
-            Vector point = { (int)((motion->pos.x + 16) / 32), (int)((motion->pos.y + 16) / 32) };
-            nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
-            if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
-                Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
-            }
+            Match_ClearVisitedSpace(nation, motion->pos.x, motion->pos.y, 128);
         }
     }
 }
@@ -832,11 +852,11 @@ void Match_Patrol(struct scene* scene)
             // If perpVel and innerCircle are perpendicular (dot == 0), then you're right on track.
             // dot is + -> turn left -> increase angle
             // dot is - -> turn right -> decrease angle
-            patrol->angle += motion->speed * diff / 35.0f;
+            patrol->angle += motion->speed * diff / 20.0f;
         }
-        // If not going directly away, and distance is greater than 64
+        // If not going directly away, and distance is greater than 72
         else if (targetAlignment >= 0 && Vector_Dist(motion->pos, patrol->focalPoint) > 72) {
-            patrol->angle += motion->speed / 35.0f;
+            patrol->angle += motion->speed / 20.0f;
         }
 
         target->tar = Vector_Add(motion->pos, Vector_Scalar((Vector) { sinf(patrol->angle), cosf(patrol->angle) }, 2 * motion->speed));
@@ -1168,6 +1188,7 @@ void Match_AI(Scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
         Goap_Update(scene, ai->goap, nation->ownNationFlag);
+        AI_TargetGroundUnitsRandomly(scene, nation->ownNationFlag);
     }
 }
 
@@ -1381,6 +1402,9 @@ void Match_AirplaneScout(struct scene* scene)
                     unit->knownByEnemy = true;
                     Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, -1);
                 } else {
+                    if (Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
+                        otherUnit->knownByEnemy = true;
+                    }
                     Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, 0);
                 }
             }
@@ -1394,7 +1418,6 @@ void Match_ProduceResources(struct scene* scene)
 {
     system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
     {
-        // I made change to mask, did that work?
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // FIXME: Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
@@ -1535,8 +1558,10 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 newNation->costs[ResourceType_COIN][unit->type] *= 2;
 
+                // You don't get the farms of other people
                 if (unit->type == UnitType_FARM) {
-                    Scene_MarkPurged(scene, id);
+                    Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+                    health->isDead = true;
                 } else {
                     nation->resources[ResourceType_POPULATION]--;
                     newNation->resources[ResourceType_POPULATION]++;
@@ -1544,6 +1569,8 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+                    producer->order = INVALID_ENTITY_INDEX;
+                    producer->orderTicksRemaining = -1;
                     nation->prodCount[producer->order]--;
                     newNation->prodCount[producer->order]++;
                 }
@@ -1559,7 +1586,10 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 
                 Scene_Unassign(scene, id, AI_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
+                Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
+                Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
+                Scene_Assign(scene, id, newNation->ownNationFlag, NULL);
             }
         }
     }
