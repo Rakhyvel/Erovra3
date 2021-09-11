@@ -9,7 +9,7 @@ Goap* Goap_Create(void (*goapInit)(Goap* goap))
         PANIC("Mem error");
     }
     for (int i = 0; i < MAX_VARIABLES; i++) {
-        goap->effects[i] = Arraylist_Create(10, sizeof(ActionID));
+        goap->effects[i] = NULL;
     }
     goapInit(goap);
     return goap;
@@ -37,6 +37,9 @@ void Goap_AddAction(Goap* goap, void (*actionPtr)(Scene* scene, ComponentKey fla
     va_end(args);
 
     // Add action to effects list corresponding to its effect
+    if (goap->effects[effect] == NULL) {
+        goap->effects[effect] = Arraylist_Create(10, sizeof(ActionID));
+    }
     Arraylist_Add(goap->effects[effect], &(goap->numActions));
     // Add action to array of actions
     goap->actions[goap->numActions++] = action;
@@ -81,21 +84,25 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         Action action = goap->actions[u];
         // For each false pre-condition in action:
         for (int i = 0; i < action.numPreconditions; i++) {
-            if (!goap->variables[action.preconditions[i]]) {
+            VariableID precondition = action.preconditions[i];
+            if (!goap->variables[precondition]) {
                 isLeaf[u] = false;
 
                 // For each action that makes this false pre-condition true:
-                Arraylist* children = goap->effects[action.preconditions[i]];
-                for (int j = 0; j < children->size; j++) {
-                    ActionID v = ARRAYLIST_GET_DEREF(children, j, ActionID);
-                    Action child = goap->actions[v];
+                const Arraylist* children = goap->effects[precondition];
+				// The effects list will be null if there are no actions that have the effect
+                if (children != NULL) {
+                    for (int j = 0; j < children->size; j++) {
+                        ActionID v = ARRAYLIST_GET_DEREF(children, j, ActionID);
+                        Action child = goap->actions[v];
 
-                    // Update dist[v] only if is not processed, there is an
-                    // edge from u to v, and total weight of path from src to
-                    // v through u is smaller than current value of dist[v]
-                    if (!processed[v] && dist[u] != INT_MAX
-                        && dist[u] + child.cost < dist[v])
-                        dist[v] = dist[u] + child.cost;
+                        // Update dist[v] only if is not processed, there is an
+                        // edge from u to v, and total weight of path from src to
+                        // v through u is smaller than current value of dist[v]
+                        if (!processed[v] && dist[u] != INT_MAX
+                            && dist[u] + child.cost < dist[v])
+                            dist[v] = dist[u] + child.cost;
+                    }
                 }
             }
         }

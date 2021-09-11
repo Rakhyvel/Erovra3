@@ -58,6 +58,8 @@ EntityID Nation_Create(struct scene* scene, Goap* goap, SDL_Color color, int map
     nation.visitedSpacesSize = mapSize / 32 + 1;
     nation.visitedSpaces = malloc(nation.visitedSpacesSize * nation.visitedSpacesSize * sizeof(float));
 
+	nation.highPrioritySpaces = Arraylist_Create(10, sizeof(Vector));
+
     nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
     nation.cities = Arraylist_Create(10, sizeof(EntityID));
@@ -86,7 +88,7 @@ void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(2.56 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(10 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
         }
     }
 }

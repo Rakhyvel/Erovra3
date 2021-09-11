@@ -202,10 +202,12 @@ typedef struct nation {
     int resources[_ResourceType_Length]; // Array of resource values
     int costs[_ResourceType_Length][_UnitType_Length]; // Array of array of resources, for each unit
     int unitCount[_UnitType_Length]; // How many units there are
+    int prodCount[_UnitType_Length]; // How many units are in production currently
     EntityID capital; // EntityID of nation's capital
     EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
     float* visitedSpaces; // Dynamic array, spaces that units have been to. Only used by AI's
-    int visitedSpacesSize;  // Twice the tile size
+    size_t visitedSpacesSize;  // Twice the tile size
+    Arraylist* highPrioritySpaces; // A list of vectors of spaces where enemies have been spotted
     bool* showOre; // Dynamic array, whether or not to show ore at a tile
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
 } Nation;

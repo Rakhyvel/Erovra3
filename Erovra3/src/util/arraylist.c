@@ -20,18 +20,20 @@
 
 /*
 	Creates an arraylist with a given type size */
-struct arraylist* Arraylist_Create(int initSize, int typeSize)
+struct arraylist* Arraylist_Create(int initCapacity, int typeSize)
 {
-    struct arraylist* retval = malloc(sizeof(struct arraylist));
+    struct arraylist* retval = calloc(1, sizeof(struct arraylist));
     if (!retval) {
         PANIC("Memory error");
     }
     retval->typeSize = typeSize;
     retval->size = 0;
-    retval->capacity = initSize;
-    retval->data = calloc(retval->capacity * retval->typeSize, sizeof(char));
-    if (!retval->data) {
-        PANIC("Memory error");
+    retval->capacity = initCapacity;
+    if (typeSize > 0) {
+        retval->data = calloc(retval->capacity * retval->typeSize, 1);
+        if (!retval->data) {
+            PANIC("Memory error");
+        }
     }
     return retval;
 }
@@ -48,7 +50,7 @@ void Arraylist_Destroy(struct arraylist* list)
 
 /*
 	Returns a pointer to within the arraylist at a given index */
-void* Arraylist_Get(struct arraylist* list, int index)
+void* Arraylist_Get(const struct arraylist* list, int index)
 {
     if (list == NULL) {
         PANIC("List is NULL");
@@ -87,17 +89,8 @@ void Arraylist_Add(struct arraylist* list, void* data)
         PANIC("Data is NULL");
     }
 
-    if (list->size >= list->capacity) {
-        void* res = realloc(list->data, 2 * list->size * list->typeSize); // FIXME: heap error
-        if (res != NULL) {
-            list->data = res;
-        } else {
-            PANIC("Mem err, asked to reallocate %d", 2 * list->size * list->typeSize);
-        }
-        list->capacity = list->size * 2;
-    }
-    Arraylist_Put(list, list->size, data);
-    list->size++;
+    Arraylist_AssertSize(list, list->size + 1);
+    Arraylist_Put(list, list->size - 1, data);
 }
 
 void Arraylist_Remove(struct arraylist* list, int index)
@@ -174,12 +167,14 @@ void Arraylist_AssertSize(struct arraylist* list, int size)
 
     if (size > list->size) {
         list->size = size;
-        list->capacity = list->size * 2;
-        void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error, reading address 0xFFFFFFFFFFFFFFFF??
-        if (res != NULL) {
-            list->data = res;
-        } else {
-            PANIC("Mem err, asked to reallocate %d %d", list->capacity, list->typeSize);
+        if (list->size >= list->capacity) {
+            list->capacity = list->size * 2;
+            void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error
+            if (res != NULL) {
+                list->data = res;
+            } else {
+                PANIC("Mem err, asked to reallocate %d", 2 * list->size * list->typeSize);
+            }
         }
     }
 }

@@ -11,8 +11,8 @@ terrain.h
 typedef struct terrain {
     float* map;
     float* ore;
-    int size;
-    int tileSize;
+    size_t size;
+    size_t tileSize;
     SDL_Texture* texture;
     EntityID* buildings;
     EntityID* walls;

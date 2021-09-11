@@ -68,7 +68,7 @@ void Game_Init(char* windowName, int width, int height)
 void Game_Exit()
 {
     Mix_CloseAudio();
-    SDL_Quit();
+    SDL_Quit(); // FIXME: Heap error when exiting, sometimes
 }
 
 /*

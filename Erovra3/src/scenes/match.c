@@ -255,6 +255,7 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     }
     producer->orderTicksRemaining = producer->orderTicksTotal;
     producer->order = type;
+    nation->prodCount[type]++;
     return true;
 }
 
@@ -426,11 +427,19 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
 
 void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
 {
-    // FIXME: Access violation?
     if (x < 0 || y < 0 || x / 32 >= nation->visitedSpacesSize || y / 32 >= nation->visitedSpacesSize) {
-        return; // This might have fixed it.
+        return;
     }
-    nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize] = min(nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize], value);
+    float oldValue = nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize];
+    if (value < 0 && value < oldValue) {
+        Vector point = { (int)((x + 16) / 32), (int)((y + 16) / 32) };
+        nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
+        if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
+            Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
+        }
+        Arraylist_Add(nation->highPrioritySpaces, &point);
+    }
+    nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize] = min(oldValue, value);
 }
 
 void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
@@ -456,6 +465,10 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
                     nation->visitedSpaces[x + y * nation->visitedSpacesSize] -= 0.1f;
                 } else if (nation->visitedSpaces[x + y * nation->visitedSpacesSize] > -1) {
                     nation->visitedSpaces[x + y * nation->visitedSpacesSize] = 0;
+                    Vector point = { x, y };
+                    if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
+                        Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
+                    }
                 }
             }
         }
@@ -516,7 +529,8 @@ void Match_DetectHit(struct scene* scene)
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
                     Match_SetUnitEngagedTicks(motion, unit);
                 }
-                if (Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
+				// GROUND UNITS: Do more damage if flanked
+                if (motion->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
                     Vector displacement = Vector_Sub(motion->pos, otherMotion->pos); // From other to me
                     health->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, motion->pos))) + 1.0f);
@@ -580,6 +594,10 @@ void Match_Death(Scene* scene)
                         focusable->focused = false;
                         instantDefocus = true;
                     }
+                }
+                if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
+                    Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+                    nation->prodCount[producer->order]--;
                 }
 
                 nation->unitCount[unit->type]--;
@@ -666,8 +684,11 @@ void Match_SetVisitedSpace(struct scene* scene)
         Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (!unit->engaged && motion->speed > 0) {
-            nation->visitedSpaces[(int)((motion->pos.x + 16) / 32) + (int)((motion->pos.y + 16) / 32) * nation->visitedSpacesSize] = 11000;
-            Match_SetAlertedTile(enemyNation, motion->pos.x, motion->pos.y, 4000);
+            Vector point = { (int)((motion->pos.x + 16) / 32), (int)((motion->pos.y + 16) / 32) };
+            nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
+            if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
+                Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
+            }
         }
     }
 }
@@ -1194,7 +1215,7 @@ void Match_CombatantAttack(struct scene* scene)
             float dist = Vector_Dist(otherMotion->pos, motion->pos);
 
             // Mark out enemies
-            if (dist < combatant->attackDist) {
+            if (dist < combatant->attackDist && motion->z <= 0.5f) {
                 float x = otherMotion->pos.x;
                 float y = otherMotion->pos.y;
                 Match_SetAlertedTile(nation, x, y, -1);
@@ -1331,6 +1352,8 @@ void Match_AirplaneAttack(Scene* scene)
             Vector facing = Vector_Normalize(Vector_Sub(target->lookat, motion->pos));
             float targetAlignment = Vector_Dot(facing, innerCircle);
 
+            unit->knownByEnemy = true;
+
             if (targetAlignment > 0.95) {
                 combatant->projConstructor(scene, motion->pos, target->lookat, combatant->attack, simpleRenderable->nation);
             }
@@ -1355,6 +1378,7 @@ void Match_AirplaneScout(struct scene* scene)
                 Match_SetUnitEngagedTicks(motion, unit);
                 Match_SetUnitEngagedTicks(otherMotion, otherUnit);
                 if (!Scene_EntityHasComponents(scene, otherID, PATROL_COMPONENT_ID) && !Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
+                    unit->knownByEnemy = true;
                     Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, -1);
                 } else {
                     Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, 0);
@@ -1428,6 +1452,7 @@ void Match_ProduceUnits(struct scene* scene)
         if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
             producer->orderTicksRemaining--;
             if (producer->orderTicksRemaining == 0) {
+                nation->prodCount[producer->order]--;
                 nation->unitCount[producer->order]++;
                 if (producer->order == UnitType_INFANTRY) {
                     Infantry_Create(scene, motion->pos, simpleRenderable->nation);
@@ -1511,14 +1536,17 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 newNation->costs[ResourceType_COIN][unit->type] *= 2;
 
                 if (unit->type == UnitType_FARM) {
-                    nation->resources[ResourceType_POPULATION_CAPACITY] -= cityPop;
-                    newNation->resources[ResourceType_POPULATION_CAPACITY] += cityPop;
+                    Scene_MarkPurged(scene, id);
                 } else {
                     nation->resources[ResourceType_POPULATION]--;
                     newNation->resources[ResourceType_POPULATION]++;
                 }
-                nation->unitCount[unit->type]--;
-                newNation->unitCount[unit->type]++;
+
+                if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
+                    Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+                    nation->prodCount[producer->order]--;
+                    newNation->prodCount[producer->order]++;
+                }
 
                 if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
                     Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
@@ -1526,6 +1554,8 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                         GUI_SetShown(scene, focusable->focused, false);
                     }
                 }
+                nation->unitCount[unit->type]--;
+                newNation->unitCount[unit->type]++;
 
                 Scene_Unassign(scene, id, AI_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
