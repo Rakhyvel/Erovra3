@@ -340,6 +340,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\util\heap.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\util\vector.c">
       <SubType>
       </SubType>
@@ -390,6 +394,7 @@
     <ClInclude Include="src\terrain.h" />
     <ClInclude Include="src\engine\textureManager.h" />
     <ClInclude Include="src\textures.h" />
+    <ClInclude Include="src\util\heap.h" />
     <ClInclude Include="src\util\lexicon.h" />
     <ClInclude Include="src\util\misc.h" />
     <ClInclude Include="src\util\perlin.h" />

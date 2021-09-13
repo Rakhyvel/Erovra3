@@ -12,6 +12,7 @@ typedef struct terrain {
     float* map;
     float* ore;
     int* continents;
+    Arraylist* continentPoints;
     int numContinents;
     size_t size;
     size_t tileSize;
@@ -19,6 +20,7 @@ typedef struct terrain {
     EntityID* buildings;
     EntityID* walls;
     Arraylist* ports;
+    Arraylist* keyContinents;
 } Terrain;
 
 struct terrain* Terrain_Create(int tileSize, float* map, SDL_Texture* texture);
@@ -34,6 +36,7 @@ void Terrain_Render(struct terrain* terrain);
 // Continent stuff
 void Terrain_FindPorts(struct terrain* terrain);
 void Terrain_FindContinents(struct terrain* terrain);
+void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to);
 
 // Some map functions
 float Terrain_GetHeight(struct terrain*, int x, int y);

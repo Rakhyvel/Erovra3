@@ -1850,7 +1850,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2361,7 +2361,6 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     miniMapTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
     Perlin_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
-    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
     printf("Match: %p\n", match);
@@ -2494,6 +2493,8 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     }
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
+    Terrain_FindCapitalPath(terrain, homeVector, enemyVector);
+    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);

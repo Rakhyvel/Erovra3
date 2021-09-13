@@ -171,6 +171,9 @@
     <ClCompile Include="src\scenes\ai.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\heap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\gameState.h">
@@ -318,6 +321,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\ai.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\heap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

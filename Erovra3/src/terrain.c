@@ -13,6 +13,7 @@ terrain.c
 
 #include "./engine/gameState.h"
 #include "./util/debug.h"
+#include "./util/heap.h"
 #include "./util/perlin.h"
 #include "./util/vector.h"
 #include "terrain.h"
@@ -51,6 +52,7 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
     if (!retval->continents) {
         PANIC("Memory error");
     }
+    retval->continentPoints = Arraylist_Create(5, sizeof(Vector));
     retval->buildings = malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     if (!retval->buildings) {
         PANIC("Memory error");
@@ -67,6 +69,7 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
         retval->walls[i] = INVALID_ENTITY_INDEX;
     }
     retval->ports = Arraylist_Create(10, sizeof(Vector));
+    retval->keyContinents = Arraylist_Create(5, sizeof(int));
     Terrain_FindPorts(retval);
     Terrain_FindContinents(retval);
     return retval;
@@ -80,6 +83,7 @@ void Terrain_Destroy(struct terrain* terrain)
     free(terrain->buildings);
     free(terrain->walls);
     Arraylist_Destroy(terrain->ports);
+    Arraylist_Destroy(terrain->keyContinents);
     SDL_DestroyTexture(terrain->texture);
     free(terrain);
 }
@@ -242,7 +246,13 @@ void Terrain_FindPorts(struct terrain* terrain)
     for (int x = 32; x < terrain->size; x += 64) {
         for (int y = 32; y < terrain->size; y += 64) {
             Vector point = { x, y };
-            if (Terrain_GetHeight(terrain, x, y) <= 0.5f && (Terrain_GetHeight(terrain, x - 64, y) > 0.5f || Terrain_GetHeight(terrain, x, y - 64) > 0.5f || Terrain_GetHeight(terrain, x + 64, y) > 0.5f || Terrain_GetHeight(terrain, x, y + 64) > 0.5f)) {
+            bool isAdjacent = false;
+            for (int x0 = -1; x0 <= 1; x0++) {
+                for (int y0 = -1; y0 <= 1; y0++) {
+                    isAdjacent |= !Terrain_LineOfSight(terrain, (Vector) { x, y }, (Vector) { x + 32 * x0, y + 32 * y0 }, 0.0f);
+                }
+            }
+            if (isAdjacent) {
                 Arraylist_Add(&terrain->ports, &point);
             }
         }
@@ -285,17 +295,150 @@ void Terrain_FindContinents(struct terrain* terrain)
     for (int x = 0; x < terrain->size; x++) {
         for (int y = 0; y < terrain->size; y++) {
             if (checkIsEmpty(terrain, x, y)) {
+                Vector point = (Vector) { x, y };
                 terrain->numContinents++;
-                continentFloodFill(terrain, (Vector) { x, y });
+                continentFloodFill(terrain, point);
+                Arraylist_Add(&terrain->continentPoints, &point);
             }
         }
     }
 }
 
+void proccessChildren(struct terrain* terrain, float cost, int* crossings, int u, int v, Heap* pq, float* dist, Sint32* parent, bool* processed)
+{
+    // Update dist[v] only if is not processed, there is an
+    // edge from u to v, and total weight of path from src to
+    // v through u is smaller than current value of dist[v]
+    if ((terrain->map[u] <= 0.5f) != (terrain->map[v] <= 0.5f)) {
+        cost += 4 * terrain->size;
+        crossings++;
+    }
+    if (!processed[v] && dist[u] + cost < dist[v]) {
+        Heap_Insert(pq, dist[u] + cost, v);
+        dist[v] = dist[u] + cost;
+        parent[v] = u;
+    }
+}
+
+struct dijkstrasResult {
+    float* dist;
+    int* parent;
+    int crossings;
+};
+
 // Perform dijkstra's algorithm for the two capital points, with sea/land transitions being incredibly expensive
 // Mark out the continents that were traversed over, those are the prime continents that units should build ports in between
+static struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to)
+{
+    Heap* pq = Heap_Create(terrain->size * terrain->size);
+    float* dist = (float*)malloc(terrain->size * terrain->size * sizeof(float));
+    if (!dist) {
+        PANIC("Mem error");
+    }
+    Sint32* parent = (Sint32*)malloc(terrain->size * terrain->size * sizeof(Sint32));
+    if (!parent) {
+        PANIC("Mem error");
+    }
+    bool* processed = (bool*)malloc(terrain->size * terrain->size * sizeof(bool));
+    if (!processed) {
+        PANIC("Mem error");
+    }
+    int crossings = 0;
+
+    for (int i = 0; i < terrain->size * terrain->size; i++) {
+        dist[i] = terrain->size * terrain->size;
+        processed[i] = false;
+        parent[i] = -1;
+    }
+    parent[(int)from.x + (int)from.y * terrain->size] = -1;
+    dist[(int)from.x + (int)from.y * terrain->size] = 0;
+    Heap_Insert(pq, 0, (Uint32)from.x + (Uint32)from.y * (Uint32)terrain->size);
+
+    while (pq->size >= 0) {
+        int u = Heap_GetMin(pq);
+        Heap_Remove(pq, 0);
+        int x = (int)(u % terrain->size);
+        int y = (int)(u / terrain->size);
+
+        if (x == (int)to.x && y == (int)to.y) {
+            break;
+        }
+
+        processed[u] = true;
+        for (int x0 = -1; x0 <= 1; x0++) {
+            for (int y0 = -1; y0 <= 1; y0++) {
+                if (x0 != y0 && x + x0 >= 0 && x + x0 < terrain->size && y + y0 >= 0 && y + y0 < terrain->size) {
+                    Vector point = { x + x0, y + y0 };
+                    proccessChildren(terrain, x0 * x0 + y0 * y0 + Vector_Dist(to, point), &crossings, u, u + x0 + y0 * terrain->size, pq, dist, parent, processed);
+                }
+            }
+        }
+    }
+
+    Heap_Destroy(pq);
+    free(processed);
+    return (struct dijkstrasResult) { dist, parent };
+}
+
+/*
+	Takes two positions, checks to see if there is dry land between them */
+int Terrain_LineOfSightSeaToLand(struct terrain* terrain, Vector from, Vector increment)
+{
+    Vector check = { from.x, from.y };
+    while (Terrain_GetHeight(terrain, (int)check.x, (int)check.y) != -1) {
+        check.x += increment.x;
+        check.y += increment.y;
+        float height = Terrain_GetHeight(terrain, (int)check.x, (int)check.y);
+        if (height > 0.5f) {
+            return terrain->continents[(int)check.x + (int)check.y * terrain->size];
+        }
+    }
+    return -1;
+}
+
 void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
 {
+    struct dijkstrasResult path = Terrain_Dijkstra(terrain, from, to);
+    int p = path.parent[(int)to.x + (int)to.y * terrain->size];
+    while (p != -1) {
+        int continent = terrain->continents[p];
+        if (continent && !Arraylist_Contains(terrain->keyContinents, &continent)) {
+            Arraylist_Add(&terrain->keyContinents, &continent);
+        }
+        p = path.parent[p];
+    }
+    free(path.parent);
+    free(path.dist);
+
+    if (terrain->keyContinents < 2) {
+        printf("No key continents\n");
+        return;
+    }
+    // Go through each port point, check to see if they are valid (can see (dist is less than 8 times the size) more than one key continent)
+    for (int i = 0; i < terrain->ports->size; i++) {
+        printf("%d: ", i);
+        Vector portPoint = *(Vector*)Arraylist_Get(terrain->ports, i);
+        Arraylist* keyContinentsSeen = Arraylist_Create(10, sizeof(int));
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0)
+                    continue;
+
+                int continentSeen = Terrain_LineOfSightSeaToLand(terrain, portPoint, (Vector) { x, y });
+                if (!Arraylist_Contains(keyContinentsSeen, &continentSeen) && Arraylist_Contains(terrain->keyContinents, &continentSeen)) {
+                    Arraylist_Add(&keyContinentsSeen, &continentSeen);
+                }
+                if (keyContinentsSeen->size >= 2) {
+                    break;
+                }
+            }
+        }
+        if (keyContinentsSeen->size < 2) {
+            Arraylist_Remove(terrain->ports, i);
+            i--;
+        }
+        printf("\n");
+    }
 }
 
 /*
