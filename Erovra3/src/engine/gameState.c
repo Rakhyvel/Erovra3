@@ -75,7 +75,7 @@ void Game_Exit()
 	Adds a scene to the top of the scene stack */
 void Game_PushScene(Scene* scene)
 {
-    Arraylist_Add(g->sceneStack, &scene);
+    Arraylist_Add(&g->sceneStack, &scene);
     sceneStale = true;
 }
 
@@ -84,8 +84,7 @@ void Game_PushScene(Scene* scene)
 void Game_PopScene(int numScenes)
 {
     for (int i = 0; i < numScenes; i++) {
-        Scene* oldScene = ARRAYLIST_POP_DEREF(g->sceneStack, Scene*);
-        printf("%p\n", oldScene);
+        Scene* oldScene = *(Scene**)Arraylist_Pop(g->sceneStack);
         Scene_Destroy(oldScene);
         sceneStale = true;
     }
@@ -119,7 +118,7 @@ void Game_Run()
         if (g->sceneStack->size < 1) {
             PANIC("No scene added to game");
         }
-        Scene* scene = ARRAYLIST_GET_DEREF(g->sceneStack, g->sceneStack->size - 1, Scene*);
+        Scene* scene = *(Scene**)Arraylist_Get(g->sceneStack, g->sceneStack->size - 1);
         // Reset scene stack flag
         sceneStale = false;
 

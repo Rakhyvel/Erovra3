@@ -23,9 +23,10 @@ typedef Uint8 ActionID;
 */
 typedef struct action {
     VariableID preconditions[MAX_PRECONDITIONS]; // Variables that action sees as preconditions before running, in order
+    Uint8 costs[MAX_PRECONDITIONS]; // The costs for each precondition
     int numPreconditions;
     void (*actionPtr)(Scene* scene, ComponentKey flag); // Action to complete
-    int cost; // Cost of this action
+    char name[16];
 } Action;
 
 typedef struct goap {
@@ -51,7 +52,18 @@ typedef struct goap {
 */
 Goap* Goap_Create(void (*goapInit)(Goap* goap));
 
-/* Adds an action to a GOAP struct.
+/*
+ Adds an action to a GOAP struct.
+* 
+* Each action acts as an "and" statement. The action function will run if all the 
+* preconditions given are true. 
+*
+* Calling this function with the same function pointer, but different
+* preconditions acts as an "or" statement. The action function will run if one
+* of the preconditions is true.
+* 
+* In this way, it is possible to construct any desired behavior.
+* 
 * 
 * @param goap				The GOAP of the AI to add the action to
 * @param action				The function pointer for the actual action of the 
@@ -61,9 +73,12 @@ Goap* Goap_Create(void (*goapInit)(Goap* goap));
 *							performed
 * @param numPreconditions	The number of preconditions the action has
 * @param preconditions		Varargs of the variable IDs that are used for 
-*							preconditions
+*							preconditions, followed by the corresponding 
+*							weights to each pre-condition. Actions without
+*							preconditions will be "default", meaning they will
+*							be selected last, but always run.
 */
-void Goap_AddAction(Goap* goap, void (*action)(Scene* scene, ComponentKey flag), int cost, VariableID effect, int numPreconditions, VariableID preconditions, ...);
+void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, ComponentKey flag), VariableID effect, int numPrecoditions, Uint8 preconditions, ...);
 
 /*
 * Performs Dijkstra's algorithm on graph, finds the action (system) to execute,

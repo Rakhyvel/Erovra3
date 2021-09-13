@@ -123,7 +123,7 @@ static int generatePreview(void* ptr)
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
-            map[x + y * size] = seaLevel->value * (map[x + y * size] - 1.0f) + 1.0f;
+            map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
         }
     }
 
@@ -158,7 +158,7 @@ static int generateFullTerrain(void* ptr)
     map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
-            map[x + y * fullMapSize] = seaLevel->value * (map[x + y * fullMapSize] - 1.0f) + 1.0f;
+            map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
         }
     }
 
@@ -212,7 +212,7 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Reset slider positions */
-    seaLevel->value = 0.1f;
+    seaLevel->value = 0.4f;
     erosion->value = 0.0f;
 
     /* Randomize seed */

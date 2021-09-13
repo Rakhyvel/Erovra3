@@ -495,7 +495,7 @@ void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object)
     Container* container = (Container*)Scene_GetComponent(scene, containerID, GUI_CONTAINER_COMPONENT_ID);
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, containerID, GUI_COMPONENT_ID);
     GUIComponent* objectGui = (GUIComponent*)Scene_GetComponent(scene, object, GUI_COMPONENT_ID);
-    Arraylist_Add(container->children, &object);
+    Arraylist_Add(&container->children, &object);
     EntityID id = *(EntityID*)Arraylist_Get(container->children, 0);
     objectGui->parent = containerID;
     GUI_UpdateLayout(scene, GUI_GetRoot(scene, containerID), gui->pos.x, gui->pos.y);

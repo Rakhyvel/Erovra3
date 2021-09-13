@@ -5,11 +5,14 @@
 #include "../engine/goap.h"
 
 enum variables {
-	HAS_WON,
+    HAS_WON,
+
+    ALWAYS_TRUE,
 
 	// Win conditions
 	NO_KNOWN_ENEMY_UNITS,
-	FOUND_ENEMY_CAPITAL,
+    FOUND_ENEMY_CAPITAL,
+    FOUND_ENEMY_CAPITAL_DEFAULT,
 	COMBATANTS_AT_ENEMY_CAPITAL,
 
 	// Engineer states
@@ -29,6 +32,7 @@ enum variables {
     HAS_POPULATION,
 
 	SPACE_FOR_EXPANSION,
+	SPACE_FOR_TWO_EXPANSIONS,
 	SPACE_FOR_AIRFIELD,
 
 	// "Can afford unit" variables
@@ -45,7 +49,7 @@ enum variables {
     AFFORD_FACTORY_COINS,
     AFFORD_AIRFIELD_COINS,
 	AFFORD_FARM_COINS,
-	AFFORD_ACADEMY_COINS,
+    AFFORD_ACADEMY_COINS,
 };
 
 void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key);

@@ -91,7 +91,7 @@ void Match_AddMessage(SDL_Color color, char* text, ...)
     EXTRACT_VARARGS(message.text, text);
     message.fade = 0;
     message.color = color;
-    Arraylist_Add(messages, &message);
+    Arraylist_Add(&messages, &message);
 }
 
 void Match_GetOrdinalSuffix(int divisionNumber, char* buffer)
@@ -437,7 +437,7 @@ void Match_SetAlertedTile(Nation* nation, float x, float y, float value)
         if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
             Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
         }
-        Arraylist_Add(nation->highPrioritySpaces, &point);
+        Arraylist_Add(&nation->highPrioritySpaces, &point);
     }
     nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize] = min(oldValue, value);
 }
@@ -456,7 +456,7 @@ void Match_ClearVisitedSpace(Nation* nation, float x0, float y0, float radius)
             }
             float oldValue = nation->visitedSpaces[(int)((x + 16) / 32) + (int)((y + 16) / 32) * nation->visitedSpacesSize];
             Vector point = { (int)((x + 16) / 32), (int)((y + 16) / 32) };
-            nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 11000;
+            nation->visitedSpaces[(int)point.x + (int)point.y * nation->visitedSpacesSize] = 3600;
             if (Arraylist_Contains(nation->highPrioritySpaces, &point)) {
                 Arraylist_Remove(nation->highPrioritySpaces, Arraylist_IndexOf(nation->highPrioritySpaces, &point));
             }
@@ -589,9 +589,7 @@ void Match_Death(Scene* scene)
                 City* homeCity = NULL;
                 if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                     Scene_MarkPurged(scene, id);
-                    if (unit->type != UnitType_FARM) {
-                        nation->resources[ResourceType_POPULATION]--;
-                    }
+                    nation->resources[ResourceType_POPULATION]--;
                 } else if (otherNation != NULL) {
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
                     simpleRenderable->nation = nation->enemyNation;
@@ -601,15 +599,15 @@ void Match_Death(Scene* scene)
                     health->health = 100;
                     health->isDead = false;
                     health->deathTicks = 0;
-                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] /= 2;
                 }
 
-                // Remove entry for city expansion map
                 if (Scene_EntityHasComponents(scene, id, EXPANSION_COMPONENT_ID)) {
                     Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
                     homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                     homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
-                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, motion->pos.x, motion->pos.y);
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    nation->costs[ResourceType_COIN][unit->type] -= nation->unitCount[unit->type] * 5;
                 }
 
                 if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
@@ -624,22 +622,10 @@ void Match_Death(Scene* scene)
                     nation->prodCount[producer->order]--;
                 }
 
-                nation->unitCount[unit->type]--;
-                switch (unit->type) {
-                case UnitType_WALL:
+                if (unit->type) {
                     Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                    break;
-                case UnitType_FACTORY:
-                case UnitType_AIRFIELD:
-                case UnitType_ACADEMY:
-                case UnitType_FARM:
-                case UnitType_PORT:
-                case UnitType_MINE:
-                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
-                case UnitType_CITY: // Intentional fall through
-                    nation->costs[ResourceType_COIN][unit->type] /= 2;
-                    break;
                 }
+                nation->unitCount[unit->type]--;
             }
         }
     }
@@ -699,16 +685,16 @@ void Match_Motion(struct scene* scene)
 	passes*/
 void Match_SetVisitedSpace(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID)
+    system(scene, id, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (!unit->engaged && motion->speed > 0) {
-            Match_ClearVisitedSpace(nation, motion->pos.x, motion->pos.y, 128);
+            Match_ClearVisitedSpace(nation, motion->pos.x, motion->pos.y, combatant->attackDist);
         }
     }
 }
@@ -1188,7 +1174,7 @@ void Match_AI(Scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
         Goap_Update(scene, ai->goap, nation->ownNationFlag);
-        AI_TargetGroundUnitsRandomly(scene, nation->ownNationFlag);
+        //AI_TargetGroundUnitsRandomly(scene, nation->ownNationFlag);
     }
 }
 
@@ -1261,7 +1247,7 @@ void Match_CombatantAttack(struct scene* scene)
 
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
-            if (unit->engaged) {
+            if (unit->engaged && Terrain_LineOfSight(terrain, motion->pos, target->lookat, motion->z)) {
                 target->tar = target->lookat; // This causes units to lerch forward after defeating an enemy, is honestly useful
             }
             unit->engaged = false;
@@ -1529,7 +1515,7 @@ void Match_ProduceUnits(struct scene* scene)
 void Match_UpdateMessageContainer()
 {
     for (int i = 0; i < messages->size; i++) {
-        struct message* message = ARRAYLIST_GET(messages, i, struct message);
+        struct message* message = (struct message*)Arraylist_Get(messages, i);
         message->fade++;
         if (message->fade >= 360) {
             Arraylist_Remove(messages, i);
@@ -1569,10 +1555,10 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-                    producer->order = INVALID_ENTITY_INDEX;
                     producer->orderTicksRemaining = -1;
                     nation->prodCount[producer->order]--;
                     newNation->prodCount[producer->order]++;
+                    producer->order = INVALID_ENTITY_INDEX;
                 }
 
                 if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
@@ -1831,6 +1817,17 @@ void Match_DrawVisitedSquares(Scene* scene)
     }
 }
 
+void Match_DrawPortTiles(Scene* scene)
+{
+    for (int i = 0; i < terrain->ports->size; i++) {
+        Vector tile = *(Vector*)Arraylist_Get(terrain->ports, i);
+        SDL_Rect rect = { 0, 0, 0, 0 };
+        Terrain_Translate(&rect, tile.x, tile.y, 64, 64);
+        SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 150);
+        SDL_RenderFillRect(g->rend, &rect);
+    }
+}
+
 void Match_DrawBoxSelect(Scene* scene)
 {
     if (boxTL.x != -1) {
@@ -2020,7 +2017,7 @@ void Match_RenderMessageContainer(Scene* scene)
     int heightOffset = 0;
     int focusGUIY = ((GUIComponent*)Scene_GetComponent(scene, focusedGUIContainer, GUI_COMPONENT_ID))->pos.y;
     for (int i = messages->size - 1; i >= 0; i--) {
-        struct message* message = ARRAYLIST_GET(messages, i, struct message);
+        struct message* message = (struct message*)Arraylist_Get(messages, i);
         float fade = message->fade < 300 ? 1.0f : (360.0f - message->fade) / 60.0f;
         SDL_Rect box = { -252, -252, 252, 1000 };
 
@@ -2081,6 +2078,7 @@ void Match_Update(Scene* match)
     Terrain_Update(terrain);
 
     Match_AIUpdateVisitedSpaces(match);
+    Match_SetVisitedSpace(match);
 
     Match_DetectHit(match);
     Match_Death(match);
@@ -2088,8 +2086,6 @@ void Match_Update(Scene* match)
     Match_Hover(match);
     Match_Select(match);
     Match_Focus(match);
-
-    Match_AI(match);
 
     Match_Patrol(match);
     Match_Target(match);
@@ -2099,12 +2095,13 @@ void Match_Update(Scene* match)
     Match_CombatantAttack(match);
     Match_AirplaneAttack(match);
     Match_AirplaneScout(match);
-    Match_SetVisitedSpace(match);
 
     Match_ProduceResources(match);
     Match_DestroyResourceParticles(match);
     Match_ProduceUnits(match);
     Match_UpdateExpansionAllegiance(match);
+
+    Match_AI(match);
 
     Match_UpdateMessageContainer(match);
     GUI_Update(match);
@@ -2138,7 +2135,8 @@ void Match_Render(Scene* match)
     Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
-    Match_DrawVisitedSquares(match);
+    //Match_DrawVisitedSquares(match);
+    //Match_DrawPortTiles(match);
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);
     Match_RenderMessageContainer(match);
@@ -2363,6 +2361,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     miniMapTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
     Perlin_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
+    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
     printf("Match: %p\n", match);
@@ -2472,8 +2471,8 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     EntityID enemyNation = Nation_Create(match, Goap_Create(&AI_Init), (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
 
     // Create and register home city
-    Vector homeVector = Terrain_FindBestLocation(terrain, (Vector) { (float)terrain->size, (float)terrain->size });
-    Vector enemyVector = Terrain_FindBestLocation(terrain, (Vector) { 0, 0 });
+    Vector homeVector = { (float)terrain->size, (float)terrain->size };
+    Vector enemyVector = { 0, 0 };
     float largestDist = 0;
     for (int i = 0; i < terrain->tileSize * terrain->tileSize - 1; i++) {
         Vector vec1 = (Vector) { (i % terrain->tileSize) * 64.0f + 32.0f, (int)(i / terrain->tileSize) * 64.0f + 32.0f };

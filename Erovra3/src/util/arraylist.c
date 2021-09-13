@@ -4,14 +4,13 @@
 	Acts like a regular list. Memory is copied byte by byte when added, memory
 	address from within the list are returned.
 
-	Arraylists have a type size, which is the number of bytes each element in
+	Arraylists have a stride, which is the number of bytes each element in
 	the pool is.
 
 	Date: 4/2/21
 	Author: Joseph Shimel
 */
 
-#pragma once
 #include "arraylist.h"
 #include "debug.h"
 #include <stdbool.h>
@@ -20,21 +19,16 @@
 
 /*
 	Creates an arraylist with a given type size */
-struct arraylist* Arraylist_Create(int initCapacity, int typeSize)
+struct arraylist* Arraylist_Create(size_t initCapacity, size_t stride)
 {
-    struct arraylist* retval = calloc(1, sizeof(struct arraylist));
+    // Allocate space for header info + space for data array
+    struct arraylist* retval = calloc(1, &(((struct arraylist*)NULL)->data) + stride * initCapacity);
     if (!retval) {
         PANIC("Memory error");
     }
-    retval->typeSize = typeSize;
+    retval->stride = stride;
     retval->size = 0;
     retval->capacity = initCapacity;
-    if (typeSize > 0) {
-        retval->data = calloc(retval->capacity * retval->typeSize, 1);
-        if (!retval->data) {
-            PANIC("Memory error");
-        }
-    }
     return retval;
 }
 
@@ -44,13 +38,12 @@ void Arraylist_Destroy(struct arraylist* list)
         printf("WARNING: list was NULL!");
         return;
     }
-    free(list->data);
     free(list);
 }
 
 /*
 	Returns a pointer to within the arraylist at a given index */
-void* Arraylist_Get(const struct arraylist* list, int index)
+void* Arraylist_Get(const struct arraylist* list, size_t index)
 {
     if (list == NULL) {
         PANIC("List is NULL");
@@ -59,7 +52,7 @@ void* Arraylist_Get(const struct arraylist* list, int index)
     } else if (index < 0) {
         PANIC("Negative index. Index was %d", index);
     }
-    return list->data + (index * list->typeSize);
+    return list->data + (index * list->stride);
 }
 
 /*
@@ -75,27 +68,50 @@ void* Arraylist_Pop(struct arraylist* list)
     }
 
     list->size--;
-    return list->data + ((long long)list->size) * list->typeSize;
+    return list->data + list->size * list->stride;
 }
 
-/* 
-	copies the data at the pointer to the end of an arraylist
-	also functions as a push method */
-void Arraylist_Add(struct arraylist* list, void* data)
+/*
+* Copies the the data pointed to by the given data pointer to the end of an 
+* arraylist. Also functions as a "push" function for stacks and queues.
+* 
+* Note that this function MAY cause the pointer to the Arraylist to become 
+* updated in the event that the list needs to be realloc'd to grow.
+* 
+* @param listPtr	A pointer to a pointer to a list. May be changed by this
+*					function if the list needs to grow.
+* @param data		A pointer to the data to copy. This function will copy and
+*					add the stride length of the list of bytes.
+*/
+void Arraylist_Add(struct arraylist** listPtr, void* data)
 {
-    if (list == NULL) {
+    if (*listPtr == NULL) {
         PANIC("List is NULL");
     } else if (data == NULL) {
         PANIC("Data is NULL");
     }
 
-    Arraylist_AssertSize(list, list->size + 1);
-    Arraylist_Put(list, list->size - 1, data);
+    Arraylist_AssertSize(listPtr, (*listPtr)->size + 1);
+    Arraylist_Put(*listPtr, (*listPtr)->size - 1, data);
 }
 
-void Arraylist_Remove(struct arraylist* list, int index)
+/*
+* Removes an entry of a list at a given index. The list is gauranteed to keep
+* the same order after this function is called.
+* 
+* @param list	Pointer to list
+* @param index	Index of entry to remove
+*/
+void Arraylist_Remove(struct arraylist* list, size_t index)
 {
-    memcpy(list->data + index * list->typeSize, list->data + (index + 1) * list->typeSize, (list->size - index - 1) * list->typeSize);
+    if (list == NULL) {
+        PANIC("List is NULL");
+    } else if (index > list->size) {
+        PANIC("Index out of bounds. Index was %d, list size is %d", index, list->size);
+    } else if (index < 0) {
+        PANIC("Negative index. Index was %d", index);
+    }
+    memcpy(list->data + index * list->stride, list->data + (index + 1) * list->stride, (list->size - index - 1) * list->stride);
     list->size--;
 }
 
@@ -108,7 +124,7 @@ int Arraylist_IndexOf(struct arraylist* list, void* data)
     }
 
     for (int i = 0; i < list->size; i++) {
-        if (!memcmp(list->data + (list->typeSize * i), data, list->typeSize)) {
+        if (!memcmp(list->data + (list->stride * i), data, list->stride)) {
             return i;
         }
     }
@@ -117,7 +133,7 @@ int Arraylist_IndexOf(struct arraylist* list, void* data)
 
 /*
 	Copies data to an index */
-void Arraylist_Put(struct arraylist* list, int index, void* data)
+void Arraylist_Put(struct arraylist* list, size_t index, void* data)
 {
     if (list == NULL) {
         PANIC("List is NULL");
@@ -129,7 +145,7 @@ void Arraylist_Put(struct arraylist* list, int index, void* data)
         PANIC("Negative index. Index was %d", index);
     }
 
-    memcpy(list->data + index * list->typeSize, data, list->typeSize);
+    memcpy(list->data + index * list->stride, data, list->stride);
 }
 
 bool Arraylist_Contains(struct arraylist* list, void* data)
@@ -141,7 +157,7 @@ bool Arraylist_Contains(struct arraylist* list, void* data)
     }
 
     for (int i = 0; i < list->size; i++) {
-        if (!memcmp(list->data + (list->typeSize * i), data, list->typeSize)) {
+        if (!memcmp(list->data + (list->stride * i), data, list->stride)) {
             return true;
         }
     }
@@ -151,29 +167,33 @@ bool Arraylist_Contains(struct arraylist* list, void* data)
 /*	Sets the size of the arraylist. Resizes the arraylist if it is too small. 
  *	Does nothing if list type size is 0. Does nothing if list size is already 
  *	larger than given size.
+ * 
+ *	TODO: Take in a pointer to pointer to the list, incase the whole thing needs to be reallocated
  *
- *	@param list	List to assert size of
- *  @param size	Size to assert.
+ *	@param listPtr	Pointer to a pointer to an Arraylist. Done this way so that I
+ *					can change the pointer to the Arraylist if a realloc needs to
+ *					be done.
+ *  @param size		Size to assert.
  */
-void Arraylist_AssertSize(struct arraylist* list, int size)
+void Arraylist_AssertSize(struct arraylist** listPtr, size_t size)
 {
-    if (list == NULL) {
+    if (*listPtr == NULL) {
         PANIC("List is NULL");
     }
     // Exit if list is ethereal
-    if (list->typeSize == 0) {
+    if ((*listPtr)->stride == 0) {
         return;
     }
 
-    if (size > list->size) {
-        list->size = size;
-        if (list->size >= list->capacity) {
-            list->capacity = list->size * 2;
-            void* res = realloc(list->data, list->capacity * list->typeSize); // FIXME: heap error
+    if (size > (*listPtr)->size) {
+        (*listPtr)->size = size;
+        if ((*listPtr)->size >= (*listPtr)->capacity) {
+            (*listPtr)->capacity = (*listPtr)->size * 2;
+            void* res = realloc(*listPtr, &(((struct arraylist*)NULL)->data) + (*listPtr)->stride * (*listPtr)->capacity); // FIXME: heap error
             if (res != NULL) {
-                list->data = res;
+                *listPtr = res;
             } else {
-                PANIC("Mem err, asked to reallocate %d", 2 * list->size * list->typeSize);
+                PANIC("Mem err, asked to reallocate %d", 2 * (*listPtr)->size * (*listPtr)->stride);
             }
         }
     }

@@ -10,7 +10,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
 {
     EntityID cityID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
-    Arraylist_Add(nationStruct->cities, &cityID);
+    Arraylist_Add(&nationStruct->cities, &cityID);
 
     Motion motion = {
         pos,

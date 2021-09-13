@@ -11,21 +11,29 @@ terrain.h
 typedef struct terrain {
     float* map;
     float* ore;
+    int* continents;
+    int numContinents;
     size_t size;
     size_t tileSize;
     SDL_Texture* texture;
     EntityID* buildings;
     EntityID* walls;
+    Arraylist* ports;
 } Terrain;
 
 struct terrain* Terrain_Create(int tileSize, float* map, SDL_Texture* texture);
 void Terrain_Destroy(struct terrain*);
+
 
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i);
 SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i);
 
 void Terrain_Update(struct terrain* terrain);
 void Terrain_Render(struct terrain* terrain);
+
+// Continent stuff
+void Terrain_FindPorts(struct terrain* terrain);
+void Terrain_FindContinents(struct terrain* terrain);
 
 // Some map functions
 float Terrain_GetHeight(struct terrain*, int x, int y);

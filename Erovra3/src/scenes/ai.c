@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type)
+static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type, bool leaveOneSpace)
 {
     Nation* nation = NULL;
     system(scene, id, NATION_COMPONENT_ID, key)
@@ -31,7 +31,7 @@ static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type)
         float tempDistance = FLT_MAX;
         Vector tempTarget = (Vector) { -1, -1 };
         for (int i = 0; i < nation->cities->size; i++) {
-            EntityID cityID = ARRAYLIST_GET_DEREF(nation->cities, i, EntityID);
+            EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
 
             Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
             City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
@@ -39,6 +39,28 @@ static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type)
             // Only build airfields at cities that don't have airfields and do have factories
             if (type == UnitType_AIRFIELD && (Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) || !Match_CityHasType(scene, homeCity, UnitType_FACTORY))) {
                 continue;
+            }
+
+            int remaningSpaces = 0;
+            if (leaveOneSpace) {
+                for (int y = -64; y <= 64; y += 64) {
+                    for (int x = -64; x <= 64; x += 64) {
+                        Vector point = (Vector) { x + cityMotion->pos.x, y + cityMotion->pos.y };
+                        if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
+                            continue;
+
+                        // Only go to squares adjacent friendly cities
+                        if (Vector_CabDist(point, cityMotion->pos) != 64)
+                            continue;
+
+                        if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
+                            continue;
+                        remaningSpaces++;
+                    }
+                }
+                if (remaningSpaces <= 1) {
+                    continue;
+                }
             }
 
             // Search around city
@@ -141,14 +163,11 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
         // makeCoinTicks < useCoinTicks
 
+        goap->variables[ALWAYS_TRUE] = true;
+
         goap->variables[NO_KNOWN_ENEMY_UNITS] = knownEnemies == 0;
         goap->variables[FOUND_ENEMY_CAPITAL] = enemyCapitalUnit->knownByEnemy;
         goap->variables[COMBATANTS_AT_ENEMY_CAPITAL] = false;
-
-        /*
-        goap->variables[HAS_CAVALRY] = knownEnemies > 0 ? false : nation->unitCount[UnitType_CAVALRY] + nation->prodCount[UnitType_CAVALRY] > 0;
-        goap->variables[HAS_INFANTRY] = knownEnemies > 0 ? false : nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > 0;
-		*/
 
         goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] > knownEnemyPlanes;
         goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] > knownEnemies;
@@ -170,62 +189,80 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[AFFORD_AIRFIELD_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
         goap->variables[AFFORD_FARM_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM];
         goap->variables[AFFORD_ACADEMY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
-    }
 
-    goap->variables[ENGINEER_ISNT_BUSY] = false;
-    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
-    {
-        Motion* motion = (Target*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        goap->variables[ENGINEER_ISNT_BUSY] = false;
+        goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER] + nation->prodCount[UnitType_ENGINEER] > 0;
+        Motion* engineerMotion = NULL;
+        system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
+        {
+            Motion* motion = (Target*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+            Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
-        if (Vector_Dist(motion->pos, target->tar) < 32) {
-            goap->variables[ENGINEER_ISNT_BUSY] = true;
-        }
-    }
-
-    // Update has available variables
-    goap->variables[HAS_AVAILABLE_FACTORY] = false;
-    goap->variables[HAS_AVAILABLE_AIRFIELD] = false;
-    goap->variables[HAS_AVAILABLE_ACADEMY] = false;
-    system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, key)
-    {
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
-
-        if (producer->orderTicksRemaining < 0) {
-            switch (unit->type) {
-            case UnitType_FACTORY:
-                goap->variables[HAS_AVAILABLE_FACTORY] = true;
-                City* homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
-                if (Match_CityHasType(scene, homeCity, UnitType_AIRFIELD)) {
-                    goap->variables[HAS_AVAILABLE_AIRFIELD] = true;
-                }
-                break;
-            case UnitType_ACADEMY:
-                goap->variables[HAS_AVAILABLE_ACADEMY] = true;
+            if (Vector_Dist(motion->pos, target->tar) < 32) {
+                goap->variables[ENGINEER_ISNT_BUSY] = true;
+                engineerMotion = motion;
                 break;
             }
         }
-    }
 
-    goap->variables[SPACE_FOR_AIRFIELD] = false;
-    system(scene, cityID, CITY_COMPONENT_ID, key)
-    {
-        Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
-        City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
+        goap->variables[SPACE_FOR_AIRFIELD] = false;
+        goap->variables[SPACE_FOR_EXPANSION] = false;
+        goap->variables[SPACE_FOR_TWO_EXPANSIONS] = false;
+        if (engineerMotion != NULL) {
+            for (int i = 0; i < nation->cities->size; i++) {
+                EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
+                Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+                City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
-        for (int x = -64; x <= 64; x += 64) {
-            for (int y = -64; y <= 64; y += 64) {
-                Vector point = { x + cityMotion->pos.x, y + cityMotion->pos.y };
-                if (Vector_CabDist(point, cityMotion->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX) {
-                    if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) && Match_CityHasType(scene, homeCity, UnitType_FACTORY)) {
-                        goap->variables[SPACE_FOR_AIRFIELD] = true;
+                int remainingSpaces = 0;
+                for (int x = -64; x <= 64; x += 64) {
+                    for (int y = -64; y <= 64; y += 64) {
+                        Vector point = { x + cityMotion->pos.x, y + cityMotion->pos.y };
+                        if (Vector_CabDist(point, cityMotion->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, engineerMotion->pos, point, 0.5f)) {
+                            if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) && Match_CityHasType(scene, homeCity, UnitType_FACTORY)) {
+                                goap->variables[SPACE_FOR_AIRFIELD] = true;
+                            }
+                            goap->variables[SPACE_FOR_EXPANSION] = true;
+                            remainingSpaces++;
+                        }
                     }
-                    goap->variables[SPACE_FOR_EXPANSION] = true;
+                }
+                if (remainingSpaces >= 1) {
+                    goap->variables[SPACE_FOR_TWO_EXPANSIONS] = true;
                 }
             }
         }
+
+        // Update has available variables
+        goap->variables[HAS_AVAILABLE_FACTORY] = false;
+        goap->variables[HAS_AVAILABLE_AIRFIELD] = false;
+        goap->variables[HAS_AVAILABLE_ACADEMY] = false;
+        system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, key)
+        {
+            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+            Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+            Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
+
+            if (producer->orderTicksRemaining < 0) {
+                switch (unit->type) {
+                case UnitType_FACTORY:
+                    goap->variables[HAS_AVAILABLE_FACTORY] = true;
+                    City* homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
+                    if (Match_CityHasType(scene, homeCity, UnitType_AIRFIELD)) {
+                        goap->variables[HAS_AVAILABLE_AIRFIELD] = true;
+                    }
+                    break;
+                case UnitType_ACADEMY:
+                    goap->variables[HAS_AVAILABLE_ACADEMY] = true;
+                    break;
+                }
+            }
+        }
+
+        /*
+        goap->variables[HAS_CAVALRY] = nation->unitCount[UnitType_CAVALRY] + nation->prodCount[UnitType_CAVALRY] > knownEnemies;
+        goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
+		*/
     }
 }
 
@@ -256,10 +293,10 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
         Vector closestTile = { -1, -1 };
         float tempDist = FLT_MAX;
         for (int i = 0; i < nation->highPrioritySpaces->size; i++) {
-            Vector point = ARRAYLIST_GET_DEREF(nation->highPrioritySpaces, i, Vector);
+            Vector point = *(Vector*)Arraylist_Get(nation->highPrioritySpaces, i);
             Vector scaledUp = Vector_Scalar(point, 32);
             float distance = Vector_Dist(motion->pos, scaledUp);
-            if (distance < tempDist) {
+            if (distance < tempDist && Terrain_LineOfSight(terrain, motion->pos, scaledUp, motion->z)) {
                 tempDist = distance;
                 closestTile = scaledUp;
                 foundEnemy = true;
@@ -283,7 +320,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
                     Vector newPoint = Vector_Scalar(point, 32);
                     float newDist = Vector_Dist(motion->pos, newPoint);
                     // If near enough to target, or if new target is closer
-                    if (dist < 3 || newDist < dist) {
+                    if ((dist < 3 || newDist < dist) && Terrain_LineOfSight(terrain, motion->pos, newPoint, motion->z)) {
                         closestTile = newPoint;
                         foundEnemy = true; // Breaks out of loop
                     }
@@ -333,20 +370,20 @@ void AI_TargetEnemyCapital(Scene* scene, ComponentKey key)
         Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
         Motion* enemyCapital = (Motion*)Scene_GetComponent(scene, enemyNation->capital, MOTION_COMPONENT_ID);
 
-        target->tar = enemyCapital->pos;
-        target->lookat = enemyCapital->pos;
+        if (Terrain_LineOfSight(terrain, motion->pos, enemyCapital->pos, motion->z)) {
+            target->tar = enemyCapital->pos;
+            target->lookat = enemyCapital->pos;
+        }
     }
 }
 
 void AI_OrderInfantry(Scene* scene, ComponentKey key)
 {
-    printf("Order infantry\n");
     orderFromProducer(scene, key, UnitType_ACADEMY, UnitType_INFANTRY);
 }
 
 void AI_OrderCavalry(Scene* scene, ComponentKey key)
 {
-    printf("Order cavalry\n");
     if (rand() % 2 == 0) {
         orderFromProducer(scene, key, UnitType_FACTORY, UnitType_CAVALRY);
     } else {
@@ -356,27 +393,22 @@ void AI_OrderCavalry(Scene* scene, ComponentKey key)
 
 void AI_OrderFighter(Scene* scene, ComponentKey key)
 {
-    printf("Order fighter\n");
     orderFromProducer(scene, key, UnitType_FACTORY, UnitType_FIGHTER);
 }
 
 void AI_OrderAttacker(Scene* scene, ComponentKey key)
 {
-    printf("Order attacker\n");
     orderFromProducer(scene, key, UnitType_FACTORY, UnitType_ATTACKER);
 }
 
 void AI_OrderEngineer(Scene* scene, ComponentKey key)
 {
-    printf("Order engineer\n");
     orderFromProducer(scene, key, UnitType_ACADEMY, UnitType_ENGINEER);
 }
 
 // Todo: Spiral search
 void AI_BuildCity(Scene* scene, ComponentKey key)
 {
-    printf("Build city\n");
-
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
@@ -410,13 +442,6 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
                 if (Terrain_GetOre(terrain, (int)point.x, (int)point.y) < 0.5)
                     continue;
                 float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
-                float northHeight = Terrain_GetHeight(terrain, (int)point.x, (int)point.y - 64);
-                float eastHeight = Terrain_GetHeight(terrain, (int)point.x + 64, (int)point.y);
-                float southHeight = Terrain_GetHeight(terrain, (int)point.x, (int)point.y + 64);
-                float westHeight = Terrain_GetHeight(terrain, (int)point.x - 64, (int)point.y);
-                if ((northHeight < 0.5 && northHeight != -1) || (eastHeight < 0.5 && eastHeight != -1) || (southHeight < 0.5 && southHeight != -1) || (westHeight < 0.5 && westHeight != -1)) {
-                    distance /= 10;
-                }
                 if (distance > tempDistance)
                     continue;
                 if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
@@ -439,67 +464,84 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
 
 void AI_BuildMine(Scene* scene, ComponentKey key)
 {
-    printf("Build mine\n");
-    findExpansionSpot(scene, key, UnitType_MINE);
+    findExpansionSpot(scene, key, UnitType_MINE, false);
 }
 
 void AI_BuildFactory(Scene* scene, ComponentKey key)
 {
-    printf("Build factory\n");
-    findExpansionSpot(scene, key, UnitType_FACTORY);
+    findExpansionSpot(scene, key, UnitType_FACTORY, false);
+}
+
+void AI_BuildFactoryForAirfield(Scene* scene, ComponentKey key)
+{
+    findExpansionSpot(scene, key, UnitType_FACTORY, true);
 }
 
 void AI_BuildAirfield(Scene* scene, ComponentKey key)
 {
-    printf("Build airfield\n");
-    findExpansionSpot(scene, key, UnitType_AIRFIELD);
+    findExpansionSpot(scene, key, UnitType_AIRFIELD, false);
 }
 
 void AI_BuildFarm(Scene* scene, ComponentKey key)
 {
-    printf("Build farm\n");
-    findExpansionSpot(scene, key, UnitType_FARM);
+    findExpansionSpot(scene, key, UnitType_FARM, false);
 }
 
 void AI_BuildAcademy(Scene* scene, ComponentKey key)
 {
-    printf("Build academy\n");
-    findExpansionSpot(scene, key, UnitType_ACADEMY);
+    findExpansionSpot(scene, key, UnitType_ACADEMY, false);
 }
 
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, NULL, 1, HAS_WON, 1, COMBATANTS_AT_ENEMY_CAPITAL);
+    Goap_AddAction(goap, "Win", NULL, HAS_WON, 1, COMBATANTS_AT_ENEMY_CAPITAL, 1);
 
-    Goap_AddAction(goap, &AI_TargetEnemyCapital, 1, COMBATANTS_AT_ENEMY_CAPITAL, 2, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL);
+    Goap_AddAction(goap, "Target capital", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 2, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL, 1, 2);
 
-    // If there are enemies, order units. DUH!
-    Goap_AddAction(goap, NULL, 1, NO_KNOWN_ENEMY_UNITS, 1, HAS_INFANTRY);
-    Goap_AddAction(goap, NULL, 1, NO_KNOWN_ENEMY_UNITS, 1, HAS_CAVALRY);
-    Goap_AddAction(goap, NULL, 1, NO_KNOWN_ENEMY_UNITS, 1, HAS_ATTACKER);
+    // If there are enemies, order units
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 0, 0);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_INFANTRY, 1, 3);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_CAVALRY, 1, 2);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_ATTACKER, 1, 1);
 
-    // If you need to find
-    Goap_AddAction(goap, NULL, 2, FOUND_ENEMY_CAPITAL, 1, HAS_CAVALRY);
-    Goap_AddAction(goap, NULL, 2, FOUND_ENEMY_CAPITAL, 1, HAS_INFANTRY);
-    Goap_AddAction(goap, NULL, 2, FOUND_ENEMY_CAPITAL, 1, HAS_ATTACKER);
+    // If you need to find the enemy capital
+    // If you can build these things, then do so. Otherwise, set units targets
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 0, 0);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_INFANTRY, 1, 3);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_CAVALRY, 1, 2);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_ATTACKER, 1, 1);
 
     // Order ground units
-    Goap_AddAction(goap, &AI_OrderInfantry, 1, HAS_INFANTRY, 4, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, HAS_FIGHTER);
-    Goap_AddAction(goap, &AI_OrderCavalry, 1, HAS_CAVALRY, 5, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, HAS_FIGHTER);
-    Goap_AddAction(goap, &AI_OrderEngineer, 1, ENGINEER_ISNT_BUSY, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 3, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
+    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
 
     // Order planes
-    Goap_AddAction(goap, &AI_OrderFighter, 1, HAS_FIGHTER, 4, AFFORD_FIGHTER_COINS, AFFORD_FIGHTER_ORE, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_OrderAttacker, 1, HAS_ATTACKER, 5, AFFORD_ATTACKER_COINS, AFFORD_ATTACKER_ORE, HAS_FIGHTER, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION);
+    Goap_AddAction(goap, "Order fighter", &AI_OrderFighter, HAS_FIGHTER, 4, AFFORD_FIGHTER_COINS, AFFORD_FIGHTER_ORE, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order attacker", &AI_OrderAttacker, HAS_ATTACKER, 5, AFFORD_ATTACKER_COINS, AFFORD_ATTACKER_ORE, HAS_FIGHTER, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1, 1);
+
+    /*
+	Perform dijkstra's algorithm at the begining of the match between the two capitals, where
+		- Moving from land to land costs 1
+		- Moving from land/sea costs a the map size squared (so will be minimized)
+		- moving from sea/sea costs 1
+
+	Find the places where you transition from sea to land, these are the key places to build a port city.
+
+	AI should build cities that have ports that are in sea-to-land(where it starts off as sea, then goes to land and/or the rally point, but never back to sea) line-of-sight of the next key sea-land transitions
+
+	When the capital is found, send units from one rally point to the next, shipping them in transports for sea voyages, until they get to the enemy capital
+	*/
 
     // Engineer build actions
-    Goap_AddAction(goap, &AI_BuildCity, 1, HAS_COINS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY);
-    Goap_AddAction(goap, &AI_BuildCity, 1, SPACE_FOR_EXPANSION, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY);
-    Goap_AddAction(goap, &AI_BuildFactory, 1, HAS_AVAILABLE_FACTORY, 6, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, ENGINEER_ISNT_BUSY, HAS_COINS, HAS_ORE, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_BuildFactory, 1, HAS_AVAILABLE_AIRFIELD, 6, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, ENGINEER_ISNT_BUSY, HAS_COINS, HAS_ORE, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_BuildAirfield, 1, HAS_AVAILABLE_AIRFIELD, 6, SPACE_FOR_EXPANSION, SPACE_FOR_AIRFIELD, AFFORD_AIRFIELD_COINS, HAS_AVAILABLE_FACTORY, ENGINEER_ISNT_BUSY, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_BuildAcademy, 1, HAS_AVAILABLE_ACADEMY, 5, SPACE_FOR_EXPANSION, AFFORD_ACADEMY_COINS, ENGINEER_ISNT_BUSY, HAS_COINS, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_BuildMine, 1, HAS_ORE, 5, SPACE_FOR_EXPANSION, AFFORD_MINE_COINS, ENGINEER_ISNT_BUSY, HAS_COINS, HAS_POPULATION);
-    Goap_AddAction(goap, &AI_BuildFarm, 1, HAS_POPULATION, 4, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, ENGINEER_ISNT_BUSY, HAS_COINS);
+    Goap_AddAction(goap, "City for coins", &AI_BuildCity, HAS_COINS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
+    Goap_AddAction(goap, "city for expan", &AI_BuildCity, SPACE_FOR_EXPANSION, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
+    Goap_AddAction(goap, "city for 2expan", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
+    Goap_AddAction(goap, "Build factory", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 5, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "factry for air", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_TWO_EXPANSIONS, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build airfield", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_EXPANSION, SPACE_FOR_AIRFIELD, AFFORD_AIRFIELD_COINS, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build academy", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 4, SPACE_FOR_EXPANSION, AFFORD_ACADEMY_COINS, HAS_COINS, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build mine", &AI_BuildMine, HAS_ORE, 3, SPACE_FOR_EXPANSION, AFFORD_MINE_COINS, HAS_POPULATION, 1, 1, 1);
+    Goap_AddAction(goap, "Build farm", &AI_BuildFarm, HAS_POPULATION, 3, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, 1, 1);
 }

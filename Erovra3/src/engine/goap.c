@@ -21,18 +21,23 @@ Goap* Goap_Create(void (*goapInit)(Goap* goap))
 * 4. Adds to list mapped to by effect variableID
 *		Create list if need to
 */
-void Goap_AddAction(Goap* goap, void (*actionPtr)(Scene* scene, ComponentKey flag), int cost, VariableID effect, int numPrecoditions, VariableID preconditions, ...)
+void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, ComponentKey flag), VariableID effect, int numPrecoditions, Uint8 preconditions, ...)
 {
     Action action;
     action.actionPtr = actionPtr;
-    action.cost = cost;
     action.numPreconditions = numPrecoditions;
+    memset(action.name, 0, 16);
+    strcpy_s(action.name, 16, name);
 
     va_list args;
     va_start(args, preconditions);
     action.preconditions[0] = preconditions;
-    for (int i = 1; i < numPrecoditions; i++) {
+    int i;
+    for (i = 1; i < numPrecoditions; i++) {
         action.preconditions[i] = va_arg(args, VariableID);
+    }
+    for (; i < numPrecoditions * 2; i++) {
+        action.costs[i - numPrecoditions] = va_arg(args, Uint8);
     }
     va_end(args);
 
@@ -40,7 +45,7 @@ void Goap_AddAction(Goap* goap, void (*actionPtr)(Scene* scene, ComponentKey fla
     if (goap->effects[effect] == NULL) {
         goap->effects[effect] = Arraylist_Create(10, sizeof(ActionID));
     }
-    Arraylist_Add(goap->effects[effect], &(goap->numActions));
+    Arraylist_Add(&goap->effects[effect], &(goap->numActions));
     // Add action to array of actions
     goap->actions[goap->numActions++] = action;
 }
@@ -66,6 +71,7 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
     goap->updateVariableSystem(scene, goap, flag);
 
     int dist[MAX_ACTIONS]; // The cost from each action the to the main goal
+    ActionID parent[MAX_ACTIONS];
     bool processed[MAX_ACTIONS]; // Whether or not the action has been processed
     bool isLeaf[MAX_ACTIONS]; // Whether or not the action is good
 
@@ -73,6 +79,7 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         dist[i] = INT_MAX;
         processed[i] = false;
         isLeaf[i] = true;
+        parent[i] = 65;
     }
     dist[0] = 0;
 
@@ -82,26 +89,34 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         processed[u] = true;
 
         Action action = goap->actions[u];
+
+		// If action is a default action, automatically increase its cost to 1000
+        if (action.numPreconditions == 0) {
+            dist[u] += 1000;
+        }
         // For each false pre-condition in action:
         for (int i = 0; i < action.numPreconditions; i++) {
             VariableID precondition = action.preconditions[i];
+            Uint8 cost = action.costs[i];
             if (!goap->variables[precondition]) {
                 isLeaf[u] = false;
 
                 // For each action that makes this false pre-condition true:
                 const Arraylist* children = goap->effects[precondition];
-				// The effects list will be null if there are no actions that have the effect
+                // The effects list will be null if there are no actions that have the effect
                 if (children != NULL) {
                     for (int j = 0; j < children->size; j++) {
-                        ActionID v = ARRAYLIST_GET_DEREF(children, j, ActionID);
+                        ActionID v = *(ActionID*)Arraylist_Get(children, j);
                         Action child = goap->actions[v];
 
                         // Update dist[v] only if is not processed, there is an
                         // edge from u to v, and total weight of path from src to
                         // v through u is smaller than current value of dist[v]
                         if (!processed[v] && dist[u] != INT_MAX
-                            && dist[u] + child.cost < dist[v])
-                            dist[v] = dist[u] + child.cost;
+                            && dist[u] + cost < dist[v]) {
+                            dist[v] = dist[u] + cost;
+                            parent[v] = u;
+                        }
                     }
                 }
             }
@@ -118,9 +133,15 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         }
     }
 
-	// Perform the best action, if there is any
+    // Perform the best action, if there is any
     if (best != -1 && best < MAX_ACTIONS) {
         Action bestAction = goap->actions[best];
+        /*
+        for (int i = best; i != 65; i = parent[i]) {
+            printf("%s(%d) <- ", goap->actions[i].name, dist[i]);
+        }
+        printf("win\n");
+		*/
         if (bestAction.actionPtr) {
             bestAction.actionPtr(scene, flag);
         }
