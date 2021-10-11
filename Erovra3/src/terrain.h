@@ -23,9 +23,14 @@ typedef struct terrain {
     Arraylist* keyContinents;
 } Terrain;
 
-struct terrain* Terrain_Create(int tileSize, float* map, SDL_Texture* texture);
-void Terrain_Destroy(struct terrain*);
+struct dijkstrasResult {
+    float* dist;
+    int* parent;
+    int crossings;
+};
 
+struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture);
+void Terrain_Destroy(struct terrain*);
 
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i);
 SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i);
@@ -37,6 +42,7 @@ void Terrain_Render(struct terrain* terrain);
 void Terrain_FindPorts(struct terrain* terrain);
 void Terrain_FindContinents(struct terrain* terrain);
 void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to);
+struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to);
 
 // Some map functions
 float Terrain_GetHeight(struct terrain*, int x, int y);

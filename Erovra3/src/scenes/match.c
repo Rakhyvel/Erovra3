@@ -1,32 +1,8 @@
 #pragma once
 #include "match.h"
-#include "../components/academy.h"
-#include "../components/airfield.h"
-#include "../components/artillery.h"
-#include "../components/attacker.h"
-#include "../components/battleship.h"
-#include "../components/bomber.h"
-#include "../components/bullet.h"
-#include "../components/cavalry.h"
-#include "../components/city.h"
-#include "../components/coin.h"
-#include "../components/components.h"
-#include "../components/cruiser.h"
-#include "../components/destroyer.h"
-#include "../components/engineer.h"
-#include "../components/factory.h"
-#include "../components/farm.h"
-#include "../components/fighter.h"
-#include "../components/infantry.h"
-#include "../components/mine.h"
-#include "../components/nation.h"
-#include "../components/orderButton.h"
-#include "../components/ore.h"
-#include "../components/port.h"
-#include "../components/shell.h"
-#include "../components/wall.h"
 #include "../engine/gameState.h"
 #include "../engine/textureManager.h"
+#include "../entities/entities.h"
 #include "../gui/font.h"
 #include "../gui/gui.h"
 #include "../main.h"
@@ -101,9 +77,9 @@ void Match_GetOrdinalSuffix(int divisionNumber, char* buffer)
     case 11:
     case 12:
     case 13:
-        strcat_s(buffer, 3, suffixes[0], 3);
+        strcat_s(buffer, 3, suffixes[0]);
     default:
-        strcat_s(buffer, 3, suffixes[divisionNumber % 10], 3);
+        strcat_s(buffer, 3, suffixes[divisionNumber % 10]);
     }
 }
 
@@ -115,6 +91,8 @@ TextureID Match_LookupResourceTypeIcon(ResourceType type)
     case ResourceType_ORE:
         return ORE_TEXTURE_ID;
     }
+    PANIC("Not a resource type: %d", type);
+    return -1;
 }
 
 void Match_CopyUnitName(UnitType type, char* buffer)
@@ -574,14 +552,15 @@ void Match_Death(Scene* scene)
 {
     system(scene, id, HEALTH_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Nation* otherNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
         if (health->isDead) {
+            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+            Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+            Nation* otherNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
+
             if (health->deathTicks < 16) {
                 health->deathTicks += 1;
             } else {
@@ -645,7 +624,11 @@ void Match_CheckWin(Scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         if (!Scene_EntityHasComponents(scene, nation->capital, nation->ownNationFlag)) {
 #ifdef TOURNAMENT
-            printf("Death\n");
+            if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
+                printf("Defeat\n");
+            } else {
+                printf("Victory\n");
+            }
             Game_PopScene(1);
             return;
 #else
@@ -751,6 +734,7 @@ void Match_Target(struct scene* scene)
                 if (terrainHeight < motion->z || terrainHeight > motion->z + 0.5f) {
                     motion->vel.x = 0;
                     motion->vel.y = 0;
+                    target->tar = motion->pos;
                 }
 
                 // Check for enemy walls
@@ -984,7 +968,6 @@ void Match_Select(struct scene* scene)
     // If ctrl is not clicked, go through entities, if they are selected, set their target
     // ! CTRL DETERMINES IF NEXT CLICK IS SELECT OR TARGET
     if (!g->ctrl && g->mouseLeftUp && !g->mouseDragged) {
-        EntityID id;
         Vector centerOfMass = { 0, 0 };
         // If shift is held down, find center of mass of selected units
         if (g->shift) {
@@ -1173,7 +1156,7 @@ void Match_AI(Scene* scene)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
-        Goap_Update(scene, ai->goap, nation->ownNationFlag);
+        Goap_Update(scene, &(ai->goap), nation->ownNationFlag);
         //AI_TargetGroundUnitsRandomly(scene, nation->ownNationFlag);
     }
 }
@@ -1215,7 +1198,7 @@ void Match_CombatantAttack(struct scene* scene)
                 continue;
             }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
-            Health* otherHealth = (Motion*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
+            Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
             if (otherHealth->isDead) {
                 continue;
             }
@@ -1850,7 +1833,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2135,7 +2118,7 @@ void Match_Render(Scene* match)
     Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
-    //Match_DrawVisitedSquares(match);
+    Match_DrawVisitedSquares(match);
     //Match_DrawPortTiles(match);
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);
@@ -2463,11 +2446,11 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     // Create home and enemy nations
     EntityID homeNation;
     if (AIControlled) {
-        homeNation = Nation_Create(match, Goap_Create(&AI_Init), (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
+        homeNation = Nation_Create(match, &AI_Init, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
     } else {
         homeNation = Nation_Create(match, NULL, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
     }
-    EntityID enemyNation = Nation_Create(match, Goap_Create(&AI_Init), (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
+    EntityID enemyNation = Nation_Create(match, &AI_Init, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
 
     // Create and register home city
     Vector homeVector = { (float)terrain->size, (float)terrain->size };
@@ -2478,11 +2461,15 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
         if (!Terrain_IsSolidSquare(terrain, vec1)) {
             continue;
         }
+        if (Terrain_GetOre(terrain, (int)vec1.x, (int)vec1.y) < 0.3)
+            continue;
         for (int j = i + 1; j < terrain->tileSize * terrain->tileSize; j++) {
             Vector vec2 = (Vector) { (j % terrain->tileSize) * 64.0f + 32.0f, (int)(j / terrain->tileSize) * 64.0f + 32.0f };
             if (!Terrain_IsSolidSquare(terrain, vec2)) {
                 continue;
             }
+            if (Terrain_GetOre(terrain, (int)vec2.x, (int)vec2.y) < 0.3)
+                continue;
             float tempDist = Vector_Dist(vec1, vec2);
             if (tempDist > largestDist) {
                 largestDist = tempDist;
@@ -2501,7 +2488,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     Terrain_SetOffset(homeVector);
 
     // Create and register enemy city
-    char* enemyNameBuffer[20];
+    char enemyNameBuffer[20];
     Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
     EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, enemyNameBuffer, true);
     Terrain_SetBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);

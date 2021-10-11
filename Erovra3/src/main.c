@@ -38,7 +38,7 @@ Code guidelines:
 */
 
 #include "./main.h"
-#include "./components/components.h"
+#include "./entities/components.h"
 #include "./gui/font.h"
 #include "./gui/gui.h"
 #include "./scenes/menu.h"
@@ -53,7 +53,7 @@ Code guidelines:
 	Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Game_Init("Erovra 3.9.3", 1280, 680);
+    Game_Init("Erovra 3.9.4", 1280, 680);
     Font_Init();
     GUI_Init();
     Components_Init();

@@ -22,7 +22,7 @@
 struct arraylist* Arraylist_Create(size_t initCapacity, size_t stride)
 {
     // Allocate space for header info + space for data array
-    struct arraylist* retval = calloc(1, &(((struct arraylist*)NULL)->data) + stride * initCapacity);
+    struct arraylist* retval = calloc(1, (size_t)(sizeof(struct arraylist) + stride * initCapacity));
     if (!retval) {
         PANIC("Memory error");
     }
@@ -43,7 +43,7 @@ void Arraylist_Destroy(struct arraylist* list)
 
 /*
 	Returns a pointer to within the arraylist at a given index */
-void* Arraylist_Get(const struct arraylist* list, size_t index)
+void* Arraylist_Get(struct arraylist* list, size_t index)
 {
     if (list == NULL) {
         PANIC("List is NULL");
@@ -95,12 +95,11 @@ void Arraylist_Add(struct arraylist** listPtr, void* data)
     Arraylist_Put(*listPtr, (*listPtr)->size - 1, data);
 }
 
-/*
-* Removes an entry of a list at a given index. The list is gauranteed to keep
-* the same order after this function is called.
-* 
-* @param list	Pointer to list
-* @param index	Index of entry to remove
+/*	Removes an entry of a list at a given index. The list is gauranteed to keep
+ *	the same order after this function is called.
+ * 
+ *	@param list		Pointer to list
+ *	@param index	Index of entry to remove
 */
 void Arraylist_Remove(struct arraylist* list, size_t index)
 {
@@ -165,10 +164,8 @@ bool Arraylist_Contains(struct arraylist* list, void* data)
 }
 
 /*	Sets the size of the arraylist. Resizes the arraylist if it is too small. 
- *	Does nothing if list type size is 0. Does nothing if list size is already 
- *	larger than given size.
- * 
- *	TODO: Take in a pointer to pointer to the list, incase the whole thing needs to be reallocated
+ *	Does nothing if list type size (stride) is 0. Does nothing if list size is 
+ *	already larger than given size.
  *
  *	@param listPtr	Pointer to a pointer to an Arraylist. Done this way so that I
  *					can change the pointer to the Arraylist if a realloc needs to
@@ -189,7 +186,7 @@ void Arraylist_AssertSize(struct arraylist** listPtr, size_t size)
         (*listPtr)->size = size;
         if ((*listPtr)->size >= (*listPtr)->capacity) {
             (*listPtr)->capacity = (*listPtr)->size * 2;
-            void* res = realloc(*listPtr, &(((struct arraylist*)NULL)->data) + (*listPtr)->stride * (*listPtr)->capacity); // FIXME: heap error
+            void* res = realloc(*listPtr, sizeof(struct arraylist) + (*listPtr)->stride * (*listPtr)->capacity);
             if (res != NULL) {
                 *listPtr = res;
             } else {

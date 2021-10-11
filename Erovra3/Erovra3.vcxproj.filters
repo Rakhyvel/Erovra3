@@ -48,7 +48,7 @@
     <ClCompile Include="src\scenes\match.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\components.c">
+    <ClCompile Include="src\entities\components.c">
       <Filter>Source Files\components</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\textureManager.c">
@@ -57,22 +57,22 @@
     <ClCompile Include="src\textures.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\city.c">
+    <ClCompile Include="src\entities\city.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\util\vector.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\nation.c">
+    <ClCompile Include="src\entities\nation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\infantry.c">
+    <ClCompile Include="src\entities\infantry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\util\polygon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\bullet.c">
+    <ClCompile Include="src\entities\bullet.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gui\guic.c">
@@ -84,67 +84,67 @@
     <ClCompile Include="src\scenes\menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\coin.c">
+    <ClCompile Include="src\entities\coin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\mine.c">
+    <ClCompile Include="src\entities\mine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\ore.c">
+    <ClCompile Include="src\entities\ore.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\factory.c">
+    <ClCompile Include="src\entities\factory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\cavalry.c">
+    <ClCompile Include="src\entities\cavalry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\artillery.c">
+    <ClCompile Include="src\entities\artillery.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\shell.c">
+    <ClCompile Include="src\entities\shell.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\wall.c">
+    <ClCompile Include="src\entities\wall.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\port.c">
+    <ClCompile Include="src\entities\port.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\battleship.c">
+    <ClCompile Include="src\entities\battleship.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\cruiser.c">
+    <ClCompile Include="src\entities\cruiser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\destroyer.c">
+    <ClCompile Include="src\entities\destroyer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\util\lexicon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\fighter.c">
+    <ClCompile Include="src\entities\fighter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\attacker.c">
+    <ClCompile Include="src\entities\attacker.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\bomber.c">
+    <ClCompile Include="src\entities\bomber.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\bomb.c">
+    <ClCompile Include="src\entities\bomb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\airfield.c">
+    <ClCompile Include="src\entities\airfield.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\engineer.c">
+    <ClCompile Include="src\entities\engineer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\farm.c">
+    <ClCompile Include="src\entities\farm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\academy.c">
+    <ClCompile Include="src\entities\academy.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\scenes\pause.c">
@@ -153,7 +153,7 @@
     <ClCompile Include="src\util\perlin.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\components\orderButton.c">
+    <ClCompile Include="src\entities\orderButton.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gui\SDL_FontCache.c">
@@ -191,7 +191,7 @@
     <ClInclude Include="src\util\arraylist.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="src\components\components.h">
+    <ClInclude Include="src\entities\components.h">
       <Filter>Header Files\components</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\match.h">
@@ -206,19 +206,7 @@
     <ClInclude Include="src\textures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\components\city.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\nation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\infantry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\util\polygon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\bullet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\main.h">
@@ -233,76 +221,13 @@
     <ClInclude Include="src\scenes\menu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\components\coin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\mine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\ore.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\factory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\cavalry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\artillery.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\shell.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\wall.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\port.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\battleship.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\cruiser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\destroyer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\util\lexicon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\fighter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\attacker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\bomber.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\bomb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\airfield.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\engineer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\farm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\academy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\pause.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\perlin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\components\orderButton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui\SDL_FontCache.h">
@@ -324,6 +249,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\heap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\entities\entities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

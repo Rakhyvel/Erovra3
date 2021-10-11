@@ -1,5 +1,5 @@
 #pragma once
-#include "../components/components.h"
+#include "../entities/components.h"
 #include "../engine/scene.h"
 #include "../terrain.h"
 #include "../util/lexicon.h"

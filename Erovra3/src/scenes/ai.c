@@ -1,7 +1,7 @@
 #pragma once
-#include "ai.h";
-#include "../components/components.h"
+#include "ai.h"
 #include "../engine/gameState.h"
+#include "../entities/components.h"
 #include "../util/debug.h"
 #include "./match.h"
 #include <ctype.h>
@@ -125,6 +125,7 @@ static void findPortTile(Scene* scene, ComponentKey key)
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = (Vector) { -1, -1 };
+        // For each city
         for (int i = 0; i < nation->cities->size; i++) {
             EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
 
@@ -146,8 +147,15 @@ static void findPortTile(Scene* scene, ComponentKey key)
                 if (distance > tempDistance)
                     continue;
 
-                if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
+                Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
                     continue;
+                }
+                // Check to see that engineer can get to port
+                intersection = Terrain_LineOfSightPoint(terrain, motion->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize))
+                    continue;
+
                 tempTarget = point;
                 tempDistance = distance;
             }
@@ -242,6 +250,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
         goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
         goap->variables[AFFORD_CAVALRY_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_CAVALRY];
+        goap->variables[AFFORD_DESTROYER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_DESTROYER];
+        goap->variables[AFFORD_DESTROYER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_DESTROYER];
         goap->variables[AFFORD_FIGHTER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FIGHTER];
         goap->variables[AFFORD_FIGHTER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_FIGHTER];
         goap->variables[AFFORD_ATTACKER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ATTACKER];
@@ -250,6 +260,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[AFFORD_CITY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY];
         goap->variables[AFFORD_MINE_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE];
         goap->variables[AFFORD_FACTORY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY];
+        goap->variables[AFFORD_PORT_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT];
         goap->variables[AFFORD_AIRFIELD_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
         goap->variables[AFFORD_FARM_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM];
         goap->variables[AFFORD_ACADEMY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
@@ -259,7 +270,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         Motion* engineerMotion = NULL;
         system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
         {
-            Motion* motion = (Target*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
             Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
             if (Vector_Dist(motion->pos, target->tar) < 32) {
@@ -273,6 +284,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[SPACE_FOR_EXPANSION] = false;
         goap->variables[SPACE_FOR_TWO_EXPANSIONS] = false;
         goap->variables[SPACE_FOR_PORT] = false;
+        goap->variables[HAS_PORT_TILES] = false;
+        goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = false;
         if (engineerMotion != NULL) {
             for (int i = 0; i < nation->cities->size; i++) {
                 EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
@@ -292,22 +305,36 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
                         }
                     }
                 }
-                if (remainingSpaces >= 1) {
+                if (remainingSpaces >= 2) {
                     goap->variables[SPACE_FOR_TWO_EXPANSIONS] = true;
                 }
+
+                // Check all port tiles, see if any are adjacent to the city tile
                 for (int j = 0; j < terrain->ports->size; j++) {
+                    goap->variables[HAS_PORT_TILES] = true;
                     Vector point = *(Vector*)Arraylist_Get(terrain->ports, j);
                     if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares adjacent friendly cities
-                    if (Vector_CabDist(point, cityMotion->pos) != 64)
+                    if (Vector_CabDist(point, cityMotion->pos) > 65)
                         continue;
 
-                    float distance = Vector_Dist(engineerMotion->pos, point);
-
-                    if (!Terrain_LineOfSight(terrain, engineerMotion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, engineerMotion->pos, cityMotion->pos, 0.5))
                         continue;
+                    goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = true;
+
+                    // Checks to see if port is buildable
+                    Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
+                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
+                        continue;
+                    }
+                    // Check to see that engineer can get to port
+                    intersection = Terrain_LineOfSightPoint(terrain, engineerMotion->pos, point, 0.5);
+                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize)) {
+                        continue;
+                    }
+
                     goap->variables[SPACE_FOR_PORT] = true;
                 }
             }
@@ -317,6 +344,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[HAS_AVAILABLE_FACTORY] = false;
         goap->variables[HAS_AVAILABLE_AIRFIELD] = false;
         goap->variables[HAS_AVAILABLE_ACADEMY] = false;
+        goap->variables[HAS_AVAILABLE_PORT] = false;
         system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, key)
         {
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -332,6 +360,9 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
                         goap->variables[HAS_AVAILABLE_AIRFIELD] = true;
                     }
                     break;
+                case UnitType_PORT:
+                    goap->variables[HAS_AVAILABLE_PORT] = true;
+                    break;
                 case UnitType_ACADEMY:
                     goap->variables[HAS_AVAILABLE_ACADEMY] = true;
                     break;
@@ -343,6 +374,9 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[HAS_CAVALRY] = nation->unitCount[UnitType_CAVALRY] + nation->prodCount[UnitType_CAVALRY] > knownEnemies;
         goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
 		*/
+    }
+    if (g->shift) {
+        printf("%d\n", goap->variables[HAS_AVAILABLE_PORT]);
     }
 }
 
@@ -360,13 +394,16 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
         if (unit->engaged) {
             continue;
         }
+
         bool isPatrol = Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID);
         Patrol* patrol = NULL;
         if (isPatrol) {
             patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         }
-
         float dist = isPatrol ? Vector_Dist(motion->pos, patrol->patrolPoint) : Vector_Dist(motion->pos, target->tar);
+        if (dist < 3) {
+            unit->foundAlertedSquare = false;
+        }
 
         // Search through alerted tiles, go to closest one
         bool foundEnemy = false;
@@ -397,6 +434,9 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
                 float spaceValue = nation->visitedSpaces[(int)point.x + (int)(point.y) * nation->visitedSpacesSize];
                 // If there is an enemy
                 if (spaceValue <= 0) {
+                    if (spaceValue <= -1) {
+                        unit->foundAlertedSquare = true;
+                    }
                     Vector newPoint = Vector_Scalar(point, 32);
                     float newDist = Vector_Dist(motion->pos, newPoint);
                     // If near enough to target, or if new target is closer
@@ -423,7 +463,60 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
                 target->tar = closestTile;
                 target->lookat = closestTile;
             }
-        } else if (dist < 1) { // An alerted space could not be found, set unit's target randomly
+        }
+    }
+
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+    {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+
+        if (unit->engaged) {
+            continue;
+        }
+
+        bool isPatrol = Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID);
+        Patrol* patrol = NULL;
+        if (isPatrol) {
+            patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
+        }
+        float dist = isPatrol ? Vector_Dist(motion->pos, patrol->patrolPoint) : Vector_Dist(motion->pos, target->tar);
+        if (dist > 1 || unit->foundAlertedSquare) {
+            continue;
+        }
+
+        float minDist = 2 * terrain->size;
+        Vector closestOther = { -1, -1 };
+        system(scene, otherID, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+        {
+            if (id == otherID)
+                continue;
+            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+            Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+            if (!otherUnit->foundAlertedSquare)
+                continue;
+            if (Vector_Dist(motion->pos, otherMotion->pos) > minDist)
+                continue;
+
+            if (!Terrain_LineOfSight(terrain, motion->pos, otherMotion->pos, motion->z))
+                continue;
+            minDist = Vector_Dist(motion->pos, otherMotion->pos);
+            closestOther = otherMotion->pos;
+        }
+
+        if (closestOther.x != -1) {
+            unit->foundAlertedSquare = true;
+            if (isPatrol) {
+                patrol->patrolPoint = closestOther;
+            } else {
+                target->tar = closestOther;
+                target->lookat = closestOther;
+            }
+        } else { // An alerted space could not be found, set unit's target randomly
+            unit->foundAlertedSquare = false;
             float randX = (float)(rand()) / (float)RAND_MAX - 0.5f;
             float randY = (float)(rand()) / (float)RAND_MAX - 0.5f;
             Vector newTarget = Vector_Add(motion->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
@@ -471,6 +564,11 @@ void AI_OrderCavalry(Scene* scene, ComponentKey key)
     }
 }
 
+void AI_OrderDestroyer(Scene* scene, ComponentKey key)
+{
+    orderFromProducer(scene, key, UnitType_PORT, UnitType_DESTROYER);
+}
+
 void AI_OrderFighter(Scene* scene, ComponentKey key)
 {
     orderFromProducer(scene, key, UnitType_FACTORY, UnitType_FIGHTER);
@@ -504,31 +602,22 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
                     continue;
                 Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
                 // Find if there is a city with cabdist less than 3 tiles
-                bool exitFlag = false;
-                system(scene, cityID, CITY_COMPONENT_ID)
-                {
-                    Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
-                    if (Vector_CabDist(point, cityMotion->pos) < 3 * 64) {
-                        exitFlag = true;
-                        break;
-                    }
-                }
-                if (exitFlag) {
+                if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, point.x, point.y) <= 2) {
                     continue;
                 }
                 if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                     continue;
-                if (Terrain_GetOre(terrain, (int)point.x, (int)point.y) < 0.5)
-                    continue;
-                float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
+                float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10 - Terrain_GetOre(terrain, (int)point.x, (int)point.y) * 10;
                 if (distance > tempDistance)
                     continue;
-                if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
+                if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5)) {
                     continue;
+                }
                 tempTarget = point;
                 tempDistance = distance;
             }
         }
+
         // City point found, set target
         if (tempTarget.x != -1) {
             target->tar = tempTarget;
@@ -557,31 +646,27 @@ void AI_BuildPortCity(Scene* scene, ComponentKey key)
             Vector portVector = *(Vector*)Arraylist_Get(terrain->ports, i);
             for (int y = -64; y <= 64; y += 64) {
                 for (int x = -64; x <= 64; x += 64) {
+                    if (abs(x) == abs(y)) {
+                        continue;
+                    }
+
                     Vector point = Vector_Add(portVector, (Vector) { x, y });
                     if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
                         continue;
-                    // Find if there is a city with cabdist less than 3 tiles
-                    bool exitFlag = false;
-                    system(scene, cityID, CITY_COMPONENT_ID)
-                    {
-                        Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
-                        if (Vector_CabDist(point, cityMotion->pos) < 3 * 64) {
-                            exitFlag = true;
-                            break;
-                        }
-                    }
-                    if (exitFlag) {
+                    if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, point.x, point.y) <= 2) {
                         continue;
                     }
                     if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
-                        continue;
-                    if (Terrain_GetOre(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
                     float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
                     if (distance > tempDistance)
                         continue;
                     if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
                         continue;
+                    Vector intersection = Terrain_LineOfSightPoint(terrain, motion->pos, point, 0.5);
+                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(motion->pos.x / 64) + (int)(motion->pos.y / 64) * terrain->tileSize)) {
+                        continue;
+                    }
                     tempTarget = point;
                     tempDistance = distance;
                 }
@@ -616,7 +701,8 @@ void AI_BuildFactoryForAirfield(Scene* scene, ComponentKey key)
 
 void AI_BuildPort(Scene* scene, ComponentKey key)
 {
-    findExpansionSpot(scene, key, UnitType_PORT, false);
+    printf("Build port!\n");
+    findPortTile(scene, key);
 }
 
 void AI_BuildAirfield(Scene* scene, ComponentKey key)
@@ -639,28 +725,30 @@ void AI_Init(Goap* goap)
     goap->updateVariableSystem = &AI_UpdateVariables;
     Goap_AddAction(goap, "Win", NULL, HAS_WON, 1, COMBATANTS_AT_ENEMY_CAPITAL, 1);
 
-    Goap_AddAction(goap, "Target capital", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 4, NO_KNOWN_ENEMY_UNITS, SEA_SUPREMACY, FOUND_ENEMY_CAPITAL, 1, 2, 3, 4);
+    Goap_AddAction(goap, "Target capital", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 2, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL, 1, 2);
 
     // If there are enemies, order units
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 0, 0);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_INFANTRY, 1, 3);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_CAVALRY, 1, 2);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, HAS_ATTACKER, 1, 1);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, SEA_SUPREMACY, 1, 1, 5);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_INFANTRY, 1, 1, 4);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_CAVALRY, 1, 1, 3);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_ATTACKER, 1, 1, 1);
 
     // If you need to find the enemy capital
     // If you can build these things, then do so. Otherwise, set units targets
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 0, 0);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_INFANTRY, 1, 3);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_CAVALRY, 1, 2);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, HAS_ATTACKER, 1, 1);
-
-    Goap_AddAction(goap, "Lol idk", &AI_TargetGroundUnitsRandomly, SEA_SUPREMACY, 0, 0);
-    Goap_AddAction(goap, "Lol idk", &AI_TargetGroundUnitsRandomly, SEA_SUPREMACY, 1, HAS_AVAILABLE_PORT, 1);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, SEA_SUPREMACY, 1, 1, 5);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_INFANTRY, 1, 1, 4);
+    Goap_AddAction(goap, "Rand fec c", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_CAVALRY, 1, 1, 3);
+    Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_ATTACKER, 1, 1, 1);
 
     // Order ground units
     Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 3, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
     Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
+
+    // Order ships
+    Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_ORE, HAS_AVAILABLE_PORT, HAS_POPULATION, 1, 1, 1, 1, 1);
 
     // Order planes
     Goap_AddAction(goap, "Order fighter", &AI_OrderFighter, HAS_FIGHTER, 4, AFFORD_FIGHTER_COINS, AFFORD_FIGHTER_ORE, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1);
@@ -670,12 +758,12 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "City for coins", &AI_BuildCity, HAS_COINS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
     Goap_AddAction(goap, "city for expan", &AI_BuildCity, SPACE_FOR_EXPANSION, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
     Goap_AddAction(goap, "city for 2expan", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
-    Goap_AddAction(goap, "city for port", &AI_BuildPortCity, SPACE_FOR_PORT, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
+    Goap_AddAction(goap, "city for port", &AI_BuildPortCity, SPACE_FOR_PORT, 3, HAS_PORT_TILES, ENGINEER_CAN_SEE_PORT_CITY_TILE, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1, 1, 1);
     Goap_AddAction(goap, "Build factory", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 5, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build port", &AI_BuildPort, HAS_AVAILABLE_PORT, 5, SPACE_FOR_PORT, ENGINEER_CAN_SEE_PORT_TILE, AFFORD_PORT_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build port", &AI_BuildPort, HAS_AVAILABLE_PORT, 6, HAS_PORT_TILES, SPACE_FOR_PORT, AFFORD_PORT_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 2, 1, 1);
     Goap_AddAction(goap, "factry for air", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_TWO_EXPANSIONS, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "Build airfield", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_EXPANSION, SPACE_FOR_AIRFIELD, AFFORD_AIRFIELD_COINS, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "Build academy", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 4, SPACE_FOR_EXPANSION, AFFORD_ACADEMY_COINS, HAS_COINS, HAS_POPULATION, 1, 1, 1, 1);
     Goap_AddAction(goap, "Build mine", &AI_BuildMine, HAS_ORE, 3, SPACE_FOR_EXPANSION, AFFORD_MINE_COINS, HAS_POPULATION, 1, 1, 1);
-    Goap_AddAction(goap, "Build farm", &AI_BuildFarm, HAS_POPULATION, 3, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, 1, 1);
+    Goap_AddAction(goap, "Build farm", &AI_BuildFarm, HAS_POPULATION, 2, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, 1, 1);
 }

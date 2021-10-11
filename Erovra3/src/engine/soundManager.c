@@ -10,6 +10,7 @@ SoundID Sound_Register(char* filename)
 {
     if (numSounds >= MAX_SOUNDS) {
         PANIC("Texture overflow");
+        return INVALID_SOUND_ID;
     } else {
         sounds[numSounds] = Mix_LoadWAV(filename);
         return numSounds++;

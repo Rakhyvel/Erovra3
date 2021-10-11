@@ -477,7 +477,7 @@ char* U8_strdup(const char* string)
 	int size = strlen(string) + 1;
     printf("%d\n", size);
     result = (char*)malloc(size);
-    strcpy_s(result, size, string, size);
+    strcpy_s(result, size, string);
 
     return result;
 }

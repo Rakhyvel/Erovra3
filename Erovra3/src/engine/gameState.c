@@ -1,21 +1,22 @@
-/*
-game.c
+/*	game.c
+*	
+*	@author	Joseph Shimel
+*	@date	3/28/21
 */
-#pragma once
-#include "gameState.h"
+
+#include "./gameState.h"
 #include "../util/debug.h"
-#include "scene.h"
+#include "./scene.h"
 #include <SDL_mixer.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-bool sceneStale = false;
-bool asap = false;
+static bool sceneStale = false; // Whether the scene stack has been modified during update
+bool asap = false; // Whether to run game ASAP or aim for 60 ticks per second
 
-/*
-	Takes in a window title, width, and height. Initializes the global game struct
+/*	Takes in a window title, width, and height. Initializes the global game struct
 	variable g by creaating an SDL window and renderer. */
 void Game_Init(char* windowName, int width, int height)
 {
@@ -44,12 +45,12 @@ void Game_Init(char* windowName, int width, int height)
     if (SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl") == SDL_FALSE) {
         printf("Warning: opengl not set as driver\n");
     }
-    if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == SDL_FALSE) {
+    if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0") == SDL_FALSE) {
         printf("Didnt work");
     }
 
     // Create Renderer
-    g->rend = SDL_CreateRenderer(g->window, -1, SDL_RENDERER_SOFTWARE);
+    g->rend = SDL_CreateRenderer(g->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (g->rend == NULL) {
         printf("Error: Creating SDL renderer: %s\n", SDL_GetError());
         exit(1);
@@ -61,14 +62,14 @@ void Game_Init(char* windowName, int width, int height)
 
     g->running = 1;
     g->up = g->down = g->left = g->right = g->ctrl = g->shift = g->mouseWheelY = g->mouseLeftDown = g->mouseRightDown = g->mouseLeftUp = g->mouseRightUp = g->mouseDrag = g->mouseDragged = g->ticks = 0;
-    g->sceneStack = Arraylist_Create(10, sizeof(Scene*));
+    g->sceneStack = Arraylist_Create(3, sizeof(Scene*));
     printf("Started.");
 }
 
-void Game_Exit()
+void Game_Exit(void)
 {
     Mix_CloseAudio();
-    SDL_Quit(); // FIXME: Heap error when exiting, sometimes
+    SDL_Quit();
 }
 
 /*
@@ -133,7 +134,7 @@ void Game_Run()
             lag -= g->dt;
             g->ticks++;
 
-			// Only do one iteration each if asap
+            // Only do one iteration each if asap
             if (asap) {
                 break;
             }

@@ -34,7 +34,6 @@ int rightChild(int i)
 void shiftUp(Heap* heap, int i)
 {
     while (i > 0 && heap->data[parent(i)].priority > heap->data[i].priority) {
-
         // Swap parent and current node
         swap(heap, parent(i), i);
 

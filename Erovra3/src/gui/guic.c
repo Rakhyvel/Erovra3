@@ -7,9 +7,9 @@
 #include <ctype.h>
 #include <string.h>
 
-TextureID radioUnchecked = NULL;
-TextureID radioChecked = NULL;
-TextureID check = NULL;
+TextureID radioUnchecked = INVALID_TEXTURE_ID;
+TextureID radioChecked = INVALID_TEXTURE_ID;
+TextureID check = INVALID_TEXTURE_ID;
 
 SoundID HOVER_SOUND_ID;
 SoundID CLICK_SOUND_ID;

@@ -350,4 +350,5 @@ ComponentID getComponentID(struct scene* scene, ComponentKey globalKey)
         }
     }
     PANIC("Component key not registered %d\n", globalKey);
+    return INVALID_COMPONENT_ID;
 }

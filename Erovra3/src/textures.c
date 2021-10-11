@@ -94,7 +94,7 @@ void Textures_Init()
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
-    drawCircle(SHELL_TEXTURE_ID, (Vector) { 20, 20 }, 20, (SDL_Color) { 255, 255, 255, 255 });
+    drawCircle(SHELL_TEXTURE_ID, (Vector) { 20, 20 }, 15, (SDL_Color) { 255, 255, 255, 255 });
     Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
 
     Texture_FillPolygon(CITY_TEXTURE_ID, Polygon_Create("res/city.gon"), (SDL_Color) { 255, 255, 255, 255 });

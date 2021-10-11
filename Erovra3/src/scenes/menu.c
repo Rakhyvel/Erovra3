@@ -5,7 +5,7 @@
  */
 
 #pragma once
-#include "../components/components.h"
+#include "../entities/components.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../gui/font.h"
@@ -121,6 +121,7 @@ static int generatePreview(void* ptr)
     state = GENERATING;
     map = Perlin_Generate(size, size / 4, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
+    Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
             map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
@@ -156,6 +157,7 @@ static int generateFullTerrain(void* ptr)
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
     map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
+    Perlin_Normalize(map, fullMapSize);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
             map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
@@ -212,7 +214,7 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Reset slider positions */
-    seaLevel->value = 0.4f;
+    seaLevel->value = 0.5f;
     erosion->value = 0.0f;
 
     /* Randomize seed */

@@ -13,12 +13,11 @@ game.h
     Game_PopScene(i);     \
     return;
 
-extern bool sceneStale;
 extern bool asap;
 
 struct game {
-    SDL_Window* window;
-    SDL_Renderer* rend;
+    const SDL_Window* window;
+    const SDL_Renderer* rend;
 
     int mouseX,
         mouseY,

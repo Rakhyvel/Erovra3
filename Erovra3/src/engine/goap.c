@@ -1,18 +1,17 @@
 #include "./goap.h"
 #include "../util/debug.h"
+#include "./gameState.h"
 #include <string.h>
 
-Goap* Goap_Create(void (*goapInit)(Goap* goap))
+void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
 {
-    Goap* goap = calloc(1, sizeof(Goap));
     if (!goap) {
-        PANIC("Mem error");
+        PANIC("Goap is null");
     }
     for (int i = 0; i < MAX_VARIABLES; i++) {
         goap->effects[i] = NULL;
     }
     goapInit(goap);
-    return goap;
 }
 /* 
 * 1. Creates action
@@ -90,7 +89,7 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
 
         Action action = goap->actions[u];
 
-		// If action is a default action, automatically increase its cost to 1000
+        // If action is a default action, automatically increase its cost to 1000
         if (action.numPreconditions == 0) {
             dist[u] += 1000;
         }
@@ -102,12 +101,11 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
                 isLeaf[u] = false;
 
                 // For each action that makes this false pre-condition true:
-                const Arraylist* children = goap->effects[precondition];
+                Arraylist* children = goap->effects[precondition];
                 // The effects list will be null if there are no actions that have the effect
                 if (children != NULL) {
                     for (int j = 0; j < children->size; j++) {
                         ActionID v = *(ActionID*)Arraylist_Get(children, j);
-                        Action child = goap->actions[v];
 
                         // Update dist[v] only if is not processed, there is an
                         // edge from u to v, and total weight of path from src to
@@ -136,12 +134,15 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
     // Perform the best action, if there is any
     if (best != -1 && best < MAX_ACTIONS) {
         Action bestAction = goap->actions[best];
-        /*
-        for (int i = best; i != 65; i = parent[i]) {
-            printf("%s(%d) <- ", goap->actions[i].name, dist[i]);
+        
+        if (g->shift) {
+            for (int i = best; i != 65; i = parent[i]) {
+                printf("%s(%d) <- ", goap->actions[i].name, dist[i]);
+            }
+            printf("\n");
         }
-        printf("win\n");
-		*/
+		
+
         if (bestAction.actionPtr) {
             bestAction.actionPtr(scene, flag);
         }

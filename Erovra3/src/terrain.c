@@ -10,6 +10,7 @@ terrain.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "./engine/gameState.h"
 #include "./util/debug.h"
@@ -46,7 +47,7 @@ struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture)
     for (int i = 0; i < (retval->tileSize * retval->tileSize); i++) {
         int x = (i % retval->tileSize) * 64;
         int y = (i / retval->tileSize) * 64;
-        retval->ore[i] *= 0.5f * (retval->map[x + y * mapSize] + 1.0f);
+        retval->ore[i] *= 0.5f * (retval->map[x + y * mapSize] + 0.75f) + 0.25f;
     }
     retval->continents = calloc(retval->size * retval->size, sizeof(int));
     if (!retval->continents) {
@@ -88,15 +89,9 @@ void Terrain_Destroy(struct terrain* terrain)
     free(terrain);
 }
 
-static float minGrad = 0;
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
 {
     i = i * 2 - 0.5f;
-
-    struct gradient grad = Perlin_GetSecondGradient(map, mapSize, (int)(x / 2) * 2, (int)(y / 2) * 2);
-    if (grad.gradY < minGrad) {
-        minGrad = grad.gradY;
-    }
 
     if (mapSize >= 512.0f && Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
         return (SDL_Color) { 255, 255, 255 };
@@ -209,36 +204,38 @@ void Terrain_Update(struct terrain* terrain)
 	Renders the terrain's texture to the screen, and some grid lines */
 void Terrain_Render(struct terrain* terrain)
 {
-    SDL_Rect rect = { 0, 0, 0, 0 };
-    Terrain_Translate(&rect, 0, 0, 0, 0);
-    rect.w = rect.h = (int)(terrain_zoom * terrain->size);
-    SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
+    if (terrain->texture) {
+        SDL_Rect rect = { 0, 0, 0, 0 };
+        Terrain_Translate(&rect, 0, 0, 0, 0);
+        rect.w = rect.h = (int)(terrain_zoom * terrain->size);
+        SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
 
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, min(max(50 * terrain_zoom, 12), 50));
-    SDL_FPoint gridLineStart = { 32, 32 };
-    SDL_Rect gridLineRect = { 0, 0, 0, 0 };
-    Terrain_Translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
-    for (int x = 0; x <= terrain->tileSize; x++) {
-        SDL_RenderDrawLine(g->rend,
-            max((int)(gridLineRect.x + x * 64.0 * terrain_zoom), 0),
-            gridLineRect.y,
-            (int)(gridLineRect.x + x * 64.0 * terrain_zoom),
-            (int)(gridLineRect.y + (terrain->size * terrain_zoom)));
-    }
-    for (int y = 0; y <= terrain->tileSize; y++) {
-        SDL_RenderDrawLine(g->rend,
-            max(gridLineRect.x, 0),
-            (int)(gridLineRect.y + y * 64.0 * terrain_zoom),
-            (int)(gridLineRect.x + (terrain->size * terrain_zoom)),
-            (int)(gridLineRect.y + y * 64.0 * terrain_zoom));
-    }
+        SDL_SetRenderDrawColor(g->rend, 0, 0, 0, min(max(50 * terrain_zoom, 12), 50));
+        SDL_FPoint gridLineStart = { 32, 32 };
+        SDL_Rect gridLineRect = { 0, 0, 0, 0 };
+        Terrain_Translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
+        for (int x = 0; x <= terrain->tileSize; x++) {
+            SDL_RenderDrawLine(g->rend,
+                max((int)(gridLineRect.x + x * 64.0 * terrain_zoom), 0),
+                gridLineRect.y,
+                (int)(gridLineRect.x + x * 64.0 * terrain_zoom),
+                (int)(gridLineRect.y + (terrain->size * terrain_zoom)));
+        }
+        for (int y = 0; y <= terrain->tileSize; y++) {
+            SDL_RenderDrawLine(g->rend,
+                max(gridLineRect.x, 0),
+                (int)(gridLineRect.y + y * 64.0 * terrain_zoom),
+                (int)(gridLineRect.x + (terrain->size * terrain_zoom)),
+                (int)(gridLineRect.y + y * 64.0 * terrain_zoom));
+        }
 
-    SDL_RenderDrawRect(g->rend, &rect);
-    rect.x += 1;
-    rect.y += 1;
-    rect.w -= 2;
-    rect.h -= 2;
-    SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(g->rend, &rect);
+        rect.x += 1;
+        rect.y += 1;
+        rect.w -= 2;
+        rect.h -= 2;
+        SDL_RenderDrawRect(g->rend, &rect);
+    }
 }
 
 void Terrain_FindPorts(struct terrain* terrain)
@@ -320,15 +317,9 @@ void proccessChildren(struct terrain* terrain, float cost, int* crossings, int u
     }
 }
 
-struct dijkstrasResult {
-    float* dist;
-    int* parent;
-    int crossings;
-};
-
 // Perform dijkstra's algorithm for the two capital points, with sea/land transitions being incredibly expensive
 // Mark out the continents that were traversed over, those are the prime continents that units should build ports in between
-static struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to)
+struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to)
 {
     Heap* pq = Heap_Create(terrain->size * terrain->size);
     float* dist = (float*)malloc(terrain->size * terrain->size * sizeof(float));
@@ -398,6 +389,7 @@ int Terrain_LineOfSightSeaToLand(struct terrain* terrain, Vector from, Vector in
 
 void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
 {
+    clock_t time = clock();
     struct dijkstrasResult path = Terrain_Dijkstra(terrain, from, to);
     int p = path.parent[(int)to.x + (int)to.y * terrain->size];
     while (p != -1) {
@@ -409,8 +401,10 @@ void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
     }
     free(path.parent);
     free(path.dist);
+    time = clock() - time;
+    printf("%f\n", ((double)time) / CLOCKS_PER_SEC);
 
-    if (terrain->keyContinents < 2) {
+    if (terrain->keyContinents->size < 2) {
         printf("No key continents\n");
         return;
     }
@@ -419,12 +413,12 @@ void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
         printf("%d: ", i);
         Vector portPoint = *(Vector*)Arraylist_Get(terrain->ports, i);
         Arraylist* keyContinentsSeen = Arraylist_Create(10, sizeof(int));
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
+        for (int x = -10; x <= 10; x++) {
+            for (int y = -10; y <= 10; y++) {
                 if (x == 0 && y == 0)
                     continue;
 
-                int continentSeen = Terrain_LineOfSightSeaToLand(terrain, portPoint, (Vector) { x, y });
+                int continentSeen = Terrain_LineOfSightSeaToLand(terrain, portPoint, Vector_Normalize((Vector) { x, y }));
                 if (!Arraylist_Contains(keyContinentsSeen, &continentSeen) && Arraylist_Contains(terrain->keyContinents, &continentSeen)) {
                     Arraylist_Add(&keyContinentsSeen, &continentSeen);
                 }
@@ -601,8 +595,8 @@ EntityID Terrain_AdjacentMask(struct scene* scene, ComponentKey key, struct terr
 	Converts map coords to screen coords*/
 void Terrain_Translate(SDL_Rect* newPos, float x, float y, float width, float height)
 {
-    newPos->x = (int)((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
-    newPos->y = (int)((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
+    newPos->x = (int)round((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
+    newPos->y = (int)round((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
     newPos->w = (int)(width * terrain_zoom);
     newPos->h = (int)(height * terrain_zoom);
 }
@@ -701,10 +695,10 @@ bool Terrain_LineOfSight(struct terrain* terrain, Vector from, Vector to, float 
     if (z > 0.5) {
         return true;
     }
-    Vector increment = Vector_Scalar(Vector_Normalize(Vector_Sub(to, from)), 0.5);
+    Vector increment = Vector_Scalar(Vector_Normalize(Vector_Sub(to, from)), 0.2f);
     Vector check = { from.x, from.y };
     float distance = Vector_Dist(from, to);
-    for (double i = 0; i < distance; i += 0.5) {
+    for (double i = 0; i < distance; i += 0.2f) {
         check.x += increment.x;
         check.y += increment.y;
         float height = Terrain_GetHeight(terrain, (int)check.x, (int)check.y);

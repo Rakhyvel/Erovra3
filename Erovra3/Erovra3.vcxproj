@@ -158,103 +158,103 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\components\airfield.c">
+    <ClCompile Include="src\entities\airfield.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\artillery.c">
+    <ClCompile Include="src\entities\artillery.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\attacker.c">
+    <ClCompile Include="src\entities\attacker.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\battleship.c">
+    <ClCompile Include="src\entities\battleship.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\bomb.c">
+    <ClCompile Include="src\entities\bomb.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\bomber.c">
+    <ClCompile Include="src\entities\bomber.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\bullet.c">
+    <ClCompile Include="src\entities\bullet.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\cavalry.c">
+    <ClCompile Include="src\entities\cavalry.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\city.c">
+    <ClCompile Include="src\entities\city.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\coin.c">
+    <ClCompile Include="src\entities\coin.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\cruiser.c">
+    <ClCompile Include="src\entities\cruiser.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\destroyer.c">
+    <ClCompile Include="src\entities\destroyer.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\engineer.c">
+    <ClCompile Include="src\entities\engineer.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\factory.c">
+    <ClCompile Include="src\entities\factory.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\farm.c">
+    <ClCompile Include="src\entities\farm.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\fighter.c">
+    <ClCompile Include="src\entities\fighter.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\infantry.c">
+    <ClCompile Include="src\entities\infantry.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\mine.c">
+    <ClCompile Include="src\entities\mine.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\nation.c">
+    <ClCompile Include="src\entities\nation.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\academy.c">
+    <ClCompile Include="src\entities\academy.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\orderButton.c">
+    <ClCompile Include="src\entities\orderButton.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\ore.c">
+    <ClCompile Include="src\entities\ore.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\port.c">
+    <ClCompile Include="src\entities\port.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\shell.c">
+    <ClCompile Include="src\entities\shell.c">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\wall.c">
+    <ClCompile Include="src\entities\wall.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -298,7 +298,7 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\components\components.c">
+    <ClCompile Include="src\entities\components.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -350,31 +350,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\components\airfield.h" />
-    <ClInclude Include="src\components\artillery.h" />
-    <ClInclude Include="src\components\attacker.h" />
-    <ClInclude Include="src\components\battleship.h" />
-    <ClInclude Include="src\components\bomber.h" />
-    <ClInclude Include="src\components\bullet.h" />
-    <ClInclude Include="src\components\cavalry.h" />
-    <ClInclude Include="src\components\city.h" />
-    <ClInclude Include="src\components\coin.h" />
-    <ClInclude Include="src\components\cruiser.h" />
-    <ClInclude Include="src\components\destroyer.h" />
-    <ClInclude Include="src\components\engineer.h" />
-    <ClInclude Include="src\components\factory.h" />
-    <ClInclude Include="src\components\farm.h" />
-    <ClInclude Include="src\components\fighter.h" />
-    <ClInclude Include="src\components\bomb.h" />
-    <ClInclude Include="src\components\academy.h" />
-    <ClInclude Include="src\components\orderButton.h" />
-    <ClInclude Include="src\components\port.h" />
-    <ClInclude Include="src\components\infantry.h" />
-    <ClInclude Include="src\components\mine.h" />
-    <ClInclude Include="src\components\nation.h" />
-    <ClInclude Include="src\components\ore.h" />
-    <ClInclude Include="src\components\shell.h" />
-    <ClInclude Include="src\components\wall.h" />
+    <ClInclude Include="src\entities\entities.h" />
     <ClInclude Include="src\engine\goap.h" />
     <ClInclude Include="src\engine\soundManager.h" />
     <ClInclude Include="src\gui\font.h" />
@@ -386,7 +362,7 @@
     <ClInclude Include="src\scenes\pause.h" />
     <ClInclude Include="src\scenes\tournament.h" />
     <ClInclude Include="src\util\arraylist.h" />
-    <ClInclude Include="src\components\components.h" />
+    <ClInclude Include="src\entities\components.h" />
     <ClInclude Include="src\util\debug.h" />
     <ClInclude Include="src\engine\scene.h" />
     <ClInclude Include="src\engine\gameState.h" />

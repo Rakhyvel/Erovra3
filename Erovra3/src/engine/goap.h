@@ -50,7 +50,7 @@ typedef struct goap {
 *					variableUpdateSystem, and add all the actions
 * @return The allocated goap, with all actions already added/
 */
-Goap* Goap_Create(void (*goapInit)(Goap* goap));
+void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap));
 
 /*
  Adds an action to a GOAP struct.

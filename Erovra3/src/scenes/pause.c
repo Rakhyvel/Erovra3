@@ -1,5 +1,5 @@
 #include "pause.h"
-#include "../components/components.h"
+#include "../entities/components.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
 #include "../gui/gui.h"
