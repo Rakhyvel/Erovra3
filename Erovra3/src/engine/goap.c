@@ -11,6 +11,7 @@ void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
     for (int i = 0; i < MAX_VARIABLES; i++) {
         goap->effects[i] = NULL;
     }
+    memset(goap, 0, sizeof(Goap));
     goapInit(goap);
 }
 /* 

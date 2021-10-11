@@ -405,6 +405,7 @@ void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
     printf("%f\n", ((double)time) / CLOCKS_PER_SEC);
 
     if (terrain->keyContinents->size < 2) {
+        Arraylist_Clear(terrain->ports);
         printf("No key continents\n");
         return;
     }

@@ -114,6 +114,13 @@ void Arraylist_Remove(struct arraylist* list, size_t index)
     list->size--;
 }
 
+void Arraylist_Clear(struct arraylist* list)
+{
+    while (list->size > 0) {
+        Arraylist_Remove(list, 0);
+    }
+}
+
 int Arraylist_IndexOf(struct arraylist* list, void* data)
 {
     if (list == NULL) {

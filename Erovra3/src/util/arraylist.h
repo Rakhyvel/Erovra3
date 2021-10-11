@@ -21,6 +21,7 @@ void Arraylist_Destroy(struct arraylist* list);
 
 void Arraylist_Add(struct arraylist** listPtr, void* data);
 void Arraylist_Remove(struct arraylist* list, size_t index);
+void Arraylist_Clear(struct arraylist* list);
 int Arraylist_IndexOf(struct arraylist* list, void* data);
 void Arraylist_Put(struct arraylist* list, size_t index, void* data);
 void* Arraylist_Get(struct arraylist* list, size_t index);

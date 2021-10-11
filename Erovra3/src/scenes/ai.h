@@ -60,8 +60,6 @@ enum variables {
     AFFORD_ACADEMY_COINS,
 };
 
-void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key);
-
 void AI_Init(Goap* goap);
 
 #endif

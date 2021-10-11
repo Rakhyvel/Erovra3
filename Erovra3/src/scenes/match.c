@@ -1833,7 +1833,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        //simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2118,7 +2118,7 @@ void Match_Render(Scene* match)
     Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
-    Match_DrawVisitedSquares(match);
+    //Match_DrawVisitedSquares(match);
     //Match_DrawPortTiles(match);
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);

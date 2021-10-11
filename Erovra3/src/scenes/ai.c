@@ -701,7 +701,6 @@ void AI_BuildFactoryForAirfield(Scene* scene, ComponentKey key)
 
 void AI_BuildPort(Scene* scene, ComponentKey key)
 {
-    printf("Build port!\n");
     findPortTile(scene, key);
 }
 
