@@ -1,17 +1,9 @@
 /*	scene.c
-
-	A simple ECS framework for the game. Entities are an index to a mask table,
-	and all component tables. Component tables are arraylist memory pools of
-	component data.
-
-	Special thanks to David Colson for his excellent blog post on the subject
-	https://www.david-colson.com/2020/02/09/making-a-simple-ecs.html
-
-	Date: 4/2/21
-	Author: Joseph Shimel
+* 
+*	@author	Joseph Shimel
+*	@date	4/2/21
 */
 
-#pragma once
 #include "scene.h"
 #include "../util/debug.h"
 #include <stdarg.h>
@@ -19,17 +11,16 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef Uint8 ComponentID;
 #define INVALID_COMPONENT_ID 0
+
+typedef Uint8 ComponentID;
 
 static EntityIndex getIndex(EntityID);
 static EntityVersion getVersion(EntityID);
 static struct entity* getEntityStruct(struct scene*, EntityID);
-ComponentID getComponentID(struct scene* scene, ComponentKey globalKey);
+static ComponentID getComponentID(struct scene* scene, ComponentKey globalKey);
 
-/*
-	Initializes the memory pools for a scene */
-struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(struct scene*), void (*render)(struct scene*), void (*destructor)(struct scene*))
+struct scene* Scene_Create(void(registerComponents)(struct scene*), void (*update)(struct scene*), void (*render)(struct scene*), void (*destructor)(struct scene*))
 {
     struct scene* retval = calloc(1, sizeof(struct scene));
     if (!retval) {
@@ -49,14 +40,13 @@ struct scene* Scene_Create(void(initComponents)(struct scene*), void (*update)(s
         retval->components[i] = NULL;
     }
 
-    if (initComponents) {
-        initComponents(retval);
+    if (registerComponents) {
+        registerComponents(retval);
     }
 
     return retval;
 }
 
-/*	Calls a scene's destructor, then frees the memory used by a scene.*/
 void Scene_Destroy(struct scene* scene)
 {
     if (scene == NULL) {
@@ -78,7 +68,6 @@ void Scene_Destroy(struct scene* scene)
     free(scene);
 }
 
-/*	Takes in a global component key, and maps it to a free ComponentID for this particular scene. */
 void Scene_RegisterComponent(struct scene* scene, ComponentKey globalKey, size_t componentSize)
 {
     if (!scene->valid) {
@@ -95,10 +84,6 @@ void Scene_RegisterComponent(struct scene* scene, ComponentKey globalKey, size_t
     PANIC("All out of components!\n");
 }
 
-/*
-	Returns a pointer to the component data for a given entity and a given component.
-	
-	EntityID must be valid, componentID must be valid, and entity must have component  */
 void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
@@ -123,14 +108,6 @@ void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKe
     }
 }
 
-/*
-	Allocates and returns a new EntityID. Will either reallocate a freed 
-	reference, or create a new one.
-	
-	Entities are gauranteed to have a unique index-version number pairing
-	than all other entities created before.
-	
-	Entities are gauranteed to have a clear component mask. */
 EntityID Scene_NewEntity(struct scene* scene)
 {
     if (!scene->valid) {
@@ -158,15 +135,6 @@ EntityID Scene_NewEntity(struct scene* scene)
     }
 }
 
-/*
-	Assigns a component to an entity. Double assignment is ok.
-
-	If given componentData argument is NULL, only the mask will be changed.
-	ComponentID does not need to be registered. Component can then act as a flag.
-	
-	If given componentData argument is not NULL, component must be registered.
-	Data will then be copied from dereference of pointer to component data
-	memory pool. */
 void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void* componentData)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
@@ -186,13 +154,6 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void
     }
 }
 
-/*
-	Takes in an entity ID, and a componentID. Unassigns the component from the
-	entity's component mask
-	
-	Sequential unassigns of the same entity and component id are allowed. This
-	means you can unassign a component to an entity that does not have the 
-	component assigned. (Might change?) */
 void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
@@ -209,12 +170,6 @@ void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
     }
 }
 
-/*
-	Marks an entity as purged, and ready for deallocation when the purge 
-	function is called 
-	
-	The same entity can be marked purged more than once. Any call after the first 
-	call, though, has no effect. */
 void Scene_MarkPurged(struct scene* scene, EntityID id)
 {
     if (!scene->valid) {
@@ -224,11 +179,6 @@ void Scene_MarkPurged(struct scene* scene, EntityID id)
     Arraylist_Add(&scene->purgedEntities, &index);
 }
 
-/*
-	Frees all purged entities.
-	
-	Marks index as invalid, increments version, clears mask, and finally frees
-	the index in the entity thing. */
 void Scene_Purge(struct scene* scene)
 {
     while (scene->purgedEntities->size > 0) {
@@ -244,8 +194,6 @@ void Scene_Purge(struct scene* scene)
     }
 }
 
-/*
-	Creates a component bit mask based on given a list of component ids */
 const ComponentMask Scene_CreateMask(struct scene* scene, int number, ComponentKey components, ...)
 {
     ComponentKey component = components;
@@ -263,8 +211,6 @@ const ComponentMask Scene_CreateMask(struct scene* scene, int number, ComponentK
     return (const ComponentMask)retval;
 }
 
-/*
-	Returns whether or not the entity matches a component mask */
 bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask, EntityID id)
 {
     if (!scene->valid) {
@@ -280,8 +226,6 @@ bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask,
     return (entt->mask & mask) == mask;
 }
 
-/*
-	Returns whether or not the entity mathces some of the components in a mask */
 bool Scene_EntityHasAnyComponents(struct scene* scene, const ComponentMask mask, EntityID id)
 {
     if (!scene->valid) {
@@ -292,22 +236,16 @@ bool Scene_EntityHasAnyComponents(struct scene* scene, const ComponentMask mask,
     return (entt->mask & mask) != 0;
 }
 
-/*
-	Finds and returns first index of a mask matching an entity */
 EntityID Scene_Begin(struct scene* scene, const ComponentMask mask)
 {
     return Scene_Next(scene, -1, mask);
 }
 
-/*
-	Checks to see if the entity id is the last entity */
 bool Scene_End(struct scene* scene, EntityID id)
 {
     return getIndex(id) < scene->entities->size;
 }
 
-/*
-	Returns the next entity id given a previous entity id, and a component mask */
 EntityID Scene_Next(struct scene* scene, EntityID prev, const ComponentMask mask)
 {
     EntityIndex index;
@@ -321,25 +259,43 @@ EntityID Scene_Next(struct scene* scene, EntityID prev, const ComponentMask mask
     return (EntityID)(scene->entities->size) << 16;
 }
 
-// returns the index portion of an id
+/**
+ * @brief Returns the index portion of an EntityID
+ * @param id The id to get the index from
+ * @return The index of the given EntityID
+*/
 EntityIndex getIndex(EntityID id)
 {
     return (id >> 16) & 0xFFFF;
 }
 
-// returns the version portion of an id
+/**
+ * @brief Returns the version portion of an EntityID
+ * @param id The id to get the version from
+ * @return The version of a given EntityID
+*/
 EntityVersion getVersion(EntityID id)
 {
     return id & 0xFFFF;
 }
 
-// returns the entity structure for a given EntityID
+/**
+ * @brief Returns the entity structure in a scene's arraylist of entities for a given EntityID
+ * @param scene	The relevant scene
+ * @param id	The id retrieve from
+*/
 struct entity* getEntityStruct(struct scene* scene, EntityID id)
 {
     return (struct entity*)Arraylist_Get(scene->entities, getIndex(id));
 }
 
-ComponentID getComponentID(struct scene* scene, ComponentKey globalKey)
+/**
+ * @brief Maps a ComponentKey to its corresponding ComponentID in a scene
+ * @param scene The relevant scene
+ * @param globalKey The component key
+ * @return The corresponding component id
+*/
+static ComponentID getComponentID(struct scene* scene, ComponentKey globalKey)
 {
     if (!scene->valid) {
         PANIC("Scene is invalid, possibly recently destroyed.");

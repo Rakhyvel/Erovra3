@@ -1,3 +1,22 @@
+/*	goap.h
+* 
+*	A GOAP (Goal-Oriented Action-Planner) is a structure used by AIs to make and 
+*	execute plans based on the state of their surroundings.
+* 
+*	# USER IMPLEMENTATION
+*	It's advised to have a component for AI which contains a GOAP. Then, define a
+*	source file which has:
+*		1. A function for updating the variables in the GOAP
+*		2. A function for each action in the GOAP
+*		3. A function for initializing the graph in the GOAP
+*	Then, for each AI entity, call Goap_Create() and pass in the pointer to the 
+*	GOAP. Then, have a system that goes through each AI entity, and call 
+*	Goap_Update().
+* 
+*	@author	Joseph Shimel
+*	@date	9/7/21
+*/
+
 #ifndef GOAP_H
 #define GOAP_H
 
@@ -11,7 +30,7 @@
 typedef Uint8 VariableID;
 typedef Uint8 ActionID;
 
-/* 
+/**
 * Actions have preconditions, a function pointer to a function, and a post-
 * condition that should be true after the action runs.
 * 
@@ -29,6 +48,9 @@ typedef struct action {
     char name[16];
 } Action;
 
+/**
+ * @brief lol
+*/
 typedef struct goap {
     // Maps variables to a list of ActionIDs of actions that cause the variable to become true
     Arraylist* effects[MAX_VARIABLES];
@@ -42,9 +64,7 @@ typedef struct goap {
     int numActions;
 } Goap;
 
-/* Creates a Goal-Oriented Action Planning struct that is used for AIs. If 
-* there are more one, separate AIs in a scene, they each should have a separate
-* GOAP, because the variables are likely specific to themselves. 
+/* Creates a Goal-Oriented Action Planning struct that is used for AIs.
 * 
 * @param goapInit	A function that is responsible for setting the 
 *					variableUpdateSystem, and add all the actions

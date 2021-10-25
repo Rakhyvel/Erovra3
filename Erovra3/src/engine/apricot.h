@@ -16,7 +16,8 @@
 *	@date	3/28/21
 */
 
-#pragma once
+#ifndef APRICOT_H
+#define APRICOT_H
 
 #include "../util/arraylist.h"
 #include "../util/vector.h"
@@ -99,3 +100,5 @@ void Apricot_PopScene(int numScenes);
 * @brief Runs the game loop forever until exit() is called.
 */
 void Apricot_Run();
+
+#endif

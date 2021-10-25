@@ -1,7 +1,15 @@
+/*	goap.c
+* 
+*	@author Joseph Shimel
+*	@date	9/7/21
+*/
+
 #include "./goap.h"
 #include "../util/debug.h"
 #include "./apricot.h"
 #include <string.h>
+
+static ActionID minDistance(int dist[], bool processed[]);
 
 void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
 {
@@ -14,13 +22,7 @@ void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
     memset(goap, 0, sizeof(Goap));
     goapInit(goap);
 }
-/* 
-* 1. Creates action
-* 2. Adds to actions array
-* 3. Increments numActions, becomes actionID
-* 4. Adds to list mapped to by effect variableID
-*		Create list if need to
-*/
+
 void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, ComponentKey flag), VariableID effect, int numPrecoditions, Uint8 preconditions, ...)
 {
     Action action;
@@ -48,21 +50,6 @@ void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, Comp
     Arraylist_Add(&goap->effects[effect], &(goap->numActions));
     // Add action to array of actions
     goap->actions[goap->numActions++] = action;
-}
-
-// A utility function to find the vertex with minimum distance value, from
-// the set of vertices not yet included in shortest path tree
-// TODO: Use a priority queue (maybe)
-static ActionID minDistance(int dist[], bool processed[])
-{
-    // Initialize min value
-    ActionID min = INT_MAX, min_index;
-
-    for (int v = 0; v < MAX_ACTIONS; v++)
-        if (!processed[v] && dist[v] <= min)
-            min = dist[v], min_index = v;
-
-    return min_index;
 }
 
 void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
@@ -135,17 +122,35 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
     // Perform the best action, if there is anyApricot_
     if (best != -1 && best < MAX_ACTIONS) {
         Action bestAction = goap->actions[best];
-        
+
         if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
             for (int i = best; i != 65; i = parent[i]) {
                 printf("%s(%d) <- ", goap->actions[i].name, dist[i]);
             }
             printf("\n");
         }
-		
 
         if (bestAction.actionPtr) {
             bestAction.actionPtr(scene, flag);
         }
     }
+}
+
+/**
+ * @brief Finds the action from the set of actions not yet included in shortest path tree with minimum distance
+ * @param dist Maps actions to their current shortest distances
+ * @param processed Maps actions to whether or not they've been processed by Dijkstra's algorithm
+ * @return The action with the shortest distance that has not yet been processed.
+*/
+static ActionID minDistance(int dist[], bool processed[])
+{
+    ActionID min = INT_MAX, min_index;
+
+    for (int v = 0; v < MAX_ACTIONS; v++) {
+        if (!processed[v] && dist[v] <= min) {
+            min = dist[v], min_index = v;
+        }
+    }
+
+    return min_index;
 }
