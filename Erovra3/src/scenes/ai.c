@@ -1,6 +1,6 @@
 #pragma once
 #include "ai.h"
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../entities/components.h"
 #include "../util/debug.h"
 #include "./match.h"
@@ -375,7 +375,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
         goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
 		*/
     }
-    if (g->shift) {
+    if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         printf("%d\n", goap->variables[HAS_AVAILABLE_PORT]);
     }
 }

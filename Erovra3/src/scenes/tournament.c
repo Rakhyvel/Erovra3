@@ -1,5 +1,5 @@
 #pragma once
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../engine/scene.h"
 #include "../terrain.h"
 #include "../util/debug.h"
@@ -17,11 +17,11 @@ void Tournament_Update(Scene* scene)
 
 Scene* Tournament_Init()
 {
-    asap = true;
+    Apricot_ASAP = true;
     int status;
     lexicon = Lexicon_Create("res/countryNames.txt", &status);
     Scene* tournament = Scene_Create(NULL, &Tournament_Update, NULL, NULL);
-    Game_PushScene(tournament);
+    Apricot_PushScene(tournament);
 
     map = Perlin_Generate(1024, 256, 24, &status);
     for (int x = 0; x < 1024; x++) {

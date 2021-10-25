@@ -6,7 +6,7 @@
 
 #pragma once
 #include "../entities/components.h"
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../engine/scene.h"
 #include "../gui/gui.h"
 #include "../util/lexicon.h"
@@ -181,12 +181,12 @@ static int generateFullTerrain(void* ptr)
 void Menu_ReconstructMap(Scene* scene, EntityID id)
 {
     // Copy current preview texture to loading texture
-    SDL_SetRenderTarget(g->rend, loading);
-    SDL_RenderCopy(g->rend, previewTexture, NULL, NULL);
+    SDL_SetRenderTarget(Apricot_Renderer, loading);
+    SDL_RenderCopy(Apricot_Renderer, previewTexture, NULL, NULL);
     // Darken loading texture a bit, return renderer to window
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 50);
-    SDL_RenderFillRect(g->rend, NULL);
-    SDL_SetRenderTarget(g->rend, NULL);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 50);
+    SDL_RenderFillRect(Apricot_Renderer, NULL);
+    SDL_SetRenderTarget(Apricot_Renderer, NULL);
 
     // Set map preview image entity to display the loading image
     Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
@@ -390,7 +390,7 @@ Scene* Menu_Init()
     loadingCircle = loadTexture("res/loadingCircle.png");
 
     SDL_Thread* assetLoadingThread = SDL_CreateThread(loadAssets, "Load assets", scene);
-    previewTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
+    previewTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
 
     camera = (Vector) { -4000, -4000 };
     vel = (Vector) { 0, 0 };
@@ -457,6 +457,6 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, loadingMatch, statusText);
     GUI_ContainerAdd(scene, loadingMatch, progressBar);
 
-    Game_PushScene(scene);
+    Apricot_PushScene(scene);
     return scene;
 }

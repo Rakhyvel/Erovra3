@@ -42,7 +42,7 @@ Code guidelines:
 #include "./gui/gui.h"
 #include "./scenes/menu.h"
 #include "./scenes/tournament.h"
-#include "engine/gameState.h"
+#include "engine/apricot.h"
 #include "textures.h"
 #include <SDL.h>
 #include <stdio.h>
@@ -52,7 +52,7 @@ Code guidelines:
 	Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Game_Init("Erovra 3.9.4", 1280, 680);
+    Apricot_Init("Erovra 3.9.4", 1280, 680);
     GUI_Init();
     Components_Init();
     Textures_Init();
@@ -61,6 +61,6 @@ int SDL_main(int argc, char** argv)
 #else
     Menu_Init();
 #endif
-    Game_Run();
+    Apricot_Run();
     return 0;
 }

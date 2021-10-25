@@ -12,7 +12,7 @@ terrain.c
 #include <string.h>
 #include <time.h>
 
-#include "./engine/gameState.h"
+#include "./engine/apricot.h"
 #include "./util/debug.h"
 #include "./util/heap.h"
 #include "./util/perlin.h"
@@ -173,30 +173,28 @@ SDL_Color Terrain_MiniMapColor(float* map, int mapSize, int x, int y, float i)
 	Sets the terrain offset and zoom depending on the game state's input */
 void Terrain_Update(struct terrain* terrain)
 {
-    terrain_zoom *= (float)pow(1.1, g->mouseWheelY - oldWheel);
-    oldWheel = g->mouseWheelY;
-    if (terrain_zoom < 0.75 * g->height / terrain->size) {
-        terrain_zoom = 0.75f * g->height / terrain->size;
+    terrain_zoom *= (float)pow(1.1, Apricot_MouseWheel.y - oldWheel);
+    oldWheel = Apricot_MouseWheel.y;
+    if (terrain_zoom < 0.75 * Apricot_Height / terrain->size) {
+        terrain_zoom = 0.75f * Apricot_Height / terrain->size;
     }
-    if (terrain_zoom > 8.0f * g->height / terrain->size) {
-        terrain_zoom = 8.0f * g->height / terrain->size;
+    if (terrain_zoom > 8.0f * Apricot_Height / terrain->size) {
+        terrain_zoom = 8.0f * Apricot_Height / terrain->size;
     }
 
-    if (g->mouseLeftDown && !mouseDown) {
+    if (Apricot_MouseLeftDown && !mouseDown) {
         mouseDown = true;
     }
-    if (!g->mouseLeftDown && mouseDown) {
+    if (!Apricot_MouseLeftDown && mouseDown) {
         mouseDown = false;
-        oldOffset.x = offset.x;
-        oldOffset.y = offset.y;
+        oldOffset = offset;
     }
-    if (g->mouseMoved) {
-        mousePos.x = (float)(((float)g->mouseX - (float)g->width / 2.0f) / terrain_zoom) - offset.x;
-        mousePos.y = (float)(((float)g->mouseY - (float)g->height / 2.0f) / terrain_zoom) - offset.y;
+    if (Apricot_MouseMoved) {
+        mousePos.x = (float)(((float)Apricot_MousePos.x - (float)Apricot_Width / 2.0f) / terrain_zoom) - offset.x;
+        mousePos.y = (float)(((float)Apricot_MousePos.y - (float)Apricot_Height / 2.0f) / terrain_zoom) - offset.y;
     }
-    if (g->mouseDrag && !g->shift) {
-        offset.x = (g->mouseX - g->mouseInitX) / terrain_zoom + oldOffset.x;
-        offset.y = (g->mouseY - g->mouseInitY) / terrain_zoom + oldOffset.y;
+    if (Apricot_MouseDrag && !Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
+        offset = Vector_Add(Vector_Scalar(Vector_Sub(Apricot_MousePos, Apricot_MouseInit), 1 / terrain_zoom), oldOffset);
     }
 }
 
@@ -208,33 +206,33 @@ void Terrain_Render(struct terrain* terrain)
         SDL_Rect rect = { 0, 0, 0, 0 };
         Terrain_Translate(&rect, 0, 0, 0, 0);
         rect.w = rect.h = (int)(terrain_zoom * terrain->size);
-        SDL_RenderCopy(g->rend, terrain->texture, NULL, &rect);
+        SDL_RenderCopy(Apricot_Renderer, terrain->texture, NULL, &rect);
 
-        SDL_SetRenderDrawColor(g->rend, 0, 0, 0, min(max(50 * terrain_zoom, 12), 50));
+        SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, min(max(50 * terrain_zoom, 12), 50));
         SDL_FPoint gridLineStart = { 32, 32 };
         SDL_Rect gridLineRect = { 0, 0, 0, 0 };
         Terrain_Translate(&gridLineRect, gridLineStart.x, gridLineStart.y, 64, 64);
         for (int x = 0; x <= terrain->tileSize; x++) {
-            SDL_RenderDrawLine(g->rend,
+            SDL_RenderDrawLine(Apricot_Renderer,
                 max((int)(gridLineRect.x + x * 64.0 * terrain_zoom), 0),
                 gridLineRect.y,
                 (int)(gridLineRect.x + x * 64.0 * terrain_zoom),
                 (int)(gridLineRect.y + (terrain->size * terrain_zoom)));
         }
         for (int y = 0; y <= terrain->tileSize; y++) {
-            SDL_RenderDrawLine(g->rend,
+            SDL_RenderDrawLine(Apricot_Renderer,
                 max(gridLineRect.x, 0),
                 (int)(gridLineRect.y + y * 64.0 * terrain_zoom),
                 (int)(gridLineRect.x + (terrain->size * terrain_zoom)),
                 (int)(gridLineRect.y + y * 64.0 * terrain_zoom));
         }
 
-        SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(Apricot_Renderer, &rect);
         rect.x += 1;
         rect.y += 1;
         rect.w -= 2;
         rect.h -= 2;
-        SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -596,8 +594,8 @@ EntityID Terrain_AdjacentMask(struct scene* scene, ComponentKey key, struct terr
 	Converts map coords to screen coords*/
 void Terrain_Translate(SDL_Rect* newPos, float x, float y, float width, float height)
 {
-    newPos->x = (int)round((x + offset.x - width / 2.0f) * terrain_zoom + g->width / 2.0f);
-    newPos->y = (int)round((y + offset.y - height / 2.0f) * terrain_zoom + g->height / 2.0f);
+    newPos->x = (int)round((x + offset.x - width / 2.0f) * terrain_zoom + Apricot_Width / 2.0f);
+    newPos->y = (int)round((y + offset.y - height / 2.0f) * terrain_zoom + Apricot_Height / 2.0f);
     newPos->w = (int)(width * terrain_zoom);
     newPos->h = (int)(height * terrain_zoom);
 }
@@ -610,8 +608,8 @@ struct vector Terrain_MousePos()
 SDL_FPoint Terrain_InverseTranslate(int x, int y)
 {
     SDL_FPoint newPos;
-    newPos.x = (x - g->width / 2) / terrain_zoom - offset.x;
-    newPos.y = (y - g->height / 2) / terrain_zoom - offset.y;
+    newPos.x = (x - Apricot_Width / 2) / terrain_zoom - offset.x;
+    newPos.y = (y - Apricot_Height / 2) / terrain_zoom - offset.y;
     return newPos;
 }
 

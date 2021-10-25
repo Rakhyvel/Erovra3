@@ -3,7 +3,7 @@
 #include "../util/debug.h"
 #include "../util/polygon.h"
 #include "../util/vector.h"
-#include "gameState.h"
+#include "apricot.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <float.h>
@@ -51,7 +51,7 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
     dest.y = y;
     dest.w = w;
     dest.h = h;
-    if (SDL_RenderCopyEx(g->rend, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
+    if (SDL_RenderCopyEx(Apricot_Renderer, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
         PANIC("%s", SDL_GetError());
     }
 }
@@ -83,7 +83,7 @@ void Texture_DrawCentered(TextureID textureID, int x, int y, float w, float h, f
         dest.h = h;
         dest.x = (w - dest.w) / 2 + x;
     }
-    if (SDL_RenderCopyEx(g->rend, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
+    if (SDL_RenderCopyEx(Apricot_Renderer, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
         PANIC("%s", SDL_GetError());
     }
 }
@@ -137,22 +137,22 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
         }
 
         // Draw scanlines
-        if (SDL_SetRenderTarget(g->rend, texture)) {
+        if (SDL_SetRenderTarget(Apricot_Renderer, texture)) {
             PANIC("%s", SDL_GetError());
         }
-        SDL_SetRenderDrawColor(g->rend, color.r, color.g, color.b, color.a);
+        SDL_SetRenderDrawColor(Apricot_Renderer, color.r, color.g, color.b, color.a);
         for (i = 0; i < nodes; i += 2) {
-            if (nodeX[i] + polygon.x >= g->width)
+            if (nodeX[i] + polygon.x >= Apricot_Width)
                 break;
             if (nodeX[i + 1] > 0) {
                 if (nodeX[i] + polygon.x < 0)
                     nodeX[i] = 0;
-                if (nodeX[i + 1] + polygon.x > g->width)
-                    nodeX[i + 1] = (float)g->width;
-                SDL_RenderDrawLine(g->rend, (int)nodeX[i] + polygon.x, (int)pixelY - 1 + polygon.y, (int)nodeX[i + 1] + polygon.x, (int)pixelY - 1 + polygon.y);
+                if (nodeX[i + 1] + polygon.x > Apricot_Width)
+                    nodeX[i + 1] = (float)Apricot_Width;
+                SDL_RenderDrawLine(Apricot_Renderer, (int)nodeX[i] + polygon.x, (int)pixelY - 1 + polygon.y, (int)nodeX[i + 1] + polygon.x, (int)pixelY - 1 + polygon.y);
             }
         }
-        SDL_SetRenderTarget(g->rend, NULL);
+        SDL_SetRenderTarget(Apricot_Renderer, NULL);
     }
 }
 
@@ -164,16 +164,16 @@ void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color colo
     } else {
         texture = NULL;
     }
-    if (SDL_SetRenderTarget(g->rend, texture)) {
+    if (SDL_SetRenderTarget(Apricot_Renderer, texture)) {
         PANIC("%s", SDL_GetError());
     }
-    SDL_SetRenderDrawColor(g->rend, color.r, color.g, color.b, color.a);
+    SDL_SetRenderDrawColor(Apricot_Renderer, color.r, color.g, color.b, color.a);
     for (double y = -radius; y < radius; y++) {
         double newY = y + center.y;
         double x = radius * (double)sqrtf(1.0 - powf(y / (double)radius, 2.0));
-        SDL_RenderDrawLine(g->rend, max(-x + center.x, -1), y + center.y, x + center.x, y + center.y);
+        SDL_RenderDrawLine(Apricot_Renderer, max(-x + center.x, -1), y + center.y, x + center.x, y + center.y);
     }
-    SDL_SetRenderTarget(g->rend, NULL);
+    SDL_SetRenderTarget(Apricot_Renderer, NULL);
 }
 
 /*
@@ -302,25 +302,25 @@ void Texture_CreateShadow(TextureID dstID, TextureID srcID)
     }
 
     // Set src texture as target, get array of pixels
-    SDL_SetRenderTarget(g->rend, src);
-    SDL_RenderCopy(g->rend, src, NULL, NULL);
-    SDL_RenderReadPixels(g->rend, NULL, srcFormat, srcPixels, srcPitch * w);
+    SDL_SetRenderTarget(Apricot_Renderer, src);
+    SDL_RenderCopy(Apricot_Renderer, src, NULL, NULL);
+    SDL_RenderReadPixels(Apricot_Renderer, NULL, srcFormat, srcPixels, srcPitch * w);
 
     // Set dst texture as target, if src pixel non-transparent, dst pixel is shadow colored
-    SDL_SetRenderTarget(g->rend, dst);
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 0);
-    SDL_RenderClear(g->rend);
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, 64);
+    SDL_SetRenderTarget(Apricot_Renderer, dst);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 0);
+    SDL_RenderClear(Apricot_Renderer);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 64);
     int area = 0;
     for (int i = 0; i < w * h * 4; i += 4) {
         int x = (i / 4) % w;
         int y = (i / 4) / w;
         if (srcPixels[i] || srcPixels[i + 1] || srcPixels[i + 2] || srcPixels[i + 3]) {
-            SDL_RenderDrawPoint(g->rend, x, y);
+            SDL_RenderDrawPoint(Apricot_Renderer, x, y);
             area++;
         }
     }
-    SDL_SetRenderTarget(g->rend, NULL);
+    SDL_SetRenderTarget(Apricot_Renderer, NULL);
 }
 
 /*
@@ -340,7 +340,7 @@ TextureID Texture_RegisterTexture(char* filename)
 SDL_Texture* loadTexture(char* filename)
 {
     // Create texture from img, which cannot be rendered on
-    SDL_Texture* imgTexture = IMG_LoadTexture(g->rend, filename);
+    SDL_Texture* imgTexture = IMG_LoadTexture(Apricot_Renderer, filename);
     if (!imgTexture) {
         PANIC("Error: %s\n", IMG_GetError());
     }
@@ -349,13 +349,13 @@ SDL_Texture* loadTexture(char* filename)
     SDL_Rect rect = { 0, 0, 0, 0 };
     SDL_QueryTexture(imgTexture, 0, 0, &rect.w, &rect.h);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-    SDL_Texture* accessibleTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rect.w, rect.h);
+    SDL_Texture* accessibleTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rect.w, rect.h);
 
     // Copy IMG texture to drawible texture
-    SDL_SetRenderTarget(g->rend, accessibleTexture);
+    SDL_SetRenderTarget(Apricot_Renderer, accessibleTexture);
     SDL_SetTextureBlendMode(accessibleTexture, SDL_BLENDMODE_BLEND);
-    SDL_RenderCopy(g->rend, imgTexture, NULL, &rect);
-    SDL_SetRenderTarget(g->rend, NULL);
+    SDL_RenderCopy(Apricot_Renderer, imgTexture, NULL, &rect);
+    SDL_SetRenderTarget(Apricot_Renderer, NULL);
     SDL_DestroyTexture(imgTexture);
 
     return accessibleTexture;

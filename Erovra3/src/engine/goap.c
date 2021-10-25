@@ -1,6 +1,6 @@
 #include "./goap.h"
 #include "../util/debug.h"
-#include "./gameState.h"
+#include "./apricot.h"
 #include <string.h>
 
 void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
@@ -132,11 +132,11 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         }
     }
 
-    // Perform the best action, if there is any
+    // Perform the best action, if there is anyApricot_
     if (best != -1 && best < MAX_ACTIONS) {
         Action bestAction = goap->actions[best];
         
-        if (g->shift) {
+        if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
             for (int i = best; i != 65; i = parent[i]) {
                 printf("%s(%d) <- ", goap->actions[i].name, dist[i]);
             }

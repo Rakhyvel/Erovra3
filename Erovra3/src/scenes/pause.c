@@ -1,6 +1,6 @@
 #include "pause.h"
 #include "../entities/components.h"
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../engine/scene.h"
 #include "../gui/gui.h"
 #include "../util/debug.h"
@@ -27,7 +27,8 @@ static Scene* matchScene = NULL;
 /* Transition value */
 int fade = 0;
 
-/*	Called from pause menu. Ends game in defeat.
+/*	Callback function, called from "surrender" button in pause menu. Ends game 
+ *	in defeat.
  * 
  *	@param scene	Scene reference (unused)
  *	@param id		EntityID of button that trigged callback (unused)
@@ -37,7 +38,8 @@ void Pause_Surrender(Scene* scene, EntityID id)
     state = DEFEAT;
 }
 
-/*	Called from pause menu. Returns to match
+/*	Callback function, called from "back to game" button in pause menu. 
+ *	Returns to match.
  * 
  *	@param scene	Scene reference (unused)
  *	@param id		EntityID of button that trigged callback (unused)
@@ -47,7 +49,8 @@ void Pause_BackToGame(Scene* scene, EntityID id)
     state = RETURN_MATCH;
 }
 
-/*	Called from surrender or victory menus. Returns to main menu
+/*	Callback function, called from "back to menu" button in pause menus. Returns
+ *	to main menu.
  * 
  *	@param scene	Scene reference (unused)
  *	@param id		EntityID of button that trigged callback (unused)
@@ -57,7 +60,7 @@ void Pause_BackToMenu(Scene* scene, EntityID id)
     state = RETURN_MENU;
 }
 
-/*	Called from surrender or victory menus. Ends program.
+/*	Callback function, called from "exit" button in pause menus. Ends game.
  * 
  *	@param scene	Scene reference (unused)
  *	@param id		EntityID of button that trigged callback (unused)
@@ -77,7 +80,7 @@ void Pause_Update(Scene* scene)
 	// Regular menus
     if (state == PAUSE || state == VICTORY || state == DEFEAT) {
 		// If in pause scene, check if esc key is pressed. Return to match if so
-        if (state == PAUSE && g->keys[SDL_SCANCODE_ESCAPE]) {
+        if (state == PAUSE && Apricot_Keys[SDL_SCANCODE_ESCAPE]) {
             if (!escDown) {
                 state = RETURN_MATCH;
                 escDown = true;
@@ -102,9 +105,9 @@ void Pause_Update(Scene* scene)
         // Reset statics to default before leaving
         escDown = true;
         if (state == RETURN_MATCH) {
-            Game_PopScene(1);
+            Apricot_PopScene(1);
         } else if (state == RETURN_MENU) {
-            Game_PopScene(2);
+            Apricot_PopScene(2);
         }
         return;
     }
@@ -134,8 +137,8 @@ void Pause_Update(Scene* scene)
 void Pause_Render(Scene* scene)
 {
     Match_Render(matchScene);
-    SDL_SetRenderDrawColor(g->rend, 0, 0, 0, fade);
-    SDL_RenderFillRect(g->rend, NULL);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, fade);
+    SDL_RenderFillRect(Apricot_Renderer, NULL);
     GUI_Render(scene);
 }
 
@@ -186,6 +189,6 @@ Scene* Pause_Init(Scene* mScene, enum pauseState s)
     GUI_ContainerAdd(scene, defeatMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Main menu", 0, &Pause_BackToMenu));
     GUI_ContainerAdd(scene, defeatMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Exit", 0, &Pause_Exit));
 
-    Game_PushScene(scene);
+    Apricot_PushScene(scene);
     return scene;
 }

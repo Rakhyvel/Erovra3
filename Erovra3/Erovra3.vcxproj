@@ -306,7 +306,7 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\engine\gameState.c" />
+    <ClCompile Include="src\engine\apricot.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\scenes\match.c">
       <SubType>
@@ -360,7 +360,7 @@
     <ClInclude Include="src\entities\components.h" />
     <ClInclude Include="src\util\debug.h" />
     <ClInclude Include="src\engine\scene.h" />
-    <ClInclude Include="src\engine\gameState.h" />
+    <ClInclude Include="src\engine\apricot.h" />
     <ClInclude Include="src\scenes\match.h" />
     <ClInclude Include="src\terrain.h" />
     <ClInclude Include="src\engine\textureManager.h" />

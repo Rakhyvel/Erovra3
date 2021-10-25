@@ -1,5 +1,5 @@
 #pragma once
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../engine/soundManager.h"
 #include "../util/debug.h"
 #include "gui.h"
@@ -65,8 +65,8 @@ void GUI_Init()
     if (!font) {
         font = FC_CreateFont();
         bigFont = FC_CreateFont();
-        FC_LoadFont(font, g->rend, "res/gui/Segoe UI.ttf", 16, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
-        FC_LoadFont(bigFont, g->rend, "res/gui/Segoe UI.ttf", 175, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+        FC_LoadFont(font, Apricot_Renderer, "res/gui/Segoe UI.ttf", 16, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+        FC_LoadFont(bigFont, Apricot_Renderer, "res/gui/Segoe UI.ttf", 175, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
     }
 }
 
@@ -549,8 +549,8 @@ void GUI_SetShown(Scene* scene, EntityID id, bool shown)
 void GUI_CenterElementAt(Scene* scene, EntityID id, int x, int y)
 {
     GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
-    gui->pos.x = g->width / 2 - gui->width / 2 + x;
-    gui->pos.y = g->height / 2 - gui->height / 2 + y;
+    gui->pos.x = Apricot_Width / 2 - gui->width / 2 + x;
+    gui->pos.y = Apricot_Height / 2 - gui->height / 2 + y;
     GUI_UpdateLayout(scene, GUI_GetRoot(scene, id), gui->pos.x, gui->pos.y);
 }
 
@@ -665,15 +665,15 @@ static void updateClickable(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Clickable* clickable = (Clickable*)Scene_GetComponent(scene, id, GUI_CLICKABLE_COMPONENT_ID);
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if (gui->isHovered && g->mouseLeftDown) {
+        if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
         gui->border = gui->isHovered * 2;
-        if (g->mouseLeftUp) {
+        if (Apricot_MouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 if (clickable->onclick == NULL) {
                     PANIC("Button onclick is NULL for button %s", clickable->text);
@@ -699,14 +699,14 @@ static void updateRockerSwitch(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, id, GUI_ROCKER_SWITCH_COMPONENT_ID);
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if (gui->isHovered && g->mouseLeftDown) {
+        if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
-        if (g->mouseLeftUp) {
+        if (Apricot_MouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 if (rockerSwitch->onchange == NULL) {
                     PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
@@ -735,20 +735,20 @@ void updateRadioButtons(Scene* scene)
         }
         RadioButtons* radioButtons = (RadioButtons*)Scene_GetComponent(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID);
 
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 34 && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y + 34 && Apricot_MousePos.y < gui->pos.y + gui->height;
         int oldSelected = radioButtons->selectionHovered;
         if (gui->isHovered) {
-            radioButtons->selectionHovered = (g->mouseY - gui->pos.y - 22) / 44;
+            radioButtons->selectionHovered = (Apricot_MousePos.y - gui->pos.y - 22) / 44;
         } else {
             radioButtons->selectionHovered = -1;
         }
         if (radioButtons->selectionHovered != -1 && oldSelected != radioButtons->selectionHovered) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if (gui->isHovered && g->mouseLeftDown) {
+        if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
-        if (g->mouseLeftUp) {
+        if (Apricot_MouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 radioButtons->selection = radioButtons->selectionHovered;
                 if (gui->active) {
@@ -774,19 +774,19 @@ void updateSlider(Scene* scene)
         Slider* slider = (Slider*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
 
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 6 + 16 && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y + 6 + 16 && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if ((gui->isHovered || gui->clickedIn) && g->mouseLeftDown) {
-            float val = (g->mouseX - gui->pos.x) / gui->width;
+        if ((gui->isHovered || gui->clickedIn) && Apricot_MouseLeftDown) {
+            float val = (Apricot_MousePos.x - gui->pos.x) / gui->width;
             slider->value = max(0.0f, min(1.0f, val));
             if (!gui->clickedIn) {
                 Sound_Play(HOVER_SOUND_ID);
             }
             gui->clickedIn = true;
         }
-        if (gui->clickedIn && !g->mouseLeftDown) {
+        if (gui->clickedIn && !Apricot_MouseLeftDown) {
             slider->onupdate(scene, id);
             if (gui->clickedIn) {
                 Sound_Play(HOVER_SOUND_ID);
@@ -807,28 +807,27 @@ void updateTextBox(Scene* scene)
         TextBox* textBox = (TextBox*)Scene_GetComponent(scene, id, GUI_TEXT_BOX_COMPONENT_ID);
 
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y + 6 + 16 && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y + 6 + 16 && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active && !textBox->active) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if (gui->isHovered && g->mouseLeftDown) {
+        if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true;
         }
-        if (!gui->isHovered && g->mouseLeftDown) {
+        if (!gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = false;
             if (textBox->active && textBox->onupdate != NULL) {
                 textBox->onupdate(scene, id);
             }
             textBox->active = false;
         }
-        if (gui->clickedIn && !g->mouseLeftDown) {
+        if (gui->clickedIn && !Apricot_MouseLeftDown) {
             gui->clickedIn = false;
             textBox->active = true;
             int total = 0;
             /* Get character index */ {
-                int i;
-                int x = g->mouseX - gui->pos.x - 9;
-                for (i = 0; textBox->text[i] != '\0'; i++) {
+                int x = Apricot_MousePos.x - gui->pos.x - 9;
+                for (int i = 0; textBox->text[i] != '\0'; i++) {
                     total += kern16[textBox->text[i]] + 1;
                     if (total > x + (kern16[textBox->text[i]] + 1) / 2) {
                         total = i;
@@ -841,20 +840,20 @@ void updateTextBox(Scene* scene)
                 Sound_Play(CLICK_SOUND_ID);
             }
         }
-        if (textBox->active && g->keyDown != '\0') {
-            // Place character in text
-            if (g->keyDown >= ' ' && g->keyDown <= '~' && textBox->length < 31) {
-                printf("%d\n", g->keyDown);
+        if (textBox->active && Apricot_CharDown != '\0') {
+            // Place character in textApricot_K
+            if (Apricot_CharDown >= ' ' && Apricot_CharDown <= '~' && textBox->length < 31) {
+                printf("%d\n", Apricot_CharDown);
                 for (int i = textBox->length; i > textBox->cursorPos; i--) {
                     textBox->text[i] = textBox->text[i - 1];
                 }
-                textBox->text[textBox->cursorPos] = g->keyDown;
+                textBox->text[textBox->cursorPos] = Apricot_CharDown;
                 textBox->cursorPos++;
                 textBox->length++;
                 textBox->text[textBox->length] = '\0';
             }
             // Backspace
-            else if (g->keyDown == '\b' && textBox->length > 0 && textBox->cursorPos > 0) {
+            else if (Apricot_CharDown == '\b' && textBox->length > 0 && textBox->cursorPos > 0) {
                 textBox->cursorPos--;
                 for (int i = textBox->cursorPos; i < textBox->length; i++) {
                     textBox->text[i] = textBox->text[i + 1];
@@ -863,11 +862,11 @@ void updateTextBox(Scene* scene)
                 textBox->text[textBox->length] = '\0';
             }
             // Left arrow
-            else if (g->left && textBox->cursorPos > 0) {
+            else if (Apricot_Keys[SDL_SCANCODE_LEFT] && textBox->cursorPos > 0) {
                 textBox->cursorPos--;
             }
             // Right arrow
-            else if (g->right && textBox->cursorPos < textBox->length) {
+            else if (Apricot_Keys[SDL_SCANCODE_RIGHT] && textBox->cursorPos < textBox->length) {
                 textBox->cursorPos++;
             }
         }
@@ -881,14 +880,14 @@ static void updateCheckBox(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && g->mouseX > gui->pos.x && g->mouseX < gui->pos.x + gui->width && g->mouseY > gui->pos.y && g->mouseY < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
             Sound_Play(HOVER_SOUND_ID);
         }
-        if (gui->isHovered && g->mouseLeftDown) {
+        if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
         }
-        if (g->mouseLeftUp) {
+        if (Apricot_MouseLeftUp) {
             if (gui->clickedIn && gui->isHovered) {
                 checkBox->value = !checkBox->value;
                 if (gui->active) {
@@ -924,16 +923,16 @@ static void renderButton(Scene* scene)
             continue;
         }
         Clickable* clickable = (Clickable*)Scene_GetComponent(scene, id, GUI_CLICKABLE_COMPONENT_ID);
-        SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderFillRect(g->rend, &rect);
-        SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-            SDL_RenderFillRect(g->rend, &rect);
-            SDL_SetRenderDrawColor(g->rend, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
         }
-        FC_Draw(font, g->rend, gui->pos.x + (gui->width - FC_GetWidth(font, clickable->text)) / 2, gui->pos.y + gui->height / 2 - 12, clickable->text);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + (gui->width - FC_GetWidth(font, clickable->text)) / 2, gui->pos.y + gui->height / 2 - 12, clickable->text);
     }
 }
 
@@ -951,33 +950,33 @@ static void renderRockerSwitch(Scene* scene)
         SDL_Rect rect = { gui->pos.x, gui->pos.y, 44, 20 };
         SDL_Rect switchRect = { gui->pos.x + 4, gui->pos.y + 4, 8, 12 };
         if (rockerSwitch->value) {
-            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
-            SDL_RenderFillRect(g->rend, &rect);
-            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+            SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
             switchRect.x += 28;
-            SDL_RenderFillRect(g->rend, &switchRect);
+            SDL_RenderFillRect(Apricot_Renderer, &switchRect);
         } else {
-            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
-            SDL_RenderFillRect(g->rend, &switchRect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(Apricot_Renderer, &switchRect);
         }
 
         if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+            SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
         } else if (rockerSwitch->value) {
-            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         }
 
-        SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(Apricot_Renderer, &rect);
         rect.x++;
         rect.y++;
         rect.w -= 2;
         rect.h -= 2;
-        SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(Apricot_Renderer, &rect);
 
-        SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
-        FC_Draw(font, g->rend, gui->pos.x + 44 + 12, gui->pos.y + gui->height / 2 - 12, rockerSwitch->text);
+        SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + 44 + 12, gui->pos.y + gui->height / 2 - 12, rockerSwitch->text);
     }
 }
 
@@ -992,7 +991,7 @@ static void renderLabel(Scene* scene)
             continue;
         }
         Label* label = (Label*)Scene_GetComponent(scene, id, GUI_LABEL_ID);
-        FC_Draw(font, g->rend, gui->pos.x + (gui->width - FC_GetWidth(font, label->text)) / 2, gui->pos.y + gui->height / 2 - 12, label->text);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + (gui->width - FC_GetWidth(font, label->text)) / 2, gui->pos.y + gui->height / 2 - 12, label->text);
     }
 }
 
@@ -1009,7 +1008,7 @@ static void renderRadioButtons(Scene* scene)
             continue;
         }
         RadioButtons* radioButtons = (RadioButtons*)Scene_GetComponent(scene, id, GUI_RADIO_BUTTONS_COMPONENT_ID);
-        FC_Draw(font, g->rend, gui->pos.x, gui->pos.y - 4, radioButtons->groupLabel);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x, gui->pos.y - 4, radioButtons->groupLabel);
         for (int i = 0; i < radioButtons->nSelections; i++) {
             int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
             if (i == radioButtons->selection) {
@@ -1024,7 +1023,7 @@ static void renderRadioButtons(Scene* scene)
                 Texture_ColorMod(radioUnchecked, borderColor);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
             }
-            FC_Draw(font, g->rend, gui->pos.x + 28, buttonY - 2, radioButtons->options[i]);
+            FC_Draw(font, Apricot_Renderer, gui->pos.x + 28, buttonY - 2, radioButtons->options[i]);
         }
     }
 }
@@ -1040,32 +1039,32 @@ static void renderSlider(Scene* scene)
             continue;
         }
         Slider* slider = (Slider*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
-        FC_Draw(font, g->rend, gui->pos.x, gui->pos.y - 4, slider->label);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x, gui->pos.y - 4, slider->label);
 
         // Draw full slider track
         if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         }
         SDL_Rect rect = { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width, 2 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
 
         // Draw filled slider track
-        SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+        SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         rect = (SDL_Rect) { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width * slider->value, 2 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
 
         // Draw knob
-        if (gui->isHovered && !g->mouseLeftDown) {
-            SDL_SetRenderDrawColor(g->rend, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+        if (gui->isHovered && !Apricot_MouseLeftDown) {
+            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
         } else if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         }
         rect = (SDL_Rect) { gui->pos.x + gui->width * slider->value - 4, gui->pos.y + 6 + 16, 8, 24 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1080,30 +1079,30 @@ static void renderTextBox(Scene* scene)
             continue;
         }
         TextBox* textBox = (TextBox*)Scene_GetComponent(scene, id, GUI_TEXT_BOX_COMPONENT_ID);
-        FC_Draw(font, g->rend, gui->pos.x, gui->pos.y - 4, textBox->label);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x, gui->pos.y - 4, textBox->label);
 
         // Draw border
         SDL_Rect rect = { gui->pos.x, gui->pos.y + 6 + 16 + 32, gui->width, 2 };
         if (textBox->active) {
-            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         } else if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         }
-        SDL_RenderDrawRect(g->rend, &rect);
+        SDL_RenderDrawRect(Apricot_Renderer, &rect);
 
         // Fill box
         rect = (SDL_Rect) { gui->pos.x, gui->pos.y + 6 + 16, gui->width, 32 };
-        SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
 
         // Draw text
-        FC_Draw(font, g->rend, gui->pos.x + 9, gui->pos.y + 6 + 16 + 7 - 4, textBox->text);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + 9, gui->pos.y + 6 + 16 + 7 - 4, textBox->text);
 
         // Draw cursor
-        if (textBox->active && g->ticks % 60 < 30) {
-            SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        if (textBox->active && Apricot_Ticks % 60 < 30) {
+            SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
             int cursorX;
             int length = textBox->cursorPos;
             char* str = textBox->text;
@@ -1118,7 +1117,7 @@ static void renderTextBox(Scene* scene)
                 }
                 cursorX = FC_GetWidth(font, buffer);
 			}
-            SDL_RenderDrawLine(g->rend, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 16 + 7, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 32 + 7);
+            SDL_RenderDrawLine(Apricot_Renderer, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 16 + 7, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 32 + 7);
         }
     }
 }
@@ -1134,18 +1133,18 @@ static void renderCheckBox(Scene* scene)
             continue;
         }
         CheckBox* checkBox = (CheckBox*)Scene_GetComponent(scene, id, GUI_CHECK_BOX_COMPONENT_ID);
-        FC_Draw(font, g->rend, gui->pos.x + 20 + 9, gui->pos.y - 2, checkBox->label);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + 20 + 9, gui->pos.y - 2, checkBox->label);
 
         // Draw the box
         if (checkBox->value) {
-            SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         } else if (gui->isHovered) {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
         }
         SDL_Rect rect = { gui->pos.x, gui->pos.y, 20, 20 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
         if (checkBox->value) {
             Texture_Draw(check, gui->pos.x, gui->pos.y, 20, 20, 0);
         }
@@ -1165,7 +1164,7 @@ static void renderImage(Scene* scene)
         Image* image = (Image*)Scene_GetComponent(scene, id, GUI_IMAGE_COMPONENT_ID);
 
         SDL_Rect dest = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderCopyEx(g->rend, image->texture, NULL, &dest, image->angle, NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(Apricot_Renderer, image->texture, NULL, &dest, image->angle, NULL, SDL_FLIP_NONE);
     }
 }
 
@@ -1181,12 +1180,12 @@ static void renderProgressBar(Scene* scene)
         }
         ProgressBar* progressBar = (ProgressBar*)Scene_GetComponent(scene, id, GUI_PROGRESS_BAR_COMPONENT_ID);
 
-        SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, 6 };
-        SDL_RenderFillRect(g->rend, &rect);
-        SDL_SetRenderDrawColor(g->rend, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         rect = (SDL_Rect) { gui->pos.x, gui->pos.y, gui->width * progressBar->value, 6 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1200,9 +1199,9 @@ static void renderContainer(Scene* scene)
         if (!gui->shown) {
             continue;
         }
-        SDL_SetRenderDrawColor(g->rend, gui->backgroundColor.r, gui->backgroundColor.g, gui->backgroundColor.b, gui->backgroundColor.a);
+        SDL_SetRenderDrawColor(Apricot_Renderer, gui->backgroundColor.r, gui->backgroundColor.g, gui->backgroundColor.b, gui->backgroundColor.a);
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1219,9 +1218,9 @@ void renderBorders(Scene* scene)
         rect.y -= 1;
         rect.w += 2;
         rect.h += 2;
-        SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
         for (int i = 0; i < gui->border; i++) {
-            SDL_RenderDrawRect(g->rend, &rect);
+            SDL_RenderDrawRect(Apricot_Renderer, &rect);
             rect.x -= 1;
             rect.y -= 1;
             rect.w += 2;

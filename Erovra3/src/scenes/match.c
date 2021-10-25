@@ -1,6 +1,6 @@
 #pragma once
 #include "match.h"
-#include "../engine/gameState.h"
+#include "../engine/apricot.h"
 #include "../engine/textureManager.h"
 #include "../entities/entities.h"
 #include "../gui/gui.h"
@@ -612,7 +612,7 @@ void Match_Death(Scene* scene)
 void Match_CheckWin(Scene* scene)
 {
 #ifdef TOURNAMENT
-    if (g->ticks > 30 * 60 * 60) {
+    if (Apricot_Ticks > 30 * 60 * 60) {
         printf("Overtime\n");
         Game_PopScene(1);
         return;
@@ -862,7 +862,7 @@ void Match_BombMove(struct scene* scene)
 void Match_Hover(struct scene* scene)
 {
     static bool drawingBox = false;
-    bool heldDown = g->mouseDrag && g->shift;
+    bool heldDown = Apricot_MouseDrag && Apricot_Keys[SDL_SCANCODE_LSHIFT];
     Vector mouse = Terrain_MousePos();
     if (drawingBox && !heldDown) {
         drawingBox = false;
@@ -918,7 +918,7 @@ void Match_Hover(struct scene* scene)
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, hoveredID, HOVERABLE_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, hoveredID, SIMPLE_RENDERABLE_COMPONENT_ID);
         hoverable->isHovered = true;
-        simpleRenderable->showOutline = !anySelected || g->ctrl;
+        simpleRenderable->showOutline = !anySelected || Apricot_Keys[SDL_SCANCODE_LCTRL];
     }
 }
 
@@ -928,7 +928,7 @@ void Match_Hover(struct scene* scene)
 void Match_EscapePressed(struct scene* scene)
 {
     static bool escDown = false;
-    if (g->keys[SDL_SCANCODE_ESCAPE]) {
+    if (Apricot_Keys[SDL_SCANCODE_ESCAPE]) {
         if (!escDown) {
             bool anyFlag = false;
 
@@ -966,10 +966,10 @@ void Match_Select(struct scene* scene)
     bool targeted = false;
     // If ctrl is not clicked, go through entities, if they are selected, set their target
     // ! CTRL DETERMINES IF NEXT CLICK IS SELECT OR TARGET
-    if (!g->ctrl && g->mouseLeftUp && !g->mouseDragged) {
+    if (!Apricot_Keys[SDL_SCANCODE_LCTRL] && Apricot_MouseLeftUp && Vector_Magnitude(Vector_Sub(Apricot_MouseInit, Apricot_MousePos)) < 16) {
         Vector centerOfMass = { 0, 0 };
         // If shift is held down, find center of mass of selected units
-        if (g->shift) {
+        if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
             int numSelected = 0;
             system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
             {
@@ -991,7 +991,7 @@ void Match_Select(struct scene* scene)
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             if (selectable->selected) {
                 Vector mouse = Terrain_MousePos();
-                if (g->shift) { // Offset by center of mass, calculated earlier
+                if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) { // Offset by center of mass, calculated earlier
                     Vector distToCenter = Vector_Sub(motion->pos, centerOfMass);
                     mouse = Vector_Add(mouse, distToCenter);
                 }
@@ -1002,7 +1002,7 @@ void Match_Select(struct scene* scene)
                     target->tar = mouse;
                     target->lookat = mouse;
                 }
-                if (!g->keys[SDL_SCANCODE_S]) { // Check if should (s)tandby for more orders
+                if (!Apricot_Keys[SDL_SCANCODE_S]) { // Check if should (s)tandby for more orders
                     selectable->selected = false;
                 }
                 targeted = true;
@@ -1024,7 +1024,7 @@ void Match_Select(struct scene* scene)
             if (selectable->selected) {
                 simpleRenderable->showOutline = 2;
             }
-            if (hoverable->isHovered && g->mouseLeftUp) {
+            if (hoverable->isHovered && Apricot_MouseLeftUp) {
                 selectable->selected = !selectable->selected;
                 anySelected |= selectable->selected;
                 if (!selectBox) {
@@ -1060,7 +1060,7 @@ void Match_Focus(struct scene* scene)
     static UnitType type;
     static int x = 0;
 
-    if (g->mouseRightUp || escFocus || instantDefocus) {
+    if (Apricot_MouseRightUp || escFocus || instantDefocus) {
         guiChange = false;
         Focusable* focusableComp = NULL;
         currFocused = INVALID_ENTITY_INDEX;
@@ -1142,10 +1142,10 @@ void Match_Focus(struct scene* scene)
     }
     if (currShown != INVALID_ENTITY_INDEX) {
         Container* gui = (Container*)Scene_GetComponent(scene, focusedGUIContainer, GUI_CONTAINER_COMPONENT_ID);
-        gui->maxWidth = g->width - 250;
-        GUI_UpdateLayout(scene, focusedGUIContainer, miniMapSize + 2, g->height - 198 + 200.0f * pow((12 - x) / 12.0f, 2));
+        gui->maxWidth = Apricot_Width - 250;
+        GUI_UpdateLayout(scene, focusedGUIContainer, miniMapSize + 2, Apricot_Height - 198 + 200.0f * pow((12 - x) / 12.0f, 2));
     } else {
-        GUI_UpdateLayout(scene, focusedGUIContainer, miniMapSize + 2, g->height + 2);
+        GUI_UpdateLayout(scene, focusedGUIContainer, miniMapSize + 2, Apricot_Height + 2);
     }
 }
 
@@ -1619,7 +1619,7 @@ double getArrowRects(Vector from, Vector to, float z, Vector centerOfMass, float
     *scale = min(1, Vector_Dist(from, to) / 64.0f * Terrain_GetZoom());
     Vector newFrom = from;
     Terrain_Translate(rect, newFrom.x, newFrom.y, 0, 0);
-    if (g->shift) { // Offset by center of mass, calculated earlier
+    if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) { // Offset by center of mass, calculated earlier
         Vector distToCenter = Vector_Sub(from, centerOfMass);
         to = Vector_Add(to, distToCenter);
     }
@@ -1636,7 +1636,7 @@ void Match_DrawSelectionArrows(Scene* scene)
 {
     Vector centerOfMass = { 0, 0 };
     // If shift is held down, find center of mass of selected units
-    if (g->shift) {
+    if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         int numSelected = 0;
         system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
@@ -1785,14 +1785,14 @@ void Match_DrawVisitedSquares(Scene* scene)
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
             for (int y = 0; y < nation->visitedSpacesSize; y++) {
                 float urgency = nation->visitedSpaces[x + y * nation->visitedSpacesSize];
-                if (urgency < 0 && g->ticks % 60 < 30) {
+                if (urgency < 0 && Apricot_Ticks % 60 < 30) {
                     Terrain_Translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
-                    SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 150);
-                    SDL_RenderFillRect(g->rend, &rect);
+                    SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 150);
+                    SDL_RenderFillRect(Apricot_Renderer, &rect);
                 } else if (urgency == 0) {
                     Terrain_Translate(&rect, x * 32.0f, y * 32.0f, 32, 32);
-                    SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 50);
-                    SDL_RenderFillRect(g->rend, &rect);
+                    SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 50);
+                    SDL_RenderFillRect(Apricot_Renderer, &rect);
                 }
             }
         }
@@ -1805,8 +1805,8 @@ void Match_DrawPortTiles(Scene* scene)
         Vector tile = *(Vector*)Arraylist_Get(terrain->ports, i);
         SDL_Rect rect = { 0, 0, 0, 0 };
         Terrain_Translate(&rect, tile.x, tile.y, 64, 64);
-        SDL_SetRenderDrawColor(g->rend, 255, 0, 0, 150);
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, 255, 0, 0, 150);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1815,8 +1815,8 @@ void Match_DrawBoxSelect(Scene* scene)
     if (boxTL.x != -1) {
         SDL_Rect rect = { (int)boxTL.x, (int)boxTL.y, (int)boxBR.x - (int)boxTL.x, (int)boxBR.y - (int)boxTL.y };
         Terrain_Translate(&rect, boxTL.x + (boxBR.x - boxTL.x) / 2, boxTL.y + (boxBR.y - boxTL.y) / 2, boxBR.x - boxTL.x, boxBR.y - boxTL.y);
-        SDL_SetRenderDrawColor(g->rend, 60, 100, 250, 50);
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, 60, 100, 250, 50);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1838,11 +1838,11 @@ void Match_UpdateFogOfWar(struct scene* scene)
 
 void Match_DrawMiniMap(Scene* scene)
 {
-    SDL_Rect rect = { 0, g->height - miniMapSize - 2, miniMapSize + 2, miniMapSize + 2 };
-    SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
-    SDL_RenderFillRect(g->rend, &rect);
-    rect = (SDL_Rect) { 0, g->height - miniMapSize, miniMapSize, miniMapSize };
-    SDL_RenderCopy(g->rend, miniMapTexture, NULL, &rect);
+    SDL_Rect rect = { 0, Apricot_Height - miniMapSize - 2, miniMapSize + 2, miniMapSize + 2 };
+    SDL_SetRenderDrawColor(Apricot_Renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(Apricot_Renderer, &rect);
+    rect = (SDL_Rect) { 0, Apricot_Height - miniMapSize, miniMapSize, miniMapSize };
+    SDL_RenderCopy(Apricot_Renderer, miniMapTexture, NULL, &rect);
 
     // Draw ore
     system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
@@ -1856,9 +1856,9 @@ void Match_DrawMiniMap(Scene* scene)
                 }
                 float ore = Terrain_GetOre(terrain, x * 64, y * 64);
                 SDL_Color oreColor = Terrain_HSVtoRGB(ore * 120, 1, 1);
-                SDL_SetRenderDrawColor(g->rend, oreColor.r, oreColor.g, oreColor.b, 80);
-                rect = (SDL_Rect) { x * miniMapSize / (terrain->tileSize), g->height - miniMapSize + y * miniMapSize / (terrain->tileSize), miniMapSize / (terrain->tileSize), miniMapSize / (terrain->tileSize) };
-                SDL_RenderFillRect(g->rend, &rect);
+                SDL_SetRenderDrawColor(Apricot_Renderer, oreColor.r, oreColor.g, oreColor.b, 80);
+                rect = (SDL_Rect) { x * miniMapSize / (terrain->tileSize), Apricot_Height - miniMapSize + y * miniMapSize / (terrain->tileSize), miniMapSize / (terrain->tileSize), miniMapSize / (terrain->tileSize) };
+                SDL_RenderFillRect(Apricot_Renderer, &rect);
             }
         }
     }
@@ -1871,9 +1871,9 @@ void Match_DrawMiniMap(Scene* scene)
         if (simpleRenderable->hidden) {
             continue;
         }
-        SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 255);
-        rect = (SDL_Rect) { motion->pos.x * miniMapSize / (terrain->tileSize * 64) - 3, g->height - miniMapSize + motion->pos.y * miniMapSize / (terrain->tileSize * 64) - 3, 6, 6 };
-        SDL_RenderFillRect(g->rend, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 255);
+        rect = (SDL_Rect) { motion->pos.x * miniMapSize / (terrain->tileSize * 64) - 3, Apricot_Height - miniMapSize + motion->pos.y * miniMapSize / (terrain->tileSize * 64) - 3, 6, 6 };
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
 
@@ -1901,19 +1901,19 @@ void Match_RenderOrderButtons(Scene* scene)
 
         // Draw background, active -> regular, inactive -> lighter
         if (gui->active) {
-            SDL_SetRenderDrawColor(g->rend, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
         } else {
-            SDL_SetRenderDrawColor(g->rend, inactiveBackgroundColor.r, inactiveBackgroundColor.g, inactiveBackgroundColor.b, inactiveBackgroundColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, inactiveBackgroundColor.r, inactiveBackgroundColor.g, inactiveBackgroundColor.b, inactiveBackgroundColor.a);
         }
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderFillRect(g->rend, &rect);
-        SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_RenderFillRect(Apricot_Renderer, &rect);
+        SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
 
         // hovered & active -> lighten background, draw border
         if (gui->isHovered && gui->active) {
-            SDL_SetRenderDrawColor(g->rend, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-            SDL_RenderFillRect(g->rend, &rect);
-            SDL_SetRenderDrawColor(g->rend, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
         }
 
         // Draw button icon
@@ -1926,7 +1926,7 @@ void Match_RenderOrderButtons(Scene* scene)
         } else {
             FC_SetDefaultColor(font, (SDL_Color) { inactiveTextColor.r, inactiveTextColor.g, inactiveTextColor.b, inactiveTextColor.a });
         }
-        FC_Draw(font, g->rend, gui->pos.x + 48, gui->pos.y + 2, clickable->text);
+        FC_Draw(font, Apricot_Renderer, gui->pos.x + 48, gui->pos.y + 2, clickable->text);
 
         int width = 0;
         for (ResourceType i = 0; i < _ResourceType_Length; i++) {
@@ -1938,7 +1938,7 @@ void Match_RenderOrderButtons(Scene* scene)
             } else {
                 FC_SetDefaultColor(font, (SDL_Color) { errorColor.r, errorColor.g, errorColor.b, errorColor.a });
             }
-            FC_Draw(font, g->rend, gui->pos.x + 48 + width, gui->pos.y + 22, "%d", nation->costs[i][orderButton->type]);
+            FC_Draw(font, Apricot_Renderer, gui->pos.x + 48 + width, gui->pos.y + 22, "%d", nation->costs[i][orderButton->type]);
             width += FC_GetWidth(font, "%d", nation->costs[i][orderButton->type]) + 1;
             Texture_Draw(Match_LookupResourceTypeIcon(i), gui->pos.x + 48 + width, gui->pos.y + 27, 15, 15, 0);
             width += 15 + 15;
@@ -1950,19 +1950,19 @@ void Match_RenderOrderButtons(Scene* scene)
 void Match_RenderNationInfo(Scene* scene)
 {
     SDL_Rect rect = { 0, 0, 140, 82 };
-    SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 180);
-    SDL_RenderFillRect(g->rend, &rect);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
+    SDL_RenderFillRect(Apricot_Renderer, &rect);
 
     system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
         Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
-        FC_Draw(font, g->rend, 36, 6, "%d", nation->resources[ResourceType_COIN]);
+        FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
         Texture_Draw(ORE_TEXTURE_ID, 8, 32, 20, 20, 0);
-        FC_Draw(font, g->rend, 36, 30, "%d", nation->resources[ResourceType_ORE]);
+        FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_ORE]);
         Texture_Draw(POPULATION_TEXTURE_ID, 8, 56, 20, 20, 0);
-        FC_Draw(font, g->rend, 36, 53, "%d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
+        FC_Draw(font, Apricot_Renderer, 36, 53, "%d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
     }
 }
 
@@ -1988,9 +1988,9 @@ void Match_RenderCityName(Scene* scene)
         int height = FC_GetAscent(bigFont, city->name) * scale.y;
         Terrain_Translate(&rect, motion->pos.x, motion->pos.y + 16, 0, 0);
         FC_SetDefaultColor(bigFont, (SDL_Color) { 0, 0, 0, 255 });
-        FC_DrawScale(bigFont, g->rend, rect.x - width / 2 + 1, rect.y - height / 2 + 1, scale, city->name);
+        FC_DrawScale(bigFont, Apricot_Renderer, rect.x - width / 2 + 1, rect.y - height / 2 + 1, scale, city->name);
         FC_SetDefaultColor(bigFont, (SDL_Color) { 255, 255, 255, 255 });
-        FC_DrawScale(bigFont, g->rend, rect.x - width / 2, rect.y - height / 2, scale, city->name);
+        FC_DrawScale(bigFont, Apricot_Renderer, rect.x - width / 2, rect.y - height / 2, scale, city->name);
     }
 }
 
@@ -2004,28 +2004,28 @@ void Match_RenderMessageContainer(Scene* scene)
         SDL_Rect box = { -252, -252, 252, 1000 };
 
         // Draw string off screen in order to get height of message
-        box = FC_DrawBox(font, g->rend, box, message->text);
+        box = FC_DrawBox(font, Apricot_Renderer, box, message->text);
         box.h += 6;
         heightOffset += box.h;
         // Reset x and y to normal values
-        box.x = g->width - 252;
+        box.x = Apricot_Width - 252;
         box.y = focusGUIY - heightOffset - 2;
 
         // Draw background
-        SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 180 * fade);
-        SDL_RenderFillRect(g->rend, &box);
+        SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180 * fade);
+        SDL_RenderFillRect(Apricot_Renderer, &box);
 
         // Draw shadow
         box.x += 9;
         box.y += 3;
         FC_SetDefaultColor(font, (SDL_Color) { 21, 21, 21, 255 * fade });
-        FC_DrawBox(font, g->rend, box, message->text);
+        FC_DrawBox(font, Apricot_Renderer, box, message->text);
 
         // Draw text
         box.y -= 1;
         box.x -= 1;
         FC_SetDefaultColor(font, (SDL_Color) { message->color.r, message->color.g, message->color.b, 255 * fade });
-        FC_DrawBox(font, g->rend, box, message->text);
+        FC_DrawBox(font, Apricot_Renderer, box, message->text);
     }
     // Reset font to default color before exiting
     FC_SetDefaultColor(font, (SDL_Color) { 255, 255, 255, 255 });
@@ -2043,12 +2043,12 @@ void Match_RenderProducerBars(Scene* scene)
         if (producer->orderTicksRemaining > 0) {
             SDL_Rect rect;
             Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 20, 6);
-            SDL_SetRenderDrawColor(g->rend, 21, 21, 21, 180);
-            SDL_RenderFillRect(g->rend, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
             Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 16, 2);
             rect.w = Terrain_GetZoom() * 16 * (1.0f - (float)producer->orderTicksRemaining / (float)producer->orderTicksTotal);
-            SDL_SetRenderDrawColor(g->rend, nation->color.r, nation->color.g, nation->color.b, 255);
-            SDL_RenderFillRect(g->rend, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 255);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
         }
     }
 }
@@ -2088,14 +2088,18 @@ void Match_Update(Scene* match)
     Match_UpdateMessageContainer(match);
     GUI_Update(match);
 
+	static bool lt = false;
+    static bool gt = false;
     // Change game tick speed
-    if (g->lt) {
-        g->dt *= 2.0;
-        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / g->dt);
-    } else if (g->gt) {
-        g->dt *= 0.5;
-        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / g->dt);
+    if (!lt && Apricot_Keys[SDL_SCANCODE_COMMA]) {
+        Apricot_DeltaT *= 2.0;
+        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / Apricot_DeltaT);
+    } else if (!gt && Apricot_Keys[SDL_SCANCODE_PERIOD]) {
+        Apricot_DeltaT *= 0.5;
+        Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / Apricot_DeltaT);
     }
+    lt = Apricot_Keys[SDL_SCANCODE_COMMA];
+    gt = Apricot_Keys[SDL_SCANCODE_PERIOD];
 
     // Placed at end because they pop game scene
     Match_CheckWin(match);
@@ -2338,15 +2342,14 @@ void Match_Destroy(Scene* scene)
 Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled)
 {
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
-    SDL_Texture* texture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
+    SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
     Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
-    miniMapTexture = SDL_CreateTexture(g->rend, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
+    miniMapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
     Perlin_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
     printf("Match: %p\n", match);
-    g->ticks = 0;
 
     orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
@@ -2506,7 +2509,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     Nation_SetCapital(match, homeNation, homeCapital);
     Nation_SetCapital(match, enemyNation, enemyCapital);
 
-    Game_PushScene(match);
+    Apricot_PushScene(match);
 
     return match;
 }

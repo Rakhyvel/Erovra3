@@ -30,7 +30,7 @@
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\engine\gameState.c">
+    <ClCompile Include="src\engine\apricot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\terrain.c">
@@ -173,7 +173,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\engine\gameState.h">
+    <ClInclude Include="src\engine\apricot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\terrain.h">
