@@ -8,7 +8,6 @@
 #include "../entities/components.h"
 #include "../engine/gameState.h"
 #include "../engine/scene.h"
-#include "../gui/font.h"
 #include "../gui/gui.h"
 #include "../util/lexicon.h"
 #include "../util/perlin.h"

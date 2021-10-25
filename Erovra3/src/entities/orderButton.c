@@ -1,4 +1,3 @@
-#include "../gui/font.h"
 #include "../gui/gui.h"
 #include "./entities.h"
 #include <string.h>

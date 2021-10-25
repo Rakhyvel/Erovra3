@@ -3,7 +3,6 @@
 #include "../engine/gameState.h"
 #include "../engine/textureManager.h"
 #include "../entities/entities.h"
-#include "../gui/font.h"
 #include "../gui/gui.h"
 #include "../main.h"
 #include "../scenes/pause.h"

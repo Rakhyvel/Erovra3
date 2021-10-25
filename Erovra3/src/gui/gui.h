@@ -2,6 +2,7 @@
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
 #include "../util/vector.h"
+#include "./SDL_FontCache.h"
 
 typedef void (*GUICallback)(struct scene*, EntityID);
 
@@ -13,6 +14,9 @@ extern SDL_Color activeColor;
 extern SDL_Color errorColor;
 extern SDL_Color inactiveBackgroundColor;
 extern SDL_Color inactiveTextColor;
+
+extern FC_Font* font;
+extern FC_Font* bigFont;
 
 void GUI_Init();
 void GUI_Register(Scene* scene);

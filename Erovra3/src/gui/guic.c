@@ -2,7 +2,6 @@
 #include "../engine/gameState.h"
 #include "../engine/soundManager.h"
 #include "../util/debug.h"
-#include "font.h"
 #include "gui.h"
 #include <ctype.h>
 #include <string.h>
@@ -22,6 +21,19 @@ SDL_Color activeColor = { 60, 100, 250, 255 };
 SDL_Color errorColor = { 250, 80, 80, 255 };
 SDL_Color inactiveBackgroundColor = { 77, 82, 88, 64 };
 SDL_Color inactiveTextColor = { 200, 200, 200, 255 };
+
+FC_Font* font = NULL;
+FC_Font* bigFont = NULL;
+static int kern16[] = {
+    0, 0, 4, 4, 4, 1, 7, 16, 7, 0, 0, 6, 5, 0, 6, 5,
+    7, 6, 5, 4, 5, 7, 7, 4, 5, 4, 6, 6, 0, 0, 0, 0,
+    8, 3, 5, 9, 7, 12, 9, 2, 4, 4, 5, 8, 2, 4, 2, 6,
+    7, 5, 7, 7, 8, 7, 7, 7, 7, 7, 2, 2, 8, 8, 8, 7,
+    13, 11, 9, 9, 9, 9, 8, 10, 9, 3, 7, 9, 7, 11, 9, 10,
+    9, 10, 9, 9, 9, 9, 10, 13, 9, 10, 7, 4, 5, 4, 5, 9,
+    3, 7, 7, 7, 7, 7, 6, 7, 7, 3, 4, 7, 3, 11, 7, 7,
+    8, 7, 5, 7, 5, 7, 7, 11, 7, 7, 8, 5, 3, 5, 8, 4
+};
 
 /*	 */
 void GUI_Init()
@@ -49,6 +61,13 @@ void GUI_Init()
 
     HOVER_SOUND_ID = Sound_Register("res/hover.wav");
     CLICK_SOUND_ID = Sound_Register("res/click.wav");
+
+    if (!font) {
+        font = FC_CreateFont();
+        bigFont = FC_CreateFont();
+        FC_LoadFont(font, g->rend, "res/gui/Segoe UI.ttf", 16, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+        FC_LoadFont(bigFont, g->rend, "res/gui/Segoe UI.ttf", 175, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+    }
 }
 
 /*	 */
@@ -85,7 +104,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 {
     EntityID buttonID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text) + 2 * 14;
+    int textWidth = FC_GetWidth(font, text) + 2 * 14;
 
     GUIComponent gui = {
         false,
@@ -119,7 +138,7 @@ EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text)
 {
     EntityID labelID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text);
+    int textWidth = FC_GetWidth(font, text);
 
     GUIComponent gui = {
         false,
@@ -147,7 +166,7 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
 {
     EntityID rockerSwitchID = Scene_NewEntity(scene);
 
-    int textWidth = Font_GetWidth(text) + 44 + 12;
+    int textWidth = FC_GetWidth(font, text) + 44 + 12;
 
     GUIComponent gui = {
         false,
@@ -278,7 +297,7 @@ EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultV
         false,
         false,
         pos,
-        20 + 9 + Font_GetWidth(label),
+        20 + 9 + FC_GetWidth(font, label),
         20,
         14,
         0,
@@ -471,7 +490,7 @@ void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...)
     va_end(args);
 
     int oldWidth = gui->width;
-    int textWidth = Font_GetWidth(label->text);
+    int textWidth = FC_GetWidth(font, label->text);
     if (oldWidth != textWidth) {
         gui->width = textWidth;
         GUIComponent* root = (GUIComponent*)Scene_GetComponent(scene, GUI_GetRoot(scene, labelID), GUI_COMPONENT_ID);
@@ -805,7 +824,19 @@ void updateTextBox(Scene* scene)
         if (gui->clickedIn && !g->mouseLeftDown) {
             gui->clickedIn = false;
             textBox->active = true;
-            textBox->cursorPos = max(0, min(textBox->length, Font_GetCharIndex(textBox->text, g->mouseX - gui->pos.x - 9)));
+            int total = 0;
+            /* Get character index */ {
+                int i;
+                int x = g->mouseX - gui->pos.x - 9;
+                for (i = 0; textBox->text[i] != '\0'; i++) {
+                    total += kern16[textBox->text[i]] + 1;
+                    if (total > x + (kern16[textBox->text[i]] + 1) / 2) {
+                        total = i;
+                        break;
+                    }
+                }
+            }
+            textBox->cursorPos = max(0, min(textBox->length, total));
             if (gui->active) {
                 Sound_Play(CLICK_SOUND_ID);
             }
@@ -1073,7 +1104,20 @@ static void renderTextBox(Scene* scene)
         // Draw cursor
         if (textBox->active && g->ticks % 60 < 30) {
             SDL_SetRenderDrawColor(g->rend, 255, 255, 255, 255);
-            int cursorX = Font_GetSubStringWidth(textBox->text, textBox->cursorPos);
+            int cursorX;
+            int length = textBox->cursorPos;
+            char* str = textBox->text;
+            /* Get Substring width */ {
+                char buffer[255];
+                memset(buffer, 0, 255);
+                if (length >= 255) {
+                    PANIC("Um lol?");
+                }
+                for (int i = 0; i < length; i++) {
+                    buffer[i] = str[i];
+                }
+                cursorX = FC_GetWidth(font, buffer);
+			}
             SDL_RenderDrawLine(g->rend, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 16 + 7, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 32 + 7);
         }
     }

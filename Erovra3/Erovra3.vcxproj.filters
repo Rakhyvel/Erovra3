@@ -78,9 +78,6 @@
     <ClCompile Include="src\gui\guic.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gui\font.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\scenes\menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -213,9 +210,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui\gui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\gui\font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scenes\menu.h">

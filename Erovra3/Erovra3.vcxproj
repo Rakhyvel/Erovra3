@@ -266,10 +266,6 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\gui\font.c">
-      <SubType>
-      </SubType>
-    </ClCompile>
     <ClCompile Include="src\gui\guic.c">
       <SubType>
       </SubType>
@@ -353,7 +349,6 @@
     <ClInclude Include="src\entities\entities.h" />
     <ClInclude Include="src\engine\goap.h" />
     <ClInclude Include="src\engine\soundManager.h" />
-    <ClInclude Include="src\gui\font.h" />
     <ClInclude Include="src\gui\gui.h" />
     <ClInclude Include="src\gui\SDL_FontCache.h" />
     <ClInclude Include="src\main.h" />
