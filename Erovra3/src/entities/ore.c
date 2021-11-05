@@ -25,7 +25,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
 
     SimpleRenderable render = {
         ORE_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        NULL,
         ORE_SHADOW_TEXTURE_ID,
         RenderPriorirty_PARTICLE_LAYER,
         nation->controlFlag == AI_COMPONENT_ID,

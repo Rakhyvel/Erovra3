@@ -1,3 +1,7 @@
+/** 
+* # BEZIER SHAPES
+*/
+
 #pragma once
 
 #define MAX_VERTICES 128

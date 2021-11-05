@@ -1,4 +1,3 @@
-#pragma once
 #include "textureManager.h"
 #include "../util/debug.h"
 #include "../util/polygon.h"
@@ -9,42 +8,55 @@
 #include <float.h>
 #include <stdio.h>
 
-SDL_Texture* loadTexture(char* filename);
-
-static SDL_Texture* textures[MAX_TEXTURES];
-static int numTextures = 0;
-
-/*
-	Changes the AlphaMod of a texture given a texture id. */
-void Texture_AlphaMod(TextureID textureID, Uint8 alpha)
+/**
+ * @brief Calculates the parametric curve based on 4 bezier control points
+ * @param x Array of x values for control points
+ * @param y Array of y values for control points
+ * @param u Parametric variable in the range [0-1]
+ * @return The position along the curve for the value of u
+*/
+static Vector bezierCurve(float x[4], float y[4], double u)
 {
-    if (textureID == INVALID_TEXTURE_ID) {
-        return;
-    }
-    SDL_Texture* texture = textures[textureID];
-    SDL_SetTextureAlphaMod(texture, alpha);
+    float xu = 0.0f, yu = 0.0f;
+    xu = (float)(pow(1 - u, 3) * x[0] + 3 * u * pow(1 - u, 2) * x[1] + 3 * pow(u, 2) * (1 - u) * x[2]
+        + pow(u, 3) * x[3]);
+    yu = (float)(pow(1 - u, 3) * y[0] + 3 * u * pow(1 - u, 2) * y[1] + 3 * pow(u, 2) * (1 - u) * y[2]
+        + pow(u, 3) * y[3]);
+    return (Vector) { xu, yu };
 }
 
-/*
-	Changes the ColorMod of a texture given a texture id. */
-void Texture_ColorMod(TextureID textureID, SDL_Color color)
+/**
+ * @brief Interprets a polygon's vertices as control points for a closed bezier curve. Approximates the bezier curve with more vertices
+ * @param polygon Polygon representing the closed bezier curve
+ * @return A rigid polygon based on the bezier curve
+*/
+static Polygon spliceBezier(Polygon polygon)
 {
-    if (textureID == INVALID_TEXTURE_ID) {
-        return;
+    float tempX[4];
+    float tempY[4];
+    Polygon rendval;
+    rendval.numVertices = 0;
+    int rendVertexIndex = 0;
+    const float detail = 16.0f;
+    for (int i = 0; i < polygon.numVertices; i += 3) {
+        // Fill temp with the four points from the polygon
+        for (int j = 0; j < 4; j++) {
+            tempX[j] = polygon.vertexX[(i + j) % polygon.numVertices];
+            tempY[j] = polygon.vertexY[(i + j) % polygon.numVertices];
+        }
+        // Add new vertices to the polygon based on a time step
+        for (int j = 0; j < detail; j++, rendVertexIndex++) {
+            Vector vertex = bezierCurve(tempX, tempY, (float)j / detail);
+            rendval.vertexX[rendVertexIndex] = vertex.x;
+            rendval.vertexY[rendVertexIndex] = vertex.y;
+            rendval.numVertices++;
+        }
     }
-    SDL_Texture* texture = textures[textureID];
-    SDL_SetTextureColorMod(texture, color.r, color.g, color.b);
+    return rendval;
 }
 
-/*
-	Draws a texture given the texture id at a position. 
-	Image width and height will be originalSize * scalar. Scalars under 0 are ignored */
-void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float angle)
+void Texture_Draw(SDL_Texture* texture, int x, int y, float w, float h, float angle)
 {
-    if (textureID == INVALID_TEXTURE_ID) {
-        return;
-    }
-    SDL_Texture* texture = textures[textureID];
     SDL_Rect dest;
 
     dest.x = x;
@@ -56,22 +68,13 @@ void Texture_Draw(TextureID textureID, int x, int y, float w, float h, float ang
     }
 }
 
-/*
-	Draws a texture given the texture id at a position. 
-	Image width and height will be originalSize * scalar. Scalars under 0 are ignored */
-void Texture_DrawCentered(TextureID textureID, int x, int y, float w, float h, float angle)
+void Texture_DrawCentered(SDL_Texture* texture, int x, int y, float w, float h, float angle)
 {
-    if (textureID == INVALID_TEXTURE_ID) {
-        return;
-    }
-    SDL_Texture* texture = textures[textureID];
     SDL_Rect dest;
 
     int textureWidth, textureHeight;
     SDL_QueryTexture(texture, NULL, NULL, &textureWidth, &textureHeight);
 
-    // textureWidth=width
-    // textureHeight=(w/h)
     if (textureWidth > textureHeight) {
         dest.x = x;
         dest.w = w;
@@ -88,20 +91,10 @@ void Texture_DrawCentered(TextureID textureID, int x, int y, float w, float h, f
     }
 }
 
-/*
-	Takes in the ID of a texture, and a polygon struct and color. Draws the 
-	polygon onto the texture with the given color. Texture must be created with
-	target access. */
-void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
+void Texture_FillPolygon(SDL_Texture* texture, Polygon polygon, SDL_Color color)
 {
     int nodes, i, j, swap;
     float nodeX[255], minY = FLT_MAX, maxY = FLT_MIN;
-    SDL_Texture* texture;
-    if (textureID != INVALID_TEXTURE_ID) {
-        texture = textures[textureID];
-    } else {
-        texture = NULL;
-    }
 
     for (i = 0; i < polygon.numVertices; i++) {
         if (polygon.vertexY[i] < minY)
@@ -156,14 +149,8 @@ void Texture_FillPolygon(TextureID textureID, Polygon polygon, SDL_Color color)
     }
 }
 
-void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color color)
+void Texture_FillCircle(SDL_Texture* texture, Vector center, float radius, SDL_Color color)
 {
-    SDL_Texture* texture;
-    if (textureID != INVALID_TEXTURE_ID) {
-        texture = textures[textureID];
-    } else {
-        texture = NULL;
-    }
     if (SDL_SetRenderTarget(Apricot_Renderer, texture)) {
         PANIC("%s", SDL_GetError());
     }
@@ -176,10 +163,7 @@ void drawCircle(TextureID textureID, Vector center, float radius, SDL_Color colo
     SDL_SetRenderTarget(Apricot_Renderer, NULL);
 }
 
-/*
-	Takes two points, and a thickness. Creates a polygon representing a rectangle
-	with the thickness that spans between p1 and p2. */
-void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color color, float thickness)
+void Texture_DrawThickLine(SDL_Texture* texture, Vector p1, Vector p2, SDL_Color color, float thickness)
 {
     if (fabs(p1.x - p2.x) < 0.001) {
         p1.x += 0.001f;
@@ -206,94 +190,39 @@ void drawThickLine(TextureID textureID, Vector p1, Vector p2, SDL_Color color, f
     rectangle.vertexY[2] = inverseSlope * -circleOffset + p2.y;
     rectangle.vertexY[3] = inverseSlope * circleOffset + p2.y;
 
-    Texture_FillPolygon(textureID, rectangle, color);
+    Texture_FillPolygon(texture, rectangle, color);
 }
 
-/*
-	Goes through the points in a polygon. Draws a line between each point */
-void Texture_DrawPolygon(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
+void Texture_DrawPolygon(SDL_Texture* texture, Polygon polygon, SDL_Color color, float thickness)
 {
     // For each edge in the polygon
     for (int i = 0; i < polygon.numVertices; i++) {
         // Draw a line between the vertex i and i+1
         Vector p1 = { polygon.vertexX[i] + polygon.x, polygon.vertexY[i] + polygon.y };
         Vector p2 = { polygon.vertexX[(i + 1) % polygon.numVertices] + polygon.x, polygon.vertexY[(i + 1) % polygon.numVertices] + polygon.y };
-        drawThickLine(textureID, p1, p2, color, thickness);
-        drawCircle(textureID, p1, thickness, color);
+        Texture_DrawThickLine(texture, p1, p2, color, thickness);
+        Texture_FillCircle(texture, p1, thickness, color);
     }
 }
 
-/*
-	Takes in an array of x values and an array of y values where the first and 
-	fourth elements are fixed points, and the second and third are slope points.
-	
-	Returns the vector <x,y> of the point along the curve from 0-1, with 0 being
-	closer to the first point and 1 being closer to the fourth and last point.*/
-static Vector bezierCurve(float x[4], float y[4], double u)
-{
-    float xu = 0.0f, yu = 0.0f;
-    xu = (float)(pow(1 - u, 3) * x[0] + 3 * u * pow(1 - u, 2) * x[1] + 3 * pow(u, 2) * (1 - u) * x[2]
-        + pow(u, 3) * x[3]);
-    yu = (float)(pow(1 - u, 3) * y[0] + 3 * u * pow(1 - u, 2) * y[1] + 3 * pow(u, 2) * (1 - u) * y[2]
-        + pow(u, 3) * y[3]);
-    return (Vector) { xu, yu };
-}
-
-/*
-	Interprets the polygon's vertices as control points for a closed bezier curve.
-	Approximates the bezier curve with more vertices.*/
-static Polygon spliceBezier(Polygon polygon)
-{
-    float tempX[4];
-    float tempY[4];
-    Polygon rendval;
-    rendval.numVertices = 0;
-    int rendVertexIndex = 0;
-    const float detail = 16.0f;
-    for (int i = 0; i < polygon.numVertices; i += 3) {
-        // Fill temp with the four points from the polygon
-        for (int j = 0; j < 4; j++) {
-            tempX[j] = polygon.vertexX[(i + j) % polygon.numVertices];
-            tempY[j] = polygon.vertexY[(i + j) % polygon.numVertices];
-        }
-        // Add new vertices to the polygon based on a time step
-        for (int j = 0; j < detail; j++, rendVertexIndex++) {
-            Vector vertex = bezierCurve(tempX, tempY, (float)j / detail);
-            rendval.vertexX[rendVertexIndex] = vertex.x;
-            rendval.vertexY[rendVertexIndex] = vertex.y;
-            rendval.numVertices++;
-        }
-    }
-    return rendval;
-}
-
-/*
-	Fills the spliced version of a bezier */
-void Texture_FillBezier(TextureID textureID, Polygon polygon, SDL_Color color)
+void Texture_FillBezier(SDL_Texture* texture, Polygon polygon, SDL_Color color)
 {
     Polygon splicedBezier = spliceBezier(polygon);
     splicedBezier.x = polygon.x;
     splicedBezier.y = polygon.y;
-    Texture_FillPolygon(textureID, splicedBezier, color);
+    Texture_FillPolygon(texture, splicedBezier, color);
 }
 
-/*
-	Draws the spliced version of a bezier polygon */
-void Texture_DrawBezier(TextureID textureID, Polygon polygon, SDL_Color color, float thickness)
+void Texture_DrawBezier(SDL_Texture* texture, Polygon polygon, SDL_Color color, float thickness)
 {
     Polygon splicedBezier = spliceBezier(polygon);
     splicedBezier.x = polygon.x;
     splicedBezier.y = polygon.y;
-    Texture_DrawPolygon(textureID, splicedBezier, color, thickness);
+    Texture_DrawPolygon(texture, splicedBezier, color, thickness);
 }
 
-/*
-	Draws a shadow on the destination texture if for each corresponding pixel in 
-	the source texture is non-transparent */
-void Texture_CreateShadow(TextureID dstID, TextureID srcID)
+void Texture_CreateShadow(SDL_Texture* dst, SDL_Texture* src)
 {
-    SDL_Texture* src = textures[srcID];
-    SDL_Texture* dst = textures[dstID];
     int srcFormat = SDL_PIXELFORMAT_ARGB8888, srcPitch = 4, w, h;
     SDL_QueryTexture(src, &srcFormat, NULL, &w, &h);
     Uint8* srcPixels = calloc(srcPitch * w * h, 1);
@@ -323,21 +252,7 @@ void Texture_CreateShadow(TextureID dstID, TextureID srcID)
     SDL_SetRenderTarget(Apricot_Renderer, NULL);
 }
 
-/*
-	Registers a texture, returns the texture id given a filename */
-TextureID Texture_RegisterTexture(char* filename)
-{
-    if (numTextures >= MAX_TEXTURES) {
-        PANIC("Texture overflow");
-    } else {
-        textures[numTextures] = loadTexture(filename);
-        return numTextures++;
-    }
-}
-
-/*
-	Loads a texture using SDL2_image given a filename */
-SDL_Texture* loadTexture(char* filename)
+SDL_Texture* Texture_Load(char* filename)
 {
     // Create texture from img, which cannot be rendered on
     SDL_Texture* imgTexture = IMG_LoadTexture(Apricot_Renderer, filename);
@@ -359,4 +274,42 @@ SDL_Texture* loadTexture(char* filename)
     SDL_DestroyTexture(imgTexture);
 
     return accessibleTexture;
+}
+
+SDL_Texture* Texture_Create(int width, int height)
+{
+    SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
+
+	// Clear texture so that it is completely transparent
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderTarget(Apricot_Renderer, texture);
+    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 0);
+    SDL_RenderClear(Apricot_Renderer);
+    SDL_SetRenderTarget(Apricot_Renderer, NULL);
+
+    return texture;
+}
+
+void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i))
+{
+    Uint8* pixels = calloc(mapSize * mapSize, 4);
+    if (!pixels) {
+        PANIC("Memory error Texture_PaintMap() creating pixels\n");
+    }
+    for (int x = 0; x < mapSize; x++) {
+        for (int y = 0; y < mapSize; y++) {
+            const unsigned int offset = (mapSize * 4 * y) + x * 4;
+            float i = map[y * mapSize + x];
+
+            SDL_Color terrainColor = colorFunction(map, mapSize, x, y, i);
+            pixels[offset + 0] = terrainColor.b;
+            pixels[offset + 1] = terrainColor.g;
+            pixels[offset + 2] = terrainColor.r;
+            pixels[offset + 3] = SDL_ALPHA_OPAQUE;
+        }
+    }
+    if (SDL_UpdateTexture(texture, NULL, pixels, mapSize * 4) == -1) {
+        PANIC("%s", SDL_GetError());
+    }
+    free(pixels);
 }

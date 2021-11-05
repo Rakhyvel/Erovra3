@@ -27,7 +27,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
 
     SimpleRenderable render = {
         COIN_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        NULL,
         COIN_SHADOW_TEXTURE_ID,
         RenderPriorirty_PARTICLE_LAYER,
         nation->controlFlag == AI_COMPONENT_ID,

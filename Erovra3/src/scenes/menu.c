@@ -337,7 +337,7 @@ void Menu_Update(Scene* scene)
         // needsRepaint flag is called by generatePreview thread
         // Signifies that preview map is updated and the preview needs to be redrawn
         if (needsRepaint) {
-            Perlin_PaintMap(map, size, previewTexture, Terrain_RealisticColor);
+            Texture_PaintMap(map, size, previewTexture, Terrain_RealisticColor);
             needsRepaint = false;
             Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
             terrain->texture = previewTexture;
@@ -385,9 +385,9 @@ Scene* Menu_Init()
 {
     Scene* scene = Scene_Create(GUI_Register, &Menu_Update, &Menu_Render, NULL);
 
-    logo = loadTexture("res/logo.png");
-    loading = loadTexture("res/loading.png");
-    loadingCircle = loadTexture("res/loadingCircle.png");
+    logo = Texture_Load("res/logo.png");
+    loading = Texture_Load("res/loading.png");
+    loadingCircle = Texture_Load("res/loadingCircle.png");
 
     SDL_Thread* assetLoadingThread = SDL_CreateThread(loadAssets, "Load assets", scene);
     previewTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);

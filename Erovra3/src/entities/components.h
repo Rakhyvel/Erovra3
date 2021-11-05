@@ -106,9 +106,9 @@ ComponentKey PATROL_COMPONENT_ID;
 /* Contains data for rendering an entity to the screen, like it's sprite,
    the outline of the sprite, and whether or not the outline should show */
 typedef struct simpleRenderable {
-    TextureID sprite; // Texture to draw on screen
-    TextureID spriteOutline; // Texture to draw when an outline around sprite is shown
-    TextureID shadow; // Texture to draw under sprite as a shadow
+    SDL_Texture* sprite; // Texture to draw on screen
+    SDL_Texture* spriteOutline; // Texture to draw when an outline around sprite is shown
+    SDL_Texture* shadow; // Texture to draw under sprite as a shadow
     enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
     bool hidden; // Whether or not the sprite is hidden, and should not be rendered
     bool showOutline; // Whether or not the sprite should have an outline
@@ -297,7 +297,7 @@ ComponentKey FOCUSABLE_COMPONENT_ID;
 /* For order buttons, which order units to be built in producers
 */
 typedef struct orderButton {
-    TextureID icon; // Icon to display on the button
+    SDL_Texture* icon; // Icon to display on the button
     UnitType type; // Type of unit to build, this retrieves the resource cost information for the button
 } OrderButton;
 ComponentKey ORDER_BUTTON_COMPONENT_ID;

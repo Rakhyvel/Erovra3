@@ -2,7 +2,7 @@
 #include "./entities.h"
 #include <string.h>
 
-EntityID OrderButton_Create(struct scene* scene, char* text, TextureID icon, UnitType type, GUICallback onclick)
+EntityID OrderButton_Create(struct scene* scene, char* text, SDL_Texture* icon, UnitType type, GUICallback onclick)
 {
     EntityID buttonID = Scene_NewEntity(scene);
 

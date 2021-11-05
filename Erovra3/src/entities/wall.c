@@ -20,7 +20,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
 
     SimpleRenderable render = {
         WALL_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        NULL,
         WALL_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,

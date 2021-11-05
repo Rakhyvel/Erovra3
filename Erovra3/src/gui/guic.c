@@ -6,12 +6,12 @@
 #include <ctype.h>
 #include <string.h>
 
-TextureID radioUnchecked = INVALID_TEXTURE_ID;
-TextureID radioChecked = INVALID_TEXTURE_ID;
-TextureID check = INVALID_TEXTURE_ID;
+SDL_Texture* radioUnchecked = NULL;
+SDL_Texture* radioChecked = NULL;
+SDL_Texture* check = NULL;
 
-SoundID HOVER_SOUND_ID;
-SoundID CLICK_SOUND_ID;
+Mix_Chunk* HOVER_SOUND;
+Mix_Chunk* CLICK_SOUND;
 
 SDL_Color backgroundColor = { 57, 63, 68, 255 };
 SDL_Color textColor = { 255, 255, 255, 255 };
@@ -52,15 +52,15 @@ void GUI_Init()
     GUI_CONTAINER_COMPONENT_ID = rand();
     GUI_CENTERED_COMPONENT_ID = rand();
 
-    radioUnchecked = Texture_RegisterTexture("res/gui/radio.png");
+    radioUnchecked = Texture_Load("res/gui/radio.png");
 
-    radioChecked = Texture_RegisterTexture("res/gui/radioFill.png");
+    radioChecked = Texture_Load("res/gui/radioFill.png");
 
-    check = Texture_RegisterTexture("res/gui/check.png");
+    check = Texture_Create(200, 200);
     Texture_DrawPolygon(check, Polygon_Create("res/gui/check.gon"), hoverColor, 10);
 
-    HOVER_SOUND_ID = Sound_Register("res/hover.wav");
-    CLICK_SOUND_ID = Sound_Register("res/click.wav");
+    HOVER_SOUND = Mix_LoadWAV("res/hover.wav");
+    CLICK_SOUND = Mix_LoadWAV("res/click.wav");
 
     if (!font) {
         font = FC_CreateFont();
@@ -667,7 +667,7 @@ static void updateClickable(Scene* scene)
         bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
@@ -679,7 +679,7 @@ static void updateClickable(Scene* scene)
                     PANIC("Button onclick is NULL for button %s", clickable->text);
                 }
                 if (gui->active) {
-                    Sound_Play(CLICK_SOUND_ID);
+                    Sound_Play(CLICK_SOUND);
                 }
                 clickable->onclick(scene, id);
             }
@@ -701,7 +701,7 @@ static void updateRockerSwitch(Scene* scene)
         bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
@@ -712,7 +712,7 @@ static void updateRockerSwitch(Scene* scene)
                     PANIC("Rocker switch onchange is NULL for rocker switch %s", rockerSwitch->text);
                 }
                 if (gui->active) {
-                    Sound_Play(CLICK_SOUND_ID);
+                    Sound_Play(CLICK_SOUND);
                 }
                 rockerSwitch->value = !rockerSwitch->value;
                 rockerSwitch->onchange(scene, id);
@@ -743,7 +743,7 @@ void updateRadioButtons(Scene* scene)
             radioButtons->selectionHovered = -1;
         }
         if (radioButtons->selectionHovered != -1 && oldSelected != radioButtons->selectionHovered) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
@@ -752,7 +752,7 @@ void updateRadioButtons(Scene* scene)
             if (gui->clickedIn && gui->isHovered) {
                 radioButtons->selection = radioButtons->selectionHovered;
                 if (gui->active) {
-                    Sound_Play(CLICK_SOUND_ID);
+                    Sound_Play(CLICK_SOUND);
                 }
             }
             gui->clickedIn = false;
@@ -776,20 +776,20 @@ void updateSlider(Scene* scene)
         bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y + 6 + 16 && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if ((gui->isHovered || gui->clickedIn) && Apricot_MouseLeftDown) {
             float val = (Apricot_MousePos.x - gui->pos.x) / gui->width;
             slider->value = max(0.0f, min(1.0f, val));
             if (!gui->clickedIn) {
-                Sound_Play(HOVER_SOUND_ID);
+                Sound_Play(HOVER_SOUND);
             }
             gui->clickedIn = true;
         }
         if (gui->clickedIn && !Apricot_MouseLeftDown) {
             slider->onupdate(scene, id);
             if (gui->clickedIn) {
-                Sound_Play(HOVER_SOUND_ID);
+                Sound_Play(HOVER_SOUND);
             }
             gui->clickedIn = false;
         }
@@ -809,7 +809,7 @@ void updateTextBox(Scene* scene)
         bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y + 6 + 16 && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active && !textBox->active) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true;
@@ -837,7 +837,7 @@ void updateTextBox(Scene* scene)
             }
             textBox->cursorPos = max(0, min(textBox->length, total));
             if (gui->active) {
-                Sound_Play(CLICK_SOUND_ID);
+                Sound_Play(CLICK_SOUND);
             }
         }
         if (textBox->active && Apricot_CharDown != '\0') {
@@ -882,7 +882,7 @@ static void updateCheckBox(Scene* scene)
         bool prevIsHovered = gui->isHovered;
         gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
-            Sound_Play(HOVER_SOUND_ID);
+            Sound_Play(HOVER_SOUND);
         }
         if (gui->isHovered && Apricot_MouseLeftDown) {
             gui->clickedIn = true; // mouse must have clicked in button, and then released in button to count as a click
@@ -891,7 +891,7 @@ static void updateCheckBox(Scene* scene)
             if (gui->clickedIn && gui->isHovered) {
                 checkBox->value = !checkBox->value;
                 if (gui->active) {
-                    Sound_Play(CLICK_SOUND_ID);
+                    Sound_Play(CLICK_SOUND);
                 }
             }
             gui->clickedIn = false;
@@ -1012,15 +1012,15 @@ static void renderRadioButtons(Scene* scene)
         for (int i = 0; i < radioButtons->nSelections; i++) {
             int buttonY = gui->pos.y + i * (buttonHeight + buttonPadding) + buttonPadding + 16 + 6;
             if (i == radioButtons->selection) {
-                Texture_ColorMod(radioUnchecked, activeColor);
-                Texture_ColorMod(radioChecked, hoverColor);
+                SDL_SetTextureColorMod(radioUnchecked, activeColor.r, activeColor.g, activeColor.b);
+                SDL_SetTextureColorMod(radioChecked, hoverColor.r, hoverColor.g, hoverColor.b);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
                 Texture_Draw(radioChecked, gui->pos.x, buttonY, 20, 20, 0);
             } else if (i == radioButtons->selectionHovered) {
-                Texture_ColorMod(radioUnchecked, hoverColor);
+                SDL_SetTextureColorMod(radioUnchecked, hoverColor.r, hoverColor.g, hoverColor.b);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
             } else {
-                Texture_ColorMod(radioUnchecked, borderColor);
+                SDL_SetTextureColorMod(radioUnchecked, borderColor.r, hoverColor.g, hoverColor.b);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
             }
             FC_Draw(font, Apricot_Renderer, gui->pos.x + 28, buttonY - 2, radioButtons->options[i]);
@@ -1163,8 +1163,7 @@ static void renderImage(Scene* scene)
         }
         Image* image = (Image*)Scene_GetComponent(scene, id, GUI_IMAGE_COMPONENT_ID);
 
-        SDL_Rect dest = { gui->pos.x, gui->pos.y, gui->width, gui->height };
-        SDL_RenderCopyEx(Apricot_Renderer, image->texture, NULL, &dest, image->angle, NULL, SDL_FLIP_NONE);
+		Texture_Draw(image->texture, gui->pos.x, gui->pos.y, gui->width, gui->height, 0);
     }
 }
 

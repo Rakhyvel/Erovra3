@@ -164,10 +164,10 @@ Scene* Pause_Init(Scene* mScene, enum pauseState s)
     state = s;
 
     if (!victoryTexture) {
-        victoryTexture = loadTexture("res/victory.png");
+        victoryTexture = Texture_Load("res/victory.png");
     }
     if (!defeatTexture) {
-        defeatTexture = loadTexture("res/defeat.png");
+        defeatTexture = Texture_Load("res/defeat.png");
     }
 
     victoryImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 619 * 0.75, 101 * 0.75, victoryTexture);

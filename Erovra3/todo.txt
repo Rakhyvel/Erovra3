@@ -299,6 +299,8 @@ x Simplify AI Engineer function
 	- SOUND ANY TIME AN ENTITY IS SPAWNED!
 	- sound should get quieter as it gets farther from the camera, inverse square
 	- should act as feedback, and let the user know about surroundings
+x Remove the notion of a "TextureID", just use pointers to SDL_Textures
+- Remove the notion of a "SoundID", just use pointers to Mix_Chunk
 - hover over unit, move other unit, now cannot press buttons for hovered unit
 - Make the progress bars better, find the offset from the edge, draw blue bar as offset
 - Completely document code, with a python script to create HTML documentation for everything

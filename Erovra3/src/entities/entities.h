@@ -236,7 +236,7 @@ void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 *	@param onclick	Call back function for when button is clicked
 *	@return EntityID of the order button
 */
-EntityID OrderButton_Create(struct scene* scene, char* text, TextureID icon, UnitType type, GUICallback onclick);
+EntityID OrderButton_Create(struct scene* scene, char* text, SDL_Texture* icon, UnitType type, GUICallback onclick);
 
 /*	Creates an ore entity with components assigned
 * 

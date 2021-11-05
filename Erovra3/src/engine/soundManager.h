@@ -1,14 +1,22 @@
+/*	soundManager.h
+* 
+*	Plays sounds
+* 
+*	@todo	Implement channel stuff, reducing the volume of certain sounds depending on distance
+* 
+*	@author	Joseph Shimel
+*	@date	9/6/21
+*/
+
 #ifndef SOUND_MANAGER_H
 #define SOUND_MANAGER_H
 
-#include <SDL.h>
+#include <SDL_mixer.h>
 
-#define MAX_SOUNDS 255
-#define INVALID_SOUND_ID 255
-
-typedef Uint8 SoundID;
-
-SoundID Sound_Register(char* filename);
-void Sound_Play(SoundID sound);
+/**
+ * @brief Plays a sound
+ * @param sound the sound to play
+*/
+void Sound_Play(Mix_Chunk* sound);
 
 #endif

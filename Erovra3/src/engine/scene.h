@@ -137,7 +137,7 @@ void Scene_RegisterComponent(struct scene* scene, const ComponentKey globalKey, 
 void* Scene_GetComponent(struct scene* scene, EntityID id, ComponentKey globalKey);
 
 /**
- * @brief Allocates a new entity. New entities have a unique index-version pair, and a clear component mask.
+ * @brief Allocates a new entity. New entities have a unique EntityID, and a clear component mask.
  * @param scene Scene to allocate the entity to
  * @return The EntityID of the allocated entity
 */

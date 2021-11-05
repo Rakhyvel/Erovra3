@@ -32,7 +32,4 @@ Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY);
 Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float posY);
 void Perlin_Erode(float* map, int mapSize, float intensity, int* status);
 
-// Map painting
-void Perlin_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i));
-
 #endif

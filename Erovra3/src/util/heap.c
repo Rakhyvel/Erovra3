@@ -71,7 +71,7 @@ void shiftDown(Heap* heap, int i)
 
 // Function to insert a new element
 // in the Binary Heap
-void Heap_Insert(Heap* heap, int p, Uint32 d)
+void Heap_Insert(Heap* heap, int p, unsigned int d)
 {
     heap->size++;
     heap->data[heap->size] = (struct pair) { p, d };

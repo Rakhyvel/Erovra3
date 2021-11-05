@@ -82,7 +82,7 @@ void Match_GetOrdinalSuffix(int divisionNumber, char* buffer)
     }
 }
 
-TextureID Match_LookupResourceTypeIcon(ResourceType type)
+SDL_Texture* Match_LookupResourceTypeIcon(ResourceType type)
 {
     switch (type) {
     case ResourceType_COIN:
@@ -1582,18 +1582,18 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         int deathTicks = !Scene_EntityHasComponents(scene, id, HEALTH_COMPONENT_ID) ? 16 : 16 - ((Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID))->deathTicks;
 
         // Shadow
-        Texture_AlphaMod(simpleRenderable->shadow, 255.0f / 16.0f * deathTicks);
+        SDL_SetTextureAlphaMod(simpleRenderable->shadow, 255.0f / 16.0f * deathTicks);
         Terrain_Translate(&rect, motion->pos.x, motion->pos.y, (float)simpleRenderable->width, (float)simpleRenderable->height);
         Texture_Draw(simpleRenderable->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
 
         // Outline
         if (deathTicks == 16) {
             if (simpleRenderable->showOutline) {
-                Texture_AlphaMod(simpleRenderable->spriteOutline, 255);
+                SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, 255);
                 Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
                 Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
             } else if (simpleRenderable->hitTicks > 0) {
-                Texture_AlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
+                SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
                 Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
                 Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
             }
@@ -1602,15 +1602,16 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         // Base image
         Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->width, (float)simpleRenderable->height);
         if (!motion->destroyOnBounds) {
-            Texture_ColorMod(simpleRenderable->sprite, ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color);
+            SDL_Color nationColor = ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color;
+            SDL_SetTextureColorMod(simpleRenderable->sprite, nationColor.r, nationColor.g, nationColor.b);
         }
-        Texture_AlphaMod(simpleRenderable->sprite, 255.0f / 16.0f * deathTicks);
+        SDL_SetTextureAlphaMod(simpleRenderable->sprite, 255.0f / 16.0f * deathTicks);
         Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
 
         // Reset alpha mods
-        Texture_AlphaMod(simpleRenderable->shadow, 255.0f);
-        Texture_AlphaMod(simpleRenderable->spriteOutline, 255.0f);
-        Texture_AlphaMod(simpleRenderable->sprite, 255.0f);
+        SDL_SetTextureAlphaMod(simpleRenderable->shadow, 255.0f);
+        SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, 255.0f);
+        SDL_SetTextureAlphaMod(simpleRenderable->sprite, 255.0f);
     }
 }
 
@@ -1686,7 +1687,7 @@ void Match_DrawSelectionArrows(Scene* scene)
             float scale = 1.0;
             double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
             Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale + 2, 64 * scale, 64 * scale, angle);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
+            Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
         }
     }
     system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
@@ -1723,8 +1724,8 @@ void Match_DrawSelectionArrows(Scene* scene)
             float scale = 1.0;
             double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
             int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
-            drawThickLine(INVALID_TEXTURE_ID, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8 * scale);
-            Texture_AlphaMod(ARROW_TEXTURE_ID, 180);
+            Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8 * scale);
+            SDL_SetTextureAlphaMod(ARROW_TEXTURE_ID, 180);
             Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale - shadowZ, 64 * scale, 64 * scale, angle);
         }
     }
@@ -1917,7 +1918,7 @@ void Match_RenderOrderButtons(Scene* scene)
         }
 
         // Draw button icon
-        Texture_ColorMod(orderButton->icon, activeColor);
+        SDL_SetTextureColorMod(orderButton->icon, activeColor.r, activeColor.g, activeColor.b);
         Texture_DrawCentered(orderButton->icon, gui->pos.x + 8, gui->pos.y + 8, 32, 32, 0);
 
         // Draw button text
@@ -2343,9 +2344,9 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
 {
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
     SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
-    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
+    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
     miniMapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
-    Perlin_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
+    Texture_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
@@ -2483,7 +2484,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
 
     // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
     Terrain_FindCapitalPath(terrain, homeVector, enemyVector);
-    Perlin_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
+    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
 
     EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
     Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);

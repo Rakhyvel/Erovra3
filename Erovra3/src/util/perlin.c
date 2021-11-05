@@ -411,27 +411,3 @@ bool Perlin_IsBorder(float* terrain, int width, int height, int x, int y, float 
 
     return containsLand && containsWater;
 }
-
-void Perlin_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i))
-{
-    Uint8* pixels = calloc(mapSize * mapSize, 4);
-    if (!pixels) {
-        PANIC("Memory error Terrain_PaintMap() creating pixels\n");
-    }
-    for (int x = 0; x < mapSize; x++) {
-        for (int y = 0; y < mapSize; y++) {
-            const unsigned int offset = (mapSize * 4 * y) + x * 4;
-            float i = map[y * mapSize + x];
-
-            SDL_Color terrainColor = colorFunction(map, mapSize, x, y, i);
-            pixels[offset + 0] = terrainColor.b;
-            pixels[offset + 1] = terrainColor.g;
-            pixels[offset + 2] = terrainColor.r;
-            pixels[offset + 3] = SDL_ALPHA_OPAQUE;
-        }
-    }
-    if (SDL_UpdateTexture(texture, NULL, pixels, mapSize * 4) == -1) {
-        PANIC("%s", SDL_GetError());
-    }
-    free(pixels);
-}

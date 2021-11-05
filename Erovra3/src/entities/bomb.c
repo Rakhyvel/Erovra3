@@ -26,7 +26,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
 
     SimpleRenderable render = {
         BOMB_TEXTURE_ID,
-        INVALID_TEXTURE_ID,
+        NULL,
         BOMB_SHADOW_TEXTURE_ID,
         RenderPriority_HIGH_SURFACE_LAYER,
         false,
