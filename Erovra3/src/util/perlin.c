@@ -2,9 +2,13 @@
 
 #include "./perlin.h"
 #include "./debug.h"
+#include "arraylist.h"
+#include "vector.h"
 #include <float.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  Does linear interpolation, basically draws a line between two points, and
@@ -125,7 +129,9 @@ void Perlin_GenerateOctave(float* map, int mapSize, int cellSize, float amplitud
     // For each node assign it a height
     for (int y = 0; y < mapSize; y += cellSize) {
         for (int x = 0; x < mapSize; x += cellSize) {
-            map[y * mapSize + x] = amplitude * ((float)rand()) / ((float)RAND_MAX);
+            float r = ((float)rand()) / ((float)RAND_MAX);
+            r = cosf(r);
+            map[y * mapSize + x] = amplitude * r;
         }
     }
 
@@ -175,8 +181,9 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
     }
     cellSize /= 2;
     amplitude /= 2;
+    int j = 1;
 
-    while (cellSize >= 4) {
+    while (cellSize >= 32) {
         Perlin_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICOSINE);
         if (!map) {
             PANIC("Memory error");
@@ -189,13 +196,13 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
 
         cellSize /= 2;
         amplitude *= 0.5f;
+        j++;
     }
-    /*
+    
     Perlin_GenerateOctave(map, mapSize, mapSize / 4, 1, seed, BICOSINE);
     for (int i = 0; i < mapSize * mapSize; i++) {
         retval[i] = retval[i] * 0.75 + map[i] * 0.25;
     }
-	*/
     free(map);
     return retval;
 }
@@ -298,52 +305,50 @@ Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float pos
     return grad;
 }
 
-// Intensity should range from 0 to 3
+// Erodes away some terrain
 void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
 {
-    float inertia = 0.9f; // higher/medium values produce smoother maps
+    float inertia = 0.1f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
-    float minSedimentCapacity = 100.0f; // Small values := more deposit
-    float depositSpeed = 0.1f;
-    float erodeSpeed = 0.1f;
+    float minSedimentCapacity = 10.0f; // Small values := more deposit
+    float depositSpeed = 0.5f;
+    float erodeSpeed = 0.5f;
     float evaporateSpeed = 100.0f;
     float gravity = 4.0f;
 
-    int* erosionBrushIndices = NULL;
-    float* erosionBrushWeights = NULL;
     for (int i = 0; i < mapSize * mapSize * intensity; i++) {
-        // Create random droplet
         float posX = ((float)rand() / (float)RAND_MAX) * (mapSize - 2);
         float posY = ((float)rand() / (float)RAND_MAX) * (mapSize - 2);
+        float initPosX = posX;
+        float initPosY = posY;
         float dirX = 0;
         float dirY = 0;
         float speed = 1;
-        float water = 1;
+        float water = 0;
         float sediment = 0;
-        for (int j = 0; j < mapSize / 16.0f; j++) {
+        for (int j = 0; j < mapSize / 8.0f; j++) {
             int nodeX = (int)posX;
             int nodeY = (int)posY;
+            inertia = map[nodeX + nodeY * mapSize];
             int dropletIndex = nodeX + nodeY * mapSize;
             float cellOffsetX = posX - nodeX;
             float cellOffsetY = posY - nodeY;
 
             Gradient grad = Perlin_GetGradient(map, mapSize, posX, posY);
-
             // Update the droplet's movement
-            dirX = (dirX * inertia - grad.gradX * (1 - inertia)) * gravity;
-            dirY = (dirY * inertia - grad.gradY * (1 - inertia)) * gravity;
+            dirX = (dirX * inertia - grad.gradX * (1 - inertia));
+            dirY = (dirY * inertia - grad.gradY * (1 - inertia));
             // Normalize direction
             float len = sqrtf(dirX * dirX + dirY * dirY);
             if (len != 0) {
                 dirX /= len;
                 dirY /= len;
             }
-
             posX += dirX;
             posY += dirY;
 
             // Stop simulating droplet if it's not moving or has flowed over edge of map
-            if ((dirX == 0 && dirY == 0) || posX < 0 || posX >= mapSize - 1 || posY < 0 || posY >= mapSize - 1) {
+            if ((dirX == 0 && dirY == 0) || posX <= 0 || posX >= mapSize - 1 || posY <= 0 || posY >= mapSize - 1) {
                 break;
             }
 
@@ -354,30 +359,18 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
             // Calculate the droplet's sediment capacity (higher when moving fast down a slope and contains lots of water)
             float sedimentCapacity = max(-deltaHeight * speed * water * sedimentCapacityFactor, minSedimentCapacity);
 
+            float deltaZ;
             // If carrying more sediment than capacity, or if flowing uphill:
             if (sediment > sedimentCapacity || deltaHeight > 0) {
-                // If moving uphill (deltaHeight > 0) try fill up to the current height, otherwise deposit a fraction of the excess sediment
-                float amountToDeposit = (deltaHeight > 0) ? min(deltaHeight, sediment) : (sediment - sedimentCapacity) * depositSpeed;
-                sediment -= amountToDeposit;
-
-                // Add the sediment to the four nodes of the current cell using bilinear interpolation
-                // Deposition is not distributed over a radius (like erosion) so that it can fill small pits
-                map[dropletIndex] += amountToDeposit * (1 - cellOffsetX) * (1 - cellOffsetY);
-                map[dropletIndex + 1] += amountToDeposit * cellOffsetX * (1 - cellOffsetY);
-                map[dropletIndex + mapSize] += amountToDeposit * (1 - cellOffsetX) * cellOffsetY;
-                map[dropletIndex + mapSize + 1] += amountToDeposit * cellOffsetX * cellOffsetY;
+                deltaZ = (deltaHeight > 0) ? min(deltaHeight, sediment) : (sediment - sedimentCapacity) * depositSpeed;
             } else {
-                // Erode a fraction of the droplet's current carry capacity.
-                // Clamp the erosion to the change in height so that it doesn't dig a hole in the terrain behind the droplet
-                float amountToErode = min((sedimentCapacity - sediment) * erodeSpeed, (float)fabs(deltaHeight));
-                sediment += amountToErode;
-
-                // Use erosion brush to erode from all nodes inside the droplet's erosion radius
-                map[dropletIndex] -= amountToErode * (1 - cellOffsetX) * (1 - cellOffsetY);
-                map[dropletIndex + 1] -= amountToErode * cellOffsetX * (1 - cellOffsetY);
-                map[dropletIndex + mapSize] -= amountToErode * (1 - cellOffsetX) * cellOffsetY;
-                map[dropletIndex + mapSize + 1] -= amountToErode * cellOffsetX * cellOffsetY;
+                deltaZ = -min((sedimentCapacity - sediment) * erodeSpeed, (float)fabs(deltaHeight));
             }
+            sediment -= deltaZ;
+            map[dropletIndex] += deltaZ * (1 - cellOffsetX) * (1 - cellOffsetY);
+            map[dropletIndex + 1] += deltaZ * cellOffsetX * (1 - cellOffsetY);
+            map[dropletIndex + mapSize] += deltaZ * (1 - cellOffsetX) * cellOffsetY;
+            map[dropletIndex + mapSize + 1] += deltaZ * cellOffsetX * cellOffsetY;
 
             // Update droplet's speed and water content
             speed = sqrtf(speed * speed + deltaHeight * gravity);

@@ -2,6 +2,7 @@
 #include "../textures.h"
 #include "./components.h"
 #include "./entities.h"
+#include <string.h>
 
 EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
 {
@@ -48,6 +49,10 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         1,
         nationStruct->unitCount[UnitType_FARM]
     };
+    type.name[0] = 'f';
+    type.name[1] = 'a';
+    type.name[2] = 'r';
+    type.name[3] = 'm';
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
     Hoverable hoverable = {

@@ -99,11 +99,13 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         // water
         i *= 2;
         i = powf(i, 51);
-        return Terrain_HSVtoRGB(214.0f - 25.0f * i, 1.0f - 0.45f * i, 0.21f + 0.6f * i + 0.1f * powf(i, 91));
+        Gradient g = Perlin_GetGradient(map, mapSize, x, y);
+        return Terrain_HSVtoRGB(214.0f - 25.0f * i, 1.0f - 0.45f * i, 0.21f + 0.6f * i + 0.1f * powf(i, 91) + g.gradY * 7);
     } else {
         // ground
         i = (i - 0.5f) * 2;
         i = powf(i, 0.25f);
+        // ranges from 0 to 1, 0 being completely dark, 1 being completely illuminated
         float light = 1.0f;
         if (x < mapSize - 1 && y < mapSize - 1) {
             // point a
@@ -118,15 +120,15 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
             int c_x = x;
             int c_y = y + 1;
             float c_z = mapSize / 16 * map[c_x + c_y * mapSize] * i * i * i * i * i;
-            // vector q
+            // vector q = a-b
             float q_x = a_x - b_x;
             float q_y = a_y - b_y;
             float q_z = a_z - b_z;
-            // vector r
+            // vector r = a-c
             float r_x = a_x - c_x;
             float r_y = a_y - c_y;
-            float r_z = a_z - c_z;
-            // normal
+            float r_z = a_z - c_z; // +((float)rand()) / ((float)RAND_MAX) * q_z * 2 - q_z * 2 * 0.5f;
+            // normal = qxr
             float n_x = (q_y * r_z) - (q_z * r_y);
             float n_y = (q_z * r_x) - (q_x * r_z);
             float n_z = (q_x * r_y) - (q_y * r_x);
@@ -136,13 +138,14 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
                 n_y /= mag;
                 n_z /= mag;
             }
-            light = max(0.0f, -0.707 * n_y + 0.707 * n_z);
+            // light = to_sun . normal
+            light = 0.0f * n_x - 0.7071f * n_y + 0.7071f * n_z;
         }
         i *= 100;
-        float hue = min(120, 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 50.3635585447);
+        float hue = max(30, min(120, 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 35.3635585447));
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
-        float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 142.0f);
-        return Terrain_HSVtoRGB(hue, min(0.3f, saturation), min(0.8f, value + 0.075f * max(0, logf(light / (1.0f - light)))));
+        float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 160.0f);
+        return Terrain_HSVtoRGB(hue + 120 * (1 - light) - 20, min(0.3f, saturation), max(0.2f, min(0.8f, value * light)));
     }
 }
 
@@ -490,8 +493,6 @@ EntityID Terrain_GetBuildingAt(struct terrain* terrain, int x, int y)
 
 void Terrain_SetBuildingAt(struct terrain* terrain, EntityID id, int x, int y)
 {
-    x -= 32;
-    y -= 32;
     x /= 64;
     y /= 64;
     terrain->buildings[x + y * (terrain->tileSize)] = id;
@@ -513,8 +514,6 @@ void Terrain_SetWallAt(struct terrain* terrain, EntityID id, int x, int y)
 
 int Terrain_ClosestBuildingDist(struct terrain* terrain, int x1, int y1)
 {
-    x1 -= 32;
-    y1 -= 32;
     x1 /= 64;
     y1 /= 64;
     int retval = terrain->size * 2;
@@ -533,15 +532,13 @@ int Terrain_ClosestBuildingDist(struct terrain* terrain, int x1, int y1)
 
 int Terrain_ClosestMaskDist(struct scene* scene, ComponentKey key, struct terrain* terrain, int x1, int y1)
 {
-    x1 -= 32;
-    y1 -= 32;
     x1 /= 64;
     y1 /= 64;
     int retval = terrain->size * 2;
     for (int x = 0; x < terrain->tileSize; x++) {
         for (int y = 0; y < terrain->tileSize; y++) {
             EntityID buildingID = terrain->buildings[x + y * terrain->tileSize];
-            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, buildingID, key)) { // EntityHasComponents giving errors about entity version
+            if (buildingID != INVALID_ENTITY_INDEX && Scene_EntityHasComponentMask(scene, Scene_CreateMask(scene, 1, key), buildingID)) { // EntityHasComponents giving errors about entity version
                 int dist = abs(x1 - x) + abs(y1 - y);
                 if (dist < retval) {
                     retval = dist;

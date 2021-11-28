@@ -47,6 +47,10 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         1,
         0
     };
+    type.name[0] = 'a';
+    type.name[1] = 'c';
+    type.name[2] = 'a';
+    type.name[3] = 'd';
     Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
 
     Hoverable hoverable = {

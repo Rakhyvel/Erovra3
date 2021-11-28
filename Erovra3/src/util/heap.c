@@ -1,37 +1,55 @@
 #include "heap.h"
 #include <stdlib.h>
 
-void swap(Heap* heap, int a, int b)
+/**
+ * @brief Swaps the data of two pairs in the heap
+ * @param heap The relevant heap
+ * @param a Index of first pair
+ * @param b Index of second pair
+*/
+static void swap(Heap* heap, int a, int b)
 {
     struct pair temp = heap->data[a];
     heap->data[a] = heap->data[b];
     heap->data[b] = temp;
 }
 
-// Function to return the index of the
-// parent node of a given node
-int parent(int i)
+/**
+ * @brief Calculates the index of a parent node from a given node
+ * @param i Child node
+ * @return The index of the parent node
+*/
+static int parent(int i)
 {
     return (i - 1) / 2;
 }
 
-// Function to return the index of the
-// left child of the given node
-int leftChild(int i)
+/**
+ * @brief Calculates the index of the left child of a given node
+ * @param i Parent node
+ * @return The index of the left child of a parent node
+*/
+static int leftChild(int i)
 {
     return ((2 * i) + 1);
 }
 
-// Function to return the index of the
-// right child of the given node
-int rightChild(int i)
+/**
+ * @brief Calculates the index of the right child of a given node
+ * @param i Parent node
+ * @return The index of the right child of a parent node
+*/
+static int rightChild(int i)
 {
     return ((2 * i) + 2);
 }
 
-// Function to shift up the node in order
-// to maintain the heap property
-void shiftUp(Heap* heap, int i)
+/**
+ * @brief Shifts up a node in the heap, based on the priority of the node. Used to maintain the heap's sorted property
+ * @param heap The relevent heap
+ * @param i Index of the node
+*/
+static void shiftUp(Heap* heap, int i)
 {
     while (i > 0 && heap->data[parent(i)].priority > heap->data[i].priority) {
         // Swap parent and current node
@@ -42,9 +60,12 @@ void shiftUp(Heap* heap, int i)
     }
 }
 
-// Function to shift down the node in
-// order to maintain the heap property
-void shiftDown(Heap* heap, int i)
+/**
+ * @brief Shifts down a node in the heap, based on the priority of the node. Used to maintain the heap's sorted property.
+ * @param heap The relevant heap
+ * @param i Index of the node
+*/
+static void shiftDown(Heap* heap, int i)
 {
     int maxIndex = i;
 
@@ -69,8 +90,36 @@ void shiftDown(Heap* heap, int i)
     }
 }
 
-// Function to insert a new element
-// in the Binary Heap
+/**
+ * @brief Finds the element with the minimum priority
+ * @param heap Heap to find the min from
+ * @return The data of the element with the least priority
+*/
+static int extractMin(Heap* heap)
+{
+    int result = heap->data[0].data;
+
+    // Replace the value at the root with the last leaf
+    heap->data[0] = heap->data[heap->size];
+    heap->size--;
+
+    // Shift down the replaced element to maintain the heap property
+    shiftDown(heap, 0);
+    return result;
+}
+
+Heap* Heap_Create(int size)
+{
+    Heap* retval = calloc(1, sizeof(Heap) + sizeof(struct pair) * size);
+    retval->size = -1;
+    return retval;
+}
+
+void Heap_Destroy(Heap* heap)
+{
+    free(heap);
+}
+
 void Heap_Insert(Heap* heap, int p, unsigned int d)
 {
     heap->size++;
@@ -80,25 +129,6 @@ void Heap_Insert(Heap* heap, int p, unsigned int d)
     shiftUp(heap, heap->size);
 }
 
-// Function to extract the element with
-// minimum priority
-int extractMin(Heap* heap)
-{
-    int result = heap->data[0].data;
-
-    // Replace the value at the root
-    // with the last leaf
-    heap->data[0] = heap->data[heap->size];
-    heap->size--;
-
-    // Shift down the replaced element
-    // to maintain the heap property
-    shiftDown(heap, 0);
-    return result;
-}
-
-// Function to change the priority
-// of an element
 void Heap_ChangePriority(Heap* heap, int i, int p)
 {
     int oldp = heap->data[i].priority;
@@ -111,15 +141,11 @@ void Heap_ChangePriority(Heap* heap, int i, int p)
     }
 }
 
-// Function to get value of the current
-// maximum element
 int Heap_GetMin(Heap* heap)
 {
     return heap->data[0].data;
 }
 
-// Function to remove the element
-// located at given index
 void Heap_Remove(Heap* heap, int i)
 {
     heap->data[i] = (struct pair) { heap->data[0].priority - 1, heap->data[0].data };
@@ -135,16 +161,4 @@ void Heap_Remove(Heap* heap, int i)
 int Heap_GetData(Heap* heap, int i)
 {
     return heap->data[i].data;
-}
-
-Heap* Heap_Create(int size)
-{
-    Heap* retval = calloc(1, sizeof(Heap) + sizeof(struct pair) * size);
-    retval->size = -1;
-    return retval;
-}
-
-void Heap_Destroy(Heap* heap)
-{
-    free(heap);
 }

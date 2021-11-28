@@ -53,6 +53,10 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         0.05f,
         nationStruct->unitCount[UnitType_MINE]
     };
+    type.name[0] = 'm';
+    type.name[1] = 'i';
+    type.name[2] = 'n';
+    type.name[3] = 'e';
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {

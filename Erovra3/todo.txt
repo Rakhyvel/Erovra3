@@ -300,17 +300,47 @@ x Simplify AI Engineer function
 	- sound should get quieter as it gets farther from the camera, inverse square
 	- should act as feedback, and let the user know about surroundings
 x Remove the notion of a "TextureID", just use pointers to SDL_Textures
-- Remove the notion of a "SoundID", just use pointers to Mix_Chunk
-- hover over unit, move other unit, now cannot press buttons for hovered unit
-- Make the progress bars better, find the offset from the edge, draw blue bar as offset
-- Completely document code, with a python script to create HTML documentation for everything
+x Remove the notion of a "SoundID", just use pointers to Mix_Chunk
+x erosion doesnt look good
+x error in dikstra algorithm
+x hover over unit, move other unit, now cannot press buttons for hovered unit
+x Make the progress bars better, find the offset from the edge, draw blue bar as offset
+x radio buttons are blue
+x bring back ore checking for capitals
+x Bug whenever enemy team takes city
+x Make sea slightly darker on right-rising gradients, using the same logic as land
+x Game crashes when user adjusts map settings while map preview is loading
 
-3.10.x- Multiplayer
+3.10.x- Pivot
+- More than one nation (Maybe an array of enemy nations)
+	- Each unit has an entityID of their nation, not a flag
+- Resources like wood
+- More non-combat units like miners, farmers
+	- miners go out and can test soil, can set up mines, mines can pack up and leave
+	- farmers, "     " farms
+	- settlers "     " cities
+- Academy trains other kinds of units
+	- Pilots
+- Cities can become restless, go rogue and spawn new rebel nations
+	- Not enough food
+	- Default on upkeep
+- Buildings can be upgraded, but require more upkeep
+- "Infinite" maps?
+	- You'd only be able to see the terrain of what you've explored (GOOD IDEA!)
+- TRANSPORT BOATS!!!!!! (cmon mane)
+- Debug menu
+	- Can time warp
+	- Can show other nations
+	- Place to display other info
+- Settings where you can turn down the volume!
+- Swap "Surrender" and "Back to game" buttons in menu
+- Fix city names, serialize the trie
+
+3.11.x- Multiplayer
 - Order particles
 	- Originate from nation's command post
 	- Send messages to units to change their position, etc (this ties into my plans for multiplayer!)
 	- Can upgrade command post to get faster messages
-- More than one nation (Maybe an array of enemy nations)
 - Multiplayer
 - Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
 - Buff factory speed if city other factories, etc with others

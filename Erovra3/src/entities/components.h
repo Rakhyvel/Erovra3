@@ -213,8 +213,8 @@ typedef struct nation {
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
 } Nation;
 ComponentKey NATION_COMPONENT_ID;
-ComponentKey HOME_NATION_FLAG_COMPONENT_ID;
-ComponentKey ENEMY_NATION_FLAG_COMPONENT_ID;
+ComponentKey HOME_NATION_FLAG_COMPONENT_ID; // REMOVE THESE!
+ComponentKey ENEMY_NATION_FLAG_COMPONENT_ID; // REMOVE THESE!
 ComponentKey PLAYER_FLAG_COMPONENT_ID;
 
 /* Assigned to nations that use a goal-oriented action planner to make decisions

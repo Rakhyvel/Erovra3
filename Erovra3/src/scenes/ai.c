@@ -602,6 +602,7 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
                     continue;
                 Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
                 // Find if there is a city with cabdist less than 3 tiles
+				// CAUSES ERRORS? First iteration too
                 if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, point.x, point.y) <= 2) {
                     continue;
                 }

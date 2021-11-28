@@ -5,9 +5,9 @@
  */
 
 #pragma once
-#include "../entities/components.h"
 #include "../engine/apricot.h"
 #include "../engine/scene.h"
+#include "../entities/components.h"
 #include "../gui/gui.h"
 #include "../util/lexicon.h"
 #include "../util/perlin.h"
@@ -64,19 +64,20 @@ Lexicon* lexicon;
 
 enum state {
     GENERATING,
-    EROSION
+    EROSION,
+	IDLE
 };
-enum state state;
+volatile enum state state;
 // Incremented by functions to asyncly get status for progress bar
-int status = 0;
+volatile int status = 0;
 // Whether or not assets are loaded. Not reset after return to menu.
-bool assetsLoaded = false;
+volatile bool assetsLoaded = false;
 // Set by generatePreview thread, map is updated, previewTexture needs to be repainted. Reset on menu return.
-bool needsRepaint = false;
+volatile bool needsRepaint = false;
 // Set by generateFullTerrain, full map is generating, show progress bar. Reset on menu return.
-bool generating = false;
+volatile bool generating = false;
 // Set by generatedFullTerrain, full map is done, start match. Reset on menu return.
-bool done = false;
+volatile bool done = false;
 
 /*	Calculates seed based on seed text box
 * 
@@ -118,7 +119,7 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = Perlin_Generate(size, size / 4, getSeed(scene), &status);
+    map = Perlin_Generate(size, size / 2, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
@@ -132,6 +133,7 @@ static int generatePreview(void* ptr)
     status = 0;
     state = EROSION;
     Perlin_Erode(map, size, erosion->value, &status);
+    state = IDLE;
 
     // Set needsRepaint flag. Menu_Update() will monitor this flag and repaint texutre, and unset this flag.
     needsRepaint = 1;
@@ -155,7 +157,7 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
+    map = Perlin_Generate(fullMapSize, fullMapSize / 2, getSeed(scene), &status);
     Perlin_Normalize(map, fullMapSize);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
@@ -169,6 +171,7 @@ static int generateFullTerrain(void* ptr)
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
     Perlin_Erode(map, fullMapSize, erosion->value, &status);
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
+    state = IDLE; // Let other threads start
     done = true;
     return 0;
 }
@@ -194,7 +197,9 @@ void Menu_ReconstructMap(Scene* scene, EntityID id)
     // (will be reset back to new previewTexture once the following thread finishes updating the map)
 
     // Call the generatePreview to update the map
-    SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
+    if (state == IDLE) {
+        SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
+    }
 
     // Resume updating GUI
 }
@@ -213,11 +218,10 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Reset slider positions */
-    seaLevel->value = 0.5f;
-    erosion->value = 0.0f;
+    srand(time(0));
+    seaLevel->value = ((float)rand()) / ((float)RAND_MAX);
 
     /* Randomize seed */
-    srand(time(0));
     char randSeed[32];
     for (int i = 0; i < 32; i++) {
         randSeed[i] = rand() % 26 + 'a';
@@ -400,17 +404,17 @@ Scene* Menu_Init()
     logoSpacerAcc = -20;
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
-    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.033f, &Menu_ReconstructMap);
-    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.5f, &Menu_ReconstructMap);
+    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
+    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, &Menu_ReconstructMap);
     nationNameTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", NULL);
     mapSeedTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Map seed", "", &Menu_ReconstructMap);
-    AIControlledCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "AI controlled", true);
+    AIControlledCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "AI controlled", false);
     terrainImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 447, 447, previewTexture);
 
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
     progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7f);
 
-    loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Hint: You can click on units to click on them!");
+    loadingAssetsHints = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Hint: You can click on units to select on them!");
     loadingAssetsImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 50, 50, loadingCircle);
 
     logoSpacer = GUI_CreateSpacer(scene, (Vector) { 0, 0 }, 0, 2050);
@@ -456,6 +460,8 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, loadingMatch, GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Loading match"));
     GUI_ContainerAdd(scene, loadingMatch, statusText);
     GUI_ContainerAdd(scene, loadingMatch, progressBar);
+
+	state = IDLE;
 
     Apricot_PushScene(scene);
     return scene;

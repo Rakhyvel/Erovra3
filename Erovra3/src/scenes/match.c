@@ -59,7 +59,6 @@ static SDL_Texture* miniMapTexture = NULL;
 const int miniMapSize = 256.0f;
 
 // UTILITY FUNCTIONS
-
 void Match_AddMessage(SDL_Color color, char* text, ...)
 {
     struct message message;
@@ -340,6 +339,8 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
         case UnitType_ACADEMY:
             building = Academy_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
             break;
+        default:
+            PANIC("What");
         }
         homeCityComponent->expansions[dir] = building;
         Terrain_SetBuildingAt(terrain, building, (int)pos.x, (int)pos.y);
@@ -569,6 +570,7 @@ void Match_Death(Scene* scene)
                     Scene_MarkPurged(scene, id);
                     nation->resources[ResourceType_POPULATION]--;
                 } else if (otherNation != NULL) {
+                    printf("City at (%f, %f) captured on tick, tick: %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
                     simpleRenderable->nation = nation->enemyNation;
                     Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
@@ -580,10 +582,13 @@ void Match_Death(Scene* scene)
                     nation->costs[ResourceType_COIN][unit->type] /= 2;
                 }
 
+                // Remove expansion from city's array, remove expansion from terrain map
                 if (Scene_EntityHasComponents(scene, id, EXPANSION_COMPONENT_ID)) {
+                    printf("Expansion at (%f, %f) destroyed on %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
                     Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
                     homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                     homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
+                    printf("%d (%f, %f)\n", unit->type, motion->pos.x, motion->pos.y);
                     Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                     nation->costs[ResourceType_COIN][unit->type] -= nation->unitCount[unit->type] * 5;
                 }
@@ -1013,7 +1018,6 @@ void Match_Select(struct scene* scene)
     Selectable* hovered = NULL;
     // If no unit targets were set previously
     if (!targeted) {
-        bool anySelected = false;
         // Go thru entities, check to see if they are now hovered and selected
         system(scene, id, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID)
         {
@@ -1026,21 +1030,8 @@ void Match_Select(struct scene* scene)
             }
             if (hoverable->isHovered && Apricot_MouseLeftUp) {
                 selectable->selected = !selectable->selected;
-                anySelected |= selectable->selected;
-                if (!selectBox) {
+                if (!selectBox) { // Only select multiple units if box-selecting
                     break;
-                }
-            }
-        }
-        // Defocus entities if others are selected and not them
-        if (anySelected) {
-            system(scene, id, SELECTABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
-            {
-                Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-                Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-
-                if (focusable->focused && !selectable->selected) {
-                    focusable->focused = false;
                 }
             }
         }
@@ -1513,12 +1504,13 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 {
     system(scene, id, EXPANSION_COMPONENT_ID)
     {
+        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        // Gives "Entity does not have component" if not checked, weird!
-        if (Scene_EntityHasComponents(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID)) {
+        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        if (!health->isDead && Scene_EntityHasComponents(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID)) {
             SimpleRenderable* homeCitySimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID);
             if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
                 Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
@@ -1528,7 +1520,6 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 
                 // You don't get the farms of other people
                 if (unit->type == UnitType_FARM) {
-                    Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
                     health->isDead = true;
                 } else {
                     nation->resources[ResourceType_POPULATION]--;
@@ -1558,6 +1549,7 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
                 Scene_Assign(scene, id, newNation->ownNationFlag, NULL);
+                printf("Expansion at (%f, %f) updated on %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
             }
         }
     }
@@ -1888,7 +1880,7 @@ void Match_RenderOrderButtons(Scene* scene)
         break;
     }
     if (nation == NULL) {
-        PANIC("The nation is null!");
+        return; // No nations found, happens when no capital point could be found
     }
     system(scene, id, ORDER_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID)
     {
@@ -2042,12 +2034,19 @@ void Match_RenderProducerBars(Scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         if (producer->orderTicksRemaining > 0) {
+            // Get the rectangle for full bar
             SDL_Rect rect;
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 20, 6);
+            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 22, 6);
+
+            // Draw the background bar
             SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
             SDL_RenderFillRect(Apricot_Renderer, &rect);
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 16, 2);
-            rect.w = Terrain_GetZoom() * 16 * (1.0f - (float)producer->orderTicksRemaining / (float)producer->orderTicksTotal);
+
+            // Draw inner bar, slightly inset
+            rect.x += Terrain_GetZoom() * 2;
+            rect.y += Terrain_GetZoom() * 2;
+            rect.w = Terrain_GetZoom() * 18 * (1.0f - (float)producer->orderTicksRemaining / (float)producer->orderTicksTotal);
+            rect.h -= Terrain_GetZoom() * 4 - 1;
             SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 255);
             SDL_RenderFillRect(Apricot_Renderer, &rect);
         }
@@ -2085,11 +2084,12 @@ void Match_Update(Scene* match)
     Match_UpdateExpansionAllegiance(match);
 
     Match_AI(match);
+    Terrain_ClosestMaskDist(match, CITY_COMPONENT_ID, terrain, 0, 0);
 
     Match_UpdateMessageContainer(match);
     GUI_Update(match);
 
-	static bool lt = false;
+    static bool lt = false;
     static bool gt = false;
     // Change game tick speed
     if (!lt && Apricot_Keys[SDL_SCANCODE_COMMA]) {
@@ -2446,14 +2446,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 204, 48, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_SetShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
-    // Create home and enemy nations
-    EntityID homeNation;
-    if (AIControlled) {
-        homeNation = Nation_Create(match, &AI_Init, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
-    } else {
-        homeNation = Nation_Create(match, NULL, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
-    }
-    EntityID enemyNation = Nation_Create(match, &AI_Init, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
+    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
 
     // Create and register home city
     Vector homeVector = { (float)terrain->size, (float)terrain->size };
@@ -2482,33 +2475,44 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
         }
     }
 
-    // TODO: A* algorithm here, use fine grain (go through each pixel and not just each tile)
-    Terrain_FindCapitalPath(terrain, homeVector, enemyVector);
-    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
+    if (homeVector.x != terrain->size) {
+        Terrain_FindCapitalPath(terrain, homeVector, enemyVector);
 
-    EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
-    Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
-    Terrain_SetOffset(homeVector);
+        // Create home and enemy nations
+        EntityID homeNation;
+        if (AIControlled) {
+            homeNation = Nation_Create(match, &AI_Init, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
+        } else {
+            homeNation = Nation_Create(match, NULL, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+        }
+        EntityID enemyNation = Nation_Create(match, &AI_Init, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
 
-    // Create and register enemy city
-    char enemyNameBuffer[20];
-    Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
-    EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, enemyNameBuffer, true);
-    Terrain_SetBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);
+        // Set enemy nations to each other
+        SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
+        SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
 
-    // Create home and enemy engineers
-    ((Nation*)Scene_GetComponent(match, homeNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
-    ((Nation*)Scene_GetComponent(match, enemyNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
-    Engineer_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-    Engineer_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+        EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
+        Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
+        Terrain_SetOffset(homeVector);
 
-    // Set enemy nations to each other
-    SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
-    SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+        // Create and register enemy city
+        char enemyNameBuffer[20];
+        Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
+        EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, enemyNameBuffer, true);
+        Terrain_SetBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);
 
-    // Set nations capitals
-    Nation_SetCapital(match, homeNation, homeCapital);
-    Nation_SetCapital(match, enemyNation, enemyCapital);
+        // Create home and enemy engineers
+        ((Nation*)Scene_GetComponent(match, homeNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
+        ((Nation*)Scene_GetComponent(match, enemyNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
+        Engineer_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
+        Engineer_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
+
+        // Set nations capitals
+        Nation_SetCapital(match, homeNation, homeCapital);
+        Nation_SetCapital(match, enemyNation, enemyCapital);
+    } else {
+        Match_AddMessage(errorColor, "Space for capitals could not be found!");
+    }
 
     Apricot_PushScene(match);
 

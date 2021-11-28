@@ -57,12 +57,7 @@ static Polygon spliceBezier(Polygon polygon)
 
 void Texture_Draw(SDL_Texture* texture, int x, int y, float w, float h, float angle)
 {
-    SDL_Rect dest;
-
-    dest.x = x;
-    dest.y = y;
-    dest.w = w;
-    dest.h = h;
+    SDL_Rect dest = { x, y, w, h };
     if (SDL_RenderCopyEx(Apricot_Renderer, texture, NULL, &dest, angle * RAD_TO_DEG, NULL, SDL_FLIP_NONE)) {
         PANIC("%s", SDL_GetError());
     }
@@ -71,10 +66,9 @@ void Texture_Draw(SDL_Texture* texture, int x, int y, float w, float h, float an
 void Texture_DrawCentered(SDL_Texture* texture, int x, int y, float w, float h, float angle)
 {
     SDL_Rect dest;
-
-    int textureWidth, textureHeight;
+    int textureWidth;
+    int textureHeight;
     SDL_QueryTexture(texture, NULL, NULL, &textureWidth, &textureHeight);
-
     if (textureWidth > textureHeight) {
         dest.x = x;
         dest.w = w;
@@ -223,7 +217,10 @@ void Texture_DrawBezier(SDL_Texture* texture, Polygon polygon, SDL_Color color, 
 
 void Texture_CreateShadow(SDL_Texture* dst, SDL_Texture* src)
 {
-    int srcFormat = SDL_PIXELFORMAT_ARGB8888, srcPitch = 4, w, h;
+    int srcFormat = SDL_PIXELFORMAT_ARGB8888;
+    int srcPitch = 4;
+    int w;
+    int h;
     SDL_QueryTexture(src, &srcFormat, NULL, &w, &h);
     Uint8* srcPixels = calloc(srcPitch * w * h, 1);
     if (!srcPixels) {
@@ -280,8 +277,8 @@ SDL_Texture* Texture_Create(int width, int height)
 {
     SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
 
-	// Clear texture so that it is completely transparent
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    // Clear texture so that it is completely transparent
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
     SDL_SetRenderTarget(Apricot_Renderer, texture);
     SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 0);
     SDL_RenderClear(Apricot_Renderer);

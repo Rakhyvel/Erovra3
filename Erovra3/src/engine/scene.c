@@ -4,6 +4,7 @@
 *	@date	4/2/21
 */
 
+#include "apricot.h"
 #include "scene.h"
 #include "../util/debug.h"
 #include <stdarg.h>
@@ -138,6 +139,8 @@ EntityID Scene_NewEntity(struct scene* scene)
 void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void* componentData)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
+    EntityIndex index = getIndex(id);
+    EntityVersion version = getVersion(id);
     if (!scene->valid) {
         PANIC("Scene is invalid, possibly recently destroyed.");
     } else if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
@@ -148,6 +151,8 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void
         getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
     } else if (scene->components[componentID] == NULL) {
         PANIC("Component not registered yet %d", globalKey);
+    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, index))->id) != version) {
+        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data.", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id));
     } else {
         getEntityStruct(scene, id)->mask |= ((ComponentMask)1 << componentID);
         Arraylist_Put(scene->components[componentID], getIndex(id), componentData);
@@ -157,6 +162,8 @@ void Scene_Assign(struct scene* scene, EntityID id, ComponentKey globalKey, void
 void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 {
     ComponentID componentID = getComponentID(scene, globalKey);
+    EntityIndex index = getIndex(id);
+    EntityVersion version = getVersion(id);
     if (!scene->valid) {
         PANIC("Scene is invalid, possibly recently destroyed.");
     } else if (getIndex(id) == INVALID_ENTITY_INDEX || getIndex(id) > MAX_ENTITIES) {
@@ -165,6 +172,8 @@ void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
         PANIC("Invalid entity index");
     } else if (scene->components[componentID] == NULL) {
         PANIC("Component not registered yet");
+    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, index))->id) != version) {
+        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data.", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id));
     } else {
         getEntityStruct(scene, id)->mask &= ~((ComponentMask)1 << componentID);
     }
@@ -172,10 +181,13 @@ void Scene_Unassign(struct scene* scene, EntityID id, ComponentKey globalKey)
 
 void Scene_MarkPurged(struct scene* scene, EntityID id)
 {
+    EntityIndex index = getIndex(id);
+    EntityVersion version = getVersion(id);
     if (!scene->valid) {
         PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, index))->id) != version) {
+        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data.", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id));
     }
-    int index = getIndex(id);
     Arraylist_Add(&scene->purgedEntities, &index);
 }
 
@@ -217,10 +229,11 @@ bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask,
         PANIC("Scene is invalid, possibly recently destroyed.");
     }
     EntityIndex index = getIndex(id);
+    EntityVersion version = getVersion(id);
     if (index > scene->entities->size) {
         PANIC("Malformed EntityID (i: %d | v: %d)", getIndex(id), getVersion(id));
-    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id) != getVersion(id)) {
-        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data.", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id));
+    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, index))->id) != version) {
+        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data. ticks: %d", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id), Apricot_Ticks);
     }
     struct entity* entt = (struct entity*)Arraylist_Get(scene->entities, index);
     return (entt->mask & mask) == mask;
@@ -228,10 +241,13 @@ bool Scene_EntityHasComponentMask(struct scene* scene, const ComponentMask mask,
 
 bool Scene_EntityHasAnyComponents(struct scene* scene, const ComponentMask mask, EntityID id)
 {
+    EntityIndex index = getIndex(id);
+    EntityVersion version = getVersion(id);
     if (!scene->valid) {
         PANIC("Scene is invalid, possibly recently destroyed.");
+    } else if (getVersion(((struct entity*)Arraylist_Get(scene->entities, index))->id) != version) {
+        PANIC("Outdated EntityID. Version is %d, given version was %d.\n\nThis means the EntityID that was provided to this function has been purged and no longer exists in the scene (or the given EntityID was garbled).\n\nWhile the index might still be the same, the version is incremented to avoid issues like this.\n\nCheck whether or not the place you got the EntityID from was valid. Chances are, it's stale data.", getVersion(((struct entity*)Arraylist_Get(scene->entities, getIndex(id)))->id), getVersion(id));
     }
-    EntityIndex index = getIndex(id);
     struct entity* entt = (struct entity*)Arraylist_Get(scene->entities, index);
     return (entt->mask & mask) != 0;
 }

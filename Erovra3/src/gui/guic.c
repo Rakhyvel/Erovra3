@@ -1020,7 +1020,7 @@ static void renderRadioButtons(Scene* scene)
                 SDL_SetTextureColorMod(radioUnchecked, hoverColor.r, hoverColor.g, hoverColor.b);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
             } else {
-                SDL_SetTextureColorMod(radioUnchecked, borderColor.r, hoverColor.g, hoverColor.b);
+                SDL_SetTextureColorMod(radioUnchecked, borderColor.r, borderColor.g, borderColor.b);
                 Texture_Draw(radioUnchecked, gui->pos.x, buttonY, 20, 20, 0);
             }
             FC_Draw(font, Apricot_Renderer, gui->pos.x + 28, buttonY - 2, radioButtons->options[i]);

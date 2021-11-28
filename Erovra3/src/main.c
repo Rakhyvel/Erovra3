@@ -1,6 +1,10 @@
 /*
 main.c
 
+This game should be a game that you can play at work. Like a solataire/mine sweeper/
+minecraft type game. Shouldn't be something that "immerses" you in it explicitly
+- Shouldn't need network connectivity to play core game
+
 starting state: A capital, and a unit that you can use to expand
 themes: resource management, production management, strategic planning and logistics
 goals:		(1) destroy enemy capital	(2) protect own capital
@@ -19,22 +23,6 @@ Strategy and logistics:
 	Can set up "task forces" or another better name (formation?). Can then assign task forces of task forces to manipulate on the field
 	Set up and plan invasions
 	Maybe a supply line that you'd have to maintain? That'd be hard tho
-
-
-
-Code guidelines:
-	Messy logic is fine as long as it is necessary
-	Long functions are fine as long as they are necessary
-	Similar functions that can be parameratized into one function should be parameritized into one function
-	Utility functions (not systems) that are only called from one place, and are not recursive, should be inlined
-	Update comments for a function when you change something in the method
-	Add line comments to a piece of code when you spend time trying to understand a piece of code
-	Each file should have a header comment giving its purpose
-	Each function should have a comment should tell what it takes in, does, and returns
-	THE LESS LINES OF CODE THE BETTER!
-
-
-
 */
 
 #include "./main.h"
@@ -44,6 +32,8 @@ Code guidelines:
 #include "./scenes/tournament.h"
 #include "engine/apricot.h"
 #include "textures.h"
+#include "./util/heap.h"
+#include "./util/debug.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <string.h>
