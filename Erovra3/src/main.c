@@ -42,7 +42,7 @@ Strategy and logistics:
 	Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Apricot_Init("Erovra 3.9.4", 1280, 680);
+    Apricot_Init("Erovra 3.9.5", 1280, 680);
     GUI_Init();
     Components_Init();
     Textures_Init();

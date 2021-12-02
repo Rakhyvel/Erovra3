@@ -64,7 +64,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         50.0f, // Attack amount
         15.0f, // Attack dist
-        Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, EXPANSION_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, EXPANSION_COMPONENT_ID),
         15, // Attack time (ticks)
         &Bomb_Create,
         true
@@ -88,7 +88,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, bomberID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, bomberID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, bomberID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, bomberID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return bomberID;
 }

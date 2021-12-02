@@ -18,8 +18,8 @@ EntityID defeatImage;
 SDL_Texture* victoryTexture = NULL;
 SDL_Texture* defeatTexture = NULL;
 
-/* The state the pause menu is currently in */
-enum pauseState state;
+/* The pauseState the pause menu is currently in */
+enum pauseState pauseState;
 
 /* Reference to the match scene. Used to render match in background */
 static Scene* matchScene = NULL;
@@ -35,7 +35,7 @@ int fade = 0;
  */
 void Pause_Surrender(Scene* scene, EntityID id)
 {
-    state = DEFEAT;
+    pauseState = DEFEAT;
 }
 
 /*	Callback function, called from "back to game" button in pause menu. 
@@ -46,7 +46,7 @@ void Pause_Surrender(Scene* scene, EntityID id)
  */
 void Pause_BackToGame(Scene* scene, EntityID id)
 {
-    state = RETURN_MATCH;
+    pauseState = RETURN_MATCH;
 }
 
 /*	Callback function, called from "back to menu" button in pause menus. Returns
@@ -57,7 +57,7 @@ void Pause_BackToGame(Scene* scene, EntityID id)
  */
 void Pause_BackToMenu(Scene* scene, EntityID id)
 {
-    state = RETURN_MENU;
+    pauseState = RETURN_MENU;
 }
 
 /*	Callback function, called from "exit" button in pause menus. Ends game.
@@ -70,7 +70,7 @@ void Pause_Exit(Scene* scene, EntityID id)
     exit(0);
 }
 
-/*	Checks menu state, and increments/decrements fade transition value accordingly
+/*	Checks menu pauseState, and increments/decrements fade transition value accordingly
  * 
  *	@param scene	Scene reference
  */
@@ -78,11 +78,11 @@ void Pause_Update(Scene* scene)
 {
     static escDown = true;
 	// Regular menus
-    if (state == PAUSE || state == VICTORY || state == DEFEAT) {
+    if (pauseState == PAUSE || pauseState == VICTORY || pauseState == DEFEAT) {
 		// If in pause scene, check if esc key is pressed. Return to match if so
-        if (state == PAUSE && Apricot_Keys[SDL_SCANCODE_ESCAPE]) {
+        if (pauseState == PAUSE && Apricot_Keys[SDL_SCANCODE_ESCAPE]) {
             if (!escDown) {
-                state = RETURN_MATCH;
+                pauseState = RETURN_MATCH;
                 escDown = true;
                 return;
             }
@@ -96,7 +96,7 @@ void Pause_Update(Scene* scene)
             fade += 128 / 10;
         }
     } 
-	// Transition states RETURN_MATCH and RETURN_MENU. Update transistion states
+	// Transition pauseStates RETURN_MATCH and RETURN_MENU. Update transistion pauseStates
 	else if (fade > 0) {
         fade -= 128 / 10;
     } 
@@ -104,9 +104,9 @@ void Pause_Update(Scene* scene)
 	else {
         // Reset statics to default before leaving
         escDown = true;
-        if (state == RETURN_MATCH) {
+        if (pauseState == RETURN_MATCH) {
             Apricot_PopScene(1);
-        } else if (state == RETURN_MENU) {
+        } else if (pauseState == RETURN_MENU) {
             Apricot_PopScene(2);
         }
         return;
@@ -119,12 +119,12 @@ void Pause_Update(Scene* scene)
     GUI_CenterElementAt(scene, victoryImage, 0, -150 - pow((128.0f - fade) / 128.0f, 2) * 1000);
     GUI_CenterElementAt(scene, defeatImage, 0, -150 - pow((128.0f - fade) / 128.0f, 2) * 1000);
 
-	// Select which container and image to show based on state
-    GUI_SetShown(scene, pauseMenuContainer, state == PAUSE);
-    GUI_SetShown(scene, victoryMenuContainer, state == VICTORY);
-    GUI_SetShown(scene, victoryImage, state == VICTORY);
-    GUI_SetShown(scene, defeatMenuContainer, state == DEFEAT);
-    GUI_SetShown(scene, defeatImage, state == DEFEAT);
+	// Select which container and image to show based on pauseState
+    GUI_SetShown(scene, pauseMenuContainer, pauseState == PAUSE);
+    GUI_SetShown(scene, victoryMenuContainer, pauseState == VICTORY);
+    GUI_SetShown(scene, victoryImage, pauseState == VICTORY);
+    GUI_SetShown(scene, defeatMenuContainer, pauseState == DEFEAT);
+    GUI_SetShown(scene, defeatImage, pauseState == DEFEAT);
 
     GUI_Update(scene);
 }
@@ -154,14 +154,14 @@ void Pause_Destroy(Scene* scene)
 /*	Creates scene
  * 
  *	@param scene	Scene reference
- *	@param s		Pause state to start pause scene in
+ *	@param s		Pause pauseState to start pause scene in
  */
 Scene* Pause_Init(Scene* mScene, enum pauseState s)
 {
     Scene* scene = Scene_Create(&GUI_Register, &Pause_Update, &Pause_Render, &Pause_Destroy);
     matchScene = mScene;
     fade = 0;
-    state = s;
+    pauseState = s;
 
     if (!victoryTexture) {
         victoryTexture = Texture_Load("res/victory.png");

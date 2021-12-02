@@ -85,7 +85,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, mineID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, mineID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return mineID;

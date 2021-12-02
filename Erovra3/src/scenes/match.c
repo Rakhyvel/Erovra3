@@ -500,14 +500,16 @@ void Match_DetectHit(struct scene* scene)
         }
         health->aliveTicks++;
 
-        ComponentKey otherNationID = GET_COMPONENT_FIELD(scene, simpleRenderable->nation, NATION_COMPONENT_ID, Nation, enemyNationFlag);
-
         // Find closest enemy projectile
         Nation* otherNation = NULL;
         SimpleRenderable* otherSimpleRenderable = NULL;
-        system(scene, otherID, MOTION_COMPONENT_ID, otherNationID, PROJECTILE_COMPONENT_ID)
+        system(scene, otherID, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
         {
             if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
+                continue;
+            }
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
                 continue;
             }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
@@ -541,6 +543,10 @@ void Match_DetectHit(struct scene* scene)
                 // If dead don't bother checking the rest of the particles
                 if (health->health <= 0) {
                     health->isDead = true;
+                    if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
+                        City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
+                        city->captureNation = otherRender->nation;
+                    }
                     break;
                 }
             }
@@ -559,7 +565,6 @@ void Match_Death(Scene* scene)
             SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-            Nation* otherNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
 
             if (health->deathTicks < 16) {
                 health->deathTicks += 1;
@@ -569,13 +574,15 @@ void Match_Death(Scene* scene)
                 if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                     Scene_MarkPurged(scene, id);
                     nation->resources[ResourceType_POPULATION]--;
-                } else if (otherNation != NULL) {
+                } else {
+                    City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
+                    Nation* otherNation = (Nation*)Scene_GetComponent(scene, city->captureNation, NATION_COMPONENT_ID);
                     printf("City at (%f, %f) captured on tick, tick: %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
-                    simpleRenderable->nation = nation->enemyNation;
-                    Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
-                    Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
-                    Scene_Assign(scene, id, otherNation->ownNationFlag, NULL);
+                    Arraylist_Add(&otherNation->cities, &id);
+                    simpleRenderable->nation = city->captureNation;
+                    city->captureNation = INVALID_ENTITY_INDEX;
+                    city->isCapital = false;
                     health->health = 100;
                     health->isDead = false;
                     health->deathTicks = 0;
@@ -626,7 +633,11 @@ void Match_CheckWin(Scene* scene)
     system(scene, id, NATION_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        if (!Scene_EntityHasComponents(scene, nation->capital, nation->ownNationFlag)) {
+        if (nation->capital == INVALID_ENTITY_INDEX) {
+            continue;
+        }
+        SimpleRenderable* capitalRender = (Scene*)Scene_GetComponent(scene, nation->capital, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (capitalRender->nation != id) {
 #ifdef TOURNAMENT
             if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
                 printf("Defeat\n");
@@ -636,10 +647,11 @@ void Match_CheckWin(Scene* scene)
             Game_PopScene(1);
             return;
 #else
-            if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
+            if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
                 Pause_Init(scene, DEFEAT);
             } else {
-                Pause_Init(scene, VICTORY);
+                //Pause_Init(scene, VICTORY);
+                nation->capital = INVALID_ENTITY_INDEX;
             }
 #endif
         }
@@ -744,8 +756,13 @@ void Match_Target(struct scene* scene)
                 // Check for enemy walls
                 SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
                 Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-                system(scene, wallID, WALL_FLAG_COMPONENT_ID, nation->enemyNationFlag)
+                system(scene, wallID, WALL_FLAG_COMPONENT_ID)
                 {
+                    // Can't pass through the walls of other nations (even if friendly)
+                    SimpleRenderable* wallRender = (SimpleRenderable*)Scene_GetComponent(scene, wallID, SIMPLE_RENDERABLE_COMPONENT_ID);
+                    if (wallRender->nation == simpleRenderable->nation) {
+                        continue;
+                    }
                     Motion* wallMotion = (Motion*)Scene_GetComponent(scene, wallID, MOTION_COMPONENT_ID);
                     float beforeDiff = 0;
                     float afterDiff = 0;
@@ -759,18 +776,6 @@ void Match_Target(struct scene* scene)
                     if (beforeDiff < 0 && afterDiff > 0 || beforeDiff > 0 && afterDiff < 0) {
                         motion->vel.x = 0;
                         motion->vel.y = 0;
-                    }
-                }
-
-                // Check for friendly units TODO
-                if (Scene_EntityHasComponents(scene, id, GROUND_UNIT_FLAG_COMPONENT_ID)) {
-                    system(scene, wallID, GROUND_UNIT_FLAG_COMPONENT_ID, nation->enemyNationFlag)
-                    {
-                        Motion* otherMotion = (Motion*)Scene_GetComponent(scene, wallID, MOTION_COMPONENT_ID);
-                        if (Vector_Dist(motion->pos, otherMotion->pos) < 16) {
-                            motion->vel.x = 0;
-                            motion->vel.y = 0;
-                        }
                     }
                 }
             }
@@ -1145,9 +1150,12 @@ void Match_AI(Scene* scene)
     system(scene, id, NATION_COMPONENT_ID, AI_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
-        Goap_Update(scene, &(ai->goap), nation->ownNationFlag);
-        //AI_TargetGroundUnitsRandomly(scene, nation->ownNationFlag);
+        if (nation->capital != INVALID_ENTITY_INDEX) {
+            AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
+            Goap_Update(scene, &(ai->goap), id);
+        } else {
+            AI_TargetGroundUnitsRandomly(scene, id);
+        }
     }
 }
 
@@ -1169,7 +1177,6 @@ void Match_CombatantAttack(struct scene* scene)
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
         if (health->isDead) {
             continue;
@@ -1185,6 +1192,10 @@ void Match_CombatantAttack(struct scene* scene)
         system_mask(scene, otherID, combatant->enemyMask)
         {
             if (!onlyBuildings && Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
+                continue;
+            }
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
                 continue;
             }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
@@ -1276,7 +1287,6 @@ void Match_AirplaneAttack(Scene* scene)
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
         // Find closest enemy ground unit
         float closestDist = combatant->attackDist + 100.0f;
@@ -1286,6 +1296,10 @@ void Match_AirplaneAttack(Scene* scene)
         float closestZ = -1;
         system_mask(scene, otherID, combatant->enemyMask)
         {
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+                continue;
+            }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
             float patrolDist = Vector_Dist(otherMotion->pos, patrol->patrolPoint);
@@ -1350,8 +1364,12 @@ void Match_AirplaneScout(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
-        system(scene, otherID, UNIT_COMPONENT_ID, nation->enemyNationFlag)
+        system(scene, otherID, UNIT_COMPONENT_ID)
         {
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+                continue;
+            }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             if (Vector_Dist(motion->pos, otherMotion->pos) < 128) {
@@ -1384,6 +1402,7 @@ void Match_ProduceResources(struct scene* scene)
 
         int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
         if (health->aliveTicks % ticks == 0) {
+            // Will not produce resources for a rump state
             resourceProducer->particleConstructor(scene, motion->pos, simpleRenderable->nation);
         }
     }
@@ -1404,6 +1423,9 @@ void Match_DestroyResourceParticles(struct scene* scene)
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        if (nation->capital == INVALID_ENTITY_INDEX) {
+            continue;
+        }
         Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
 
         if (Vector_Dist(motion->pos, capital->pos) < 6) {
@@ -1514,7 +1536,6 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
             SimpleRenderable* homeCitySimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID);
             if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
                 Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
-                simpleRenderable->nation = homeCitySimpleRenderable->nation;
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
                 newNation->costs[ResourceType_COIN][unit->type] *= 2;
 
@@ -1543,12 +1564,10 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 nation->unitCount[unit->type]--;
                 newNation->unitCount[unit->type]++;
 
+                simpleRenderable->nation = homeCitySimpleRenderable->nation;
                 Scene_Unassign(scene, id, AI_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
-                Scene_Unassign(scene, id, ENEMY_NATION_FLAG_COMPONENT_ID);
-                Scene_Unassign(scene, id, HOME_NATION_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
-                Scene_Assign(scene, id, newNation->ownNationFlag, NULL);
                 printf("Expansion at (%f, %f) updated on %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
             }
         }
@@ -1645,7 +1664,7 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -1682,7 +1701,7 @@ void Match_DrawSelectionArrows(Scene* scene)
             Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
         }
     }
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -1825,7 +1844,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        simpleRenderable->hidden = nation->ownNationFlag == ENEMY_NATION_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        //simpleRenderable->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -1838,7 +1857,7 @@ void Match_DrawMiniMap(Scene* scene)
     SDL_RenderCopy(Apricot_Renderer, miniMapTexture, NULL, &rect);
 
     // Draw ore
-    system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
@@ -1874,7 +1893,7 @@ void Match_RenderOrderButtons(Scene* scene)
 {
     // Quickly find home nation
     Nation* nation = NULL;
-    system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
         break;
@@ -1946,7 +1965,7 @@ void Match_RenderNationInfo(Scene* scene)
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
-    system(scene, id, NATION_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID)
+    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
@@ -2026,7 +2045,7 @@ void Match_RenderMessageContainer(Scene* scene)
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, HOME_NATION_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, PLAYER_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -2448,68 +2467,113 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
 
     Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
 
-    // Create and register home city
-    Vector homeVector = { (float)terrain->size, (float)terrain->size };
-    Vector enemyVector = { 0, 0 };
-    float largestDist = 0;
-    for (int i = 0; i < terrain->tileSize * terrain->tileSize - 1; i++) {
-        Vector vec1 = (Vector) { (i % terrain->tileSize) * 64.0f + 32.0f, (int)(i / terrain->tileSize) * 64.0f + 32.0f };
-        if (!Terrain_IsSolidSquare(terrain, vec1)) {
-            continue;
+    int nNations = 6;
+    int tileSize = mapSize / 64;
+    int trySize = 10000;
+    Arraylist* nationVectors = Arraylist_Create(nNations, sizeof(Vector));
+    Arraylist* tempVectors = Arraylist_Create(nNations, sizeof(Vector));
+    for (int j = 0; j < nNations; j++) {
+        Vector v = { 0, 0 };
+        Arraylist_Add(&tempVectors, &v);
+    }
+    double largestDist = 0;
+    // Try a couple different positions
+    for (int i = 0; i < trySize; i++) {
+        // Try random tiles
+        for (int j = 0; j < nNations; j++) {
+            float randX = 64 * (rand() % tileSize) + 32;
+            float randY = 64 * (rand() % tileSize) + 32;
+            Vector v = { randX, randY };
+            if (!Terrain_IsSolidSquare(terrain, v)) {
+                j--;
+                continue;
+            }
+            Arraylist_Put(tempVectors, j, &v);
         }
-        if (Terrain_GetOre(terrain, (int)vec1.x, (int)vec1.y) < 0.3)
-            continue;
-        for (int j = i + 1; j < terrain->tileSize * terrain->tileSize; j++) {
-            Vector vec2 = (Vector) { (j % terrain->tileSize) * 64.0f + 32.0f, (int)(j / terrain->tileSize) * 64.0f + 32.0f };
-            if (!Terrain_IsSolidSquare(terrain, vec2)) {
-                continue;
+
+        // Find the product of all the distances in the graph of nations. Remember if it is larger
+        double tempDist = 1;
+        for (int j = 0; j < nNations - 1; j++) {
+            for (int k = j + 1; k < nNations; k++) {
+                float dist = Vector_Dist(*(Vector*)Arraylist_Get(tempVectors, j), *(Vector*)Arraylist_Get(tempVectors, k));
+                if (dist < 7 * 64) {
+                    tempDist = 0;
+                    j = nNations;
+                    break;
+                } else {
+                    tempDist += dist;
+                }
             }
-            if (Terrain_GetOre(terrain, (int)vec2.x, (int)vec2.y) < 0.3)
-                continue;
-            float tempDist = Vector_Dist(vec1, vec2);
-            if (tempDist > largestDist) {
-                largestDist = tempDist;
-                enemyVector = vec1;
-                homeVector = vec2;
-            }
+        }
+        if (tempDist > largestDist) {
+            Arraylist_Copy(&nationVectors, tempVectors);
+            largestDist = tempDist;
         }
     }
 
-    if (homeVector.x != terrain->size) {
-        Terrain_FindCapitalPath(terrain, homeVector, enemyVector);
-
-        // Create home and enemy nations
-        EntityID homeNation;
-        if (AIControlled) {
-            homeNation = Nation_Create(match, &AI_Init, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
-        } else {
-            homeNation = Nation_Create(match, NULL, (SDL_Color) { 60, 100, 250 }, terrain->size, HOME_NATION_FLAG_COMPONENT_ID, ENEMY_NATION_FLAG_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID);
+    if (largestDist > 0) {
+        // Locate all port cities between each nation
+        /*
+        bool foundKeyContinents = false;
+        for (int i = 0; i < nNations - 1; i++) {
+            for (int j = i + 1; j < nNations; j++) {
+                foundKeyContinents |= Terrain_FindCapitalPath(terrain, *(Vector*)Arraylist_Get(nationVectors, i), *(Vector*)Arraylist_Get(nationVectors, j));
+            }
         }
-        EntityID enemyNation = Nation_Create(match, &AI_Init, (SDL_Color) { 250, 80, 80 }, terrain->size, ENEMY_NATION_FLAG_COMPONENT_ID, HOME_NATION_FLAG_COMPONENT_ID, AI_COMPONENT_ID);
+        if (!foundKeyContinents) {
+        }
+		*/
+        Arraylist_Clear(terrain->ports);
 
-        // Set enemy nations to each other
-        SET_COMPONENT_FIELD(match, homeNation, NATION_COMPONENT_ID, Nation, enemyNation, enemyNation);
-        SET_COMPONENT_FIELD(match, enemyNation, NATION_COMPONENT_ID, Nation, enemyNation, homeNation);
+        // Create nations, with the first nation being player controlled
+        Arraylist* nations = Arraylist_Create(nNations, sizeof(EntityID));
+        for (int j = 0; j < nNations; j++) {
+            EntityID temp = INVALID_ENTITY_INDEX;
+            Arraylist_Add(&nations, &temp);
+        }
+        SDL_Color nationColors[] = {
+            (SDL_Color) { 60, 107, 250 }, // Blue
+            (SDL_Color) { 250, 60, 60 },  // Red
+            (SDL_Color) { 60, 250, 60 },  // Green
+            (SDL_Color) { 250, 250, 60 }, // Yellow
+            (SDL_Color) { 250, 60, 250 }, // Magenta
+            (SDL_Color) { 250, 155, 60 }, // Orange
 
-        EntityID homeCapital = City_Create(match, homeVector, homeNation, capitalName, true);
-        Terrain_SetBuildingAt(terrain, homeCapital, (int)homeVector.x, (int)homeVector.y);
-        Terrain_SetOffset(homeVector);
+        };
+        for (int i = 0; i < nNations; i++) {
+            EntityID nation;
+            EntityID capital;
+            Vector nationVector = *(Vector*)Arraylist_Get(nationVectors, i);
+            if (i == 0 && !AIControlled) {
+                nation = Nation_Create(match, NULL, nationColors[i], terrain->size, PLAYER_FLAG_COMPONENT_ID);
+                Terrain_SetOffset(nationVector);
+                capital = City_Create(match, nationVector, nation, capitalName, true);
+            } else {
+                char enemyNameBuffer[20];
+                Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
+                nation = Nation_Create(match, AI_Init, nationColors[i], terrain->size, AI_COMPONENT_ID);
+                capital = City_Create(match, nationVector, nation, enemyNameBuffer, true);
+            }
+            // Register nation
+            Arraylist_Put(nations, i, &nation);
+            // Register capital
+            Terrain_SetBuildingAt(terrain, capital, (int)nationVector.x, (int)nationVector.y);
+            Nation_SetCapital(match, nation, capital);
 
-        // Create and register enemy city
-        char enemyNameBuffer[20];
-        Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
-        EntityID enemyCapital = City_Create(match, enemyVector, enemyNation, enemyNameBuffer, true);
-        Terrain_SetBuildingAt(terrain, enemyCapital, (int)enemyVector.x, (int)enemyVector.y);
+            // Create engineers
+            Engineer_Create(match, nationVector, nation);
+            ((Nation*)Scene_GetComponent(match, nation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
+        }
 
-        // Create home and enemy engineers
-        ((Nation*)Scene_GetComponent(match, homeNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
-        ((Nation*)Scene_GetComponent(match, enemyNation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
-        Engineer_Create(match, GET_COMPONENT_FIELD(match, homeCapital, MOTION_COMPONENT_ID, Motion, pos), homeNation);
-        Engineer_Create(match, GET_COMPONENT_FIELD(match, enemyCapital, MOTION_COMPONENT_ID, Motion, pos), enemyNation);
-
-        // Set nations capitals
-        Nation_SetCapital(match, homeNation, homeCapital);
-        Nation_SetCapital(match, enemyNation, enemyCapital);
+        // Make all nations enemies of each other
+        for (int i = 0; i < nNations - 1; i++) {
+            for (int j = i + 1; j < nNations; j++) {
+                EntityID nation1 = *(EntityID*)Arraylist_Get(nations, i);
+                EntityID nation2 = *(EntityID*)Arraylist_Get(nations, j);
+                Arraylist_Add(&(GET_COMPONENT_FIELD(match, nation1, NATION_COMPONENT_ID, Nation, enemyNations)), &nation2);
+                Arraylist_Add(&(GET_COMPONENT_FIELD(match, nation2, NATION_COMPONENT_ID, Nation, enemyNations)), &nation1);
+            }
+        }
     } else {
         Match_AddMessage(errorColor, "Space for capitals could not be found!");
     }

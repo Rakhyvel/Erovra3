@@ -77,7 +77,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, ENGINEER_UNIT_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, engineerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, engineerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return engineerID;
 }

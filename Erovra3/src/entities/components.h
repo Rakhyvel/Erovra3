@@ -197,15 +197,13 @@ ComponentKey BOMB_COMPONENT_ID;
 */
 typedef struct nation {
     SDL_Color color; // Color to render units
-    ComponentKey ownNationFlag; // Flag that determines if an entity belongs to this nation
-    ComponentKey enemyNationFlag; // Flag that determines if an entity belongs to enemy nation
     ComponentKey controlFlag; // Flag that determines the control method for the nation
     int resources[_ResourceType_Length]; // Array of resource values
     int costs[_ResourceType_Length][_UnitType_Length]; // Array of array of resources, for each unit
     int unitCount[_UnitType_Length]; // How many units there are
     int prodCount[_UnitType_Length]; // How many units are in production currently
     EntityID capital; // EntityID of nation's capital
-    EntityID enemyNation; // EntityID of other nation, NOT the flag for enemy nation
+    Arraylist* enemyNations; // EntityIDs of enemy nations
     float* visitedSpaces; // Dynamic array, spaces that units have been to. Only used by AI's
     size_t visitedSpacesSize;  // Twice the tile size
     Arraylist* highPrioritySpaces; // A list of vectors of spaces where enemies have been spotted
@@ -213,8 +211,6 @@ typedef struct nation {
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
 } Nation;
 ComponentKey NATION_COMPONENT_ID;
-ComponentKey HOME_NATION_FLAG_COMPONENT_ID; // REMOVE THESE!
-ComponentKey ENEMY_NATION_FLAG_COMPONENT_ID; // REMOVE THESE!
 ComponentKey PLAYER_FLAG_COMPONENT_ID;
 
 /* Assigned to nations that use a goal-oriented action planner to make decisions
@@ -230,6 +226,7 @@ typedef struct city {
     char name[20]; // Name of the city
     bool isCapital; // Whether or not the city is a capital
     EntityID expansions[4]; // Corresponds to NWSE CardinalDirection id
+    EntityID captureNation; // The nation that this city will be captured by
 } City;
 ComponentKey CITY_COMPONENT_ID;
 

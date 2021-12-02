@@ -49,10 +49,6 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         1,
         nationStruct->unitCount[UnitType_FARM]
     };
-    type.name[0] = 'f';
-    type.name[1] = 'a';
-    type.name[2] = 'r';
-    type.name[3] = 'm';
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
     Hoverable hoverable = {
@@ -73,7 +69,6 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, farmID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, farmID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, farmID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, farmID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return farmID;

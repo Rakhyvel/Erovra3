@@ -312,29 +312,49 @@ x Make sea slightly darker on right-rising gradients, using the same logic as la
 x Game crashes when user adjusts map settings while map preview is loading
 
 3.10.x- Pivot
-- More than one nation (Maybe an array of enemy nations)
-	- Each unit has an entityID of their nation, not a flag
-- Resources like wood
+x More than one nation (Maybe an array of enemy nations)
+	x Each unit has an entityID of their nation, not a flag
+	- Procedurally generate more than two nations
+	- Ports are reset, make that not so
+- Resources like wood, oil
+	- Wood to build buildings
+	- Oil for planes, drains and needs to be replenished or else they fall from the sky
 - More non-combat units like miners, farmers
 	- miners go out and can test soil, can set up mines, mines can pack up and leave
 	- farmers, "     " farms
 	- settlers "     " cities
+		- Cities should be cheap to settle, scale linearly with how many cities there are
+		- Quadratic to upgrade a city (or however much it would be depending on the coin rate, should remain relatively constant)
+		- This would make outposts possible
 - Academy trains other kinds of units
 	- Pilots
 - Cities can become restless, go rogue and spawn new rebel nations
 	- Not enough food
 	- Default on upkeep
+	- Have a happiness meter
+		- Building consumer goods in factories increaes this happiness
+		- Naturally decreases
+		- Decreases if food production is too low
+		- Captured cities start with low happiness
 - Buildings can be upgraded, but require more upkeep
 - "Infinite" maps?
 	- You'd only be able to see the terrain of what you've explored (GOOD IDEA!)
+	- Store map data on disk, access when needed
+	- Temporarily load the segments that the player views as textures
+		- Would be efficient on memory
+		- But would mean only things could only happen when the user is viewing (bad)
 - TRANSPORT BOATS!!!!!! (cmon mane)
 - Debug menu
 	- Can time warp
 	- Can show other nations
-	- Place to display other info
+	- Show AI goals above the capital
+	- Show AI visited tiles
 - Settings where you can turn down the volume!
 - Swap "Surrender" and "Back to game" buttons in menu
 - Fix city names, serialize the trie
+- Different shapes for the mini map
+- Build walls 3 tile radius around capital
+- Increase attacker to fighter ratio
 
 3.11.x- Multiplayer
 - Order particles

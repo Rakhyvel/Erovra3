@@ -5,9 +5,12 @@
 
 EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
 {
+    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
+    if (nation->capital == INVALID_ENTITY_INDEX) {
+        return INVALID_ENTITY_INDEX;
+    }
     EntityID coinID = Scene_NewEntity(scene);
 
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
     Vector vel = Vector_Sub(capitalMotion->pos, pos);
     vel = Vector_Normalize(vel);

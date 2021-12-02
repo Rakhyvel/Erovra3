@@ -58,7 +58,6 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
     };
     Scene_Assign(scene, shellID, PROJECTILE_COMPONENT_ID, &projectile);
 
-    Scene_Assign(scene, shellID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, shellID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return shellID;
 }

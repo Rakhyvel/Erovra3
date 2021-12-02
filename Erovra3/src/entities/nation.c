@@ -1,14 +1,12 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey ownNation, ComponentKey enemyNation, ComponentKey controlFlag)
+EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag)
 {
     EntityID nationID = Scene_NewEntity(scene);
     Nation nation = {
         color,
-        ownNation,
-        enemyNation,
-        controlFlag,
+        controlFlag
     };
     // Initial resources
     nation.resources[ResourceType_COIN] = 25;
@@ -58,6 +56,7 @@ EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Co
 
     nation.showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
+	nation.enemyNations = Arraylist_Create(5, sizeof(EntityID));
     nation.cities = Arraylist_Create(10, sizeof(EntityID));
 
     if (controlFlag == AI_COMPONENT_ID) {
@@ -69,7 +68,6 @@ EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Co
         Scene_Assign(scene, nationID, controlFlag, NULL);
     }
     Scene_Assign(scene, nationID, NATION_COMPONENT_ID, &nation);
-    Scene_Assign(scene, nationID, ownNation, NULL);
     return nationID;
 }
 

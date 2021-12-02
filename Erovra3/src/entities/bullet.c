@@ -49,7 +49,6 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     Scene_Assign(scene, bulletID, PROJECTILE_COMPONENT_ID, &projectile);
     Scene_Assign(scene, bulletID, BULLET_COMPONENT_ID, NULL);
 
-    Scene_Assign(scene, bulletID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     return bulletID;
 }
 

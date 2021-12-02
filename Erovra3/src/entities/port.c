@@ -82,7 +82,6 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, portID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, portID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return portID;

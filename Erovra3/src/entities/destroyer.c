@@ -58,7 +58,7 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         1.0f, // Attack
         125.0f, // Dist
-        Scene_CreateMask(scene, 3, MOTION_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID),
         120, // Time
         &Shell_Create,
         false
@@ -83,7 +83,6 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Scene_Assign(scene, destroyerID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, destroyerID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, destroyerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, destroyerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return destroyerID;
 }

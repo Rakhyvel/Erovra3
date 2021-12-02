@@ -76,7 +76,6 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, factoryID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, factoryID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return factoryID;

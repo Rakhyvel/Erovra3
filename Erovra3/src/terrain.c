@@ -145,7 +145,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         float hue = max(30, min(120, 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 35.3635585447));
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
         float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 160.0f);
-        return Terrain_HSVtoRGB(hue + 120 * (1 - light) - 20, min(0.3f, saturation), max(0.2f, min(0.8f, value * light)));
+        return Terrain_HSVtoRGB(hue + 120 * (1 - light) - 20, min(0.3f, max(0.2f, saturation + (0.5f - light) * 0.1f)), max(0.2f, min(0.8f, value * light)));
     }
 }
 
@@ -388,7 +388,7 @@ int Terrain_LineOfSightSeaToLand(struct terrain* terrain, Vector from, Vector in
     return -1;
 }
 
-void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
+bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
 {
     clock_t time = clock();
     struct dijkstrasResult path = Terrain_Dijkstra(terrain, from, to);
@@ -406,9 +406,8 @@ void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
     printf("%f\n", ((double)time) / CLOCKS_PER_SEC);
 
     if (terrain->keyContinents->size < 2) {
-        Arraylist_Clear(terrain->ports);
         printf("No key continents\n");
-        return;
+        return false;
     }
     // Go through each port point, check to see if they are valid (can see (dist is less than 8 times the size) more than one key continent)
     for (int i = 0; i < terrain->ports->size; i++) {
@@ -435,6 +434,7 @@ void Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
         }
         printf("\n");
     }
+    return true;
 }
 
 /*

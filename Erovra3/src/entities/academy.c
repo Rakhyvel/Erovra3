@@ -80,7 +80,6 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, academyID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, academyID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, academyID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, academyID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
     return academyID;

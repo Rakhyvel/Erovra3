@@ -156,3 +156,12 @@ bool Arraylist_AssertSize(Arraylist** listPtr, size_t size)
     }
     return false;
 }
+
+// type sizes should be the same
+void Arraylist_Copy(Arraylist** dst, Arraylist* src)
+{
+    Arraylist_Clear(dst);
+    for (int i = 0; i < src->size; i++) {
+        Arraylist_Add(dst, Arraylist_Get(src, i));
+    }
+}

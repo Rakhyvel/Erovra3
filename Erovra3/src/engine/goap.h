@@ -44,7 +44,7 @@ typedef struct action {
     VariableID preconditions[MAX_PRECONDITIONS]; // Variables that action sees as preconditions before running, in order
     Uint8 costs[MAX_PRECONDITIONS]; // The costs for each precondition
     int numPreconditions;
-    void (*actionPtr)(Scene* scene, ComponentKey flag); // Action to complete
+    void (*actionPtr)(Scene* scene, EntityID intelligence); // Action to complete
     char name[16];
 } Action;
 
@@ -57,7 +57,7 @@ typedef struct goap {
 
     // "Variables" should be enums
     bool variables[MAX_VARIABLES];
-    void (*updateVariableSystem)(Scene* scene, struct goap* goap, ComponentKey flag); // Updates the variables according to the scene state
+    void (*updateVariableSystem)(Scene* scene, struct goap* goap, EntityID intelligence); // Updates the variables according to the scene state
 
     // Actions are allocated sequentially
     Action actions[MAX_ACTIONS];
@@ -104,10 +104,10 @@ void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, Comp
 * Performs Dijkstra's algorithm on graph, finds the action (system) to execute,
 * and executes it.
 * 
-* @param scene	The scene that the AI inhabits
-* @param goap	The GOAP struct to use for AI
-* @param flag	The flag used to distinguish entities as part of this AI
+* @param scene			The scene that the AI inhabits
+* @param goap			The GOAP struct to use for AI
+* @param intelligence	The entity representing the AI
 */
-void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag);
+void Goap_Update(Scene* scene, Goap* goap, EntityID intelligence);
 
 #endif

@@ -58,7 +58,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         0.2f,
         68.0f,
-        Scene_CreateMask(scene, 2, LAND_UNIT_FLAG_COMPONENT_ID, nationStruct->enemyNationFlag),
+        Scene_CreateMask(scene, 1, LAND_UNIT_FLAG_COMPONENT_ID),
         30,
         &Bullet_Create,
         true
@@ -84,7 +84,6 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, ownNationFlag), NULL);
     Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return infantryID;
 }

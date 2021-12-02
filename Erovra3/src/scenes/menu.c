@@ -65,7 +65,7 @@ Lexicon* lexicon;
 enum state {
     GENERATING,
     EROSION,
-	IDLE
+    IDLE
 };
 volatile enum state state;
 // Incremented by functions to asyncly get status for progress bar
@@ -124,7 +124,8 @@ static int generatePreview(void* ptr)
     Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
-            map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
+            //map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * size] = (1.5f - seaLevel->value) / 3.0f * powf(map[x + y * size], 2) + 0.5f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * size];
         }
     }
 
@@ -161,7 +162,7 @@ static int generateFullTerrain(void* ptr)
     Perlin_Normalize(map, fullMapSize);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
-            map[x + y * fullMapSize] = map[x + y * fullMapSize] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
+            map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.0f * powf(map[x + y * fullMapSize], 2) + 0.5f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
         }
     }
 
@@ -199,6 +200,8 @@ void Menu_ReconstructMap(Scene* scene, EntityID id)
     // Call the generatePreview to update the map
     if (state == IDLE) {
         SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
+    } else {
+        printf("%d\n", state);
     }
 
     // Resume updating GUI
@@ -315,6 +318,7 @@ void Menu_Update(Scene* scene)
             needsRepaint = false;
             generating = false;
             done = false;
+            state = IDLE; // Let other threads start
 
             Match_Init(map, capitalName->text, lexicon, fullMapSize, AIControlled->value);
             return; // Always return after scene stack disruption!
@@ -399,6 +403,7 @@ Scene* Menu_Init()
     camera = (Vector) { -4000, -4000 };
     vel = (Vector) { 0, 0 };
     acc.y = 0;
+    state = IDLE;
 
     logoSpacerVel = 0;
     logoSpacerAcc = -20;
@@ -460,8 +465,6 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, loadingMatch, GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Loading match"));
     GUI_ContainerAdd(scene, loadingMatch, statusText);
     GUI_ContainerAdd(scene, loadingMatch, progressBar);
-
-	state = IDLE;
 
     Apricot_PushScene(scene);
     return scene;

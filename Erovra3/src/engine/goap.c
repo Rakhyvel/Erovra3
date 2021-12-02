@@ -52,10 +52,10 @@ void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, Comp
     goap->actions[goap->numActions++] = action;
 }
 
-void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
+void Goap_Update(Scene* scene, Goap* goap, EntityID intelligence)
 {
     // Update the variables before running planner
-    goap->updateVariableSystem(scene, goap, flag);
+    goap->updateVariableSystem(scene, goap, intelligence);
 
     int dist[MAX_ACTIONS]; // The cost from each action the to the main goal
     ActionID parent[MAX_ACTIONS];
@@ -131,7 +131,7 @@ void Goap_Update(Scene* scene, Goap* goap, ComponentKey flag)
         }
 
         if (bestAction.actionPtr) {
-            bestAction.actionPtr(scene, flag);
+            bestAction.actionPtr(scene, intelligence);
         }
     }
 }

@@ -217,7 +217,7 @@ EntityID Mine_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCi
 *	@param controlFlag	Component key for how the entities in the nation are controlled
 *	@return EntityID of created nation
 */
-EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey homeNation, ComponentKey enemyNation, ComponentKey controlFlag);
+EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag);
 
 /*	Assigns the capital for a nation
 * 

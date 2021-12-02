@@ -10,23 +10,18 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type, bool leaveOneSpace)
+static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bool leaveOneSpace)
 {
-    Nation* nation = NULL;
-    system(scene, id, NATION_COMPONENT_ID, key)
-    {
-        nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        break;
-    }
-    if (nation == NULL) {
-        PANIC("Didnt find nation");
-    }
+    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
-    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
+    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = (Vector) { -1, -1 };
@@ -105,23 +100,18 @@ static void findExpansionSpot(Scene* scene, ComponentKey key, UnitType type, boo
     }
 }
 
-static void findPortTile(Scene* scene, ComponentKey key)
+static void findPortTile(Scene* scene, EntityID nationID)
 {
-    Nation* nation = NULL;
-    system(scene, id, NATION_COMPONENT_ID, key)
-    {
-        nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        break;
-    }
-    if (nation == NULL) {
-        PANIC("Didnt find nation");
-    }
+    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
-    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
+    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = (Vector) { -1, -1 };
@@ -174,14 +164,18 @@ static void findPortTile(Scene* scene, ComponentKey key)
     }
 }
 
-static void orderFromProducer(Scene* scene, ComponentKey key, UnitType producerType, UnitType orderType)
+static void orderFromProducer(Scene* scene, EntityID nationID, UnitType producerType, UnitType orderType)
 {
-    system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, key)
+    printf("Wow!\n");
+    system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
 
         if (orderType == UnitType_FIGHTER || orderType == UnitType_ATTACKER || orderType == UnitType_BOMBER) {
@@ -196,19 +190,27 @@ static void orderFromProducer(Scene* scene, ComponentKey key, UnitType producerT
     }
 }
 
-void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
+void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
 {
-    system(scene, id, NATION_COMPONENT_ID, key)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
-        Unit* enemyCapitalUnit = (Unit*)Scene_GetComponent(scene, nation->capital, UNIT_COMPONENT_ID);
+    Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
-        int knownEnemies = 0; // ground units
-        int knownEnemySeaUnits = 0;
-        int knownEnemyPlanes = 0; // air units
-        system(scene, otherID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, nation->enemyNationFlag)
+    int knownEnemies = 0; // ground units
+    int knownEnemySeaUnits = 0;
+    int knownEnemyPlanes = 0; // air units
+    bool knownEnemyCapital = false;
+    for (int i = 0; i < nation->enemyNations->size; i++) {
+        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, *(EntityID*)Arraylist_Get(nation->enemyNations, i), NATION_COMPONENT_ID);
+        if (enemyNation->capital == INVALID_ENTITY_INDEX) {
+            continue;
+        }
+        Unit* enemyCapitalUnit = (Unit*)Scene_GetComponent(scene, nation->capital, UNIT_COMPONENT_ID);
+        knownEnemyCapital |= enemyCapitalUnit->knownByEnemy;
+        system(scene, otherID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
         {
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+                continue;
+            }
             Unit* unit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             if (unit->knownByEnemy) {
                 if (unit->type == UnitType_FIGHTER || unit->type == UnitType_ATTACKER || unit->type == UnitType_BOMBER) {
@@ -220,176 +222,187 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, ComponentKey key)
                 }
             }
         }
+    }
 
-        // How many ticks does it take to make an ore
-        const float averageTicksPerOreMade = nation->unitCount[UnitType_MINE] == 0 ? 54000.0f : 2 * ticksPerLabor / (nation->unitCount[UnitType_MINE]);
-        // How many ticks does it take to use an ore
-        const float averageTicksPerOreUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 54000.0f : (ticksPerLabor * 15.0f) / (5.0f * nation->unitCount[UnitType_FACTORY]);
-        // Build a mine if it takes more ticks to make an ore than it does to use one (Different from coins below)
+    // How many ticks does it take to make an ore
+    const float averageTicksPerOreMade = nation->unitCount[UnitType_MINE] == 0 ? 54000.0f : 2 * ticksPerLabor / (nation->unitCount[UnitType_MINE]);
+    // How many ticks does it take to use an ore
+    const float averageTicksPerOreUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 54000.0f : (ticksPerLabor * 15.0f) / (5.0f * nation->unitCount[UnitType_FACTORY]);
+    // Build a mine if it takes more ticks to make an ore than it does to use one (Different from coins below)
 
-        // How many ticks does it take to make a coin
-        const float averageTicksPerCoinMade = nation->unitCount[UnitType_CITY] == 0 ? 54000.0f : ticksPerLabor / nation->unitCount[UnitType_CITY];
-        // How many ticks does it take to use a coin
-        const int coinUsers = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT];
-        const float averageTicksPerCoinUsed = coinUsers == 0 ? 54000.0f : (ticksPerLabor * 22.0f) / (15.0f * coinUsers);
-        // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
-        // makeCoinTicks < useCoinTicks
+    // How many ticks does it take to make a coin
+    const float averageTicksPerCoinMade = nation->unitCount[UnitType_CITY] == 0 ? 54000.0f : ticksPerLabor / nation->unitCount[UnitType_CITY];
+    // How many ticks does it take to use a coin
+    const int coinUsers = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT];
+    const float averageTicksPerCoinUsed = coinUsers == 0 ? 54000.0f : (ticksPerLabor * 22.0f) / (15.0f * coinUsers);
+    // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
+    // makeCoinTicks < useCoinTicks
 
-        goap->variables[COMBATANTS_AT_ENEMY_CAPITAL] = false;
+    goap->variables[COMBATANTS_AT_ENEMY_CAPITAL] = false;
 
-        goap->variables[NO_KNOWN_ENEMY_UNITS] = knownEnemies == 0;
-        goap->variables[FOUND_ENEMY_CAPITAL] = enemyCapitalUnit->knownByEnemy;
-        goap->variables[SEA_SUPREMACY] = nation->unitCount[UnitType_DESTROYER] > max(1, knownEnemySeaUnits);
+    goap->variables[NO_KNOWN_ENEMY_UNITS] = knownEnemies == 0;
+    goap->variables[FOUND_ENEMY_CAPITAL] = knownEnemyCapital;
+    goap->variables[SEA_SUPREMACY] = nation->unitCount[UnitType_DESTROYER] > max(1, knownEnemySeaUnits);
 
-        goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] > knownEnemyPlanes;
-        goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] > knownEnemies;
-        goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
-        goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
-        goap->variables[HAS_POPULATION] = nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY];
+    goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] > knownEnemyPlanes;
+    goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] > knownEnemies;
+    goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
+    goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
+    goap->variables[HAS_POPULATION] = nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY];
 
-        goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
-        goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
-        goap->variables[AFFORD_CAVALRY_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_CAVALRY];
-        goap->variables[AFFORD_DESTROYER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_DESTROYER];
-        goap->variables[AFFORD_DESTROYER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_DESTROYER];
-        goap->variables[AFFORD_FIGHTER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FIGHTER];
-        goap->variables[AFFORD_FIGHTER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_FIGHTER];
-        goap->variables[AFFORD_ATTACKER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ATTACKER];
-        goap->variables[AFFORD_ATTACKER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_ATTACKER];
+    goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
+    goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
+    goap->variables[AFFORD_CAVALRY_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_CAVALRY];
+    goap->variables[AFFORD_DESTROYER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_DESTROYER];
+    goap->variables[AFFORD_DESTROYER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_DESTROYER];
+    goap->variables[AFFORD_FIGHTER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FIGHTER];
+    goap->variables[AFFORD_FIGHTER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_FIGHTER];
+    goap->variables[AFFORD_ATTACKER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ATTACKER];
+    goap->variables[AFFORD_ATTACKER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_ATTACKER];
 
-        goap->variables[AFFORD_CITY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY];
-        goap->variables[AFFORD_MINE_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE];
-        goap->variables[AFFORD_FACTORY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY];
-        goap->variables[AFFORD_PORT_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT];
-        goap->variables[AFFORD_AIRFIELD_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
-        goap->variables[AFFORD_FARM_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM];
-        goap->variables[AFFORD_ACADEMY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
+    goap->variables[AFFORD_CITY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CITY];
+    goap->variables[AFFORD_MINE_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE];
+    goap->variables[AFFORD_FACTORY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY];
+    goap->variables[AFFORD_PORT_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT];
+    goap->variables[AFFORD_AIRFIELD_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_AIRFIELD];
+    goap->variables[AFFORD_FARM_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FARM];
+    goap->variables[AFFORD_ACADEMY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
 
-        goap->variables[ENGINEER_ISNT_BUSY] = false;
-        goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER] + nation->prodCount[UnitType_ENGINEER] > 0;
-        Motion* engineerMotion = NULL;
-        system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
-        {
-            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-            Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+    goap->variables[ENGINEER_ISNT_BUSY] = false;
+    goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER];
+    Motion* engineerMotion = NULL;
+    system(scene, otherID, ENGINEER_UNIT_FLAG_COMPONENT_ID)
+    {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != id) {
+            continue;
+        }
+        Motion* motion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
+        Target* target = (Target*)Scene_GetComponent(scene, otherID, TARGET_COMPONENT_ID);
 
-            if (Vector_Dist(motion->pos, target->tar) < 32) {
-                goap->variables[ENGINEER_ISNT_BUSY] = true;
-                engineerMotion = motion;
+        if (Vector_Dist(motion->pos, target->tar) < 32) {
+            goap->variables[ENGINEER_ISNT_BUSY] = true;
+            engineerMotion = motion;
+            break;
+        }
+    }
+
+    goap->variables[SPACE_FOR_AIRFIELD] = false;
+    goap->variables[SPACE_FOR_EXPANSION] = false;
+    goap->variables[SPACE_FOR_TWO_EXPANSIONS] = false;
+    goap->variables[SPACE_FOR_PORT] = false;
+    goap->variables[HAS_PORT_TILES] = false;
+    goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = false;
+    if (engineerMotion != NULL) {
+        for (int i = 0; i < nation->cities->size; i++) {
+            EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
+            Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+            City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
+
+            int remainingSpaces = 0;
+            for (int x = -64; x <= 64; x += 64) {
+                for (int y = -64; y <= 64; y += 64) {
+                    Vector point = { x + cityMotion->pos.x, y + cityMotion->pos.y };
+                    if (Vector_CabDist(point, cityMotion->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, engineerMotion->pos, point, 0.5f)) {
+                        if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) && Match_CityHasType(scene, homeCity, UnitType_FACTORY)) {
+                            goap->variables[SPACE_FOR_AIRFIELD] = true;
+                        }
+                        goap->variables[SPACE_FOR_EXPANSION] = true;
+                        remainingSpaces++;
+                    }
+                }
+            }
+            if (remainingSpaces >= 2) {
+                goap->variables[SPACE_FOR_TWO_EXPANSIONS] = true;
+            }
+
+            // Check all port tiles, see if any are adjacent to the city tile
+            for (int j = 0; j < terrain->ports->size; j++) {
+                goap->variables[HAS_PORT_TILES] = true;
+                Vector point = *(Vector*)Arraylist_Get(terrain->ports, j);
+                if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
+                    continue;
+
+                // Only go to squares adjacent friendly cities
+                if (Vector_CabDist(point, cityMotion->pos) > 65)
+                    continue;
+
+                if (!Terrain_LineOfSight(terrain, engineerMotion->pos, cityMotion->pos, 0.5))
+                    continue;
+                goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = true;
+
+                // Checks to see if port is buildable
+                Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
+                    continue;
+                }
+                // Check to see that engineer can get to port
+                intersection = Terrain_LineOfSightPoint(terrain, engineerMotion->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize)) {
+                    continue;
+                }
+
+                goap->variables[SPACE_FOR_PORT] = true;
+            }
+        }
+    }
+
+    // Update has available variables
+    goap->variables[HAS_AVAILABLE_FACTORY] = false;
+    goap->variables[HAS_AVAILABLE_AIRFIELD] = false;
+    goap->variables[HAS_AVAILABLE_ACADEMY] = false;
+    goap->variables[HAS_AVAILABLE_PORT] = false;
+    system(scene, otherID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != id) {
+            continue;
+        }
+        Unit* unit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, otherID, PRODUCER_COMPONENT_ID);
+        Expansion* expansion = (Expansion*)Scene_GetComponent(scene, otherID, EXPANSION_COMPONENT_ID);
+
+        if (producer->orderTicksRemaining < 0) {
+            switch (unit->type) {
+            case UnitType_FACTORY:
+                goap->variables[HAS_AVAILABLE_FACTORY] = true;
+                City* homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
+                if (Match_CityHasType(scene, homeCity, UnitType_AIRFIELD)) {
+                    goap->variables[HAS_AVAILABLE_AIRFIELD] = true;
+                }
+                break;
+            case UnitType_PORT:
+                goap->variables[HAS_AVAILABLE_PORT] = true;
+                break;
+            case UnitType_ACADEMY:
+                goap->variables[HAS_AVAILABLE_ACADEMY] = true;
                 break;
             }
         }
+    }
 
-        goap->variables[SPACE_FOR_AIRFIELD] = false;
-        goap->variables[SPACE_FOR_EXPANSION] = false;
-        goap->variables[SPACE_FOR_TWO_EXPANSIONS] = false;
-        goap->variables[SPACE_FOR_PORT] = false;
-        goap->variables[HAS_PORT_TILES] = false;
-        goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = false;
-        if (engineerMotion != NULL) {
-            for (int i = 0; i < nation->cities->size; i++) {
-                EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
-                Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
-                City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
-
-                int remainingSpaces = 0;
-                for (int x = -64; x <= 64; x += 64) {
-                    for (int y = -64; y <= 64; y += 64) {
-                        Vector point = { x + cityMotion->pos.x, y + cityMotion->pos.y };
-                        if (Vector_CabDist(point, cityMotion->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, engineerMotion->pos, point, 0.5f)) {
-                            if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) && Match_CityHasType(scene, homeCity, UnitType_FACTORY)) {
-                                goap->variables[SPACE_FOR_AIRFIELD] = true;
-                            }
-                            goap->variables[SPACE_FOR_EXPANSION] = true;
-                            remainingSpaces++;
-                        }
-                    }
-                }
-                if (remainingSpaces >= 2) {
-                    goap->variables[SPACE_FOR_TWO_EXPANSIONS] = true;
-                }
-
-                // Check all port tiles, see if any are adjacent to the city tile
-                for (int j = 0; j < terrain->ports->size; j++) {
-                    goap->variables[HAS_PORT_TILES] = true;
-                    Vector point = *(Vector*)Arraylist_Get(terrain->ports, j);
-                    if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
-                        continue;
-
-                    // Only go to squares adjacent friendly cities
-                    if (Vector_CabDist(point, cityMotion->pos) > 65)
-                        continue;
-
-                    if (!Terrain_LineOfSight(terrain, engineerMotion->pos, cityMotion->pos, 0.5))
-                        continue;
-                    goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = true;
-
-                    // Checks to see if port is buildable
-                    Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
-                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
-                        continue;
-                    }
-                    // Check to see that engineer can get to port
-                    intersection = Terrain_LineOfSightPoint(terrain, engineerMotion->pos, point, 0.5);
-                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize)) {
-                        continue;
-                    }
-
-                    goap->variables[SPACE_FOR_PORT] = true;
-                }
-            }
-        }
-
-        // Update has available variables
-        goap->variables[HAS_AVAILABLE_FACTORY] = false;
-        goap->variables[HAS_AVAILABLE_AIRFIELD] = false;
-        goap->variables[HAS_AVAILABLE_ACADEMY] = false;
-        goap->variables[HAS_AVAILABLE_PORT] = false;
-        system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID, key)
-        {
-            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-            Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-            Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
-
-            if (producer->orderTicksRemaining < 0) {
-                switch (unit->type) {
-                case UnitType_FACTORY:
-                    goap->variables[HAS_AVAILABLE_FACTORY] = true;
-                    City* homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
-                    if (Match_CityHasType(scene, homeCity, UnitType_AIRFIELD)) {
-                        goap->variables[HAS_AVAILABLE_AIRFIELD] = true;
-                    }
-                    break;
-                case UnitType_PORT:
-                    goap->variables[HAS_AVAILABLE_PORT] = true;
-                    break;
-                case UnitType_ACADEMY:
-                    goap->variables[HAS_AVAILABLE_ACADEMY] = true;
-                    break;
-                }
-            }
-        }
-
-        /*
+    /*
         goap->variables[HAS_CAVALRY] = nation->unitCount[UnitType_CAVALRY] + nation->prodCount[UnitType_CAVALRY] > knownEnemies;
         goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
 		*/
-    }
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
-        printf("%d\n", goap->variables[HAS_AVAILABLE_PORT]);
+        printf("%d\n", goap->variables[HAS_ENGINEER]);
     }
 }
 
 // Really only for tactical planning, let GOAP handle strategic stuff, it's good at that
-void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
+void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         if (unit->engaged) {
             continue;
@@ -466,13 +479,16 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         if (unit->engaged) {
             continue;
@@ -490,10 +506,14 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
 
         float minDist = 2 * terrain->size;
         Vector closestOther = { -1, -1 };
-        system(scene, otherID, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+        system(scene, otherID, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
         {
             if (id == otherID)
                 continue;
+            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
+            if (otherRender->nation != nationID) {
+                continue;
+            }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             if (!otherUnit->foundAlertedSquare)
@@ -532,67 +552,80 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, ComponentKey key)
     }
 }
 
-void AI_TargetEnemyCapital(Scene* scene, ComponentKey key)
+void AI_TargetEnemyCapital(Scene* scene, EntityID nationID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID, key)
+    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, nation->enemyNation, NATION_COMPONENT_ID);
-        Motion* enemyCapital = (Motion*)Scene_GetComponent(scene, enemyNation->capital, MOTION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
-        if (Terrain_LineOfSight(terrain, motion->pos, enemyCapital->pos, motion->z)) {
-            target->tar = enemyCapital->pos;
-            target->lookat = enemyCapital->pos;
+        for (int i = 0; i < nation->enemyNations->size; i++) {
+            Nation* enemyNation = (Nation*)Scene_GetComponent(scene, *(EntityID*)Arraylist_Get(nation->enemyNations, i), NATION_COMPONENT_ID);
+            if (enemyNation->capital == INVALID_ENTITY_INDEX) {
+                continue;
+            }
+            Motion* enemyCapital = (Motion*)Scene_GetComponent(scene, enemyNation->capital, MOTION_COMPONENT_ID);
+
+            if (Terrain_LineOfSight(terrain, motion->pos, enemyCapital->pos, motion->z)) {
+                target->tar = enemyCapital->pos;
+                target->lookat = enemyCapital->pos;
+                break;
+            }
         }
     }
 }
 
-void AI_OrderInfantry(Scene* scene, ComponentKey key)
+void AI_OrderInfantry(Scene* scene, EntityID nationID)
 {
-    orderFromProducer(scene, key, UnitType_ACADEMY, UnitType_INFANTRY);
+    orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_INFANTRY);
 }
 
-void AI_OrderCavalry(Scene* scene, ComponentKey key)
+void AI_OrderCavalry(Scene* scene, EntityID nationID)
 {
     if (rand() % 2 == 0) {
-        orderFromProducer(scene, key, UnitType_FACTORY, UnitType_CAVALRY);
+        orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_CAVALRY);
     } else {
-        orderFromProducer(scene, key, UnitType_FACTORY, UnitType_ARTILLERY);
+        orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_ARTILLERY);
     }
 }
 
-void AI_OrderDestroyer(Scene* scene, ComponentKey key)
+void AI_OrderDestroyer(Scene* scene, EntityID nationID)
 {
-    orderFromProducer(scene, key, UnitType_PORT, UnitType_DESTROYER);
+    orderFromProducer(scene, nationID, UnitType_PORT, UnitType_DESTROYER);
 }
 
-void AI_OrderFighter(Scene* scene, ComponentKey key)
+void AI_OrderFighter(Scene* scene, EntityID nationID)
 {
-    orderFromProducer(scene, key, UnitType_FACTORY, UnitType_FIGHTER);
+    orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_FIGHTER);
 }
 
-void AI_OrderAttacker(Scene* scene, ComponentKey key)
+void AI_OrderAttacker(Scene* scene, EntityID nationID)
 {
-    orderFromProducer(scene, key, UnitType_FACTORY, UnitType_ATTACKER);
+    orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_ATTACKER);
 }
 
-void AI_OrderEngineer(Scene* scene, ComponentKey key)
+void AI_OrderEngineer(Scene* scene, EntityID nationID)
 {
-    orderFromProducer(scene, key, UnitType_ACADEMY, UnitType_ENGINEER);
+    orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_ENGINEER);
 }
 
-void AI_BuildCity(Scene* scene, ComponentKey key)
+void AI_BuildCity(Scene* scene, EntityID nationID)
 {
-    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
+    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = { -1, -1 };
@@ -602,7 +635,7 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
                     continue;
                 Vector point = { x * 64.0f + 32.0f, y * 64.0f + 32.0f };
                 // Find if there is a city with cabdist less than 3 tiles
-				// CAUSES ERRORS? First iteration too
+                // CAUSES ERRORS? First iteration too
                 if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, point.x, point.y) <= 2) {
                     continue;
                 }
@@ -631,15 +664,18 @@ void AI_BuildCity(Scene* scene, ComponentKey key)
     }
 }
 
-void AI_BuildPortCity(Scene* scene, ComponentKey key)
+void AI_BuildPortCity(Scene* scene, EntityID nationID)
 {
-    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID, key)
+    system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        if (simpleRenderable->nation != nationID) {
+            continue;
+        }
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = { -1, -1 };
@@ -685,39 +721,39 @@ void AI_BuildPortCity(Scene* scene, ComponentKey key)
     }
 }
 
-void AI_BuildMine(Scene* scene, ComponentKey key)
+void AI_BuildMine(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_MINE, false);
+    findExpansionSpot(scene, nationID, UnitType_MINE, false);
 }
 
-void AI_BuildFactory(Scene* scene, ComponentKey key)
+void AI_BuildFactory(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_FACTORY, false);
+    findExpansionSpot(scene, nationID, UnitType_FACTORY, false);
 }
 
-void AI_BuildFactoryForAirfield(Scene* scene, ComponentKey key)
+void AI_BuildFactoryForAirfield(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_FACTORY, true);
+    findExpansionSpot(scene, nationID, UnitType_FACTORY, true);
 }
 
-void AI_BuildPort(Scene* scene, ComponentKey key)
+void AI_BuildPort(Scene* scene, EntityID nationID)
 {
-    findPortTile(scene, key);
+    findPortTile(scene, nationID);
 }
 
-void AI_BuildAirfield(Scene* scene, ComponentKey key)
+void AI_BuildAirfield(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_AIRFIELD, false);
+    findExpansionSpot(scene, nationID, UnitType_AIRFIELD, false);
 }
 
-void AI_BuildFarm(Scene* scene, ComponentKey key)
+void AI_BuildFarm(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_FARM, false);
+    findExpansionSpot(scene, nationID, UnitType_FARM, false);
 }
 
-void AI_BuildAcademy(Scene* scene, ComponentKey key)
+void AI_BuildAcademy(Scene* scene, EntityID nationID)
 {
-    findExpansionSpot(scene, key, UnitType_ACADEMY, false);
+    findExpansionSpot(scene, nationID, UnitType_ACADEMY, false);
 }
 
 void AI_Init(Goap* goap)

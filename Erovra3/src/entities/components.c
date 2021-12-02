@@ -40,8 +40,6 @@ void Components_Init()
     RESOURCE_PRODUCER_COMPONENT_ID = rand();
 
     NATION_COMPONENT_ID = rand();
-    HOME_NATION_FLAG_COMPONENT_ID = rand();
-    ENEMY_NATION_FLAG_COMPONENT_ID = rand();
     PLAYER_FLAG_COMPONENT_ID = rand();
     AI_COMPONENT_ID = rand();
 
@@ -91,8 +89,6 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, RESOURCE_PRODUCER_COMPONENT_ID, sizeof(ResourceProducer));
 
     Scene_RegisterComponent(scene, NATION_COMPONENT_ID, sizeof(Nation));
-    Scene_RegisterComponent(scene, HOME_NATION_FLAG_COMPONENT_ID, 0);
-    Scene_RegisterComponent(scene, ENEMY_NATION_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AI_COMPONENT_ID, sizeof(AI));
 

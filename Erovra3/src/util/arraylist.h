@@ -22,7 +22,7 @@ typedef struct arraylist {
 
 /**
  * @brief Creates an empty arraylist
- * @param initSize The initial capacity of the arraylist. This is how many free spaces the list starts with. 
+ * @param initSize The initial capacity of the arraylist.
  * @param typeSize The size, in bytes, of the items to be stored in the list
  * @return A pointer to the arraylist structure
 */
@@ -101,5 +101,7 @@ bool Arraylist_Contains(Arraylist* list, void* data);
  * @return Whether or not the list pointer has been updated
 */
 bool Arraylist_AssertSize(Arraylist** listPtr, size_t size);
+
+void Arraylist_Copy(Arraylist** dst, Arraylist* src);
 
 #endif
