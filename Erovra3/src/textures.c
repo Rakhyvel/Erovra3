@@ -52,6 +52,7 @@ void Textures_Init()
     ACADEMY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
     ACADEMY_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     WALL_TEXTURE_ID = Texture_Load("res/wall.png");
+    WALL_OUTLINE_TEXTURE_ID = Texture_Load("res/wall_outline.png");
     WALL_SHADOW_TEXTURE_ID = Texture_Load("res/wall_shadow.png");
 
     INFANTRY_TEXTURE_ID = Texture_Create(320, 160);

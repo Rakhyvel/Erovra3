@@ -244,7 +244,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     goap->variables[FOUND_ENEMY_CAPITAL] = knownEnemyCapital;
     goap->variables[SEA_SUPREMACY] = nation->unitCount[UnitType_DESTROYER] > max(1, knownEnemySeaUnits);
 
-    goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] > knownEnemyPlanes;
+    goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] >= 1;
     goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] > knownEnemies;
     goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
     goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
@@ -253,6 +253,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
     goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
     goap->variables[AFFORD_CAVALRY_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_CAVALRY];
+    goap->variables[AFFORD_ENGINEER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ENGINEER];
     goap->variables[AFFORD_DESTROYER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_DESTROYER];
     goap->variables[AFFORD_DESTROYER_ORE] = nation->resources[ResourceType_ORE] >= nation->costs[ResourceType_ORE][UnitType_DESTROYER];
     goap->variables[AFFORD_FIGHTER_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FIGHTER];
@@ -269,7 +270,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     goap->variables[AFFORD_ACADEMY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_ACADEMY];
 
     goap->variables[ENGINEER_ISNT_BUSY] = false;
-    goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER];
+    goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER] + nation->prodCount[UnitType_ENGINEER] > 0;
     Motion* engineerMotion = NULL;
     system(scene, otherID, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
@@ -611,6 +612,7 @@ void AI_OrderAttacker(Scene* scene, EntityID nationID)
 
 void AI_OrderEngineer(Scene* scene, EntityID nationID)
 {
+    printf("Need engineer!\n");
     orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_ENGINEER);
 }
 
@@ -765,22 +767,22 @@ void AI_Init(Goap* goap)
 
     // If there are enemies, order units
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 0, 0);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 2, HAS_ENGINEER, SEA_SUPREMACY, 1, 1, 5);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_INFANTRY, 1, 1, 4);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_CAVALRY, 1, 1, 3);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_ATTACKER, 1, 1, 1);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, SEA_SUPREMACY, 1, 5);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_INFANTRY, 1, 4);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_CAVALRY, 1, 3);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_ATTACKER, 1, 1);
 
     // If you need to find the enemy capital
     // If you can build these things, then do so. Otherwise, set units targets
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 0, 0);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 2, HAS_ENGINEER, SEA_SUPREMACY, 1, 1, 5);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_INFANTRY, 1, 1, 4);
-    Goap_AddAction(goap, "Rand fec c", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_CAVALRY, 1, 1, 3);
-    Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 3, HAS_ENGINEER, HAS_AVAILABLE_PORT, HAS_ATTACKER, 1, 1, 1);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, SEA_SUPREMACY, 5);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_INFANTRY, 4);
+    Goap_AddAction(goap, "Rand fec c", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_CAVALRY, 3);
+    Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_ATTACKER, 1);
 
     // Order ground units
-    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 3, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
-    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 3, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
 
     // Order ships
@@ -791,15 +793,15 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "Order attacker", &AI_OrderAttacker, HAS_ATTACKER, 5, AFFORD_ATTACKER_COINS, AFFORD_ATTACKER_ORE, HAS_FIGHTER, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1, 1);
 
     // Engineer build actions
-    Goap_AddAction(goap, "City for coins", &AI_BuildCity, HAS_COINS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
-    Goap_AddAction(goap, "city for expan", &AI_BuildCity, SPACE_FOR_EXPANSION, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
-    Goap_AddAction(goap, "city for 2expan", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 2, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1);
-    Goap_AddAction(goap, "city for port", &AI_BuildPortCity, SPACE_FOR_PORT, 3, HAS_PORT_TILES, ENGINEER_CAN_SEE_PORT_CITY_TILE, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build factory", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 5, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build port", &AI_BuildPort, HAS_AVAILABLE_PORT, 6, HAS_PORT_TILES, SPACE_FOR_PORT, AFFORD_PORT_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 2, 1, 1);
-    Goap_AddAction(goap, "factry for air", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_TWO_EXPANSIONS, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build airfield", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 5, SPACE_FOR_EXPANSION, SPACE_FOR_AIRFIELD, AFFORD_AIRFIELD_COINS, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build academy", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 4, SPACE_FOR_EXPANSION, AFFORD_ACADEMY_COINS, HAS_COINS, HAS_POPULATION, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Build mine", &AI_BuildMine, HAS_ORE, 3, SPACE_FOR_EXPANSION, AFFORD_MINE_COINS, HAS_POPULATION, 1, 1, 1);
-    Goap_AddAction(goap, "Build farm", &AI_BuildFarm, HAS_POPULATION, 2, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, 1, 1);
+    Goap_AddAction(goap, "City for coins", &AI_BuildCity, HAS_COINS, 3, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, HAS_ENGINEER, 1, 1, 1);
+    Goap_AddAction(goap, "city for expan", &AI_BuildCity, SPACE_FOR_EXPANSION, 3, HAS_ENGINEER, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1, 1);
+    Goap_AddAction(goap, "city for 2expan", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 3, HAS_ENGINEER, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1, 1);
+    Goap_AddAction(goap, "city for port", &AI_BuildPortCity, SPACE_FOR_PORT, 5, HAS_ENGINEER, HAS_PORT_TILES, ENGINEER_CAN_SEE_PORT_CITY_TILE, AFFORD_CITY_COINS, ENGINEER_ISNT_BUSY, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build factory", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 7, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_EXPANSION, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build port", &AI_BuildPort, HAS_AVAILABLE_PORT, 8, HAS_ENGINEER, ENGINEER_ISNT_BUSY, HAS_PORT_TILES, SPACE_FOR_PORT, AFFORD_PORT_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1, 2, 1, 1);
+    Goap_AddAction(goap, "factry for air", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 7, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_TWO_EXPANSIONS, AFFORD_FACTORY_COINS, HAS_COINS, HAS_ORE, HAS_POPULATION, 1, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build airfield", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 7, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_EXPANSION, SPACE_FOR_AIRFIELD, AFFORD_AIRFIELD_COINS, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build academy", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 6, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_EXPANSION, AFFORD_ACADEMY_COINS, HAS_COINS, HAS_POPULATION, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build mine", &AI_BuildMine, HAS_ORE, 5, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_EXPANSION, AFFORD_MINE_COINS, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Build farm", &AI_BuildFarm, HAS_POPULATION, 4, HAS_ENGINEER, ENGINEER_ISNT_BUSY, SPACE_FOR_EXPANSION, AFFORD_FARM_COINS, 1, 1, 1, 1);
 }

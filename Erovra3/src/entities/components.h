@@ -145,7 +145,7 @@ typedef struct unit {
     UnitType type; // The type of unit this is
     const float defense; // The defense stat of the unit
     int ordinal; // Serial number of unit, assigned sequentially
-    int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Determines if other nation can see unit
+    int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Only determines if other nation can see unit
     char name[32]; // Description of unit
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy

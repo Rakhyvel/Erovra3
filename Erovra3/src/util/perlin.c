@@ -183,7 +183,7 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
     amplitude /= 2;
     int j = 1;
 
-    while (cellSize >= 32) {
+    while (cellSize >= 1) {
         Perlin_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICOSINE);
         if (!map) {
             PANIC("Memory error");

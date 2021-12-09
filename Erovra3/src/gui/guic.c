@@ -229,7 +229,7 @@ EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int 
     return id;
 }
 
-EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, GUICallback onupdate)
+EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, int nNotches, GUICallback onupdate)
 {
     EntityID id = Scene_NewEntity(scene);
 
@@ -250,7 +250,8 @@ EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, floa
 
     Slider slider = {
         onupdate,
-        defaultValue
+        defaultValue,
+        nNotches
     };
     strncpy_s(slider.label, 32, label, 32);
     Scene_Assign(scene, id, GUI_SLIDER_COMPONENT_ID, &slider);
@@ -780,14 +781,20 @@ void updateSlider(Scene* scene)
         }
         if ((gui->isHovered || gui->clickedIn) && Apricot_MouseLeftDown) {
             float val = (Apricot_MousePos.x - gui->pos.x) / gui->width;
-            slider->value = max(0.0f, min(1.0f, val));
+            if (slider->nNotches == 0) { // Notchless behavior
+                slider->value = max(0.0f, min(1.0f, val));
+            } else {
+                slider->value = ((int)round(val * (slider->nNotches - 1)));
+            }
             if (!gui->clickedIn) {
                 Sound_Play(HOVER_SOUND);
             }
             gui->clickedIn = true;
         }
         if (gui->clickedIn && !Apricot_MouseLeftDown) {
-            slider->onupdate(scene, id);
+            if (slider->onupdate) {
+                slider->onupdate(scene, id);
+            }
             if (gui->clickedIn) {
                 Sound_Play(HOVER_SOUND);
             }
@@ -1034,12 +1041,14 @@ static void renderSlider(Scene* scene)
 {
     system(scene, id, GUI_SLIDER_COMPONENT_ID, GUI_COMPONENT_ID)
     {
+        const int sliderOffset = 6 + 12 + 16;
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         if (!gui->shown) {
             continue;
         }
         Slider* slider = (Slider*)Scene_GetComponent(scene, id, GUI_SLIDER_COMPONENT_ID);
         FC_Draw(font, Apricot_Renderer, gui->pos.x, gui->pos.y - 4, slider->label);
+        const float sliderValueDenom = slider->nNotches == 0 ? 1 : (float)(slider->nNotches - 1);
 
         // Draw full slider track
         if (gui->isHovered) {
@@ -1047,13 +1056,21 @@ static void renderSlider(Scene* scene)
         } else {
             SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         }
-        SDL_Rect rect = { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width, 2 };
+        SDL_Rect rect = { gui->pos.x, gui->pos.y + sliderOffset, gui->width, 2 };
         SDL_RenderFillRect(Apricot_Renderer, &rect);
 
         // Draw filled slider track
         SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
-        rect = (SDL_Rect) { gui->pos.x, gui->pos.y + 6 + 12 + 16, gui->width * slider->value, 2 };
+        rect = (SDL_Rect) { gui->pos.x, gui->pos.y + sliderOffset, gui->width * slider->value / sliderValueDenom, 2 };
         SDL_RenderFillRect(Apricot_Renderer, &rect);
+
+        // Draw notches
+        float notchWidth = gui->width / (slider->nNotches - 1);
+        SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        for (int i = 0; i < slider->nNotches; i++) {
+            SDL_RenderDrawLine(Apricot_Renderer, gui->pos.x + i * notchWidth, gui->pos.y + 7 + 16, gui->pos.x + i * notchWidth, gui->pos.y + 7 + 16 + 5);
+            SDL_RenderDrawLine(Apricot_Renderer, gui->pos.x + i * notchWidth, gui->pos.y + 7 + 16 + 18, gui->pos.x + i * notchWidth, gui->pos.y + 7 + 16 + 18 + 5);
+        }
 
         // Draw knob
         if (gui->isHovered && !Apricot_MouseLeftDown) {
@@ -1063,8 +1080,30 @@ static void renderSlider(Scene* scene)
         } else {
             SDL_SetRenderDrawColor(Apricot_Renderer, activeColor.r, activeColor.g, activeColor.b, activeColor.a);
         }
-        rect = (SDL_Rect) { gui->pos.x + gui->width * slider->value - 4, gui->pos.y + 6 + 16, 8, 24 };
+        rect = (SDL_Rect) { gui->pos.x + gui->width * slider->value / sliderValueDenom - 4, gui->pos.y + 7 + 16, 8, 24 };
         SDL_RenderFillRect(Apricot_Renderer, &rect);
+
+        // Draw tooltip
+        if (gui->isHovered && Apricot_MouseLeftDown) {
+            rect = (SDL_Rect) { gui->pos.x + gui->width * slider->value / sliderValueDenom - 14, gui->pos.y - 27, 28, 30 };
+            SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+            SDL_RenderFillRect(Apricot_Renderer, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            SDL_RenderDrawRect(Apricot_Renderer, &rect);
+            rect.x -= 1;
+            rect.y -= 1;
+            rect.w += 2;
+            rect.h += 2;
+            SDL_RenderDrawRect(Apricot_Renderer, &rect);
+            SDL_SetRenderDrawColor(Apricot_Renderer, textColor.r, textColor.g, textColor.b, textColor.a);
+            if (slider->nNotches == 0) {
+                int textWidth = FC_GetWidth(font, "%.1f", slider->value);
+                FC_Draw(font, Apricot_Renderer, rect.x + rect.w / 2 - textWidth / 2, rect.y + 4, "%.1f", slider->value);
+            } else {
+                int textWidth = FC_GetWidth(font, "%d", (int)slider->value);
+                FC_Draw(font, Apricot_Renderer, rect.x + rect.w / 2 - textWidth / 2, rect.y + 4, "%d", (int)slider->value);
+            }
+        }
     }
 }
 
@@ -1116,7 +1155,7 @@ static void renderTextBox(Scene* scene)
                     buffer[i] = str[i];
                 }
                 cursorX = FC_GetWidth(font, buffer);
-			}
+            }
             SDL_RenderDrawLine(Apricot_Renderer, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 16 + 7, gui->pos.x + 9 + cursorX, gui->pos.y + 6 + 32 + 7);
         }
     }
@@ -1163,7 +1202,7 @@ static void renderImage(Scene* scene)
         }
         Image* image = (Image*)Scene_GetComponent(scene, id, GUI_IMAGE_COMPONENT_ID);
 
-		Texture_Draw(image->texture, gui->pos.x, gui->pos.y, gui->width, gui->height, 0);
+        Texture_Draw(image->texture, gui->pos.x, gui->pos.y, gui->width, gui->height, 0);
     }
 }
 
@@ -1237,10 +1276,10 @@ void GUI_Render(Scene* scene)
     renderLabel(scene);
     renderRockerSwitch(scene);
     renderRadioButtons(scene);
-    renderSlider(scene);
     renderTextBox(scene);
     renderCheckBox(scene);
     renderImage(scene);
     renderProgressBar(scene);
+    renderSlider(scene);
     renderBorders(scene);
 }

@@ -26,7 +26,7 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
 EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...);
-EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, GUICallback);
+EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, int nNotches, GUICallback);
 EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
 EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue);
 EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture);
@@ -93,7 +93,8 @@ ComponentKey GUI_RADIO_BUTTONS_COMPONENT_ID;
 
 typedef struct slider {
     GUICallback onupdate; // Called whenever the user changes the slider value
-    float value;
+    float value; // Will be [0, nNotches-1] when nNotches != 0; otherwise will be [0.0, 1.0]
+    int nNotches; // The number of notches
     char label[32];
 } Slider;
 ComponentKey GUI_SLIDER_COMPONENT_ID;

@@ -20,7 +20,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
 
     SimpleRenderable render = {
         WALL_TEXTURE_ID,
-        NULL,
+        WALL_OUTLINE_TEXTURE_ID,
         WALL_SHADOW_TEXTURE_ID,
         RenderPriorirty_BUILDING_LAYER,
         false,
@@ -28,8 +28,8 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation)
         nation,
         64,
         64,
-        36,
-        36
+        64,
+        64
     };
     Scene_Assign(scene, wallID, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_Assign(scene, wallID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);

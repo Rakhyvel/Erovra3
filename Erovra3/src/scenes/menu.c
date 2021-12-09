@@ -29,6 +29,8 @@ EntityID erosionSlider;
 EntityID nationNameTextBox;
 EntityID mapSeedTextBox;
 EntityID AIControlledCheckBox;
+EntityID fogOfWarCheckBox;
+EntityID numNationsSlider;
 EntityID terrainImage;
 EntityID logoSpacer;
 SDL_Texture* logo;
@@ -306,7 +308,9 @@ void Menu_Update(Scene* scene)
         if (done) {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
             CheckBox* AIControlled = (CheckBox*)Scene_GetComponent(scene, AIControlledCheckBox, GUI_CHECK_BOX_COMPONENT_ID);
+            CheckBox* fogOfWar = (CheckBox*)Scene_GetComponent(scene, fogOfWarCheckBox, GUI_CHECK_BOX_COMPONENT_ID);
             TextBox* capitalName = (TextBox*)Scene_GetComponent(scene, nationNameTextBox, GUI_TEXT_BOX_COMPONENT_ID);
+            Slider* numNations = (Slider*)Scene_GetComponent(scene, numNationsSlider, GUI_SLIDER_COMPONENT_ID);
             int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
 
             // Setup a new texture, call Match_Init, start game!
@@ -320,7 +324,7 @@ void Menu_Update(Scene* scene)
             done = false;
             state = IDLE; // Let other threads start
 
-            Match_Init(map, capitalName->text, lexicon, fullMapSize, AIControlled->value);
+            Match_Init(map, capitalName->text, lexicon, fullMapSize, AIControlled->value, fogOfWar->value, numNations->value);
             return; // Always return after scene stack disruption!
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
@@ -409,11 +413,13 @@ Scene* Menu_Init()
     logoSpacerAcc = -20;
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
-    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, &Menu_ReconstructMap);
-    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, &Menu_ReconstructMap);
+    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, 0, &Menu_ReconstructMap);
+    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, 0, &Menu_ReconstructMap);
     nationNameTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", NULL);
     mapSeedTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Map seed", "", &Menu_ReconstructMap);
     AIControlledCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "AI controlled", false);
+    fogOfWarCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "Fog of war", true);
+    numNationsSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Number of nations", 2, 7, NULL);
     terrainImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 447, 447, previewTexture);
 
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
@@ -447,6 +453,8 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, newGameForm, nationNameTextBox);
     GUI_ContainerAdd(scene, newGameForm, mapSeedTextBox);
     GUI_ContainerAdd(scene, newGameForm, AIControlledCheckBox);
+    GUI_ContainerAdd(scene, newGameForm, fogOfWarCheckBox);
+    GUI_ContainerAdd(scene, newGameForm, numNationsSlider);
     GUI_ContainerAdd(scene, newGameForm, terrainImage);
 
     newGameActions = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 51);

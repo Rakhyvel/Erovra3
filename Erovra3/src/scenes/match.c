@@ -57,6 +57,7 @@ bool buildPorts = false;
 
 static SDL_Texture* miniMapTexture = NULL;
 const int miniMapSize = 256.0f;
+static bool doFogOfWar = true;
 
 // UTILITY FUNCTIONS
 void Match_AddMessage(SDL_Color color, char* text, ...)
@@ -529,7 +530,9 @@ void Match_DetectHit(struct scene* scene)
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
                     Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
-                    Match_SetUnitEngagedTicks(motion, unit);
+                    if (otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+                        Match_SetUnitEngagedTicks(motion, unit);
+                    }
                 }
                 // GROUND UNITS: Do more damage if flanked
                 if (motion->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
@@ -583,6 +586,9 @@ void Match_Death(Scene* scene)
                     simpleRenderable->nation = city->captureNation;
                     city->captureNation = INVALID_ENTITY_INDEX;
                     city->isCapital = false;
+                    simpleRenderable->sprite = CITY_TEXTURE_ID;
+                    simpleRenderable->shadow = CITY_SHADOW_TEXTURE_ID;
+                    simpleRenderable->spriteOutline = CITY_OUTLINE_TEXTURE_ID;
                     health->health = 100;
                     health->isDead = false;
                     health->deathTicks = 0;
@@ -666,10 +672,11 @@ void Match_Motion(struct scene* scene)
     system(scene, id, MOTION_COMPONENT_ID)
     {
         Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        motion->pos = Vector_Add(motion->pos, motion->vel);
+        Vector newPos = Vector_Add(motion->pos, motion->vel);
         motion->dZ += motion->aZ;
         motion->z += motion->dZ;
         float height = Terrain_GetHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
+        motion->pos = Vector_Add(motion->pos, motion->vel);
         if (motion->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
         }
@@ -1189,6 +1196,7 @@ void Match_CombatantAttack(struct scene* scene)
         Vector closestVel = { -1, -1 };
         bool groundUnit = false;
         bool onlyBuildings = true;
+        Nation* otherNation = NULL;
         system_mask(scene, otherID, combatant->enemyMask)
         {
             if (!onlyBuildings && Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
@@ -1223,6 +1231,7 @@ void Match_CombatantAttack(struct scene* scene)
                 }
                 closestDist = dist;
                 closest = otherID;
+                otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
                 closestPos = otherMotion->pos;
                 closestVel = otherMotion->vel;
                 groundUnit = Scene_EntityHasComponents(scene, otherID, GROUND_UNIT_FLAG_COMPONENT_ID);
@@ -1253,7 +1262,9 @@ void Match_CombatantAttack(struct scene* scene)
         }
         unit->engaged = true;
         unit->knownByEnemy = true;
-        Match_SetUnitEngagedTicks(motion, unit);
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || (otherNation != NULL && otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID)) {
+            Match_SetUnitEngagedTicks(motion, unit);
+        }
 
         // Shoot enemy units if found
         Vector displacement = Vector_Sub(motion->pos, closestPos);
@@ -1287,6 +1298,7 @@ void Match_AirplaneAttack(Scene* scene)
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* otherNation = NULL;
 
         // Find closest enemy ground unit
         float closestDist = combatant->attackDist + 100.0f;
@@ -1311,6 +1323,7 @@ void Match_AirplaneAttack(Scene* scene)
             if (patrolDist + otherHealth->health < closestDist && dist < combatant->attackDist) {
                 closestDist = dist + otherHealth->health;
                 closest = otherID;
+                otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
                 closestPos = otherMotion->pos;
                 closestVel = otherMotion->vel;
                 closestZ = otherMotion->z;
@@ -1339,7 +1352,9 @@ void Match_AirplaneAttack(Scene* scene)
 
             patrol->focalPoint = Vector_Add(closestPos, Vector_Scalar(closestVel, (float)t));
 
-            Match_SetUnitEngagedTicks(motion, unit);
+            if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || (otherNation != NULL && otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID)) {
+                Match_SetUnitEngagedTicks(motion, unit);
+            }
 
             // Shoot enemy units if found
             Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, motion->pos)); // Points from pos to focal
@@ -1372,9 +1387,12 @@ void Match_AirplaneScout(struct scene* scene)
             }
             Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+            Nation* otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
             if (Vector_Dist(motion->pos, otherMotion->pos) < 128) {
-                Match_SetUnitEngagedTicks(motion, unit);
-                Match_SetUnitEngagedTicks(otherMotion, otherUnit);
+                if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+                    Match_SetUnitEngagedTicks(motion, unit);
+                    Match_SetUnitEngagedTicks(otherMotion, otherUnit);
+                }
                 if (!Scene_EntityHasComponents(scene, otherID, PATROL_COMPONENT_ID) && !Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                     unit->knownByEnemy = true;
                     Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, -1);
@@ -1844,7 +1862,7 @@ void Match_UpdateFogOfWar(struct scene* scene)
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        //simpleRenderable->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        simpleRenderable->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -2131,7 +2149,9 @@ void Match_Update(Scene* match)
 void Match_Render(Scene* match)
 {
     Terrain_Render(terrain);
-    Match_UpdateFogOfWar(match);
+    if (doFogOfWar) { // Determined by a switch in the match creation menu
+        Match_UpdateFogOfWar(match);
+    }
     Match_SimpleRender(match, BUILDING_LAYER_COMPONENT_ID);
     Match_RenderProducerBars(match);
     Match_RenderCityName(match);
@@ -2359,7 +2379,7 @@ void Match_Destroy(Scene* scene)
 
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
-Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled)
+Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled, bool fogOfWar, int nNations)
 {
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
     SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
@@ -2370,6 +2390,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
     printf("Match: %p\n", match);
+    doFogOfWar = fogOfWar;
 
     orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
@@ -2467,7 +2488,6 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
 
     Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
 
-    int nNations = 6;
     int tileSize = mapSize / 64;
     int trySize = 10000;
     Arraylist* nationVectors = Arraylist_Create(nNations, sizeof(Vector));
@@ -2533,10 +2553,10 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
         }
         SDL_Color nationColors[] = {
             (SDL_Color) { 60, 107, 250 }, // Blue
-            (SDL_Color) { 250, 60, 60 },  // Red
-            (SDL_Color) { 60, 250, 60 },  // Green
+            (SDL_Color) { 250, 60, 60 }, // Red
+            (SDL_Color) { 60, 200, 60 }, // Green
             (SDL_Color) { 250, 250, 60 }, // Yellow
-            (SDL_Color) { 250, 60, 250 }, // Magenta
+            (SDL_Color) { 200, 60, 200 }, // Magenta
             (SDL_Color) { 250, 155, 60 }, // Orange
 
         };
@@ -2561,8 +2581,8 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
             Nation_SetCapital(match, nation, capital);
 
             // Create engineers
+            ((Nation*)Scene_GetComponent(match, nation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++; // Done first, so that engineer unit ordinal is correct
             Engineer_Create(match, nationVector, nation);
-            ((Nation*)Scene_GetComponent(match, nation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++;
         }
 
         // Make all nations enemies of each other

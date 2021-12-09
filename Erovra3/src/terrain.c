@@ -95,7 +95,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
 
     if (mapSize >= 512.0f && Terrain_IsBorder(map, mapSize, mapSize, x, y, 0.5f, 1)) {
         return (SDL_Color) { 255, 255, 255 };
-    } else if (i < 0.5) {
+    } else if (i <= 0.5) {
         // water
         i *= 2;
         i = powf(i, 51);
@@ -104,7 +104,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
     } else {
         // ground
         i = (i - 0.5f) * 2;
-        i = powf(i, 0.25f);
+        i = powf(i, 0.25);
         // ranges from 0 to 1, 0 being completely dark, 1 being completely illuminated
         float light = 1.0f;
         if (x < mapSize - 1 && y < mapSize - 1) {
@@ -127,7 +127,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
             // vector r = a-c
             float r_x = a_x - c_x;
             float r_y = a_y - c_y;
-            float r_z = a_z - c_z; // +((float)rand()) / ((float)RAND_MAX) * q_z * 2 - q_z * 2 * 0.5f;
+            float r_z = a_z - c_z; //+ ((float)rand()) / ((float)RAND_MAX) * q_z * 2 - q_z * 2 * 0.5f;
             // normal = qxr
             float n_x = (q_y * r_z) - (q_z * r_y);
             float n_y = (q_z * r_x) - (q_x * r_z);
@@ -145,7 +145,7 @@ SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i)
         float hue = max(30, min(120, 0.0000000369 * powf(i, 5) - 0.00000714407361075 * powf(i, 4) + 0.000381833965482 * powf(i, 3) - 0.00120026434352 * powf(i, 2) + 0.207995982732 * i + 35.3635585447));
         float saturation = 0.01 * (0.00000104466482419f * powf(hue, 5) - 0.000370237098314f * powf(hue, 4) + 0.0514055142232 * powf(hue, 3) - 3.4855548673f * powf(hue, 2) + 115.271785291 * hue - 1464.19348868);
         float value = 0.01 * (0.00617544789795f * powf(hue, 2) - 1.54124326627f * hue + 160.0f);
-        return Terrain_HSVtoRGB(hue + 120 * (1 - light) - 20, min(0.3f, max(0.2f, saturation + (0.5f - light) * 0.1f)), max(0.2f, min(0.8f, value * light)));
+        return Terrain_HSVtoRGB(hue + 120 * (1 - light) - 20, min(0.35f, max(0.25f, saturation + (0.5f - light) * 0.1f)), max(0.3f, min(0.8f, value * light)));
     }
 }
 

@@ -314,23 +314,43 @@ x Game crashes when user adjusts map settings while map preview is loading
 3.10.x- Pivot
 x More than one nation (Maybe an array of enemy nations)
 	x Each unit has an entityID of their nation, not a flag
-	- Procedurally generate more than two nations
+	x Procedurally generate more than two nations
 	- Ports are reset, make that not so
-- Resources like wood, oil
+	x Fix AI making too many planes
+	x Fix AI not making replacement engineers
+	- Fix AI hesitation glitch
+	x Switch texture for captured capitals to city
+	x Make Magenta, Yellow, green not look so garish
+	x Add wall outline texture
+	x Fog of war should be an option in match creation menu
+	x Nation number is an option in matche creation menu
+		x Add notches to sliders
+		x Add tool-tip above slider-knob when changing value (maybe with callback fxn for slider value translation)
+	- AI ground units shouldn't care about plane sightings
+	- Reduce generate progress bar max
+	- Fix wall cost
+	- Farm cost goes up even if you capture other farms?
+- Resources change
+	- Farms produce food just like a resource producer
+		- Is consumed by the units of a city
+		- If no food, city happiness lowers (see lower)
+		- Grain silos to store excess food
 	- Wood to build buildings
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky
+		- Same thing as food, produced by other units, drained by each unit
 - More non-combat units like miners, farmers
 	- miners go out and can test soil, can set up mines, mines can pack up and leave
 	- farmers, "     " farms
 	- settlers "     " cities
 		- Cities should be cheap to settle, scale linearly with how many cities there are
 		- Quadratic to upgrade a city (or however much it would be depending on the coin rate, should remain relatively constant)
-		- This would make outposts possible
+		- This would make 'outposts' possible
+	- Gameplay:
+		- 
 - Academy trains other kinds of units
 	- Pilots
 - Cities can become restless, go rogue and spawn new rebel nations
 	- Not enough food
-	- Default on upkeep
 	- Have a happiness meter
 		- Building consumer goods in factories increaes this happiness
 		- Naturally decreases
@@ -349,6 +369,7 @@ x More than one nation (Maybe an array of enemy nations)
 	- Can show other nations
 	- Show AI goals above the capital
 	- Show AI visited tiles
+	- Show port tiles
 - Settings where you can turn down the volume!
 - Swap "Surrender" and "Back to game" buttons in menu
 - Fix city names, serialize the trie
