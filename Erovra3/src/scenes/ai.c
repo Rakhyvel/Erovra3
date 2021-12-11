@@ -16,11 +16,10 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
 
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
@@ -28,7 +27,7 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
         for (int i = 0; i < nation->cities->size; i++) {
             EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
 
-            Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+            Sprite* citySprite = (Sprite*)Scene_GetComponent(scene, cityID, SPRITE_COMPONENT_ID);
             City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
             // Only build airfields at cities that don't have airfields and do have factories
@@ -40,12 +39,12 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
             if (leaveOneSpace) {
                 for (int y = -64; y <= 64; y += 64) {
                     for (int x = -64; x <= 64; x += 64) {
-                        Vector point = (Vector) { x + cityMotion->pos.x, y + cityMotion->pos.y };
+                        Vector point = (Vector) { x + citySprite->pos.x, y + citySprite->pos.y };
                         if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
                             continue;
 
                         // Only go to squares adjacent friendly cities
-                        if (Vector_CabDist(point, cityMotion->pos) != 64)
+                        if (Vector_CabDist(point, citySprite->pos) != 64)
                             continue;
 
                         if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
@@ -61,18 +60,18 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
             // Search around city
             for (int y = -64; y <= 64; y += 64) {
                 for (int x = -64; x <= 64; x += 64) {
-                    Vector point = (Vector) { x + cityMotion->pos.x, y + cityMotion->pos.y };
+                    Vector point = (Vector) { x + citySprite->pos.x, y + citySprite->pos.y };
                     if (Terrain_GetBuildingAt(terrain, point.x, point.y) != INVALID_ENTITY_INDEX)
                         continue;
 
                     // Only go to squares adjacent friendly cities
-                    if (Vector_CabDist(point, cityMotion->pos) != 64)
+                    if (Vector_CabDist(point, citySprite->pos) != 64)
                         continue;
 
                     if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
 
-                    float distance = Vector_Dist(motion->pos, point);
+                    float distance = Vector_Dist(sprite->pos, point);
                     // If youre looking to build a mine, find the best place, regardless of distance
                     if (type == UnitType_MINE) {
                         distance = 1.0f / Terrain_GetOre(terrain, point.x, point.y);
@@ -81,7 +80,7 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
                     if (distance > tempDistance)
                         continue;
 
-                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, sprite->pos, point, 0.5))
                         continue;
                     tempTarget = point;
                     tempDistance = distance;
@@ -93,8 +92,8 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
         if (tempTarget.x != -1) {
             target->tar = tempTarget;
             target->lookat = tempTarget;
-            if (Vector_Dist(motion->pos, target->tar) < 32) {
-                Match_BuyExpansion(scene, type, simpleRenderable->nation, motion->pos);
+            if (Vector_Dist(sprite->pos, target->tar) < 32) {
+                Match_BuyExpansion(scene, type, sprite->nation, sprite->pos);
             }
         }
     }
@@ -106,11 +105,10 @@ static void findPortTile(Scene* scene, EntityID nationID)
 
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
@@ -119,7 +117,7 @@ static void findPortTile(Scene* scene, EntityID nationID)
         for (int i = 0; i < nation->cities->size; i++) {
             EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
 
-            Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+            Sprite* citySprite= (Sprite*)Scene_GetComponent(scene, cityID, SPRITE_COMPONENT_ID);
             City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
             // Search port tiles
@@ -129,20 +127,20 @@ static void findPortTile(Scene* scene, EntityID nationID)
                     continue;
 
                 // Only go to squares adjacent friendly cities
-                if (Vector_CabDist(point, cityMotion->pos) != 64)
+                if (Vector_CabDist(point, citySprite->pos) != 64)
                     continue;
 
-                float distance = Vector_Dist(motion->pos, point);
+                float distance = Vector_Dist(sprite->pos, point);
 
                 if (distance > tempDistance)
                     continue;
 
-                Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
-                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
+                Vector intersection = Terrain_LineOfSightPoint(terrain, citySprite->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(citySprite->pos.x / 64) + (int)(citySprite->pos.y / 64) * terrain->tileSize)) {
                     continue;
                 }
                 // Check to see that engineer can get to port
-                intersection = Terrain_LineOfSightPoint(terrain, motion->pos, point, 0.5);
+                intersection = Terrain_LineOfSightPoint(terrain, sprite->pos, point, 0.5);
                 if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize))
                     continue;
 
@@ -155,10 +153,10 @@ static void findPortTile(Scene* scene, EntityID nationID)
         if (tempTarget.x != -1) {
             target->tar = tempTarget;
             target->lookat = tempTarget;
-            if (Vector_Dist(motion->pos, target->tar) < 32) {
-                Match_BuyExpansion(scene, UnitType_PORT, simpleRenderable->nation, motion->pos);
-                target->tar = motion->pos;
-                target->lookat = motion->pos;
+            if (Vector_Dist(sprite->pos, target->tar) < 32) {
+                Match_BuyExpansion(scene, UnitType_PORT, sprite->nation, sprite->pos);
+                target->tar = sprite->pos;
+                target->lookat = sprite->pos;
             }
         }
     }
@@ -168,8 +166,8 @@ static void orderFromProducer(Scene* scene, EntityID nationID, UnitType producer
 {
     system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -206,8 +204,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
         knownEnemyCapital |= enemyCapitalUnit->knownByEnemy;
         system(scene, otherID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
         {
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+            Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
             Unit* unit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
@@ -270,19 +268,18 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
 
     goap->variables[ENGINEER_ISNT_BUSY] = false;
     goap->variables[HAS_ENGINEER] = nation->unitCount[UnitType_ENGINEER] + nation->prodCount[UnitType_ENGINEER] > 0;
-    Motion* engineerMotion = NULL;
+    Sprite* engineerSprite = NULL;
     system(scene, otherID, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != id) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+        if (sprite->nation != id) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, otherID, TARGET_COMPONENT_ID);
 
-        if (Vector_Dist(motion->pos, target->tar) < 32) {
+        if (Vector_Dist(sprite->pos, target->tar) < 32) {
             goap->variables[ENGINEER_ISNT_BUSY] = true;
-            engineerMotion = motion;
+            engineerSprite = sprite;
             break;
         }
     }
@@ -293,17 +290,17 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     goap->variables[SPACE_FOR_PORT] = false;
     goap->variables[HAS_PORT_TILES] = false;
     goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = false;
-    if (engineerMotion != NULL) {
+    if (engineerSprite != NULL) {
         for (int i = 0; i < nation->cities->size; i++) {
             EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
-            Motion* cityMotion = (Motion*)Scene_GetComponent(scene, cityID, MOTION_COMPONENT_ID);
+            Sprite* citySprite = (Sprite*)Scene_GetComponent(scene, cityID, SPRITE_COMPONENT_ID);
             City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
             int remainingSpaces = 0;
             for (int x = -64; x <= 64; x += 64) {
                 for (int y = -64; y <= 64; y += 64) {
-                    Vector point = { x + cityMotion->pos.x, y + cityMotion->pos.y };
-                    if (Vector_CabDist(point, cityMotion->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, engineerMotion->pos, point, 0.5f)) {
+                    Vector point = { x + citySprite->pos.x, y + citySprite->pos.y };
+                    if (Vector_CabDist(point, citySprite->pos) == 64 && Terrain_GetHeightForBuilding(terrain, point.x, point.y) > 0.5f && Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, engineerSprite->pos, point, 0.5f)) {
                         if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD) && Match_CityHasType(scene, homeCity, UnitType_FACTORY)) {
                             goap->variables[SPACE_FOR_AIRFIELD] = true;
                         }
@@ -324,20 +321,20 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
                     continue;
 
                 // Only go to squares adjacent friendly cities
-                if (Vector_CabDist(point, cityMotion->pos) > 65)
+                if (Vector_CabDist(point, citySprite->pos) > 65)
                     continue;
 
-                if (!Terrain_LineOfSight(terrain, engineerMotion->pos, cityMotion->pos, 0.5))
+                if (!Terrain_LineOfSight(terrain, engineerSprite->pos, citySprite->pos, 0.5))
                     continue;
                 goap->variables[ENGINEER_CAN_SEE_PORT_CITY_TILE] = true;
 
                 // Checks to see if port is buildable
-                Vector intersection = Terrain_LineOfSightPoint(terrain, cityMotion->pos, point, 0.5);
-                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(cityMotion->pos.x / 64) + (int)(cityMotion->pos.y / 64) * terrain->tileSize)) {
+                Vector intersection = Terrain_LineOfSightPoint(terrain, citySprite->pos, point, 0.5);
+                if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(citySprite->pos.x / 64) + (int)(citySprite->pos.y / 64) * terrain->tileSize)) {
                     continue;
                 }
                 // Check to see that engineer can get to port
-                intersection = Terrain_LineOfSightPoint(terrain, engineerMotion->pos, point, 0.5);
+                intersection = Terrain_LineOfSightPoint(terrain, engineerSprite->pos, point, 0.5);
                 if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) != ((int)(point.x / 64) + (int)(point.y / 64) * terrain->tileSize)) {
                     continue;
                 }
@@ -354,8 +351,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     goap->variables[HAS_AVAILABLE_PORT] = false;
     system(scene, otherID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != id) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+        if (sprite->nation != id) {
             continue;
         }
         Unit* unit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
@@ -393,13 +390,12 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
 // Really only for tactical planning, let GOAP handle strategic stuff, it's good at that
 void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -413,7 +409,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
         if (isPatrol) {
             patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         }
-        float dist = isPatrol ? Vector_Dist(motion->pos, patrol->patrolPoint) : Vector_Dist(motion->pos, target->tar);
+        float dist = isPatrol ? Vector_Dist(sprite->pos, patrol->patrolPoint) : Vector_Dist(sprite->pos, target->tar);
         if (dist < 3) {
             unit->foundAlertedSquare = false;
         }
@@ -425,8 +421,8 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
         for (int i = 0; i < nation->highPrioritySpaces->size; i++) {
             Vector point = *(Vector*)Arraylist_Get(nation->highPrioritySpaces, i);
             Vector scaledUp = Vector_Scalar(point, 32);
-            float distance = Vector_Dist(motion->pos, scaledUp);
-            if (distance < tempDist && Terrain_LineOfSight(terrain, motion->pos, scaledUp, motion->z)) {
+            float distance = Vector_Dist(sprite->pos, scaledUp);
+            if (distance < tempDist && Terrain_LineOfSight(terrain, sprite->pos, scaledUp, sprite->z)) {
                 tempDist = distance;
                 closestTile = scaledUp;
                 foundEnemy = true;
@@ -442,7 +438,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
         int dx = xOffsets[r];
         int dy = yOffsets[r];
         for (int i = 0; !foundEnemy && i < nation->visitedSpacesSize * nation->visitedSpacesSize; i++) {
-            Vector point = { x + (int)(motion->pos.x / 32), y + (int)(motion->pos.y / 32) };
+            Vector point = { x + (int)(sprite->pos.x / 32), y + (int)(sprite->pos.y / 32) };
             if (point.x >= 0 && point.y >= 0 && point.x < nation->visitedSpacesSize && point.y < nation->visitedSpacesSize) {
                 float spaceValue = nation->visitedSpaces[(int)point.x + (int)(point.y) * nation->visitedSpacesSize];
                 // If there is an enemy
@@ -451,9 +447,9 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
                         unit->foundAlertedSquare = true;
                     }
                     Vector newPoint = Vector_Scalar(point, 32);
-                    float newDist = Vector_Dist(motion->pos, newPoint);
+                    float newDist = Vector_Dist(sprite->pos, newPoint);
                     // If near enough to target, or if new target is closer
-                    if ((dist < 3 || newDist < dist) && Terrain_LineOfSight(terrain, motion->pos, newPoint, motion->z)) {
+                    if ((dist < 3 || newDist < dist) && Terrain_LineOfSight(terrain, sprite->pos, newPoint, sprite->z)) {
                         closestTile = newPoint;
                         foundEnemy = true; // Breaks out of loop
                     }
@@ -479,13 +475,12 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -499,32 +494,31 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
         if (isPatrol) {
             patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         }
-        float dist = isPatrol ? Vector_Dist(motion->pos, patrol->patrolPoint) : Vector_Dist(motion->pos, target->tar);
+        float dist = isPatrol ? Vector_Dist(sprite->pos, patrol->patrolPoint) : Vector_Dist(sprite->pos, target->tar);
         if (dist > 1 || unit->foundAlertedSquare) {
             continue;
         }
 
         float minDist = 2 * terrain->size;
         Vector closestOther = { -1, -1 };
-        system(scene, otherID, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+        system(scene, otherID, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
         {
             if (id == otherID)
                 continue;
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (otherRender->nation != nationID) {
+            Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (otherSprite->nation != nationID) {
                 continue;
             }
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             if (!otherUnit->foundAlertedSquare)
                 continue;
-            if (Vector_Dist(motion->pos, otherMotion->pos) > minDist)
+            if (Vector_Dist(sprite->pos, otherSprite->pos) > minDist)
                 continue;
 
-            if (!Terrain_LineOfSight(terrain, motion->pos, otherMotion->pos, motion->z))
+            if (!Terrain_LineOfSight(terrain, sprite->pos, otherSprite->pos, sprite->z))
                 continue;
-            minDist = Vector_Dist(motion->pos, otherMotion->pos);
-            closestOther = otherMotion->pos;
+            minDist = Vector_Dist(sprite->pos, otherSprite->pos);
+            closestOther = otherSprite->pos;
         }
 
         if (closestOther.x != -1) {
@@ -539,8 +533,8 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
             unit->foundAlertedSquare = false;
             float randX = (float)(rand()) / (float)RAND_MAX - 0.5f;
             float randY = (float)(rand()) / (float)RAND_MAX - 0.5f;
-            Vector newTarget = Vector_Add(motion->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
-            if (Terrain_LineOfSight(terrain, motion->pos, newTarget, motion->z)) {
+            Vector newTarget = Vector_Add(sprite->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
+            if (Terrain_LineOfSight(terrain, sprite->pos, newTarget, sprite->z)) {
                 if (isPatrol) {
                     patrol->patrolPoint = newTarget;
                 } else {
@@ -554,13 +548,12 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
 
 void AI_TargetEnemyCapital(Scene* scene, EntityID nationID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
@@ -569,9 +562,9 @@ void AI_TargetEnemyCapital(Scene* scene, EntityID nationID)
             if (enemyNation->capital == INVALID_ENTITY_INDEX) {
                 continue;
             }
-            Motion* enemyCapital = (Motion*)Scene_GetComponent(scene, enemyNation->capital, MOTION_COMPONENT_ID);
+            Sprite* enemyCapital = (Sprite*)Scene_GetComponent(scene, enemyNation->capital, SPRITE_COMPONENT_ID);
 
-            if (Terrain_LineOfSight(terrain, motion->pos, enemyCapital->pos, motion->z)) {
+            if (Terrain_LineOfSight(terrain, sprite->pos, enemyCapital->pos, sprite->z)) {
                 target->tar = enemyCapital->pos;
                 target->lookat = enemyCapital->pos;
                 break;
@@ -618,11 +611,10 @@ void AI_BuildCity(Scene* scene, EntityID nationID)
 {
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -641,10 +633,10 @@ void AI_BuildCity(Scene* scene, EntityID nationID)
                 }
                 if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                     continue;
-                float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10 - Terrain_GetOre(terrain, (int)point.x, (int)point.y) * 10;
+                float distance = Vector_Dist(sprite->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10 - Terrain_GetOre(terrain, (int)point.x, (int)point.y) * 10;
                 if (distance > tempDistance)
                     continue;
-                if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5)) {
+                if (!Terrain_LineOfSight(terrain, sprite->pos, point, 0.5)) {
                     continue;
                 }
                 tempTarget = point;
@@ -656,8 +648,8 @@ void AI_BuildCity(Scene* scene, EntityID nationID)
         if (tempTarget.x != -1) {
             target->tar = tempTarget;
             target->lookat = tempTarget;
-            if (Vector_Dist(motion->pos, target->tar) < 32) {
-                Match_BuyCity(scene, simpleRenderable->nation, motion->pos);
+            if (Vector_Dist(sprite->pos, target->tar) < 32) {
+                Match_BuyCity(scene, sprite->nation, sprite->pos);
             }
         }
         break;
@@ -668,11 +660,10 @@ void AI_BuildPortCity(Scene* scene, EntityID nationID)
 {
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        if (simpleRenderable->nation != nationID) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        if (sprite->nation != nationID) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
@@ -695,13 +686,13 @@ void AI_BuildPortCity(Scene* scene, EntityID nationID)
                     }
                     if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                         continue;
-                    float distance = Vector_Dist(motion->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
+                    float distance = Vector_Dist(sprite->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10;
                     if (distance > tempDistance)
                         continue;
-                    if (!Terrain_LineOfSight(terrain, motion->pos, point, 0.5))
+                    if (!Terrain_LineOfSight(terrain, sprite->pos, point, 0.5))
                         continue;
-                    Vector intersection = Terrain_LineOfSightPoint(terrain, motion->pos, point, 0.5);
-                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(motion->pos.x / 64) + (int)(motion->pos.y / 64) * terrain->tileSize)) {
+                    Vector intersection = Terrain_LineOfSightPoint(terrain, sprite->pos, point, 0.5);
+                    if (((int)(intersection.x / 64) + (int)(intersection.y / 64) * terrain->tileSize) == ((int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize)) {
                         continue;
                     }
                     tempTarget = point;
@@ -713,8 +704,8 @@ void AI_BuildPortCity(Scene* scene, EntityID nationID)
         if (tempTarget.x != -1) {
             target->tar = tempTarget;
             target->lookat = tempTarget;
-            if (Vector_Dist(motion->pos, target->tar) < 32) {
-                Match_BuyCity(scene, simpleRenderable->nation, motion->pos);
+            if (Vector_Dist(sprite->pos, target->tar) < 32) {
+                Match_BuyCity(scene, sprite->nation, sprite->pos);
             }
         }
         break;
