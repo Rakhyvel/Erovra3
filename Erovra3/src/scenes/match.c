@@ -199,6 +199,9 @@ bool Match_CheckResources(Nation* nation, UnitType type)
 {
     // Check resource amounts
     for (int i = 0; i < _ResourceType_Length; i++) {
+        if (i == ResourceType_FOOD) {
+            continue;
+        }
         if (nation->resources[i] < nation->costs[i][type]) {
             return false;
         }
@@ -580,7 +583,6 @@ void Match_Death(Scene* scene)
                 } else {
                     City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
                     Nation* otherNation = (Nation*)Scene_GetComponent(scene, city->captureNation, NATION_COMPONENT_ID);
-                    printf("City at (%f, %f) captured on tick, tick: %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
                     Arraylist_Add(&otherNation->cities, &id);
                     simpleRenderable->nation = city->captureNation;
@@ -597,11 +599,9 @@ void Match_Death(Scene* scene)
 
                 // Remove expansion from city's array, remove expansion from terrain map
                 if (Scene_EntityHasComponents(scene, id, EXPANSION_COMPONENT_ID)) {
-                    printf("Expansion at (%f, %f) destroyed on %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
                     Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
                     homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                     homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
-                    printf("%d (%f, %f)\n", unit->type, motion->pos.x, motion->pos.y);
                     Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
                     nation->costs[ResourceType_COIN][unit->type] -= nation->unitCount[unit->type] * 5;
                 }
@@ -1160,8 +1160,6 @@ void Match_AI(Scene* scene)
         if (nation->capital != INVALID_ENTITY_INDEX) {
             AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
             Goap_Update(scene, &(ai->goap), id);
-        } else {
-            AI_TargetGroundUnitsRandomly(scene, id);
         }
     }
 }
@@ -1215,13 +1213,11 @@ void Match_CombatantAttack(struct scene* scene)
 
             // Mark out enemies
             if (dist < combatant->attackDist && motion->z <= 0.5f) {
-                float x = otherMotion->pos.x;
-                float y = otherMotion->pos.y;
-                Match_SetAlertedTile(nation, x, y, -1);
-                Match_SetAlertedTile(nation, x - 32, y, 0);
-                Match_SetAlertedTile(nation, x, y - 32, 0);
-                Match_SetAlertedTile(nation, x + 32, y, 0);
-                Match_SetAlertedTile(nation, x, y + 32, 0);
+                for (int x = -2; x <= 2; x++) {
+                    for (int y = -2; y <= 2; y++) {
+                        Match_SetAlertedTile(nation, otherMotion->pos.x + x, otherMotion->pos.y + y, 0);
+                    }
+                }
             }
 
             if (dist < closestDist || (dist < combatant->attackDist && onlyBuildings && !Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID))) {
@@ -1400,7 +1396,11 @@ void Match_AirplaneScout(struct scene* scene)
                     if (Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                         otherUnit->knownByEnemy = true;
                     }
-                    Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, 0);
+                    for (int x = -1; x <= 1; x++) {
+                        for (int y = -1; y <= 1; y++) {
+                            Match_SetAlertedTile(nation, otherMotion->pos.x + x, otherMotion->pos.y + y, 0);
+                        }
+                    }
                 }
             }
         }
@@ -1453,6 +1453,26 @@ void Match_DestroyResourceParticles(struct scene* scene)
     }
 }
 
+void Match_EatFood(struct scene* scene)
+{
+    system(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    {
+        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        int ticks = (int)(ticksPerLabor * 6);
+        if (health->aliveTicks % ticks == 0) {
+            if (nation->resources[ResourceType_FOOD] > 0) {
+                nation->resources[ResourceType_FOOD]--;
+            } else {
+                health->health *= 0.5f;
+                printf("Hungry!\n");
+            }
+        }
+    }
+}
+
 /*
 	For every producer, decrements time left for producer. If there are no ticks 
 	left, produces the unit. 
@@ -1471,55 +1491,53 @@ void Match_ProduceUnits(struct scene* scene)
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         City* city = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
 
-        if (nation->resources[ResourceType_POPULATION] < nation->resources[ResourceType_POPULATION_CAPACITY]) {
-            producer->orderTicksRemaining--;
-            if (producer->orderTicksRemaining == 0) {
-                nation->prodCount[producer->order]--;
-                nation->unitCount[producer->order]++;
-                if (producer->order == UnitType_INFANTRY) {
-                    Infantry_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_ENGINEER) {
-                    Engineer_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_CAVALRY) {
-                    Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_ARTILLERY) {
-                    Artillery_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_DESTROYER) {
-                    Destroyer_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_CRUISER) {
-                    Cruiser_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_BATTLESHIP) {
-                    Battleship_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_FIGHTER) {
-                    Fighter_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_ATTACKER) {
-                    Attacker_Create(scene, motion->pos, simpleRenderable->nation);
-                } else if (producer->order == UnitType_BOMBER) {
-                    Bomber_Create(scene, motion->pos, simpleRenderable->nation);
-                } else {
-                    PANIC("Producer's can't build that UnitType");
-                }
-                nation->resources[ResourceType_POPULATION]++;
+        producer->orderTicksRemaining--;
+        if (producer->orderTicksRemaining == 0) {
+            nation->prodCount[producer->order]--;
+            nation->unitCount[producer->order]++;
+            if (producer->order == UnitType_INFANTRY) {
+                Infantry_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_ENGINEER) {
+                Engineer_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_CAVALRY) {
+                Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_ARTILLERY) {
+                Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_DESTROYER) {
+                Destroyer_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_CRUISER) {
+                Cruiser_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_BATTLESHIP) {
+                Battleship_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_FIGHTER) {
+                Fighter_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_ATTACKER) {
+                Attacker_Create(scene, motion->pos, simpleRenderable->nation);
+            } else if (producer->order == UnitType_BOMBER) {
+                Bomber_Create(scene, motion->pos, simpleRenderable->nation);
+            } else {
+                PANIC("Producer's can't build that UnitType");
+            }
+            nation->resources[ResourceType_POPULATION]++;
 
-                if (Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+            if (Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+                char buffer[32];
+                memset(buffer, 0, 32);
+                Match_CopyUnitName(unit->type, buffer);
+                Match_AddMessage(activeColor, "Order completed at %s %s", city->name, buffer);
+            }
+
+            if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
+                if (producer->repeat && Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
                     char buffer[32];
                     memset(buffer, 0, 32);
                     Match_CopyUnitName(unit->type, buffer);
-                    Match_AddMessage(activeColor, "Order completed at %s %s", city->name, buffer);
+                    Match_AddMessage(errorColor, "Insufficient resources at %s %s, auto re-order canceled", city->name, buffer);
                 }
-
-                if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
-                    if (producer->repeat && Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
-                        char buffer[32];
-                        memset(buffer, 0, 32);
-                        Match_CopyUnitName(unit->type, buffer);
-                        Match_AddMessage(errorColor, "Insufficient resources at %s %s, auto re-order canceled", city->name, buffer);
-                    }
-                    producer->order = INVALID_ENTITY_INDEX;
-                    producer->repeat = false;
-                    focusable->guiContainer = producer->readyGUIContainer;
-                    guiChange = true;
-                }
+                producer->order = INVALID_ENTITY_INDEX;
+                producer->repeat = false;
+                focusable->guiContainer = producer->readyGUIContainer;
+                guiChange = true;
             }
         }
     }
@@ -1554,13 +1572,14 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
             SimpleRenderable* homeCitySimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID);
             if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
                 Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
+
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
-                newNation->costs[ResourceType_COIN][unit->type] *= 2;
 
                 // You don't get the farms of other people
                 if (unit->type == UnitType_FARM) {
                     health->isDead = true;
                 } else {
+                    newNation->costs[ResourceType_COIN][unit->type] *= 2;
                     nation->resources[ResourceType_POPULATION]--;
                     newNation->resources[ResourceType_POPULATION]++;
                 }
@@ -1586,7 +1605,6 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 Scene_Unassign(scene, id, AI_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
-                printf("Expansion at (%f, %f) updated on %d\n", motion->pos.x / 64 - 32, motion->pos.y / 64 - 32, Apricot_Ticks);
             }
         }
     }
@@ -1983,7 +2001,7 @@ void Match_RenderNationInfo(Scene* scene)
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
-    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, NATION_COMPONENT_ID)
     {
         Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
 
@@ -1993,6 +2011,9 @@ void Match_RenderNationInfo(Scene* scene)
         FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_ORE]);
         Texture_Draw(POPULATION_TEXTURE_ID, 8, 56, 20, 20, 0);
         FC_Draw(font, Apricot_Renderer, 36, 53, "%d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
+        Texture_Draw(POPULATION_TEXTURE_ID, 8, 88, 20, 20, 0);
+        FC_Draw(font, Apricot_Renderer, 36, 84, "%d", nation->resources[ResourceType_FOOD]);
+        break;
     }
 }
 
@@ -2117,6 +2138,7 @@ void Match_Update(Scene* match)
 
     Match_ProduceResources(match);
     Match_DestroyResourceParticles(match);
+    Match_EatFood(match);
     Match_ProduceUnits(match);
     Match_UpdateExpansionAllegiance(match);
 
@@ -2172,7 +2194,7 @@ void Match_Render(Scene* match)
 }
 
 /*
-	Called when infantry build city button is pressed. Builds a city */
+	Called when engineer build city button is pressed. Builds a city */
 void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 {
     system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
@@ -2188,7 +2210,7 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 }
 
 /*
-	Called by the infantry's "Test Soil" button. Gives the user the info for the soil */
+	Builds an expansion */
 void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, guiID, GUI_CLICKABLE_COMPONENT_ID))->meta;
@@ -2206,7 +2228,7 @@ void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 }
 
 /*
-	Called by the infantry's "Build Wall" button. Builds a wall on the gridline 
+	Called by the engineer's "Build Wall" button. Builds a wall on the gridline 
 	segment that the infantry is closest to. Doesn't add a wall if there is 
 	already a wall in place. */
 void Match_EngineerAddWall(Scene* scene, EntityID guiID)
@@ -2217,7 +2239,7 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused && nation->resources[ResourceType_COIN] >= 15) {
+        if (focusable->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
             Vector cellMidPoint = { 64.0f * (int)(motion->pos.x / 64) + 32.0f, 64.0f * (int)(motion->pos.y / 64) + 32.0f };
             float angle;
             float xOffset = cellMidPoint.x - motion->pos.x;
@@ -2552,12 +2574,12 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
             Arraylist_Add(&nations, &temp);
         }
         SDL_Color nationColors[] = {
-            (SDL_Color) { 60, 107, 250 }, // Blue
-            (SDL_Color) { 250, 60, 60 }, // Red
-            (SDL_Color) { 60, 200, 60 }, // Green
-            (SDL_Color) { 250, 250, 60 }, // Yellow
-            (SDL_Color) { 200, 60, 200 }, // Magenta
-            (SDL_Color) { 250, 155, 60 }, // Orange
+            (SDL_Color) { 0, 79, 206 }, // Blue
+            (SDL_Color) { 202, 20, 21 }, // Red
+            (SDL_Color) { 97, 191, 34 }, // Green
+            (SDL_Color) { 247, 216, 1 }, // Yellow
+            (SDL_Color) { 255, 0, 255 }, // Magenta
+            (SDL_Color) { 255, 129, 18 }, // Orange
 
         };
         for (int i = 0; i < nNations; i++) {
@@ -2598,6 +2620,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
         Match_AddMessage(errorColor, "Space for capitals could not be found!");
     }
 
+    ignoreMissedTicks = true;
     Apricot_PushScene(match);
 
     return match;

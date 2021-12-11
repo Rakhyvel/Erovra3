@@ -23,6 +23,8 @@ Strategy and logistics:
 	Can set up "task forces" or another better name (formation?). Can then assign task forces of task forces to manipulate on the field
 	Set up and plan invasions
 	Maybe a supply line that you'd have to maintain? That'd be hard tho
+
+A complex system that slowly comes to an equilibrium with one nation remaining. Goal is to be that nation remaining
 */
 
 #include "./main.h"

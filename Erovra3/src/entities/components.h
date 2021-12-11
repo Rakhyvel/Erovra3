@@ -50,6 +50,7 @@ typedef enum resourceType {
     ResourceType_ORE,
     ResourceType_POPULATION,
     ResourceType_POPULATION_CAPACITY,
+	ResourceType_FOOD,
     _ResourceType_Length
 } ResourceType;
 

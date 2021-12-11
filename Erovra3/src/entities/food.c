@@ -3,13 +3,13 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
+EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    if (nation->capital == INVALID_ENTITY_INDEX) { // If the nation is defeated, no ore for you!
+    if (nation->capital == INVALID_ENTITY_INDEX) { // If the nation is defeated, no food for you!
         return INVALID_ENTITY_INDEX;
     }
-    EntityID oreID = Scene_NewEntity(scene);
+    EntityID foodID = Scene_NewEntity(scene);
 
     Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
     Vector vel = Vector_Sub(capitalMotion->pos, pos);
@@ -24,7 +24,7 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         0.2f,
         true
     };
-    Scene_Assign(scene, oreID, MOTION_COMPONENT_ID, &motion);
+    Scene_Assign(scene, foodID, MOTION_COMPONENT_ID, &motion);
 
     SimpleRenderable render = {
         ORE_TEXTURE_ID,
@@ -39,17 +39,17 @@ EntityID Ore_Create(struct scene* scene, Vector pos, EntityID nationID)
         0,
         0
     };
-    Scene_Assign(scene, oreID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
-    Scene_Assign(scene, oreID, PARTICLE_LAYER_COMPONENT_ID, NULL);
+    Scene_Assign(scene, foodID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+    Scene_Assign(scene, foodID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
-        ResourceType_ORE,
+        ResourceType_FOOD,
         Vector_Dist(pos, capitalMotion->pos),
         capitalMotion->pos
     };
-    Scene_Assign(scene, oreID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
+    Scene_Assign(scene, foodID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 
-    Scene_Assign(scene, oreID, GET_COMPONENT_FIELD(scene, nationID, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, foodID, GET_COMPONENT_FIELD(scene, nationID, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
 
-    return oreID;
+    return foodID;
 }

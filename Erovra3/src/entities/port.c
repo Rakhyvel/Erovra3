@@ -18,12 +18,6 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     };
     Scene_Assign(scene, portID, MOTION_COMPONENT_ID, &motion);
 
-    Target target = {
-        (struct vector) { 0.0f, 0.0f },
-        pos,
-    };
-    Scene_Assign(scene, portID, TARGET_COMPONENT_ID, &target);
-
     SimpleRenderable render = {
         PORT_TEXTURE_ID,
         PORT_OUTLINE_TEXTURE_ID,

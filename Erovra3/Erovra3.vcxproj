@@ -222,6 +222,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\entities\food.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\entities\infantry.c">
       <SubType>
       </SubType>

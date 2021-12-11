@@ -14,6 +14,7 @@
 #include <time.h>
 
 static bool sceneStale = false; // Whether the scene stack has been modified during update
+bool ignoreMissedTicks = false;
 static Arraylist* sceneStack;
 static Mix_Chunk* samples[2];
 
@@ -80,11 +81,11 @@ void Apricot_Init(char* windowTitle, int width, int height)
     }
     SDL_SetRenderDrawBlendMode(Apricot_Renderer, SDL_BLENDMODE_BLEND);
 
-	// Init sound
+    // Init sound
     Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 2, 512);
     Mix_AllocateChannels(4);
 
-	// Init scene stack
+    // Init scene stack
     sceneStack = Arraylist_Create(3, sizeof(Scene*));
 
     printf("Started.");
@@ -136,6 +137,11 @@ void Apricot_Run()
             pollInput();
 
             scene->update(scene);
+
+            if (ignoreMissedTicks) { // Ignore missed ticks if the ignoreMissedTicks flag is set. Reset flag
+                ignoreMissedTicks = false;
+                lag = 0;
+            }
 
             if (!sceneStale && !Apricot_ASAP) { // Do not purge entities if scene is stale
                 Scene_Purge(scene);
@@ -285,7 +291,7 @@ static void pollInput()
         }
         case SDL_MOUSEWHEEL: {
             Vector* temp = &Apricot_MouseWheel; // Bypass const
-			temp->x += event.wheel.x;
+            temp->x += event.wheel.x;
             temp->y += event.wheel.y;
             break;
         }

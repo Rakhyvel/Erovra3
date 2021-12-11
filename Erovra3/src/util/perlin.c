@@ -192,7 +192,6 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
             retval[i] += map[i];
         }
         (*status)++;
-        printf("%d\n", *status);
 
         cellSize /= 2;
         amplitude *= 0.5f;

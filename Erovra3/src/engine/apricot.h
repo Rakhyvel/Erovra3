@@ -35,6 +35,10 @@ bool Apricot_ASAP;
 double Apricot_DeltaT;
 /* Number of ticks that have passed since the application was started */
 const int Apricot_Ticks;
+/* A flag to signify to the game loop that an expensive, but one-time update 
+   took place, and to ignore any missed ticks this caused. 
+   Reset to false after every update. */
+bool ignoreMissedTicks;
 
 /* ---------- Keyboard info ---------- */
 /* Character of key that was not held previous tick, or was pressed over a second ago, and is held this tick

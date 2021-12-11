@@ -51,6 +51,12 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
+	ResourceProducer resourceProducer = {
+        1.0f,
+        &Food_Create
+    };
+    Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
+
     Hoverable hoverable = {
         false,
     };

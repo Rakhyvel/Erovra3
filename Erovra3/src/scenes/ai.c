@@ -166,7 +166,6 @@ static void findPortTile(Scene* scene, EntityID nationID)
 
 static void orderFromProducer(Scene* scene, EntityID nationID, UnitType producerType, UnitType orderType)
 {
-    printf("Wow!\n");
     system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
@@ -612,7 +611,6 @@ void AI_OrderAttacker(Scene* scene, EntityID nationID)
 
 void AI_OrderEngineer(Scene* scene, EntityID nationID)
 {
-    printf("Need engineer!\n");
     orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_ENGINEER);
 }
 
@@ -761,13 +759,13 @@ void AI_BuildAcademy(Scene* scene, EntityID nationID)
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, "Win", NULL, HAS_WON, 1, COMBATANTS_AT_ENEMY_CAPITAL, 1);
+    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 1);
 
     Goap_AddAction(goap, "Target capital", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 2, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL, 1, 2);
 
     // If there are enemies, order units
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 0, 0);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, SEA_SUPREMACY, 1, 5);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, SEA_SUPREMACY, 1, 5);
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_INFANTRY, 1, 4);
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_CAVALRY, 1, 3);
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_ATTACKER, 1, 1);
@@ -781,12 +779,12 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_ATTACKER, 1);
 
     // Order ground units
-    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 3, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_ORE, HAS_AVAILABLE_FACTORY, HAS_POPULATION, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
 
     // Order ships
-    Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_ORE, HAS_AVAILABLE_PORT, HAS_POPULATION, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_ORE, HAS_AVAILABLE_PORT, HAS_POPULATION, 1, 1, 1, 1);
 
     // Order planes
     Goap_AddAction(goap, "Order fighter", &AI_OrderFighter, HAS_FIGHTER, 4, AFFORD_FIGHTER_COINS, AFFORD_FIGHTER_ORE, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1);

@@ -121,13 +121,13 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = Perlin_Generate(size, size / 2, getSeed(scene), &status);
+    map = Perlin_Generate(size, size / 1, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
             //map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
-            map[x + y * size] = (1.5f - seaLevel->value) / 3.0f * powf(map[x + y * size], 2) + 0.5f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * size];
+            map[x + y * size] = (1.5f - seaLevel->value) / 3.33f * powf(map[x + y * size], 2) + 0.55f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * size];
         }
     }
 
@@ -160,11 +160,11 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Perlin_Generate(fullMapSize, fullMapSize / 2, getSeed(scene), &status);
+    map = Perlin_Generate(fullMapSize, fullMapSize / 1, getSeed(scene), &status);
     Perlin_Normalize(map, fullMapSize);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
-            map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.0f * powf(map[x + y * fullMapSize], 2) + 0.5f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
+            map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.33f * powf(map[x + y * fullMapSize], 2) + 0.55f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
         }
     }
 
@@ -202,8 +202,6 @@ void Menu_ReconstructMap(Scene* scene, EntityID id)
     // Call the generatePreview to update the map
     if (state == IDLE) {
         SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
-    } else {
-        printf("%d\n", state);
     }
 
     // Resume updating GUI
@@ -337,7 +335,7 @@ void Menu_Update(Scene* scene)
             // Calculate progress bar max status counts based on state
             double denominator = 1;
             if (state == GENERATING) {
-                denominator = log(fullMapSize / 64.0f) / log(2) + 4;
+                denominator = log(fullMapSize / 64.0f) / log(2) + 5;
                 strncpy_s(label->text, 32, "Generating...", 32);
             } else if (state == EROSION) {
                 strncpy_s(label->text, 32, "Eroding...", 32);

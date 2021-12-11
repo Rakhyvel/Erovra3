@@ -403,7 +403,6 @@ bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
     free(path.parent);
     free(path.dist);
     time = clock() - time;
-    printf("%f\n", ((double)time) / CLOCKS_PER_SEC);
 
     if (terrain->keyContinents->size < 2) {
         printf("No key continents\n");
@@ -411,7 +410,6 @@ bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
     }
     // Go through each port point, check to see if they are valid (can see (dist is less than 8 times the size) more than one key continent)
     for (int i = 0; i < terrain->ports->size; i++) {
-        printf("%d: ", i);
         Vector portPoint = *(Vector*)Arraylist_Get(terrain->ports, i);
         Arraylist* keyContinentsSeen = Arraylist_Create(10, sizeof(int));
         for (int x = -10; x <= 10; x++) {
@@ -432,7 +430,6 @@ bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
             Arraylist_Remove(terrain->ports, i);
             i--;
         }
-        printf("\n");
     }
     return true;
 }

@@ -784,7 +784,7 @@ void updateSlider(Scene* scene)
             if (slider->nNotches == 0) { // Notchless behavior
                 slider->value = max(0.0f, min(1.0f, val));
             } else {
-                slider->value = ((int)round(val * (slider->nNotches - 1)));
+                slider->value = max(0.0f, min(slider->nNotches -1, ((int)round(val * (slider->nNotches - 1)))));
             }
             if (!gui->clickedIn) {
                 Sound_Play(HOVER_SOUND);
@@ -850,7 +850,6 @@ void updateTextBox(Scene* scene)
         if (textBox->active && Apricot_CharDown != '\0') {
             // Place character in textApricot_K
             if (Apricot_CharDown >= ' ' && Apricot_CharDown <= '~' && textBox->length < 31) {
-                printf("%d\n", Apricot_CharDown);
                 for (int i = textBox->length; i > textBox->cursorPos; i--) {
                     textBox->text[i] = textBox->text[i - 1];
                 }

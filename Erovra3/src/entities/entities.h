@@ -188,6 +188,14 @@ EntityID Farm_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCi
 */
 EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation);
 
+/*	Creates a food particle
+ * 
+ * @param scene		Pointer to the match scene
+ * @param pos		Position that the food particle starts on
+ * @param nationID	Nation that the food particle belongs to
+ */
+EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID);
+
 /*	Creates a infantry entity with components assigned
 * 
 *	@param scene	Pointer to the match scene

@@ -13,13 +13,14 @@ EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Co
     nation.resources[ResourceType_ORE] = 0;
     nation.resources[ResourceType_POPULATION] = 1;
     nation.resources[ResourceType_POPULATION_CAPACITY] = 1;
+    nation.resources[ResourceType_FOOD] = 0;
 
     // Coin costs
     nation.costs[ResourceType_COIN][UnitType_CITY] = 10;
     nation.costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation.costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation.costs[ResourceType_COIN][UnitType_PORT] = 10;
-    nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 25;
+    nation.costs[ResourceType_COIN][UnitType_AIRFIELD] = 20;
     nation.costs[ResourceType_COIN][UnitType_FARM] = 10;
     nation.costs[ResourceType_COIN][UnitType_ACADEMY] = 10;
     nation.costs[ResourceType_COIN][UnitType_WALL] = 10;
@@ -79,7 +80,7 @@ void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(10 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(5 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
         }
     }
 }

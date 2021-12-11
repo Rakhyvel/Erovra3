@@ -326,15 +326,17 @@ x More than one nation (Maybe an array of enemy nations)
 	x Nation number is an option in matche creation menu
 		x Add notches to sliders
 		x Add tool-tip above slider-knob when changing value (maybe with callback fxn for slider value translation)
+		- Minmax discrete sliders
 	- AI ground units shouldn't care about plane sightings
-	- Reduce generate progress bar max
-	- Fix wall cost
-	- Farm cost goes up even if you capture other farms?
+	x Reduce generate progress bar max
+	x Fix wall cost
+	x Farm cost goes up even if you capture other farms?
 - Resources change
 	- Farms produce food just like a resource producer
 		- Is consumed by the units of a city
 		- If no food, city happiness lowers (see lower)
 		- Grain silos to store excess food
+		- Does food go to the city? And units are assigned to each city?
 	- Wood to build buildings
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky
 		- Same thing as food, produced by other units, drained by each unit
