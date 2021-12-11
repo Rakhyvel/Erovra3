@@ -8,29 +8,15 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     EntityID bomberID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         1.0f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0.56f, // speed
-        false
-    };
-    Scene_Assign(scene, bomberID, MOTION_COMPONENT_ID, &motion);
-
-    Target target = {
-        pos,
-        pos,
-    };
-    Scene_Assign(scene, bomberID, TARGET_COMPONENT_ID, &target);
-
-    Patrol patrol = {
-        pos,
-        pos
-    };
-    Scene_Assign(scene, bomberID, PATROL_COMPONENT_ID, &patrol);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         BOMBER_TEXTURE_ID,
         BOMBER_OUTLINE_TEXTURE_ID,
         BOMBER_SHADOW_TEXTURE_ID,
@@ -43,8 +29,20 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
         84,
         54
     };
+    Scene_Assign(scene, bomberID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bomberID, PLANE_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, bomberID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Target target = {
+        pos,
+        pos,
+    };
+    Scene_Assign(scene, bomberID, TARGET_COMPONENT_ID, &target);
+
+    Patrol patrol = {
+        pos,
+        pos
+    };
+    Scene_Assign(scene, bomberID, PATROL_COMPONENT_ID, &patrol);
 
     Health health = {
         100.0f,
@@ -64,7 +62,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         50.0f, // Attack amount
         15.0f, // Attack dist
-        Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, EXPANSION_COMPONENT_ID),
+        Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, EXPANSION_COMPONENT_ID),
         15, // Attack time (ticks)
         &Bomb_Create,
         true

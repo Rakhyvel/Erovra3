@@ -9,23 +9,15 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
 
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0.2f,
-        false
-    };
-    Scene_Assign(scene, artilleryID, MOTION_COMPONENT_ID, &motion);
-
-    Target target = {
-        pos,
-        pos,
-    };
-    Scene_Assign(scene, artilleryID, TARGET_COMPONENT_ID, &target);
-
-    SimpleRenderable render = {
+        false,
+		0,
+		0,
         ARTILLERY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
@@ -38,8 +30,15 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
         36,
         20
     };
+    Scene_Assign(scene, artilleryID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, artilleryID, SURFACE_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, artilleryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Target target = {
+        pos,
+        pos,
+    };
+    Scene_Assign(scene, artilleryID, TARGET_COMPONENT_ID, &target);
+
 
     Health health = {
         100.0f,
@@ -59,7 +58,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         0.8f,
         100.0f,
-        Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, LAND_UNIT_FLAG_COMPONENT_ID),
+        Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, LAND_UNIT_FLAG_COMPONENT_ID),
         120,
         &Shell_Create,
         true

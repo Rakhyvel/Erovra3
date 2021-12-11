@@ -15,17 +15,15 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     vel = Vector_Scalar(vel, 4);
     float angle = Vector_Angle(vel);
     angle += 3.141592f / 2.0f;
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         vel,
         angle,
         4,
-        true
-    };
-    Scene_Assign(scene, bulletID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        true,
+		0,
+        0,
         BULLET_TEXTURE_ID,
         NULL,
         BULLET_SHADOW_TEXTURE_ID,
@@ -38,8 +36,8 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
         0,
         0
     };
+    Scene_Assign(scene, bulletID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bulletID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, bulletID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Projectile projectile = {
         attack,
@@ -59,7 +57,7 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
     Scene_Assign(scene, airBulletID, AIR_BULLET_COMPONENT_ID, NULL);
     Scene_Unassign(scene, airBulletID, BUILDING_LAYER_COMPONENT_ID);
     Scene_Assign(scene, airBulletID, AIR_LAYER_COMPONENT_ID, NULL);
-    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->z = 1.0f;
-    ((Motion*)Scene_GetComponent(scene, airBulletID, MOTION_COMPONENT_ID))->aZ = 0;
+    ((Sprite*)Scene_GetComponent(scene, airBulletID, SPRITE_COMPONENT_ID))->z = 1.0f;
+    ((Sprite*)Scene_GetComponent(scene, airBulletID, SPRITE_COMPONENT_ID))->aZ = 0;
     return airBulletID;
 }

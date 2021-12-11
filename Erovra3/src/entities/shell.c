@@ -22,7 +22,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
     vel = Vector_Normalize(vel);
     vel = Vector_Scalar(vel, s * cosf(theta));
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         vel,
@@ -30,11 +30,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         s * cosf(theta),
         true,
         s * sinf(theta),
-        -g
-    };
-    Scene_Assign(scene, shellID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        -g,
         SHELL_TEXTURE_ID,
         NULL,
         SHELL_SHADOW_TEXTURE_ID,
@@ -47,9 +43,8 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         0,
         0
     };
+    Scene_Assign(scene, shellID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, shellID, AIR_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, shellID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
-    Scene_Assign(scene, shellID, SHELL_COMPONENT_ID, 0);
 
     Projectile projectile = {
         attack,
@@ -57,6 +52,7 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         8.0f
     };
     Scene_Assign(scene, shellID, PROJECTILE_COMPONENT_ID, &projectile);
+    Scene_Assign(scene, shellID, SHELL_COMPONENT_ID, 0);
 
     Scene_Assign(scene, shellID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
     return shellID;

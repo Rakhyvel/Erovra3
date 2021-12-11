@@ -11,22 +11,20 @@ EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID)
     }
     EntityID foodID = Scene_NewEntity(scene);
 
-    Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
-    Vector vel = Vector_Sub(capitalMotion->pos, pos);
+    Sprite* capitalSprite = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
+    Vector vel = Vector_Sub(capitalSprite->pos, pos);
     vel = Vector_Normalize(vel);
     vel = Vector_Scalar(vel, 6);
     float angle = Vector_Angle(vel);
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         vel,
         0,
         0.2f,
-        true
-    };
-    Scene_Assign(scene, foodID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        true,
+		0,
+        0,
         ORE_TEXTURE_ID,
         NULL,
         ORE_SHADOW_TEXTURE_ID,
@@ -39,13 +37,13 @@ EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID)
         0,
         0
     };
-    Scene_Assign(scene, foodID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+    Scene_Assign(scene, foodID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, foodID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
         ResourceType_FOOD,
-        Vector_Dist(pos, capitalMotion->pos),
-        capitalMotion->pos
+        Vector_Dist(pos, capitalSprite->pos),
+        capitalSprite->pos
     };
     Scene_Assign(scene, foodID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 

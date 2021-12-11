@@ -75,12 +75,12 @@ EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Co
 void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital)
 {
     Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-    Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, capital, MOTION_COMPONENT_ID);
+    Sprite* capitalSprite = (Sprite*)Scene_GetComponent(scene, capital, SPRITE_COMPONENT_ID);
     nation->capital = capital;
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(5 * Vector_Dist(capitalMotion->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(5 * Vector_Dist(capitalSprite->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
         }
     }
 }

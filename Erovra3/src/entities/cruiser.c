@@ -9,23 +9,15 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
     EntityID cruiserID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.0f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0.2f, // speed
-        false
-    };
-    Scene_Assign(scene, cruiserID, MOTION_COMPONENT_ID, &motion);
-
-    Target target = {
-        pos,
-        pos,
-    };
-    Scene_Assign(scene, cruiserID, TARGET_COMPONENT_ID, &target);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         CRUISER_TEXTURE_ID,
         SHIP_OUTLINE_TEXTURE_ID,
         SHIP_SHADOW_TEXTURE_ID,
@@ -38,8 +30,14 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
         16,
         46
     };
+    Scene_Assign(scene, cruiserID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cruiserID, SURFACE_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, cruiserID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Target target = {
+        pos,
+        pos,
+    };
+    Scene_Assign(scene, cruiserID, TARGET_COMPONENT_ID, &target);
 
     Health health = {
         100.0f,
@@ -59,7 +57,7 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation)
     Combatant combatant = {
         2.0f, // Attack
         250.0f, // Dist
-        Scene_CreateMask(scene, 2, MOTION_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID),
+        Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, SHIP_FLAG_COMPONENT_ID),
         120, // Time
         &Shell_Create,
         false

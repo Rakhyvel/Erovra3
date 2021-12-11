@@ -11,12 +11,12 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
     }
     EntityID coinID = Scene_NewEntity(scene);
 
-    Motion* capitalMotion = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
-    Vector vel = Vector_Sub(capitalMotion->pos, pos);
+    Sprite* capitalSprite = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
+    Vector vel = Vector_Sub(capitalSprite->pos, pos);
     vel = Vector_Normalize(vel);
     vel = Vector_Scalar(vel, 6);
     float angle = Vector_Angle(vel);
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         vel,
@@ -24,11 +24,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0.2f,
         true,
         0.01, // Z vel
-        -0.0001f // z acc due to gravity
-    };
-    Scene_Assign(scene, coinID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        -0.0001f, // z acc due to gravity
         COIN_TEXTURE_ID,
         NULL,
         COIN_SHADOW_TEXTURE_ID,
@@ -41,13 +37,13 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         0,
         0
     };
-    Scene_Assign(scene, coinID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+    Scene_Assign(scene, coinID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, coinID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
         ResourceType_COIN,
-        Vector_Dist(pos, capitalMotion->pos),
-        capitalMotion->pos
+        Vector_Dist(pos, capitalSprite->pos),
+        capitalSprite->pos
     };
     Scene_Assign(scene, coinID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 

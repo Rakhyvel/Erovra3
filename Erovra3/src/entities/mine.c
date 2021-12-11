@@ -8,23 +8,15 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     EntityID mineID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, mineID, MOTION_COMPONENT_ID, &motion);
-
-    Target target = {
-        (struct vector) { 0.0f, 0.0f },
-        pos,
-    };
-    Scene_Assign(scene, mineID, TARGET_COMPONENT_ID, &target);
-
-    SimpleRenderable render = {
+        false,
+		0,
+		0,
         MINE_TEXTURE_ID,
         MINE_OUTLINE_TEXTURE_ID,
         MINE_SHADOW_TEXTURE_ID,
@@ -37,8 +29,14 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         32,
         32
     };
+    Scene_Assign(scene, mineID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, mineID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, mineID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
+
+    Target target = {
+        (struct vector) { 0.0f, 0.0f },
+        pos,
+    };
+    Scene_Assign(scene, mineID, TARGET_COMPONENT_ID, &target);
 
     Health health = {
         100.0f,

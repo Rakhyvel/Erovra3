@@ -12,7 +12,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
 
     float angle = Vector_Angle(Vector_Sub(pos, tar));
     angle += 3.1415f / 2.0f;
-    Motion motion = {
+    Sprite sprite = {
         pos,
         1.0f,
         { 0.0f, 0.0f },
@@ -20,11 +20,7 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         4,
         true,
         0.001, // Vel
-        -0.0005f // Acc due to gravity
-    };
-    Scene_Assign(scene, bombID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        -0.0005f, // Acc due to gravity
         BOMB_TEXTURE_ID,
         NULL,
         BOMB_SHADOW_TEXTURE_ID,
@@ -37,8 +33,8 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         0,
         0
     };
+    Scene_Assign(scene, bombID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bombID, AIR_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, bombID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Projectile projectile = {
         attack,

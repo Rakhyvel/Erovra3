@@ -73,7 +73,7 @@ enum RenderPriority {
 
 /* Contains basic data for positioning an entity in the world space, as
    well as moving the entity with a target and velocity */
-typedef struct motion {
+typedef struct sprite {
     struct vector pos; // The cartesian position of the unit in world-space
     float z; // The z axis coordinate. Ranges from [0,1], 0 being sea, 0.5 being surface, and 0.5-1 being air
     struct vector vel; // Difference in position over ticks
@@ -82,8 +82,20 @@ typedef struct motion {
     bool destroyOnBounds; // Whether or not the entity is purged if it goes outside the bounds of the map
     float dZ; // Change in z (height)
     float aZ; // Change in dZ (vertical acceleration)
-} Motion;
-ComponentKey MOTION_COMPONENT_ID;
+    SDL_Texture* sprite; // Texture to draw on screen
+    SDL_Texture* spriteOutline; // Texture to draw when an outline around sprite is shown
+    SDL_Texture* shadow; // Texture to draw under sprite as a shadow
+    enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
+    bool hidden; // Whether or not the sprite is hidden, and should not be rendered
+    bool showOutline; // Whether or not the sprite should have an outline
+    EntityID nation; // Nation EntityID to get color from
+    int width; // Width of the sprite when drawing to screen (asset may vary)
+    int height; // Height of the sprite when drawing to screen (asset may vary)
+    int outlineWidth; // Width of sprite outline texture
+    int outlineHeight; // Height of sprite outline texture
+    int hitTicks; // Timer, set when sprite is hit, systems fade this out. Used to add opacity to outline
+} Sprite;
+ComponentKey SPRITE_COMPONENT_ID;
 
 /*	Used by ground units and ships. These units go directly towards their target. 
 
@@ -103,24 +115,6 @@ typedef struct patrol {
     float angle; // Acts like bacteria, this angle is updated to change focal point
 } Patrol;
 ComponentKey PATROL_COMPONENT_ID;
-
-/* Contains data for rendering an entity to the screen, like it's sprite,
-   the outline of the sprite, and whether or not the outline should show */
-typedef struct simpleRenderable {
-    SDL_Texture* sprite; // Texture to draw on screen
-    SDL_Texture* spriteOutline; // Texture to draw when an outline around sprite is shown
-    SDL_Texture* shadow; // Texture to draw under sprite as a shadow
-    enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
-    bool hidden; // Whether or not the sprite is hidden, and should not be rendered
-    bool showOutline; // Whether or not the sprite should have an outline
-    EntityID nation; // Nation EntityID to get color from
-    int width; // Width of the sprite when drawing to screen (asset may vary)
-    int height; // Height of the sprite when drawing to screen (asset may vary)
-    int outlineWidth; // Width of sprite outline texture
-    int outlineHeight; // Height of sprite outline texture
-    int hitTicks; // Timer, set when sprite is hit, systems fade this out. Used to add opacity to outline
-} SimpleRenderable;
-ComponentKey SIMPLE_RENDERABLE_COMPONENT_ID;
 
 ComponentKey BUILDING_LAYER_COMPONENT_ID;
 ComponentKey SURFACE_LAYER_COMPONENT_ID;

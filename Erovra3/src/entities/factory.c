@@ -8,17 +8,15 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     EntityID factoryID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, factoryID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         FACTORY_TEXTURE_ID,
         FACTORY_OUTLINE_TEXTURE_ID,
         FACTORY_SHADOW_TEXTURE_ID,
@@ -31,8 +29,8 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         32,
         32
     };
+    Scene_Assign(scene, factoryID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, factoryID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, factoryID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,

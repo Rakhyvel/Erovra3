@@ -8,17 +8,15 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     EntityID portID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, portID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         PORT_TEXTURE_ID,
         PORT_OUTLINE_TEXTURE_ID,
         PORT_SHADOW_TEXTURE_ID,
@@ -31,8 +29,8 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         32,
         32
     };
+    Scene_Assign(scene, portID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, portID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,

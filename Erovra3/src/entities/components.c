@@ -3,10 +3,9 @@
 
 void Components_Init()
 {
-    MOTION_COMPONENT_ID = rand();
+    SPRITE_COMPONENT_ID = rand();
     TARGET_COMPONENT_ID = rand();
     PATROL_COMPONENT_ID = rand();
-    SIMPLE_RENDERABLE_COMPONENT_ID = rand();
     BUILDING_LAYER_COMPONENT_ID = rand();
     SURFACE_LAYER_COMPONENT_ID = rand();
     AIR_LAYER_COMPONENT_ID = rand();
@@ -52,10 +51,9 @@ void Components_Init()
 
 void Components_Register(struct scene* scene)
 {
-    Scene_RegisterComponent(scene, MOTION_COMPONENT_ID, sizeof(Motion));
+    Scene_RegisterComponent(scene, SPRITE_COMPONENT_ID, sizeof(Sprite));
     Scene_RegisterComponent(scene, TARGET_COMPONENT_ID, sizeof(Target));
     Scene_RegisterComponent(scene, PATROL_COMPONENT_ID, sizeof(Patrol));
-    Scene_RegisterComponent(scene, SIMPLE_RENDERABLE_COMPONENT_ID, sizeof(SimpleRenderable));
     Scene_RegisterComponent(scene, BUILDING_LAYER_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, SURFACE_LAYER_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AIR_LAYER_COMPONENT_ID, 0);

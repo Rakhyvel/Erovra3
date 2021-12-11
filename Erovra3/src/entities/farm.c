@@ -9,18 +9,15 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     EntityID farmID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    // pos parameter will be slightly towards the home city, hopefully
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, farmID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         FARM_TEXTURE_ID,
         FARM_OUTLINE_TEXTURE_ID,
         FARM_SHADOW_TEXTURE_ID,
@@ -33,8 +30,8 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
         32,
         32
     };
+    Scene_Assign(scene, farmID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, farmID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, farmID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,

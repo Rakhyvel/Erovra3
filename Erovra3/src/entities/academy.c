@@ -8,17 +8,15 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     EntityID academyID = Scene_NewEntity(scene);
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, academyID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        false,
+		0,
+		0,
         ACADEMY_TEXTURE_ID,
         ACADEMY_OUTLINE_TEXTURE_ID,
         ACADEMY_SHADOW_TEXTURE_ID,
@@ -31,8 +29,8 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
         32,
         32
     };
+    Scene_Assign(scene, academyID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, academyID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,

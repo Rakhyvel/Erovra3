@@ -10,17 +10,15 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
     Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
     Arraylist_Add(&nationStruct->cities, &cityID);
 
-    Motion motion = {
+    Sprite sprite = {
         pos,
         0.5f,
         (struct vector) { 0.0f, 0.0f },
         0,
         0,
-        false
-    };
-    Scene_Assign(scene, cityID, MOTION_COMPONENT_ID, &motion);
-
-    SimpleRenderable render = {
+        false,
+		0,
+        0,
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         isCapital ? CAPITAL_OUTLINE_TEXTURE_ID : CITY_OUTLINE_TEXTURE_ID,
         isCapital ? CAPITAL_SHADOW_TEXTURE_ID : CITY_SHADOW_TEXTURE_ID,
@@ -33,8 +31,8 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
         32,
         32
     };
+    Scene_Assign(scene, cityID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cityID, BUILDING_LAYER_COMPONENT_ID, 0);
-    Scene_Assign(scene, cityID, SIMPLE_RENDERABLE_COMPONENT_ID, &render);
 
     Health health = {
         100.0f,
