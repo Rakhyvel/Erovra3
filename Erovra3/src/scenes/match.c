@@ -165,19 +165,18 @@ void Match_CopyUnitName(UnitType type, char* buffer)
 
 bool Match_Collision(Scene* scene, EntityID id, Vector pos)
 {
-    Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-    SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-    float dx = motion->pos.x - pos.x;
-    float dy = pos.y - motion->pos.y + motion->z;
-    if (motion->z == -1) {
+    Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+    float dx = sprite->pos.x - pos.x;
+    float dy = pos.y - sprite->pos.y + sprite->z;
+    if (sprite->z == -1) {
         dy += 32;
     }
 
-    float sin = sinf(motion->angle);
-    float cos = cosf(motion->angle);
+    float sin = sinf(sprite->angle);
+    float cos = cosf(sprite->angle);
 
-    bool checkLR = fabs(sin * dx + cos * dy) <= simpleRenderable->height / 2;
-    bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
+    bool checkLR = fabs(sin * dx + cos * dy) <= sprite->height / 2;
+    bool checkTB = fabs(cos * dx - sin * dy) <= sprite->width / 2;
 
     return checkLR && checkTB;
 }
@@ -319,9 +318,9 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
         if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
             Match_AddMessage(errorColor, "Not enough available citizens for %s", name);
     } else {
-        Motion* homeCityMotion = (Motion*)Scene_GetComponent(scene, homeCity, MOTION_COMPONENT_ID); // FIXME: Get errors here!
+        Sprite* homeCitySprite = (Sprite*)Scene_GetComponent(scene, homeCity, SPRITE_COMPONENT_ID);
         City* homeCityComponent = (City*)Scene_GetComponent(scene, homeCity, CITY_COMPONENT_ID);
-        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCityMotion->pos)), -16);
+        Vector diff = Vector_Scalar(Vector_Normalize(Vector_Sub(pos, homeCitySprite->pos)), -16);
         CardinalDirection dir = Match_FindDir(diff);
         EntityID building = INVALID_ENTITY_INDEX;
         switch (type) {
@@ -446,12 +445,12 @@ void Match_ClearVisitedSpace(Nation* nation, float x0, float y0, float radius)
     }
 }
 
-void Match_SetUnitEngagedTicks(Motion* motion, Unit* unit)
+void Match_SetUnitEngagedTicks(Sprite* sprite, Unit* unit)
 {
-    if (motion->speed == 0) {
+    if (sprite->speed == 0) {
         unit->engagedTicks = 60 * 60 * 60; // 1 hour
     } else {
-        unit->engagedTicks = max(unit->engagedTicks, (int)(128.0f / motion->speed));
+        unit->engagedTicks = max(unit->engagedTicks, (int)(128.0f / sprite->speed));
     }
 }
 
@@ -491,37 +490,34 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 	either the wall or building map in the terrain struct */
 void Match_DetectHit(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
-        if (simpleRenderable->hitTicks > 0) {
-            simpleRenderable->hitTicks--;
+        if (sprite->hitTicks > 0) {
+            sprite->hitTicks--;
         }
         health->aliveTicks++;
 
         // Find closest enemy projectile
         Nation* otherNation = NULL;
-        SimpleRenderable* otherSimpleRenderable = NULL;
-        system(scene, otherID, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
+        Sprite* otherSprite = NULL;
+        system(scene, otherID, SPRITE_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
         {
             if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
                 continue;
             }
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+            otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
-            otherSimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            otherNation = (Nation*)Scene_GetComponent(scene, otherSimpleRenderable->nation, NATION_COMPONENT_ID);
+            otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
 
-            float dist = Vector_Dist(motion->pos, otherMotion->pos);
+            float dist = Vector_Dist(sprite->pos, otherSprite->pos);
             if (projectile->armed && dist < projectile->splash) {
                 float splashDamageModifier;
                 if (projectile->splash <= 8) {
@@ -532,18 +528,18 @@ void Match_DetectHit(struct scene* scene)
                 health->health -= projectile->attack * splashDamageModifier / unit->defense;
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
-                    Match_SetAlertedTile(nation, motion->pos.x, motion->pos.y, -10);
+                    Match_SetAlertedTile(nation, sprite->pos.x, sprite->pos.y, -10);
                     if (otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
-                        Match_SetUnitEngagedTicks(motion, unit);
+                        Match_SetUnitEngagedTicks(sprite, unit);
                     }
                 }
                 // GROUND UNITS: Do more damage if flanked
-                if (motion->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
+                if (sprite->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-                    Vector displacement = Vector_Sub(motion->pos, otherMotion->pos); // From other to me
-                    health->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, motion->pos))) + 1.0f);
+                    Vector displacement = Vector_Sub(sprite->pos, otherSprite->pos); // From other to me
+                    health->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, sprite->pos))) + 1.0f);
                 }
-                simpleRenderable->hitTicks = 18;
+                sprite->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
 
                 // If dead don't bother checking the rest of the particles
@@ -551,7 +547,7 @@ void Match_DetectHit(struct scene* scene)
                     health->isDead = true;
                     if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                         City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
-                        city->captureNation = otherRender->nation;
+                        city->captureNation = otherSprite->nation;
                     }
                     break;
                 }
@@ -567,10 +563,9 @@ void Match_Death(Scene* scene)
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
 
         if (health->isDead) {
-            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-            Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+            Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
             if (health->deathTicks < 16) {
                 health->deathTicks += 1;
@@ -585,12 +580,12 @@ void Match_Death(Scene* scene)
                     Nation* otherNation = (Nation*)Scene_GetComponent(scene, city->captureNation, NATION_COMPONENT_ID);
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
                     Arraylist_Add(&otherNation->cities, &id);
-                    simpleRenderable->nation = city->captureNation;
+                    sprite->nation = city->captureNation;
                     city->captureNation = INVALID_ENTITY_INDEX;
                     city->isCapital = false;
-                    simpleRenderable->sprite = CITY_TEXTURE_ID;
-                    simpleRenderable->shadow = CITY_SHADOW_TEXTURE_ID;
-                    simpleRenderable->spriteOutline = CITY_OUTLINE_TEXTURE_ID;
+                    sprite->sprite = CITY_TEXTURE_ID;
+                    sprite->shadow = CITY_SHADOW_TEXTURE_ID;
+                    sprite->spriteOutline = CITY_OUTLINE_TEXTURE_ID;
                     health->health = 100;
                     health->isDead = false;
                     health->deathTicks = 0;
@@ -602,7 +597,7 @@ void Match_Death(Scene* scene)
                     Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
                     homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
                     homeCity->expansions[expansion->dir] = INVALID_ENTITY_INDEX;
-                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)sprite->pos.x, (int)sprite->pos.y);
                     nation->costs[ResourceType_COIN][unit->type] -= nation->unitCount[unit->type] * 5;
                 }
 
@@ -619,7 +614,7 @@ void Match_Death(Scene* scene)
                 }
 
                 if (unit->type) {
-                    Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)motion->pos.x, (int)motion->pos.y);
+                    Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)sprite->pos.x, (int)sprite->pos.y);
                 }
                 nation->unitCount[unit->type]--;
             }
@@ -642,7 +637,7 @@ void Match_CheckWin(Scene* scene)
         if (nation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
-        SimpleRenderable* capitalRender = (Scene*)Scene_GetComponent(scene, nation->capital, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* capitalRender = (Scene*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
         if (capitalRender->nation != id) {
 #ifdef TOURNAMENT
             if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
@@ -665,19 +660,19 @@ void Match_CheckWin(Scene* scene)
 }
 
 /*
-	Takes in a scene, iterates through all entites that have a motion component. 
+	Takes in a scene, iterates through all entites that have a sprite component. 
 	Their position is then incremented by their velocity. */
-void Match_Motion(struct scene* scene)
+void Match_Sprite(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        Vector newPos = Vector_Add(motion->pos, motion->vel);
-        motion->dZ += motion->aZ;
-        motion->z += motion->dZ;
-        float height = Terrain_GetHeight(terrain, (int)motion->pos.x, (int)motion->pos.y);
-        motion->pos = Vector_Add(motion->pos, motion->vel);
-        if (motion->destroyOnBounds && height == -1) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Vector newPos = Vector_Add(sprite->pos, sprite->vel);
+        sprite->dZ += sprite->aZ;
+        sprite->z += sprite->dZ;
+        float height = Terrain_GetHeight(terrain, (int)sprite->pos.x, (int)sprite->pos.y);
+        sprite->pos = Vector_Add(sprite->pos, sprite->vel);
+        if (sprite->destroyOnBounds && height == -1) {
             Scene_MarkPurged(scene, id);
         }
     }
@@ -691,16 +686,15 @@ void Match_Motion(struct scene* scene)
 	passes*/
 void Match_SetVisitedSpace(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
-        if (!unit->engaged && motion->speed > 0) {
-            Match_ClearVisitedSpace(nation, motion->pos.x, motion->pos.y, combatant->attackDist);
+        if (!unit->engaged && sprite->speed > 0) {
+            Match_ClearVisitedSpace(nation, sprite->pos.x, sprite->pos.y, combatant->attackDist);
         }
     }
 }
@@ -713,101 +707,99 @@ void Match_SetVisitedSpace(struct scene* scene)
 	Stops units if they go through an enemy wall */
 void Match_Target(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
         // Calculate if pointing in direction of lookat vector
-        Vector displacement = Vector_Sub(motion->pos, target->lookat);
+        Vector displacement = Vector_Sub(sprite->pos, target->lookat);
         float tempAngle = Vector_Angle(displacement); // atan2
-        if (fabs(motion->angle - tempAngle) < 3.1415926) {
+        if (fabs(sprite->angle - tempAngle) < 3.1415926) {
             // Can be compared directly
-        } else if (motion->angle < tempAngle) {
-            motion->angle += 2 * 3.1415926f;
-        } else if (motion->angle > tempAngle) {
-            motion->angle -= 2 * 3.1415926f;
+        } else if (sprite->angle < tempAngle) {
+            sprite->angle += 2 * 3.1415926f;
+        } else if (sprite->angle > tempAngle) {
+            sprite->angle -= 2 * 3.1415926f;
         }
-        float diff = (float)fabs(motion->angle - tempAngle);
+        float diff = (float)fabs(sprite->angle - tempAngle);
 
-        if (diff > motion->speed / 18.0f) {
+        if (diff > sprite->speed / 18.0f) {
             // Not looking in direction, turn
-            if (motion->angle > tempAngle) {
-                motion->angle -= 5.0f * powf(motion->speed, 2) / 18.0f;
+            if (sprite->angle > tempAngle) {
+                sprite->angle -= 5.0f * powf(sprite->speed, 2) / 18.0f;
             } else {
-                motion->angle += 5.0f * powf(motion->speed, 2) / 18.0f;
+                sprite->angle += 5.0f * powf(sprite->speed, 2) / 18.0f;
             }
-            motion->vel.x = 0;
-            motion->vel.y = 0;
-        } else if (Vector_Dist(target->tar, motion->pos) > motion->speed) {
+            sprite->vel.x = 0;
+            sprite->vel.y = 0;
+        } else if (Vector_Dist(target->tar, sprite->pos) > sprite->speed) {
             // Looking in direction, not at target, move
-            motion->vel.x = (target->tar.x - motion->pos.x);
-            motion->vel.y = (target->tar.y - motion->pos.y);
-            float mag = sqrtf((motion->vel.x * motion->vel.x) + (motion->vel.y * motion->vel.y));
-            float slownessFactor = motion->z == 0.5 ? -Terrain_GetHeight(terrain, (int)motion->pos.x, (int)motion->pos.y) / 2.0f + 1.25f : 1.0f;
+            sprite->vel.x = (target->tar.x - sprite->pos.x);
+            sprite->vel.y = (target->tar.y - sprite->pos.y);
+            float mag = sqrtf((sprite->vel.x * sprite->vel.x) + (sprite->vel.y * sprite->vel.y));
+            float slownessFactor = sprite->z == 0.5 ? -Terrain_GetHeight(terrain, (int)sprite->pos.x, (int)sprite->pos.y) / 2.0f + 1.25f : 1.0f;
             if (mag > 0.1) {
-                motion->vel.x /= mag / (slownessFactor * motion->speed);
-                motion->vel.y /= mag / (slownessFactor * motion->speed);
+                sprite->vel.x /= mag / (slownessFactor * sprite->speed);
+                sprite->vel.y /= mag / (slownessFactor * sprite->speed);
             }
 
-            displacement = Vector_Add((motion->pos), (motion->vel));
+            displacement = Vector_Add((sprite->pos), (sprite->vel));
             float terrainHeight = Terrain_GetHeight(terrain, (int)displacement.x, (int)displacement.y);
-            if (motion->z <= 0.5f) {
+            if (sprite->z <= 0.5f) {
                 // Not in air and hit edge -> stay still
-                if (terrainHeight < motion->z || terrainHeight > motion->z + 0.5f) {
-                    motion->vel.x = 0;
-                    motion->vel.y = 0;
-                    target->tar = motion->pos;
+                if (terrainHeight < sprite->z || terrainHeight > sprite->z + 0.5f) {
+                    sprite->vel.x = 0;
+                    sprite->vel.y = 0;
+                    target->tar = sprite->pos;
                 }
 
                 // Check for enemy walls
-                SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-                Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+                Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
                 system(scene, wallID, WALL_FLAG_COMPONENT_ID)
                 {
                     // Can't pass through the walls of other nations (even if friendly)
-                    SimpleRenderable* wallRender = (SimpleRenderable*)Scene_GetComponent(scene, wallID, SIMPLE_RENDERABLE_COMPONENT_ID);
-                    if (wallRender->nation == simpleRenderable->nation) {
+                    Sprite* wallSprite = (Sprite*)Scene_GetComponent(scene, wallID, SPRITE_COMPONENT_ID);
+                    if (wallSprite->nation == sprite->nation) {
                         continue;
                     }
-                    Motion* wallMotion = (Motion*)Scene_GetComponent(scene, wallID, MOTION_COMPONENT_ID);
                     float beforeDiff = 0;
                     float afterDiff = 0;
-                    if (wallMotion->angle != 0 && motion->pos.y < wallMotion->pos.y + 32 && motion->pos.y > wallMotion->pos.y - 32) {
-                        beforeDiff = motion->pos.x - wallMotion->pos.x;
-                        afterDiff = motion->pos.x - wallMotion->pos.x + motion->vel.x;
-                    } else if (motion->pos.x < wallMotion->pos.x + 32 && motion->pos.x > wallMotion->pos.x - 32) {
-                        beforeDiff = motion->pos.y - wallMotion->pos.y;
-                        afterDiff = motion->pos.y - wallMotion->pos.y + motion->vel.y;
+                    if (wallSprite->angle != 0 && sprite->pos.y < wallSprite->pos.y + 32 && sprite->pos.y > wallSprite->pos.y - 32) {
+                        beforeDiff = sprite->pos.x - wallSprite->pos.x;
+                        afterDiff = sprite->pos.x - wallSprite->pos.x + sprite->vel.x;
+                    } else if (sprite->pos.x < wallSprite->pos.x + 32 && sprite->pos.x > wallSprite->pos.x - 32) {
+                        beforeDiff = sprite->pos.y - wallSprite->pos.y;
+                        afterDiff = sprite->pos.y - wallSprite->pos.y + sprite->vel.y;
                     }
                     if (beforeDiff < 0 && afterDiff > 0 || beforeDiff > 0 && afterDiff < 0) {
-                        motion->vel.x = 0;
-                        motion->vel.y = 0;
+                        sprite->vel.x = 0;
+                        sprite->vel.y = 0;
                     }
                 }
             }
         } else {
-            motion->vel.x = 0;
-            motion->vel.y = 0;
+            sprite->vel.x = 0;
+            sprite->vel.y = 0;
         }
 
-        while (motion->angle > M_PI * 2) {
-            motion->angle -= (float)M_PI * 2.0f;
+        while (sprite->angle > M_PI * 2) {
+            sprite->angle -= (float)M_PI * 2.0f;
         }
-        while (motion->angle < 0) {
-            motion->angle += (float)M_PI * 2.0f;
+        while (sprite->angle < 0) {
+            sprite->angle += (float)M_PI * 2.0f;
         }
     }
 }
 
 void Match_ResourceParticleAccelerate(Scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
 
-        motion->z = -1.0f * pow(Vector_Dist(motion->pos, resourceParticle->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 0.75f;
+        sprite->z = -1.0f * pow(Vector_Dist(sprite->pos, resourceParticle->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 0.75f;
     }
 }
 
@@ -820,15 +812,15 @@ if enemy is behind you, keep flying until you're far enough away, then turn arou
 */
 void Match_Patrol(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
 
-        Vector innerCircle = Vector_Normalize(Vector_Sub(motion->pos, patrol->focalPoint)); // Points from patrol to pos
-        Vector perpVel = { -motion->vel.y, motion->vel.x };
-        float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
+        Vector innerCircle = Vector_Normalize(Vector_Sub(sprite->pos, patrol->focalPoint)); // Points from patrol to pos
+        Vector perpVel = { -sprite->vel.y, sprite->vel.x };
+        float targetAlignment = Vector_Dot(Vector_Normalize(sprite->vel), innerCircle);
 
         // Only make targetAlignment better
         if (targetAlignment < 0) {
@@ -838,18 +830,18 @@ void Match_Patrol(struct scene* scene)
             // If perpVel and innerCircle are perpendicular (dot == 0), then you're right on track.
             // dot is + -> turn left -> increase angle
             // dot is - -> turn right -> decrease angle
-            patrol->angle += motion->speed * diff / 20.0f;
+            patrol->angle += sprite->speed * diff / 20.0f;
         }
         // If not going directly away, and distance is greater than 72
-        else if (targetAlignment >= 0 && Vector_Dist(motion->pos, patrol->focalPoint) > 72) {
-            patrol->angle += motion->speed / 20.0f;
+        else if (targetAlignment >= 0 && Vector_Dist(sprite->pos, patrol->focalPoint) > 72) {
+            patrol->angle += sprite->speed / 20.0f;
         }
 
-        target->tar = Vector_Add(motion->pos, Vector_Scalar((Vector) { sinf(patrol->angle), cosf(patrol->angle) }, 2 * motion->speed));
+        target->tar = Vector_Add(sprite->pos, Vector_Scalar((Vector) { sinf(patrol->angle), cosf(patrol->angle) }, 2 * sprite->speed));
         target->lookat = target->tar;
 
-        Vector displacement = Vector_Sub(motion->pos, target->lookat);
-        motion->angle = Vector_Angle(displacement); // atan2
+        Vector displacement = Vector_Sub(sprite->pos, target->lookat);
+        sprite->angle = Vector_Angle(displacement); // atan2
     }
 }
 
@@ -858,12 +850,12 @@ TODO: combine this with shells so that any time an aloft projectile hits the gro
 */
 void Match_BombMove(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Projectile* projectile = (Projectile*)Scene_GetComponent(scene, id, PROJECTILE_COMPONENT_ID);
 
-        if (motion->z < 0.5) {
+        if (sprite->z < 0.5) {
             if (!projectile->armed) {
                 projectile->armed = true;
             } else {
@@ -875,7 +867,7 @@ void Match_BombMove(struct scene* scene)
 
 /*
 	Calculates whether a unit is hovered over with the mouse. Assumes rectangle 
-	shape, given by SimpleRenderable texture bounds */
+	shape, given by Sprite texture bounds */
 void Match_Hover(struct scene* scene)
 {
     static bool drawingBox = false;
@@ -904,38 +896,37 @@ void Match_Hover(struct scene* scene)
 
     EntityID hoveredID = INVALID_ENTITY_INDEX;
     enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
 
         hoverable->isHovered = false;
-        simpleRenderable->showOutline = false;
+        sprite->showOutline = false;
 
         if (selectBox) {
-            hoverable->isHovered = motion->pos.x > boxTL.x && motion->pos.x < boxBR.x && motion->pos.y > boxTL.y && motion->pos.y < boxBR.y;
-        } else if (simpleRenderable->priority >= priority) {
-            float dx = motion->pos.x - mouse.x;
-            float dy = mouse.y - motion->pos.y + (motion->z < 0.5 ? 0 : 60 * motion->z - 28);
+            hoverable->isHovered = sprite->pos.x > boxTL.x && sprite->pos.x < boxBR.x && sprite->pos.y > boxTL.y && sprite->pos.y < boxBR.y;
+        } else if (sprite->priority >= priority) {
+            float dx = sprite->pos.x - mouse.x;
+            float dy = mouse.y - sprite->pos.y + (sprite->z < 0.5 ? 0 : 60 * sprite->z - 28);
 
-            float sin = sinf(motion->angle);
-            float cos = cosf(motion->angle);
+            float sin = sinf(sprite->angle);
+            float cos = cosf(sprite->angle);
 
-            bool checkLR = fabs(sin * dx + cos * dy) <= simpleRenderable->height / 2;
-            bool checkTB = fabs(cos * dx - sin * dy) <= simpleRenderable->width / 2;
+            bool checkLR = fabs(sin * dx + cos * dy) <= sprite->height / 2;
+            bool checkTB = fabs(cos * dx - sin * dy) <= sprite->width / 2;
 
             if (checkLR && checkTB) {
                 hoveredID = id;
-                priority = simpleRenderable->priority;
+                priority = sprite->priority;
             }
         }
     }
     if (hoveredID != INVALID_ENTITY_INDEX) {
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, hoveredID, HOVERABLE_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, hoveredID, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, hoveredID, SPRITE_COMPONENT_ID);
         hoverable->isHovered = true;
-        simpleRenderable->showOutline = !anySelected || Apricot_Keys[SDL_SCANCODE_LCTRL];
+        sprite->showOutline = !anySelected || Apricot_Keys[SDL_SCANCODE_LCTRL];
     }
 }
 
@@ -988,12 +979,12 @@ void Match_Select(struct scene* scene)
         // If shift is held down, find center of mass of selected units
         if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
             int numSelected = 0;
-            system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+            system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
             {
-                Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+                Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
                 Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
                 if (selectable->selected) {
-                    centerOfMass = Vector_Add(centerOfMass, motion->pos);
+                    centerOfMass = Vector_Add(centerOfMass, sprite->pos);
                     numSelected++;
                 }
             }
@@ -1001,15 +992,15 @@ void Match_Select(struct scene* scene)
                 centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
             }
         }
-        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
-            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             if (selectable->selected) {
                 Vector mouse = Terrain_MousePos();
                 if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) { // Offset by center of mass, calculated earlier
-                    Vector distToCenter = Vector_Sub(motion->pos, centerOfMass);
+                    Vector distToCenter = Vector_Sub(sprite->pos, centerOfMass);
                     mouse = Vector_Add(mouse, distToCenter);
                 }
                 if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
@@ -1031,14 +1022,14 @@ void Match_Select(struct scene* scene)
     // If no unit targets were set previously
     if (!targeted) {
         // Go thru entities, check to see if they are now hovered and selected
-        system(scene, id, SELECTABLE_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID)
+        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID)
         {
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
-            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
 
             if (selectable->selected) {
-                simpleRenderable->showOutline = 2;
+                sprite->showOutline = 2;
             }
             if (hoverable->isHovered && Apricot_MouseLeftUp) {
                 selectable->selected = !selectable->selected;
@@ -1070,19 +1061,19 @@ void Match_Focus(struct scene* scene)
         currFocusedEntity = INVALID_ENTITY_INDEX;
         enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
         // Search all focusable entities
-        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
-            SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             focusable->focused = false;
-            if (hoverable->isHovered && simpleRenderable->priority >= priority) {
+            if (hoverable->isHovered && sprite->priority >= priority) {
                 currFocused = focusable->guiContainer;
                 currFocusedEntity = id;
                 focusableComp = focusable;
                 type = unit->type;
-                priority = simpleRenderable->priority;
+                priority = sprite->priority;
             }
         }
         if (currFocusedEntity != currShownEntity || instantDefocus) {
@@ -1169,19 +1160,18 @@ void Match_AI(Scene* scene)
 	enemy to them, and finally shoot a projectile at them. */
 void Match_CombatantAttack(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         // Exclude planes
         if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
             continue;
         }
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
         if (health->isDead) {
             continue;
@@ -1200,22 +1190,21 @@ void Match_CombatantAttack(struct scene* scene)
             if (!onlyBuildings && Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                 continue;
             }
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+            Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
             if (otherHealth->isDead) {
                 continue;
             }
-            float dist = Vector_Dist(otherMotion->pos, motion->pos);
+            float dist = Vector_Dist(otherSprite->pos, sprite->pos);
 
             // Mark out enemies
-            if (dist < combatant->attackDist && motion->z <= 0.5f) {
+            if (dist < combatant->attackDist && sprite->z <= 0.5f) {
                 for (int x = -2; x <= 2; x++) {
                     for (int y = -2; y <= 2; y++) {
-                        Match_SetAlertedTile(nation, otherMotion->pos.x + x, otherMotion->pos.y + y, 0);
+                        Match_SetAlertedTile(nation, otherSprite->pos.x + x, otherSprite->pos.y + y, 0);
                     }
                 }
             }
@@ -1227,16 +1216,16 @@ void Match_CombatantAttack(struct scene* scene)
                 }
                 closestDist = dist;
                 closest = otherID;
-                otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
-                closestPos = otherMotion->pos;
-                closestVel = otherMotion->vel;
+                otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+                closestPos = otherSprite->pos;
+                closestVel = otherSprite->vel;
                 groundUnit = Scene_EntityHasComponents(scene, otherID, GROUND_UNIT_FLAG_COMPONENT_ID);
             }
         }
 
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
-            if (unit->engaged && Terrain_LineOfSight(terrain, motion->pos, target->lookat, motion->z)) {
+            if (unit->engaged && Terrain_LineOfSight(terrain, sprite->pos, target->lookat, sprite->z)) {
                 target->tar = target->lookat; // This causes units to lerch forward after defeating an enemy, is honestly useful
             }
             unit->engaged = false;
@@ -1245,13 +1234,13 @@ void Match_CombatantAttack(struct scene* scene)
 
         Vector lead = closestPos;
         // Set flags indicating that unit is engaged in battle
-        if (Scene_EntityHasComponents(scene, id, AI_COMPONENT_ID) || Vector_Dot(Vector_Normalize(Vector_Sub(target->tar, motion->pos)), Vector_Normalize(Vector_Sub(closestPos, motion->pos))) > 0) {
+        if (Scene_EntityHasComponents(scene, id, AI_COMPONENT_ID) || Vector_Dot(Vector_Normalize(Vector_Sub(target->tar, sprite->pos)), Vector_Normalize(Vector_Sub(closestPos, sprite->pos))) > 0) {
             if (groundUnit && combatant->faceEnemy) {
-                target->tar = motion->pos;
+                target->tar = sprite->pos;
             }
             if (combatant->faceEnemy) {
                 if (Scene_EntityHasComponents(scene, id, AI_COMPONENT_ID)) {
-                    target->tar = motion->pos;
+                    target->tar = sprite->pos;
                 }
                 target->lookat = lead;
             }
@@ -1259,11 +1248,11 @@ void Match_CombatantAttack(struct scene* scene)
         unit->engaged = true;
         unit->knownByEnemy = true;
         if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || (otherNation != NULL && otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID)) {
-            Match_SetUnitEngagedTicks(motion, unit);
+            Match_SetUnitEngagedTicks(sprite, unit);
         }
 
         // Shoot enemy units if found
-        Vector displacement = Vector_Sub(motion->pos, closestPos);
+        Vector displacement = Vector_Sub(sprite->pos, closestPos);
         float deflection = Vector_Angle(displacement);
 
         while (deflection > M_PI * 2) {
@@ -1272,10 +1261,10 @@ void Match_CombatantAttack(struct scene* scene)
         while (deflection < 0) {
             deflection += (float)M_PI * 2;
         }
-        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - motion->angle) < 0.2 * motion->speed || !combatant->faceEnemy)) {
-            float homeFieldAdvantage = 1.0f; //0.6 * (Vector_Dist(capital->pos, motion->pos) / sqrtf(terrain->size * terrain->size)) + 1;
+        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - sprite->angle) < 0.2 * sprite->speed || !combatant->faceEnemy)) {
+            float homeFieldAdvantage = 1.0f; //0.6 * (Vector_Dist(capital->pos, sprite->pos) / sqrtf(terrain->size * terrain->size)) + 1;
             float manPower = 1.0f; //health->health / 100.0f;
-            combatant->projConstructor(scene, motion->pos, lead, manPower * homeFieldAdvantage * combatant->attack, simpleRenderable->nation);
+            combatant->projConstructor(scene, sprite->pos, lead, manPower * homeFieldAdvantage * combatant->attack, sprite->nation);
         }
     }
 }
@@ -1286,14 +1275,13 @@ void Match_AirplaneAttack(Scene* scene)
 {
     system(scene, id, TARGET_COMPONENT_ID, PATROL_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Nation* otherNation = NULL;
 
         // Find closest enemy ground unit
@@ -1304,25 +1292,24 @@ void Match_AirplaneAttack(Scene* scene)
         float closestZ = -1;
         system_mask(scene, otherID, combatant->enemyMask)
         {
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+            Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
-            float patrolDist = Vector_Dist(otherMotion->pos, patrol->patrolPoint);
+            float patrolDist = Vector_Dist(otherSprite->pos, patrol->patrolPoint);
 
-            float dist = Vector_Dist(otherMotion->pos, motion->pos);
-            Vector innerCircle = Vector_Normalize(Vector_Sub(otherMotion->pos, motion->pos)); // Points from pos to patrol
-            float targetAlignment = Vector_Dot(Vector_Normalize(motion->vel), innerCircle);
+            float dist = Vector_Dist(otherSprite->pos, sprite->pos);
+            Vector innerCircle = Vector_Normalize(Vector_Sub(otherSprite->pos, sprite->pos)); // Points from pos to patrol
+            float targetAlignment = Vector_Dot(Vector_Normalize(sprite->vel), innerCircle);
 
             if (patrolDist + otherHealth->health < closestDist && dist < combatant->attackDist) {
                 closestDist = dist + otherHealth->health;
                 closest = otherID;
-                otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
-                closestPos = otherMotion->pos;
-                closestVel = otherMotion->vel;
-                closestZ = otherMotion->z;
+                otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+                closestPos = otherSprite->pos;
+                closestVel = otherSprite->vel;
+                closestZ = otherSprite->z;
             }
         }
 
@@ -1335,7 +1322,7 @@ void Match_AirplaneAttack(Scene* scene)
 			Special thanks to: https://www.gamedev.net/forums/topic/457840-calculating-target-lead/4020764/
 			Solve quadratic: ((P - O) + V * t)^2 - (w*w) * t^2 = 0
 			*/
-            Vector toEnemy = Vector_Sub(closestPos, motion->pos);
+            Vector toEnemy = Vector_Sub(closestPos, sprite->pos);
             float a = Vector_Dot(closestVel, closestVel) - 16;
             float b = Vector_Dot(toEnemy, closestVel) * 2.0f;
             float c = Vector_Dot(toEnemy, toEnemy);
@@ -1349,18 +1336,18 @@ void Match_AirplaneAttack(Scene* scene)
             patrol->focalPoint = Vector_Add(closestPos, Vector_Scalar(closestVel, (float)t));
 
             if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || (otherNation != NULL && otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID)) {
-                Match_SetUnitEngagedTicks(motion, unit);
+                Match_SetUnitEngagedTicks(sprite, unit);
             }
 
             // Shoot enemy units if found
-            Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, motion->pos)); // Points from pos to focal
-            Vector facing = Vector_Normalize(Vector_Sub(target->lookat, motion->pos));
+            Vector innerCircle = Vector_Normalize(Vector_Sub(patrol->focalPoint, sprite->pos)); // Points from pos to focal
+            Vector facing = Vector_Normalize(Vector_Sub(target->lookat, sprite->pos));
             float targetAlignment = Vector_Dot(facing, innerCircle);
 
             unit->knownByEnemy = true;
 
             if (targetAlignment > 0.95) {
-                combatant->projConstructor(scene, motion->pos, target->lookat, combatant->attack, simpleRenderable->nation);
+                combatant->projConstructor(scene, sprite->pos, target->lookat, combatant->attack, sprite->nation);
             }
         }
     }
@@ -1368,37 +1355,35 @@ void Match_AirplaneAttack(Scene* scene)
 
 void Match_AirplaneScout(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, AIRCRAFT_FLAG_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
         system(scene, otherID, UNIT_COMPONENT_ID)
         {
-            SimpleRenderable* otherRender = (SimpleRenderable*)Scene_GetComponent(scene, otherID, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (!Arraylist_Contains(nation->enemyNations, &otherRender->nation)) {
+            Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+            if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Motion* otherMotion = (Motion*)Scene_GetComponent(scene, otherID, MOTION_COMPONENT_ID);
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
-            Nation* otherNation = (Nation*)Scene_GetComponent(scene, otherRender->nation, NATION_COMPONENT_ID);
-            if (Vector_Dist(motion->pos, otherMotion->pos) < 128) {
+            Nation* otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+            if (Vector_Dist(sprite->pos, otherSprite->pos) < 128) {
                 if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
-                    Match_SetUnitEngagedTicks(motion, unit);
-                    Match_SetUnitEngagedTicks(otherMotion, otherUnit);
+                    Match_SetUnitEngagedTicks(sprite, unit);
+                    Match_SetUnitEngagedTicks(otherSprite, otherUnit);
                 }
                 if (!Scene_EntityHasComponents(scene, otherID, PATROL_COMPONENT_ID) && !Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                     unit->knownByEnemy = true;
-                    Match_SetAlertedTile(nation, otherMotion->pos.x, otherMotion->pos.y, -1);
+                    Match_SetAlertedTile(nation, otherSprite->pos.x, otherSprite->pos.y, -1);
                 } else {
                     if (Scene_EntityHasComponents(scene, otherID, BUILDING_FLAG_COMPONENT_ID)) {
                         otherUnit->knownByEnemy = true;
                     }
                     for (int x = -1; x <= 1; x++) {
                         for (int y = -1; y <= 1; y++) {
-                            Match_SetAlertedTile(nation, otherMotion->pos.x + x, otherMotion->pos.y + y, 0);
+                            Match_SetAlertedTile(nation, otherSprite->pos.x + x, otherSprite->pos.y + y, 0);
                         }
                     }
                 }
@@ -1411,17 +1396,16 @@ void Match_AirplaneScout(struct scene* scene)
 	Creates a resource particle every time a production period has passed */
 void Match_ProduceResources(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID); // FIXME: Gives error that component doesnt exist: Entity 3 does not have component 1(motion), mask is 0
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
         int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
         if (health->aliveTicks % ticks == 0) {
             // Will not produce resources for a rump state
-            resourceProducer->particleConstructor(scene, motion->pos, simpleRenderable->nation);
+            resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
         }
     }
 }
@@ -1435,18 +1419,17 @@ void Match_ProduceResources(struct scene* scene)
 	increase that resource for the nations resource array */
 void Match_DestroyResourceParticles(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         if (nation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
-        Motion* capital = (Motion*)Scene_GetComponent(scene, nation->capital, MOTION_COMPONENT_ID);
+        Sprite* capital = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
 
-        if (Vector_Dist(motion->pos, capital->pos) < 6) {
+        if (Vector_Dist(sprite->pos, capital->pos) < 6) {
             Scene_MarkPurged(scene, id);
             nation->resources[resourceParticle->type]++;
         }
@@ -1455,10 +1438,10 @@ void Match_DestroyResourceParticles(struct scene* scene)
 
 void Match_EatFood(struct scene* scene)
 {
-    system(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
     {
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         int ticks = (int)(ticksPerLabor * 6);
@@ -1480,11 +1463,10 @@ void Match_EatFood(struct scene* scene)
 	If the producer's "repeat" flag is set, repeats the order a second time. */
 void Match_ProduceUnits(struct scene* scene)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
@@ -1496,31 +1478,31 @@ void Match_ProduceUnits(struct scene* scene)
             nation->prodCount[producer->order]--;
             nation->unitCount[producer->order]++;
             if (producer->order == UnitType_INFANTRY) {
-                Infantry_Create(scene, motion->pos, simpleRenderable->nation);
+                Infantry_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ENGINEER) {
-                Engineer_Create(scene, motion->pos, simpleRenderable->nation);
+                Engineer_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_CAVALRY) {
-                Cavalry_Create(scene, motion->pos, simpleRenderable->nation);
+                Cavalry_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ARTILLERY) {
-                Artillery_Create(scene, motion->pos, simpleRenderable->nation);
+                Artillery_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_DESTROYER) {
-                Destroyer_Create(scene, motion->pos, simpleRenderable->nation);
+                Destroyer_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_CRUISER) {
-                Cruiser_Create(scene, motion->pos, simpleRenderable->nation);
+                Cruiser_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_BATTLESHIP) {
-                Battleship_Create(scene, motion->pos, simpleRenderable->nation);
+                Battleship_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_FIGHTER) {
-                Fighter_Create(scene, motion->pos, simpleRenderable->nation);
+                Fighter_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ATTACKER) {
-                Attacker_Create(scene, motion->pos, simpleRenderable->nation);
+                Attacker_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_BOMBER) {
-                Bomber_Create(scene, motion->pos, simpleRenderable->nation);
+                Bomber_Create(scene, sprite->pos, sprite->nation);
             } else {
                 PANIC("Producer's can't build that UnitType");
             }
             nation->resources[ResourceType_POPULATION]++;
 
-            if (Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+            if (Scene_EntityHasComponents(scene, sprite->nation, PLAYER_FLAG_COMPONENT_ID)) {
                 char buffer[32];
                 memset(buffer, 0, 32);
                 Match_CopyUnitName(unit->type, buffer);
@@ -1528,7 +1510,7 @@ void Match_ProduceUnits(struct scene* scene)
             }
 
             if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
-                if (producer->repeat && Scene_EntityHasComponents(scene, simpleRenderable->nation, PLAYER_FLAG_COMPONENT_ID)) {
+                if (producer->repeat && Scene_EntityHasComponents(scene, sprite->nation, PLAYER_FLAG_COMPONENT_ID)) {
                     char buffer[32];
                     memset(buffer, 0, 32);
                     Match_CopyUnitName(unit->type, buffer);
@@ -1562,16 +1544,15 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 {
     system(scene, id, EXPANSION_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        if (!health->isDead && Scene_EntityHasComponents(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID)) {
-            SimpleRenderable* homeCitySimpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, expansion->homeCity, SIMPLE_RENDERABLE_COMPONENT_ID);
-            if (simpleRenderable->nation != homeCitySimpleRenderable->nation) {
-                Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySimpleRenderable->nation, NATION_COMPONENT_ID);
+        if (!health->isDead && Scene_EntityHasComponents(scene, expansion->homeCity, SPRITE_COMPONENT_ID)) {
+            Sprite* homeCitySprite = (Sprite*)Scene_GetComponent(scene, expansion->homeCity, SPRITE_COMPONENT_ID);
+            if (sprite->nation != homeCitySprite->nation) {
+                Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySprite->nation, NATION_COMPONENT_ID);
 
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
 
@@ -1601,7 +1582,7 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                 nation->unitCount[unit->type]--;
                 newNation->unitCount[unit->type]++;
 
-                simpleRenderable->nation = homeCitySimpleRenderable->nation;
+                sprite->nation = homeCitySprite->nation;
                 Scene_Unassign(scene, id, AI_COMPONENT_ID);
                 Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
                 Scene_Assign(scene, id, newNation->controlFlag, NULL);
@@ -1611,54 +1592,53 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 }
 
 /*
-	Takes in a scene, iterates through all entities with SimpleRenderable and 
+	Takes in a scene, iterates through all entities with Sprite and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
 	colorizes based on the nation color, and renders texture to screen. */
 void Match_SimpleRender(struct scene* scene, ComponentKey layer)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, layer)
+    system(scene, id, SPRITE_COMPONENT_ID, layer)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         SDL_Rect rect = { 0, 0, 0, 0 };
-        if (simpleRenderable->hidden) {
+        if (sprite->hidden) {
             continue;
         }
 
-        int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
+        int shadowZ = (int)(sprite->z < 0.5 ? 2 : 60 * sprite->z - 28);
         int deathTicks = !Scene_EntityHasComponents(scene, id, HEALTH_COMPONENT_ID) ? 16 : 16 - ((Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID))->deathTicks;
 
         // Shadow
-        SDL_SetTextureAlphaMod(simpleRenderable->shadow, 255.0f / 16.0f * deathTicks);
-        Terrain_Translate(&rect, motion->pos.x, motion->pos.y, (float)simpleRenderable->width, (float)simpleRenderable->height);
-        Texture_Draw(simpleRenderable->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+        SDL_SetTextureAlphaMod(sprite->shadow, 255.0f / 16.0f * deathTicks);
+        Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, (float)sprite->width, (float)sprite->height);
+        Texture_Draw(sprite->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
 
         // Outline
         if (deathTicks == 16) {
-            if (simpleRenderable->showOutline) {
-                SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, 255);
-                Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
-                Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
-            } else if (simpleRenderable->hitTicks > 0) {
-                SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, (Uint8)(simpleRenderable->hitTicks / 18.0f * 255));
-                Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->outlineWidth, (float)simpleRenderable->outlineHeight);
-                Texture_Draw(simpleRenderable->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+            if (sprite->showOutline) {
+                SDL_SetTextureAlphaMod(sprite->spriteOutline, 255);
+                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->outlineWidth, (float)sprite->outlineHeight);
+                Texture_Draw(sprite->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
+            } else if (sprite->hitTicks > 0) {
+                SDL_SetTextureAlphaMod(sprite->spriteOutline, (Uint8)(sprite->hitTicks / 18.0f * 255));
+                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->outlineWidth, (float)sprite->outlineHeight);
+                Texture_Draw(sprite->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
             }
         }
 
         // Base image
-        Terrain_Translate(&rect, motion->pos.x, motion->pos.y - shadowZ, (float)simpleRenderable->width, (float)simpleRenderable->height);
-        if (!motion->destroyOnBounds) {
-            SDL_Color nationColor = ((Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID))->color;
-            SDL_SetTextureColorMod(simpleRenderable->sprite, nationColor.r, nationColor.g, nationColor.b);
+        Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->width, (float)sprite->height);
+        if (!sprite->destroyOnBounds) {
+            SDL_Color nationColor = ((Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID))->color;
+            SDL_SetTextureColorMod(sprite->sprite, nationColor.r, nationColor.g, nationColor.b);
         }
-        SDL_SetTextureAlphaMod(simpleRenderable->sprite, 255.0f / 16.0f * deathTicks);
-        Texture_Draw(simpleRenderable->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, motion->angle);
+        SDL_SetTextureAlphaMod(sprite->sprite, 255.0f / 16.0f * deathTicks);
+        Texture_Draw(sprite->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
 
         // Reset alpha mods
-        SDL_SetTextureAlphaMod(simpleRenderable->shadow, 255.0f);
-        SDL_SetTextureAlphaMod(simpleRenderable->spriteOutline, 255.0f);
-        SDL_SetTextureAlphaMod(simpleRenderable->sprite, 255.0f);
+        SDL_SetTextureAlphaMod(sprite->shadow, 255.0f);
+        SDL_SetTextureAlphaMod(sprite->spriteOutline, 255.0f);
+        SDL_SetTextureAlphaMod(sprite->sprite, 255.0f);
     }
 }
 
@@ -1686,12 +1666,12 @@ void Match_DrawSelectionArrows(Scene* scene)
     // If shift is held down, find center of mass of selected units
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         int numSelected = 0;
-        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, MOTION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
-            Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             if (selectable->selected) {
-                centerOfMass = Vector_Add(centerOfMass, motion->pos);
+                centerOfMass = Vector_Add(centerOfMass, sprite->pos);
                 numSelected++;
             }
         }
@@ -1700,9 +1680,9 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
@@ -1711,14 +1691,14 @@ void Match_DrawSelectionArrows(Scene* scene)
         SDL_Rect dest = { 0, 0, 0, 0 };
         SDL_Rect arrow = { 0, 0, 0, 0 };
 
-        Vector to = motion->pos;
-        Vector from = motion->pos;
+        Vector to = sprite->pos;
+        Vector from = sprite->pos;
         if (selectable->selected) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 from = patrol->patrolPoint;
             } else {
-                from = motion->pos;
+                from = sprite->pos;
             }
             to = Terrain_MousePos();
         } else if (hoverable->isHovered) {
@@ -1730,16 +1710,16 @@ void Match_DrawSelectionArrows(Scene* scene)
             }
         }
 
-        if (Vector_Dist(motion->pos, to) > 1) {
+        if (Vector_Dist(sprite->pos, to) > 1) {
             float scale = 1.0;
-            double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
+            double angle = getArrowRects(from, to, sprite->z, centerOfMass, &scale, &rect, &dest, &arrow);
             Texture_Draw(ARROW_SHADOW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale + 2, 64 * scale, 64 * scale, angle);
             Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
         }
     }
-    system(scene, id, MOTION_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
@@ -1748,14 +1728,14 @@ void Match_DrawSelectionArrows(Scene* scene)
         SDL_Rect dest = { 0, 0, 0, 0 };
         SDL_Rect arrow = { 0, 0, 0, 0 };
 
-        Vector to = motion->pos;
-        Vector from = motion->pos;
+        Vector to = sprite->pos;
+        Vector from = sprite->pos;
         if (selectable->selected) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 from = patrol->patrolPoint;
             } else {
-                from = motion->pos;
+                from = sprite->pos;
             }
             to = Terrain_MousePos();
         } else if (hoverable->isHovered) {
@@ -1767,10 +1747,10 @@ void Match_DrawSelectionArrows(Scene* scene)
             }
         }
 
-        if (Vector_Dist(motion->pos, to) > 1) {
+        if (Vector_Dist(sprite->pos, to) > 1) {
             float scale = 1.0;
-            double angle = getArrowRects(from, to, motion->z, centerOfMass, &scale, &rect, &dest, &arrow);
-            int shadowZ = (int)(motion->z < 0.5 ? 2 : 60 * motion->z - 28);
+            double angle = getArrowRects(from, to, sprite->z, centerOfMass, &scale, &rect, &dest, &arrow);
+            int shadowZ = (int)(sprite->z < 0.5 ? 2 : 60 * sprite->z - 28);
             Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y - shadowZ }, (Vector) { rect.x, rect.y - shadowZ }, (SDL_Color) { 60, 120, 250, 180 }, 8 * scale);
             SDL_SetTextureAlphaMod(ARROW_TEXTURE_ID, 180);
             Texture_Draw(ARROW_TEXTURE_ID, arrow.x - 32 * scale, arrow.y - 32 * scale - shadowZ, 64 * scale, 64 * scale, angle);
@@ -1876,11 +1856,11 @@ void Match_UpdateFogOfWar(struct scene* scene)
     system(scene, id, UNIT_COMPONENT_ID, AI_COMPONENT_ID)
     {
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
         unit->engagedTicks--;
-        simpleRenderable->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
+        sprite->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
     }
 }
 
@@ -1911,16 +1891,15 @@ void Match_DrawMiniMap(Scene* scene)
         }
     }
 
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, UNIT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
-        if (simpleRenderable->hidden) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        if (sprite->hidden) {
             continue;
         }
         SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 255);
-        rect = (SDL_Rect) { motion->pos.x * miniMapSize / (terrain->tileSize * 64) - 3, Apricot_Height - miniMapSize + motion->pos.y * miniMapSize / (terrain->tileSize * 64) - 3, 6, 6 };
+        rect = (SDL_Rect) { sprite->pos.x * miniMapSize / (terrain->tileSize * 64) - 3, Apricot_Height - miniMapSize + sprite->pos.y * miniMapSize / (terrain->tileSize * 64) - 3, 6, 6 };
         SDL_RenderFillRect(Apricot_Renderer, &rect);
     }
 }
@@ -2019,13 +1998,12 @@ void Match_RenderNationInfo(Scene* scene)
 
 void Match_RenderCityName(Scene* scene)
 {
-    system(scene, id, CITY_COMPONENT_ID, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID)
+    system(scene, id, CITY_COMPONENT_ID, SPRITE_COMPONENT_ID, SPRITE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
 
-        if (simpleRenderable->hidden) {
+        if (sprite->hidden) {
             continue;
         }
         SDL_Rect rect;
@@ -2037,7 +2015,7 @@ void Match_RenderCityName(Scene* scene)
         }
         int width = FC_GetWidth(bigFont, city->name) * scale.x;
         int height = FC_GetAscent(bigFont, city->name) * scale.y;
-        Terrain_Translate(&rect, motion->pos.x, motion->pos.y + 16, 0, 0);
+        Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y + 16, 0, 0);
         FC_SetDefaultColor(bigFont, (SDL_Color) { 0, 0, 0, 255 });
         FC_DrawScale(bigFont, Apricot_Renderer, rect.x - width / 2 + 1, rect.y - height / 2 + 1, scale, city->name);
         FC_SetDefaultColor(bigFont, (SDL_Color) { 255, 255, 255, 255 });
@@ -2086,15 +2064,14 @@ void Match_RenderProducerBars(Scene* scene)
 {
     system(scene, id, PLAYER_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
 
         if (producer->orderTicksRemaining > 0) {
             // Get the rectangle for full bar
             SDL_Rect rect;
-            Terrain_Translate(&rect, motion->pos.x, motion->pos.y - 13, 22, 6);
+            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - 13, 22, 6);
 
             // Draw the background bar
             SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
@@ -2129,7 +2106,7 @@ void Match_Update(Scene* match)
 
     Match_Patrol(match);
     Match_Target(match);
-    Match_Motion(match);
+    Match_Sprite(match);
     Match_ResourceParticleAccelerate(match);
     Match_BombMove(match);
     Match_CombatantAttack(match);
@@ -2197,14 +2174,13 @@ void Match_Render(Scene* match)
 	Called when engineer build city button is pressed. Builds a city */
 void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused) {
-            Match_BuyCity(scene, simpleRenderable->nation, motion->pos);
+            Match_BuyCity(scene, sprite->nation, sprite->pos);
         }
     }
 }
@@ -2214,15 +2190,14 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, guiID, GUI_CLICKABLE_COMPONENT_ID))->meta;
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
 
         if (focusable->focused) {
-            Match_BuyExpansion(scene, type, simpleRenderable->nation, motion->pos);
+            Match_BuyExpansion(scene, type, sprite->nation, sprite->pos);
         }
     }
 }
@@ -2233,20 +2208,19 @@ void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 	already a wall in place. */
 void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
-            Vector cellMidPoint = { 64.0f * (int)(motion->pos.x / 64) + 32.0f, 64.0f * (int)(motion->pos.y / 64) + 32.0f };
+            Vector cellMidPoint = { 64.0f * (int)(sprite->pos.x / 64) + 32.0f, 64.0f * (int)(sprite->pos.y / 64) + 32.0f };
             float angle;
-            float xOffset = cellMidPoint.x - motion->pos.x;
-            float yOffset = cellMidPoint.y - motion->pos.y;
+            float xOffset = cellMidPoint.x - sprite->pos.x;
+            float yOffset = cellMidPoint.y - sprite->pos.y;
             // Central wall, with units orientation
             if (xOffset * xOffset + yOffset * yOffset < 15 * 15) {
-                if ((motion->angle < M_PI / 4 && motion->angle > 0) || motion->angle > 7 * M_PI / 4 || (motion->angle > 3 * M_PI / 4 && motion->angle < 5 * M_PI / 4)) {
+                if ((sprite->angle < M_PI / 4 && sprite->angle > 0) || sprite->angle > 7 * M_PI / 4 || (sprite->angle > 3 * M_PI / 4 && sprite->angle < 5 * M_PI / 4)) {
                     angle = 0;
                 } else {
                     angle = (float)M_PI / 2;
@@ -2275,7 +2249,7 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
             }
 
             if (Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
-                EntityID wall = Wall_Create(scene, cellMidPoint, angle, simpleRenderable->nation);
+                EntityID wall = Wall_Create(scene, cellMidPoint, angle, sprite->nation);
                 Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
                 nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_WALL];
             }
@@ -2287,18 +2261,17 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused) {
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
-                    int x0 = (x + (int)motion->pos.x / 64);
-                    int y0 = (y + (int)motion->pos.y / 64);
-                    if (x0 < 0 || x0 >= terrain->tileSize || y0 < 0 || y0 >= terrain->tileSize || Terrain_GetHeightForBuilding(terrain, x * 64 + motion->pos.x, y * 64 + motion->pos.y) <= 0.5) {
+                    int x0 = (x + (int)sprite->pos.x / 64);
+                    int y0 = (y + (int)sprite->pos.y / 64);
+                    if (x0 < 0 || x0 >= terrain->tileSize || y0 < 0 || y0 >= terrain->tileSize || Terrain_GetHeightForBuilding(terrain, x * 64 + sprite->pos.x, y * 64 + sprite->pos.y) <= 0.5) {
                         continue;
                     }
                     nation->showOre[x0 + y0 * terrain->tileSize] = true;
@@ -2316,11 +2289,10 @@ void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, buttonID, GUI_CLICKABLE_COMPONENT_ID))->meta;
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
@@ -2349,11 +2321,10 @@ void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 	Called from producer's "Cancel Order" button. Cancels the order of the Producer that is focused */
 void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 {
-    system(scene, id, MOTION_COMPONENT_ID, SIMPLE_RENDERABLE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        Motion* motion = (Motion*)Scene_GetComponent(scene, id, MOTION_COMPONENT_ID);
-        SimpleRenderable* simpleRenderable = (SimpleRenderable*)Scene_GetComponent(scene, id, SIMPLE_RENDERABLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, simpleRenderable->nation, NATION_COMPONENT_ID);
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
