@@ -24,8 +24,6 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         nation,
         32,
-        32,
-        32,
         32
     };
     Scene_Assign(scene, factoryID, SPRITE_COMPONENT_ID, &sprite);

@@ -27,8 +27,6 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
         nation,
         32,
         32,
-        32,
-        32
     };
     Scene_Assign(scene, cityID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cityID, BUILDING_LAYER_COMPONENT_ID, 0);

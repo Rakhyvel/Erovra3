@@ -25,8 +25,6 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         nation,
         32,
         32,
-        32,
-        32
     };
     Scene_Assign(scene, academyID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);

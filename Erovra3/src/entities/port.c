@@ -25,8 +25,6 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         nation,
         32,
         32,
-        32,
-        32
     };
     Scene_Assign(scene, portID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);

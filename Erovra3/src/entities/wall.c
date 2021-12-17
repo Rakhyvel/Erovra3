@@ -25,8 +25,6 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, Nation* nation)
         nation,
         64,
         64,
-        64,
-        64
     };
     Scene_Assign(scene, wallID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, wallID, BUILDING_LAYER_COMPONENT_ID, 0);

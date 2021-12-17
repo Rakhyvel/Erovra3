@@ -40,8 +40,6 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
         nation,
         4,
         4,
-        0,
-        0
     };
     Scene_Assign(scene, shellID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, shellID, AIR_LAYER_COMPONENT_ID, 0);

@@ -26,8 +26,6 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation)
         nation,
         16,
         46,
-        16,
-        46
     };
     Scene_Assign(scene, cruiserID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cruiserID, SURFACE_LAYER_COMPONENT_ID, 0);

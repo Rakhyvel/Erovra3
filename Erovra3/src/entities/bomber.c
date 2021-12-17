@@ -25,8 +25,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         nation,
         84, //42
         54, //41
-        84,
-        54
     };
     Scene_Assign(scene, bomberID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bomberID, PLANE_LAYER_COMPONENT_ID, 0);

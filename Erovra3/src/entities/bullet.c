@@ -33,8 +33,6 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
         nation,
         20,
         2,
-        0,
-        0
     };
     Scene_Assign(scene, bulletID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bulletID, BUILDING_LAYER_COMPONENT_ID, 0);

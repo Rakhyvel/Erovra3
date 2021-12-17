@@ -24,8 +24,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         false,
         nation,
-        32,
-        16,
         36,
         20
     };

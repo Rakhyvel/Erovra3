@@ -30,8 +30,6 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
         nation,
         9,
         5,
-        0,
-        0
     };
     Scene_Assign(scene, bombID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bombID, AIR_LAYER_COMPONENT_ID, 0);

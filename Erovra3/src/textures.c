@@ -55,12 +55,12 @@ void Textures_Init()
     WALL_OUTLINE_TEXTURE_ID = Texture_Load("res/wall_outline.png");
     WALL_SHADOW_TEXTURE_ID = Texture_Load("res/wall_shadow.png");
 
-    INFANTRY_TEXTURE_ID = Texture_Create(320, 160);
-    CAVALRY_TEXTURE_ID = Texture_Create(320, 160);
-    ARTILLERY_TEXTURE_ID = Texture_Create(320, 160);
-    ENGINEER_TEXTURE_ID = Texture_Create(320, 160);
+    INFANTRY_TEXTURE_ID = Texture_Create(360, 200);
+    CAVALRY_TEXTURE_ID = Texture_Create(360, 200);
+    ARTILLERY_TEXTURE_ID = Texture_Create(360, 200);
+    ENGINEER_TEXTURE_ID = Texture_Create(360, 200);
     GROUND_OUTLINE_TEXTURE_ID = Texture_Load("res/ground_outline.png");
-    GROUND_SHADOW_TEXTURE_ID = Texture_Create(320, 160);
+    GROUND_SHADOW_TEXTURE_ID = Texture_Create(360, 200);
 
     DESTROYER_TEXTURE_ID = Texture_Create(160, 460);
     CRUISER_TEXTURE_ID = Texture_Create(160, 460);

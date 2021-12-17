@@ -25,8 +25,6 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
         nation,
         16,
         46,
-        16,
-        46
     };
     Scene_Assign(scene, battleshipID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, battleshipID, SURFACE_LAYER_COMPONENT_ID, 0);

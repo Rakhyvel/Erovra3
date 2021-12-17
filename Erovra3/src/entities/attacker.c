@@ -25,8 +25,6 @@ EntityID Attacker_Create(Scene* scene, Vector pos, Nation* nation)
         nation,
         58, //42
         48, //41
-        58,
-        48
     };
     Scene_Assign(scene, attackerID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, attackerID, PLANE_LAYER_COMPONENT_ID, 0);

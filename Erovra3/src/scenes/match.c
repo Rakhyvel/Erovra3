@@ -1579,11 +1579,11 @@ void Match_SpriteRender(struct scene* scene, ComponentKey layer)
         if (deathTicks == 16) {
             if (sprite->showOutline) {
                 SDL_SetTextureAlphaMod(sprite->spriteOutline, 255);
-                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->outlineWidth, (float)sprite->outlineHeight);
+                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->width, (float)sprite->height);
                 Texture_Draw(sprite->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
             } else if (sprite->hitTicks > 0) {
                 SDL_SetTextureAlphaMod(sprite->spriteOutline, (Uint8)(sprite->hitTicks / 18.0f * 255));
-                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->outlineWidth, (float)sprite->outlineHeight);
+                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->width, (float)sprite->height);
                 Texture_Draw(sprite->spriteOutline, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
             }
         }

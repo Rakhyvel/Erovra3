@@ -25,8 +25,6 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
         nation,
         16,
         46,
-        16,
-        46
     };
     Scene_Assign(scene, destroyerID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, destroyerID, SURFACE_LAYER_COMPONENT_ID, 0);

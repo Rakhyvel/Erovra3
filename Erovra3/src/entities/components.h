@@ -93,8 +93,6 @@ typedef struct sprite {
     struct nation* nation; // Nation EntityID to get color from
     int width; // Width of the sprite when drawing to screen (asset may vary)
     int height; // Height of the sprite when drawing to screen (asset may vary)
-    int outlineWidth; // Width of sprite outline texture
-    int outlineHeight; // Height of sprite outline texture
     int hitTicks; // Timer, set when sprite is hit, systems fade this out. Used to add opacity to outline
 } Sprite;
 ComponentKey SPRITE_COMPONENT_ID;

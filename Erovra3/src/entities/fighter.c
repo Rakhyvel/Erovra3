@@ -23,10 +23,8 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         false,
         nation,
-        42, //42
-        41, //41
         42,
-        41
+        41, 
     };
     Scene_Assign(scene, fighterID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, fighterID, PLANE_LAYER_COMPONENT_ID, 0);

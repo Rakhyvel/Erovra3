@@ -33,8 +33,6 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
         nation,
         20,
         20,
-        0,
-        0
     };
     Scene_Assign(scene, foodID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, foodID, PARTICLE_LAYER_COMPONENT_ID, NULL);
