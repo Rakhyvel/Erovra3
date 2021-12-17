@@ -486,7 +486,7 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 	
 	If the entity is a wall or building, and is destroyed, will remove from 
 	either the wall or building map in the terrain struct */
-void Match_DetectHit(struct scene* scene)
+void Match_Unit(struct scene* scene)
 {
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
@@ -494,75 +494,7 @@ void Match_DetectHit(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = sprite->nation;
 
-        if (sprite->hitTicks > 0) {
-            sprite->hitTicks--;
-        }
-        unit->aliveTicks++;
-
-        // Find closest enemy projectile
-        Nation* otherNation = NULL;
-        Sprite* otherSprite = NULL;
-        system(scene, otherID, SPRITE_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
-        {
-            if (!Scene_EntityHasAnyComponents(scene, unit->sensedProjectiles, otherID)) {
-                continue;
-            }
-            otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
-            if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
-                continue;
-            }
-            Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
-            otherNation = otherSprite->nation;
-
-            float dist = Vector_Dist(sprite->pos, otherSprite->pos);
-            if (projectile->armed && dist < projectile->splash) {
-                float splashDamageModifier;
-                if (projectile->splash <= 8) {
-                    splashDamageModifier = 1.0f; // Damage is same regardless of distance
-                } else {
-                    splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
-                }
-                unit->health -= projectile->attack * splashDamageModifier / unit->defense;
-                // Building set engaged ticks, visited spaces (building defense should be top priority)
-                if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
-                    Match_SetAlertedTile(nation, sprite->pos.x, sprite->pos.y, -10);
-                    if (otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
-                        Match_SetUnitEngagedTicks(sprite, unit);
-                    }
-                }
-                // GROUND UNITS: Do more damage if flanked
-                if (sprite->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
-                    Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-                    Vector displacement = Vector_Sub(sprite->pos, otherSprite->pos); // From other to me
-                    unit->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, sprite->pos))) + 1.0f);
-                }
-                sprite->hitTicks = 18;
-                Scene_MarkPurged(scene, otherID);
-
-                // If dead don't bother checking the rest of the particles
-                if (unit->health <= 0) {
-                    unit->isDead = true;
-                    if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
-                        City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
-                        city->captureNation = otherSprite->nation;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void Match_Death(Scene* scene)
-{
-    system(scene, id, UNIT_COMPONENT_ID)
-    {
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-
         if (unit->isDead) {
-            Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-            Nation* nation = sprite->nation;
-
             if (unit->deathTicks < 16) {
                 unit->deathTicks += 1;
             } else {
@@ -615,6 +547,63 @@ void Match_Death(Scene* scene)
                     Terrain_SetWallAt(terrain, INVALID_ENTITY_INDEX, (int)sprite->pos.x, (int)sprite->pos.y);
                 }
                 nation->unitCount[unit->type]--;
+            }
+        } else {
+            if (sprite->hitTicks > 0) {
+                sprite->hitTicks--;
+            }
+            unit->aliveTicks++;
+
+            // Find closest enemy projectile
+            Nation* otherNation = NULL;
+            Sprite* otherSprite = NULL;
+            system(scene, otherID, SPRITE_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
+            {
+                if (!Scene_EntityHasAnyComponents(scene, unit->sensedProjectiles, otherID)) {
+                    continue;
+                }
+                otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+                if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
+                    continue;
+                }
+                Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
+                otherNation = otherSprite->nation;
+
+                float dist = Vector_Dist(sprite->pos, otherSprite->pos);
+                if (projectile->armed && dist < projectile->splash) {
+                    float splashDamageModifier;
+                    if (projectile->splash <= 8) {
+                        splashDamageModifier = 1.0f; // Damage is same regardless of distance
+                    } else {
+                        splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
+                    }
+                    unit->health -= projectile->attack * splashDamageModifier / unit->defense;
+                    // Building set engaged ticks, visited spaces (building defense should be top priority)
+                    if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
+                        Match_SetAlertedTile(nation, sprite->pos.x, sprite->pos.y, -10);
+                        if (otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+                            Match_SetUnitEngagedTicks(sprite, unit);
+                        }
+                    }
+                    // GROUND UNITS: Do more damage if flanked
+                    if (sprite->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
+                        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+                        Vector displacement = Vector_Sub(sprite->pos, otherSprite->pos); // From other to me
+                        unit->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, sprite->pos))) + 1.0f);
+                    }
+                    sprite->hitTicks = 18;
+                    Scene_MarkPurged(scene, otherID);
+
+                    // If dead don't bother checking the rest of the particles
+                    if (unit->health <= 0) {
+                        unit->isDead = true;
+                        if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
+                            City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
+                            city->captureNation = otherSprite->nation;
+                        }
+                        break;
+                    }
+                }
             }
         }
     }
@@ -2067,8 +2056,7 @@ void Match_Update(Scene* match)
     Match_AIUpdateVisitedSpaces(match);
     Match_SetVisitedSpace(match);
 
-    Match_DetectHit(match);
-    Match_Death(match);
+    Match_Unit(match);
 
     Match_Hover(match);
     Match_Select(match);
@@ -2517,7 +2505,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
             (SDL_Color) { 255, 129, 18 }, // Orange
 
         };
-		// Add nations first. When lists are resized, their pointers change.
+        // Add nations first. When lists are resized, their pointers change.
         for (int i = 0; i < nNations; i++) {
             Nation temp;
             memset(&temp, 0, sizeof(Nation));
