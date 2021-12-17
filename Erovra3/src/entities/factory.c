@@ -39,14 +39,11 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         UnitType_FACTORY,
         1,
-        nation->unitCount[UnitType_FACTORY]
-    };
-    Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
-
-    Hoverable hoverable = {
+        nation->unitCount[UnitType_FACTORY],
+        0,
         false,
     };
-    Scene_Assign(scene, factoryID, HOVERABLE_COMPONENT_ID, &hoverable);
+    Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
 
     Focusable focusable = {
         false,

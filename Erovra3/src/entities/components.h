@@ -136,6 +136,7 @@ typedef struct unit {
     const float defense; // The defense stat of the unit
     int ordinal; // Serial number of unit, assigned sequentially
     int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Only determines if other nation can see unit
+    bool isHovered; // Whether or not the unit is hovered
     char name[32]; // Description of unit
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy
@@ -256,13 +257,6 @@ typedef struct resourceProducer {
     void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation); // Resource particle constructor
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
-
-/* For units that can become hovered by the mouse
-*/
-typedef struct hoverable {
-    bool isHovered; // Whether or not the unit is hovered
-} Hoverable;
-ComponentKey HOVERABLE_COMPONENT_ID;
 
 /* For units that can be selected to be moved by left-clicking
 */

@@ -45,7 +45,9 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_DESTROYER,
         0.5f, // Defense
-        nation->unitCount[UnitType_DESTROYER]
+        nation->unitCount[UnitType_DESTROYER],
+        0,
+        false,
     };
     Scene_Assign(scene, destroyerID, UNIT_COMPONENT_ID, &type);
 
@@ -63,11 +65,6 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, destroyerID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, destroyerID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

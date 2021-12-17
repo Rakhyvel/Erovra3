@@ -45,7 +45,9 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_ARTILLERY,
         1.0f,
-        nation->unitCount[UnitType_ARTILLERY]
+        nation->unitCount[UnitType_ARTILLERY],
+        0,
+        false,
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
 
@@ -63,11 +65,6 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, artilleryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, artilleryID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

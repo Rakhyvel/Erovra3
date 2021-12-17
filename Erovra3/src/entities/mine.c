@@ -45,7 +45,9 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         false,
         UnitType_MINE,
         0.05f,
-        nation->unitCount[UnitType_MINE]
+        nation->unitCount[UnitType_MINE],
+        0,
+        false,
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
@@ -55,11 +57,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, mineID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

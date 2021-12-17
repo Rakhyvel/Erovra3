@@ -51,7 +51,9 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_BOMBER,
         0.5f, // Defense
-        nation->unitCount[UnitType_BOMBER] 
+        nation->unitCount[UnitType_BOMBER],
+		0,
+		false,
     };
     Scene_Assign(scene, bomberID, UNIT_COMPONENT_ID, &type);
 
@@ -69,11 +71,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, bomberID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, bomberID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

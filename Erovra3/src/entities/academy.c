@@ -39,18 +39,11 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         UnitType_ACADEMY,
         1,
-        0
-    };
-    type.name[0] = 'a';
-    type.name[1] = 'c';
-    type.name[2] = 'a';
-    type.name[3] = 'd';
-    Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
-
-    Hoverable hoverable = {
+        0,
+        0,
         false,
     };
-    Scene_Assign(scene, academyID, HOVERABLE_COMPONENT_ID, &hoverable);
+    Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
 
     Focusable focusable = {
         false,

@@ -45,7 +45,9 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_BATTLESHIP,
         2.0f,
-        nation->unitCount[UnitType_BATTLESHIP]
+        nation->unitCount[UnitType_BATTLESHIP],
+        0,
+        false,
     };
     Scene_Assign(scene, battleshipID, UNIT_COMPONENT_ID, &type);
 
@@ -63,11 +65,6 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, battleshipID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, battleshipID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

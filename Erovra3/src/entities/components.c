@@ -41,7 +41,6 @@ void Components_Init()
     PLAYER_FLAG_COMPONENT_ID = rand();
     AI_COMPONENT_ID = rand();
 
-    HOVERABLE_COMPONENT_ID = rand();
     SELECTABLE_COMPONENT_ID = rand();
     FOCUSABLE_COMPONENT_ID = rand();
 
@@ -88,7 +87,6 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AI_COMPONENT_ID, 0);
 
-    Scene_RegisterComponent(scene, HOVERABLE_COMPONENT_ID, sizeof(Hoverable));
     Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));
     Scene_RegisterComponent(scene, FOCUSABLE_COMPONENT_ID, sizeof(Focusable));
 

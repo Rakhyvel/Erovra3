@@ -45,7 +45,9 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_CAVALRY,
         1.0f,
-        nation->unitCount[UnitType_CAVALRY]
+        nation->unitCount[UnitType_CAVALRY],
+        0,
+        false,
     };
     Scene_Assign(scene, cavalryID, UNIT_COMPONENT_ID, &type);
 
@@ -65,11 +67,6 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, cavalryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, cavalryID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

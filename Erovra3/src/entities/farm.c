@@ -40,7 +40,9 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         false,
         UnitType_FARM,
         1,
-        nation->unitCount[UnitType_FARM]
+        nation->unitCount[UnitType_FARM],
+        0,
+        false,
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
@@ -49,11 +51,6 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         &Food_Create
     };
     Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, farmID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

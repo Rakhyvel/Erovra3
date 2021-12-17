@@ -32,16 +32,16 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 #include "./gui/gui.h"
 #include "./scenes/menu.h"
 #include "./scenes/tournament.h"
+#include "./util/debug.h"
+#include "./util/heap.h"
 #include "engine/apricot.h"
 #include "textures.h"
-#include "./util/heap.h"
-#include "./util/debug.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <string.h>
 
 /*
-	Inits the game, then starts the game loop */
+	Entry point of program. Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
     Apricot_Init("Erovra 3.9.5", 1280, 720);

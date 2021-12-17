@@ -39,14 +39,11 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         false,
         UnitType_PORT,
         1,
-        nation->unitCount[UnitType_PORT]
-    };
-    Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
-
-    Hoverable hoverable = {
+        nation->unitCount[UnitType_PORT],
+        0,
         false,
     };
-    Scene_Assign(scene, portID, HOVERABLE_COMPONENT_ID, &hoverable);
+    Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
 
     Focusable focusable = {
         false,

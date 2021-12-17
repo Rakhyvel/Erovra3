@@ -46,7 +46,9 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_ENGINEER,
         0.0005f, // 1-shot kill,
-        nation->unitCount[UnitType_ENGINEER]
+        nation->unitCount[UnitType_ENGINEER],
+        0,
+        false,
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
     strncpy_s(type.name, 32, "Engineer", 32);
@@ -55,11 +57,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, engineerID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, engineerID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

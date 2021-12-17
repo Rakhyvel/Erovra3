@@ -893,16 +893,16 @@ void Match_Hover(struct scene* scene)
 
     EntityID hoveredID = INVALID_ENTITY_INDEX;
     enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
-    system(scene, id, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        hoverable->isHovered = false;
+        unit->isHovered = false;
         sprite->showOutline = false;
 
         if (selectBox) {
-            hoverable->isHovered = sprite->pos.x > boxTL.x && sprite->pos.x < boxBR.x && sprite->pos.y > boxTL.y && sprite->pos.y < boxBR.y;
+            unit->isHovered = sprite->pos.x > boxTL.x && sprite->pos.x < boxBR.x && sprite->pos.y > boxTL.y && sprite->pos.y < boxBR.y;
         } else if (sprite->priority >= priority) {
             float dx = sprite->pos.x - mouse.x;
             float dy = mouse.y - sprite->pos.y + (sprite->z < 0.5 ? 0 : 60 * sprite->z - 28);
@@ -920,9 +920,9 @@ void Match_Hover(struct scene* scene)
         }
     }
     if (hoveredID != INVALID_ENTITY_INDEX) {
-        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, hoveredID, HOVERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, hoveredID, UNIT_COMPONENT_ID);
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, hoveredID, SPRITE_COMPONENT_ID);
-        hoverable->isHovered = true;
+        unit->isHovered = true;
         sprite->showOutline = !anySelected || Apricot_Keys[SDL_SCANCODE_LCTRL];
     }
 }
@@ -1019,16 +1019,16 @@ void Match_Select(struct scene* scene)
     // If no unit targets were set previously
     if (!targeted) {
         // Go thru entities, check to see if they are now hovered and selected
-        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-            Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
 
             if (selectable->selected) {
                 sprite->showOutline = 2;
             }
-            if (hoverable->isHovered && Apricot_MouseLeftUp) {
+            if (unit->isHovered && Apricot_MouseLeftUp) {
                 selectable->selected = !selectable->selected;
                 if (!selectBox) { // Only select multiple units if box-selecting
                     break;
@@ -1058,14 +1058,13 @@ void Match_Focus(struct scene* scene)
         currFocusedEntity = INVALID_ENTITY_INDEX;
         enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
         // Search all focusable entities
-        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-            Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             focusable->focused = false;
-            if (hoverable->isHovered && sprite->priority >= priority) {
+            if (unit->isHovered && sprite->priority >= priority) {
                 currFocused = focusable->guiContainer;
                 currFocusedEntity = id;
                 focusableComp = focusable;
@@ -1672,11 +1671,11 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
     // Draw all the shadows (so that one shadow of an arrow isnt on top of another)
-    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
 
         SDL_Rect rect = { 0, 0, 0, 0 };
@@ -1693,7 +1692,7 @@ void Match_DrawSelectionArrows(Scene* scene)
                 from = sprite->pos;
             }
             to = Terrain_MousePos();
-        } else if (hoverable->isHovered) {
+        } else if (unit->isHovered) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 to = patrol->patrolPoint;
@@ -1710,11 +1709,11 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
     // Draw the arrows
-    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
 
         SDL_Rect rect = { 0, 0, 0, 0 };
@@ -1731,7 +1730,7 @@ void Match_DrawSelectionArrows(Scene* scene)
                 from = sprite->pos;
             }
             to = Terrain_MousePos();
-        } else if (hoverable->isHovered) {
+        } else if (unit->isHovered) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 to = patrol->patrolPoint;

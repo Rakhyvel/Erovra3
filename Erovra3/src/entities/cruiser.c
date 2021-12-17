@@ -46,7 +46,9 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_CRUISER,
         1.0f,
-        nation->unitCount[UnitType_CRUISER]
+        nation->unitCount[UnitType_CRUISER],
+        0,
+        false,
     };
     Scene_Assign(scene, cruiserID, UNIT_COMPONENT_ID, &type);
 
@@ -64,11 +66,6 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, cruiserID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, cruiserID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,

@@ -39,14 +39,11 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, Nation* nation, Entity
         false,
         UnitType_AIRFIELD,
         1,
-        0
-    };
-    Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
-
-    Hoverable hoverable = {
+        0,
+        0,
         false,
     };
-    Scene_Assign(scene, airfieldID, HOVERABLE_COMPONENT_ID, &hoverable);
+    Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
 
     Focusable focusable = {
         false,

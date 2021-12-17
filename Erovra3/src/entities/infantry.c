@@ -45,7 +45,9 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
         UnitType_INFANTRY,
         1.0f, // 1 damage every 30 ticks -> 300 ticks,
-        nation->unitCount[UnitType_INFANTRY]
+        nation->unitCount[UnitType_INFANTRY],
+        0,
+        false,
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
@@ -63,11 +65,6 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Hoverable hoverable = {
-        false,
-    };
-    Scene_Assign(scene, infantryID, HOVERABLE_COMPONENT_ID, &hoverable);
 
     Focusable focusable = {
         false,
