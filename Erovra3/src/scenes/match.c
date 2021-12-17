@@ -778,14 +778,25 @@ void Match_Target(struct scene* scene)
     }
 }
 
-void Match_ResourceParticleAccelerate(Scene* scene)
+void Match_ResourceParticle(Scene* scene)
 {
     system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
+        Nation* nation = sprite->nation;
+        Sprite* capital = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
 
         sprite->z = -1.0f * pow(Vector_Dist(sprite->pos, resourceParticle->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 0.75f;
+        if (nation->capital == INVALID_ENTITY_INDEX) {
+            continue;
+        }
+
+		// Detect if at capital
+        if (Vector_Dist(sprite->pos, capital->pos) < 6) {
+            Scene_MarkPurged(scene, id);
+            nation->resources[resourceParticle->type]++;
+        }
     }
 }
 
@@ -1385,32 +1396,6 @@ void Match_ProduceResources(struct scene* scene)
         if (unit->aliveTicks % ticks == 0) {
             // Will not produce resources for a rump state
             resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
-        }
-    }
-}
-
-/*
-	For every resource particle, if the particle is at the capital, marks particle for purge, increases
-	nation's resources by 1. 
-	
-	Could have a flag for resource particle, loop through those entities in one system. Nations
-	would have a resource array, particles would contain an index for which resource they were. Would
-	increase that resource for the nations resource array */
-void Match_DestroyResourceParticles(struct scene* scene)
-{
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
-    {
-        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
-        Nation* nation = sprite->nation;
-        if (nation->capital == INVALID_ENTITY_INDEX) {
-            continue;
-        }
-        Sprite* capital = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
-
-        if (Vector_Dist(sprite->pos, capital->pos) < 6) {
-            Scene_MarkPurged(scene, id);
-            nation->resources[resourceParticle->type]++;
         }
     }
 }
@@ -2065,14 +2050,13 @@ void Match_Update(Scene* match)
     Match_Patrol(match);
     Match_Target(match);
     Match_SpriteMove(match);
-    Match_ResourceParticleAccelerate(match);
+    Match_ResourceParticle(match);
     Match_BombMove(match);
     Match_CombatantAttack(match);
     Match_AirplaneAttack(match);
     Match_AirplaneScout(match);
 
     Match_ProduceResources(match);
-    Match_DestroyResourceParticles(match);
     Match_EatFood(match);
     Match_ProduceUnits(match);
     Match_UpdateExpansionAllegiance(match);
