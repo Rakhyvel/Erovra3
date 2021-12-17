@@ -55,11 +55,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
     strncpy_s(type.name, 32, "Engineer", 32);
 
-    Selectable selectable = {
-        false,
-    };
-    Scene_Assign(scene, engineerID, SELECTABLE_COMPONENT_ID, &selectable);
-
     Scene_Assign(scene, engineerID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);

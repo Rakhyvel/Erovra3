@@ -106,6 +106,7 @@ ComponentKey SPRITE_COMPONENT_ID;
 typedef struct target {
     struct vector tar; // Where to move towards
     struct vector lookat; // Where to face
+    bool selected; // Whether or not the unit is selected
 } Target;
 ComponentKey TARGET_COMPONENT_ID;
 
@@ -204,7 +205,7 @@ typedef struct nation {
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
     Goap goap; // A Goal-Oritented Action Planner for the AI
 } Nation;
-ComponentKey NATION_COMPONENT_ID;
+
 ComponentKey PLAYER_FLAG_COMPONENT_ID;
 
 /* Assigned to nations that use a goal-oriented action planner to make decisions
@@ -259,13 +260,6 @@ typedef struct resourceProducer {
     void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation); // Resource particle constructor
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
-
-/* For units that can be selected to be moved by left-clicking
-*/
-typedef struct selectable {
-    bool selected; // Whether or not the unit is selected
-} Selectable;
-ComponentKey SELECTABLE_COMPONENT_ID;
 
 /* For order buttons, which order units to be built in producers
 */

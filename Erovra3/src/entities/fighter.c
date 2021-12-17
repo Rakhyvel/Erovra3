@@ -69,11 +69,6 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, fighterID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Selectable selectable = {
-        false,
-    };
-    Scene_Assign(scene, fighterID, SELECTABLE_COMPONENT_ID, &selectable);
-
     Scene_Assign(scene, fighterID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, fighterID, nation->controlFlag, NULL);
     return fighterID;

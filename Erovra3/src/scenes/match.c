@@ -885,10 +885,10 @@ void Match_Hover(struct scene* scene)
     }
 
     bool anySelected = false;
-    system(scene, id, SELECTABLE_COMPONENT_ID)
+    system(scene, id, TARGET_COMPONENT_ID)
     {
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-        anySelected |= selectable->selected;
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        anySelected |= target->selected;
     }
 
     EntityID hoveredID = INVALID_ENTITY_INDEX;
@@ -937,11 +937,11 @@ void Match_EscapePressed(struct scene* scene)
         if (!escDown) {
             bool anyFlag = false;
 
-            system(scene, id, SELECTABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+            system(scene, id, TARGET_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
             {
-                Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-                anyFlag |= selectable->selected;
-                selectable->selected = false;
+                Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+                anyFlag |= target->selected;
+                target->selected = false;
             }
 
             system(scene, id, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
@@ -963,7 +963,7 @@ void Match_EscapePressed(struct scene* scene)
 }
 
 /*
-	 Iterates through entities that are selectable. Determines if a unit is 
+	 Iterates through entities that are target. Determines if a unit is 
 	 hovered, selected, if a whole task force is selected, and if and where to 
 	 set units' targets. */
 void Match_Select(struct scene* scene)
@@ -976,11 +976,11 @@ void Match_Select(struct scene* scene)
         // If shift is held down, find center of mass of selected units
         if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
             int numSelected = 0;
-            system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+            system(scene, id, TARGET_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
             {
                 Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-                Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-                if (selectable->selected) {
+                Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+                if (target->selected) {
                     centerOfMass = Vector_Add(centerOfMass, sprite->pos);
                     numSelected++;
                 }
@@ -989,12 +989,11 @@ void Match_Select(struct scene* scene)
                 centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
             }
         }
-        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-            if (selectable->selected) {
+            if (target->selected) {
                 Vector mouse = Terrain_MousePos();
                 if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) { // Offset by center of mass, calculated earlier
                     Vector distToCenter = Vector_Sub(sprite->pos, centerOfMass);
@@ -1008,28 +1007,28 @@ void Match_Select(struct scene* scene)
                     target->lookat = mouse;
                 }
                 if (!Apricot_Keys[SDL_SCANCODE_S]) { // Check if should (s)tandby for more orders
-                    selectable->selected = false;
+                    target->selected = false;
                 }
                 targeted = true;
             }
         }
     }
 
-    Selectable* hovered = NULL;
+    Target* hovered = NULL;
     // If no unit targets were set previously
     if (!targeted) {
         // Go thru entities, check to see if they are now hovered and selected
-        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
-            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
+            Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
 
-            if (selectable->selected) {
+            if (target->selected) {
                 sprite->showOutline = 2;
             }
             if (unit->isHovered && Apricot_MouseLeftUp) {
-                selectable->selected = !selectable->selected;
+                target->selected = !target->selected;
                 if (!selectBox) { // Only select multiple units if box-selecting
                     break;
                 }
@@ -1655,11 +1654,11 @@ void Match_DrawSelectionArrows(Scene* scene)
     // If shift is held down, find center of mass of selected units
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         int numSelected = 0;
-        system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, TARGET_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-            Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
-            if (selectable->selected) {
+            Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+            if (target->selected) {
                 centerOfMass = Vector_Add(centerOfMass, sprite->pos);
                 numSelected++;
             }
@@ -1669,12 +1668,11 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
     // Draw all the shadows (so that one shadow of an arrow isnt on top of another)
-    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
 
         SDL_Rect rect = { 0, 0, 0, 0 };
         SDL_Rect dest = { 0, 0, 0, 0 };
@@ -1682,7 +1680,7 @@ void Match_DrawSelectionArrows(Scene* scene)
 
         Vector to = sprite->pos;
         Vector from = sprite->pos;
-        if (selectable->selected) {
+        if (target->selected) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 from = patrol->patrolPoint;
@@ -1707,12 +1705,11 @@ void Match_DrawSelectionArrows(Scene* scene)
         }
     }
     // Draw the arrows
-    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
 
         SDL_Rect rect = { 0, 0, 0, 0 };
         SDL_Rect dest = { 0, 0, 0, 0 };
@@ -1720,7 +1717,7 @@ void Match_DrawSelectionArrows(Scene* scene)
 
         Vector to = sprite->pos;
         Vector from = sprite->pos;
-        if (selectable->selected) {
+        if (target->selected) {
             if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
                 Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
                 from = patrol->patrolPoint;

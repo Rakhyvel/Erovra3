@@ -37,11 +37,8 @@ void Components_Init()
     RESOURCE_PARTICLE_COMPONENT_ID = rand();
     RESOURCE_PRODUCER_COMPONENT_ID = rand();
 
-    NATION_COMPONENT_ID = rand();
     PLAYER_FLAG_COMPONENT_ID = rand();
     AI_COMPONENT_ID = rand();
-
-    SELECTABLE_COMPONENT_ID = rand();
 
     ORDER_BUTTON_COMPONENT_ID = rand();
 }
@@ -82,11 +79,8 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, RESOURCE_PARTICLE_COMPONENT_ID, sizeof(ResourceParticle));
     Scene_RegisterComponent(scene, RESOURCE_PRODUCER_COMPONENT_ID, sizeof(ResourceProducer));
 
-    Scene_RegisterComponent(scene, NATION_COMPONENT_ID, sizeof(Nation));
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AI_COMPONENT_ID, 0);
-
-    Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));
 
     Scene_RegisterComponent(scene, ORDER_BUTTON_COMPONENT_ID, sizeof(OrderButton));
 }

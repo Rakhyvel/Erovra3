@@ -63,11 +63,6 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, artilleryID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Selectable selectable = {
-        false,
-    };
-    Scene_Assign(scene, artilleryID, SELECTABLE_COMPONENT_ID, &selectable);
-
     Scene_Assign(scene, artilleryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);

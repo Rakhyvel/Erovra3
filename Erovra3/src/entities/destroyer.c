@@ -63,11 +63,6 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, destroyerID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Selectable selectable = {
-        false,
-    };
-    Scene_Assign(scene, destroyerID, SELECTABLE_COMPONENT_ID, &selectable);
-
     Scene_Assign(scene, destroyerID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, destroyerID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, destroyerID, nation->controlFlag, NULL);
