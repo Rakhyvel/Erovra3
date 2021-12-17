@@ -52,7 +52,7 @@ void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, Comp
     goap->actions[goap->numActions++] = action;
 }
 
-void Goap_Update(Scene* scene, Goap* goap, EntityID intelligence)
+void Goap_Update(Scene* scene, Goap* goap, void* intelligence)
 {
     // Update the variables before running planner
     goap->updateVariableSystem(scene, goap, intelligence);

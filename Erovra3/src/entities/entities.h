@@ -22,7 +22,7 @@
 *	@param dir		Offset direction relative to home city
 *	@return EntityID of created academy
 */
-EntityID Academy_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Academy_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates an airfield entity with components assigned
 * 
@@ -33,7 +33,7 @@ EntityID Academy_Create(struct scene*, Vector pos, EntityID nation, EntityID hom
 *	@param dir		Offset direction relative to home city
 *	@return EntityID of created airfield
 */
-EntityID Airfield_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Airfield_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates an artillery entity with components assigned
 * 
@@ -42,7 +42,7 @@ EntityID Airfield_Create(struct scene*, Vector pos, EntityID nation, EntityID ho
 *	@param nation	Nation EntityID for artillery unit
 *	@return EntityID of created artillery unit
 */
-EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates an attacker entity with components assigned
 * 
@@ -51,7 +51,7 @@ EntityID Artillery_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for attacker
 *	@return EntityID of created attacker
 */
-EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Attacker_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a battleship entity with components assigned
 * 
@@ -60,7 +60,7 @@ EntityID Attacker_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created battleship
 */
-EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a bomb entity with components assigned
 * 
@@ -71,7 +71,7 @@ EntityID Battleship_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for bomb
 *	@return EntityID of created bomb
 */
-EntityID Bomb_Create(struct scene*, Vector pos, Vector tar, float attack, EntityID nation);
+EntityID Bomb_Create(struct scene*, Vector pos, Vector tar, float attack, Nation* nation);
 
 /*	Creates a bomber entity with components assigned
 * 
@@ -80,7 +80,7 @@ EntityID Bomb_Create(struct scene*, Vector pos, Vector tar, float attack, Entity
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created bomber
 */
-EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a bullet entity with components assigned
 * 
@@ -91,7 +91,7 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for bullet
 *	@return EntityID of created bullet
 */
-EntityID Bullet_Create(struct scene*, Vector pos, Vector tar, float attack, EntityID nation);
+EntityID Bullet_Create(struct scene*, Vector pos, Vector tar, float attack, Nation* nation);
 
 /*	Creates an air bullet entity with components assigned
 * 
@@ -102,7 +102,7 @@ EntityID Bullet_Create(struct scene*, Vector pos, Vector tar, float attack, Enti
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created air bullet
 */
-EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation);
+EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation);
 
 /*	Creates a cavalry entity with components assigned
 * 
@@ -111,7 +111,7 @@ EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float att
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created cavalry
 */
-EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a city entity with components assigned
 * 
@@ -123,7 +123,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param isCapital	Determines whether or not the city is a capital of a nation
 *	@return EntityID of created city
 */
-EntityID City_Create(struct scene*, Vector pos, EntityID nation, char* nameBuffer, bool isCapital);
+EntityID City_Create(struct scene*, Vector pos, Nation* nation, char* nameBuffer, bool isCapital);
 
 /*	Creates a coin entity with components assigned
 * 
@@ -132,7 +132,7 @@ EntityID City_Create(struct scene*, Vector pos, EntityID nation, char* nameBuffe
 *	@param nation	Nation EntityID for coin
 *	@return EntityID of created coin
 */
-EntityID Coin_Create(struct scene*, Vector pos, EntityID nation);
+EntityID Coin_Create(struct scene*, Vector pos, Nation* nation);
 
 /*	Creates a cruiser entity with components assigned
 * 
@@ -141,7 +141,7 @@ EntityID Coin_Create(struct scene*, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created cruiser
 */
-EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a destroyer entity with components assigned
 * 
@@ -150,7 +150,7 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created destroyer
 */
-EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates an engineer entity with components assigned
 * 
@@ -159,7 +159,7 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created engineer
 */
-EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a factory entity with components assigned
 * 
@@ -168,7 +168,7 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created factory
 */
-EntityID Factory_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Factory_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a farm entity with components assigned
 * 
@@ -177,7 +177,7 @@ EntityID Factory_Create(struct scene*, Vector pos, EntityID nation, EntityID hom
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created farm
 */
-EntityID Farm_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Farm_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a fighter entity with components assigned
 * 
@@ -186,7 +186,7 @@ EntityID Farm_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCi
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created fighter
 */
-EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a food particle
  * 
@@ -194,7 +194,7 @@ EntityID Fighter_Create(Scene* scene, Vector pos, EntityID nation);
  * @param pos		Position that the food particle starts on
  * @param nationID	Nation that the food particle belongs to
  */
-EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID);
+EntityID Food_Create(struct scene* scene, Vector pos, Nation* nationID);
 
 /*	Creates a infantry entity with components assigned
 * 
@@ -203,7 +203,7 @@ EntityID Food_Create(struct scene* scene, Vector pos, EntityID nationID);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created infantry
 */
-EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation);
+EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation);
 
 /*	Creates a mine entity with components assigned
 * 
@@ -212,7 +212,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created mine
 */
-EntityID Mine_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Mine_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a nation entity with components assigned
 * 
@@ -225,7 +225,7 @@ EntityID Mine_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCi
 *	@param controlFlag	Component key for how the entities in the nation are controlled
 *	@return EntityID of created nation
 */
-EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag);
+void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag);
 
 /*	Assigns the capital for a nation
 * 
@@ -233,7 +233,7 @@ EntityID Nation_Create(struct scene* scene, void (*goapInit)(Goap* goap), SDL_Co
 *	@param nationID	EntityID of the nation to assign capital to
 *	@param capital	EntityID of a city entity that will be assigned as the capital
 */
-void Nation_SetCapital(struct scene* scene, EntityID nationID, EntityID capital);
+void Nation_SetCapital(struct scene* scene, Nation* nationID, EntityID capital);
 
 /*	Creates an order button entity, with apropriate components assigned
 * 
@@ -253,7 +253,7 @@ EntityID OrderButton_Create(struct scene* scene, char* text, SDL_Texture* icon, 
 *	@param nation	Nation EntityID for ore
 *	@return EntityID of created ore
 */
-EntityID Ore_Create(struct scene*, Vector pos, EntityID nationID);
+EntityID Ore_Create(struct scene*, Vector pos, Nation* nationID);
 
 /*	Creates a port entity with components assigned
 * 
@@ -262,7 +262,7 @@ EntityID Ore_Create(struct scene*, Vector pos, EntityID nationID);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created port
 */
-EntityID Port_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir);
+EntityID Port_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a shell entity with components assigned
 * 
@@ -273,7 +273,7 @@ EntityID Port_Create(struct scene*, Vector pos, EntityID nation, EntityID homeCi
 *	@param nation	Nation EntityID for shell
 *	@return EntityID of created shell
 */
-EntityID Shell_Create(struct scene*, Vector pos, Vector tar, float attack, EntityID nation);
+EntityID Shell_Create(struct scene*, Vector pos, Vector tar, float attack, Nation* nation);
 
 /*	Creates a wall entity with components assigned
 * 
@@ -282,4 +282,4 @@ EntityID Shell_Create(struct scene*, Vector pos, Vector tar, float attack, Entit
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created wall
 */
-EntityID Wall_Create(Scene* scene, Vector pos, float angle, EntityID nation);
+EntityID Wall_Create(Scene* scene, Vector pos, float angle, Nation* nation);

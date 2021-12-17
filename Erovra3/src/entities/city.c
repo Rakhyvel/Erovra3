@@ -4,11 +4,10 @@
 #include "./entities.h"
 #include <string.h>
 
-EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nameBuffer, bool isCapital)
+EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* nameBuffer, bool isCapital)
 {
     EntityID cityID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
-    Arraylist_Add(&nationStruct->cities, &cityID);
+    Arraylist_Add(&(nation->cities), &cityID);
 
     Sprite sprite = {
         pos,
@@ -34,15 +33,12 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
     Scene_Assign(scene, cityID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cityID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID)
-    };
-    Scene_Assign(scene, cityID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID),
+        false,
         UnitType_CITY,
         1.0f,
         0,
@@ -66,7 +62,7 @@ EntityID City_Create(struct scene* scene, Vector pos, EntityID nation, char* nam
 
     Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, cityID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, cityID, nation->controlFlag, NULL);
 
     return cityID;
 }

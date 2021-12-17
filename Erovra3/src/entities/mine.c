@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID mineID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -38,23 +37,16 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     };
     Scene_Assign(scene, mineID, TARGET_COMPONENT_ID, &target);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, mineID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_MINE,
         0.05f,
-        nationStruct->unitCount[UnitType_MINE]
+        nation->unitCount[UnitType_MINE]
     };
-    type.name[0] = 'm';
-    type.name[1] = 'i';
-    type.name[2] = 'n';
-    type.name[3] = 'e';
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
@@ -83,7 +75,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, mineID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, mineID, nation->controlFlag, NULL);
 
     return mineID;
 }

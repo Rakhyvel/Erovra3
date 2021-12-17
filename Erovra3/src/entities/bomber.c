@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
+EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
 {
     EntityID bomberID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -44,18 +43,15 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, bomberID, PATROL_COMPONENT_ID, &patrol);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 1, AIR_BULLET_COMPONENT_ID)
-    };
-    Scene_Assign(scene, bomberID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 1, AIR_BULLET_COMPONENT_ID),
+        false,
         UnitType_BOMBER,
         0.5f, // Defense
-        nationStruct->unitCount[UnitType_BOMBER] 
+        nation->unitCount[UnitType_BOMBER] 
     };
     Scene_Assign(scene, bomberID, UNIT_COMPONENT_ID, &type);
 
@@ -86,6 +82,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, bomberID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, bomberID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, bomberID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, bomberID, nation->controlFlag, NULL);
     return bomberID;
 }

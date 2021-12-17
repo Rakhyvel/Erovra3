@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID portID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -32,18 +31,15 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, portID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, portID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_PORT,
         1,
-        nationStruct->unitCount[UnitType_PORT]
+        nation->unitCount[UnitType_PORT]
     };
     Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
 
@@ -60,7 +56,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
 
     Producer producer = {
         -1,
-        INVALID_ENTITY_INDEX,
+        -1,
         false,
         PORT_READY_FOCUSED_GUI,
         PORT_BUSY_FOCUSED_GUI
@@ -74,7 +70,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, portID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, portID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, portID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, portID, nation->controlFlag, NULL);
 
     return portID;
 }

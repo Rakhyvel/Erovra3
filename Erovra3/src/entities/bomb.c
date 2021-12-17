@@ -6,7 +6,7 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
+EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation)
 {
     EntityID bombID = Scene_NewEntity(scene);
 

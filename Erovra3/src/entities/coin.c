@@ -3,9 +3,8 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
+EntityID Coin_Create(struct scene* scene, Vector pos, Nation* nation)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     if (nation->capital == INVALID_ENTITY_INDEX) {
         return INVALID_ENTITY_INDEX;
     }
@@ -31,7 +30,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
         RenderPriorirty_PARTICLE_LAYER,
         nation->controlFlag == AI_COMPONENT_ID,
         false,
-        nationID,
+        nation,
         20,
         20,
         0,
@@ -47,7 +46,7 @@ EntityID Coin_Create(struct scene* scene, Vector pos, EntityID nationID)
     };
     Scene_Assign(scene, coinID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 
-    Scene_Assign(scene, coinID, GET_COMPONENT_FIELD(scene, nationID, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, coinID, nation->controlFlag, NULL);
 
     return coinID;
 }

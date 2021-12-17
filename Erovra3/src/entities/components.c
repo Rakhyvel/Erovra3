@@ -11,7 +11,6 @@ void Components_Init()
     AIR_LAYER_COMPONENT_ID = rand();
     PLANE_LAYER_COMPONENT_ID = rand();
     PARTICLE_LAYER_COMPONENT_ID = rand();
-    HEALTH_COMPONENT_ID = rand();
 
     UNIT_COMPONENT_ID = rand();
     COMBATANT_COMPONENT_ID = rand();
@@ -59,7 +58,6 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, AIR_LAYER_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, PLANE_LAYER_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, PARTICLE_LAYER_COMPONENT_ID, 0);
-    Scene_RegisterComponent(scene, HEALTH_COMPONENT_ID, sizeof(Health));
 
     Scene_RegisterComponent(scene, UNIT_COMPONENT_ID, sizeof(Unit));
     Scene_RegisterComponent(scene, COMBATANT_COMPONENT_ID, sizeof(Combatant));
@@ -88,7 +86,7 @@ void Components_Register(struct scene* scene)
 
     Scene_RegisterComponent(scene, NATION_COMPONENT_ID, sizeof(Nation));
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
-    Scene_RegisterComponent(scene, AI_COMPONENT_ID, sizeof(AI));
+    Scene_RegisterComponent(scene, AI_COMPONENT_ID, 0);
 
     Scene_RegisterComponent(scene, HOVERABLE_COMPONENT_ID, sizeof(Hoverable));
     Scene_RegisterComponent(scene, SELECTABLE_COMPONENT_ID, sizeof(Selectable));

@@ -4,7 +4,7 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
+EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation)
 {
     EntityID shellID = Scene_NewEntity(scene);
 
@@ -54,6 +54,6 @@ EntityID Shell_Create(struct scene* scene, Vector pos, Vector tar, float attack,
     Scene_Assign(scene, shellID, PROJECTILE_COMPONENT_ID, &projectile);
     Scene_Assign(scene, shellID, SHELL_COMPONENT_ID, 0);
 
-    Scene_Assign(scene, shellID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, shellID, nation->controlFlag, NULL);
     return shellID;
 }

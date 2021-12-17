@@ -7,6 +7,8 @@
 #include "../util/vector.h"
 #include "../engine/goap.h"
 
+struct nation;
+
 /* Assigns random values to the global component IDs
 */
 void Components_Init();
@@ -88,7 +90,7 @@ typedef struct sprite {
     enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
     bool hidden; // Whether or not the sprite is hidden, and should not be rendered
     bool showOutline; // Whether or not the sprite should have an outline
-    EntityID nation; // Nation EntityID to get color from
+    struct nation* nation; // Nation EntityID to get color from
     int width; // Width of the sprite when drawing to screen (asset may vary)
     int height; // Height of the sprite when drawing to screen (asset may vary)
     int outlineWidth; // Width of sprite outline texture
@@ -122,21 +124,14 @@ ComponentKey AIR_LAYER_COMPONENT_ID;
 ComponentKey PLANE_LAYER_COMPONENT_ID;
 ComponentKey PARTICLE_LAYER_COMPONENT_ID;
 
-/*
-		Contains data used for determining the health of a unit, how long the
-   unit has been alive, and how long the unit has been dead. */
-typedef struct health {
+/* Misc. data relating to units
+*/
+typedef struct unit {
     float health; // Health of the unit. Full health is 100, dead is 0
     int aliveTicks; // How long this unit has been alive
     int deathTicks; // How long this unit has been dead, ranges from 0-16
     ComponentMask sensedProjectiles; // Mask of projectiles that this unit is vulnerable to
     bool isDead; // Whether or not this unit is dead
-} Health;
-ComponentKey HEALTH_COMPONENT_ID;
-
-/* Misc. data relating to units
-*/
-typedef struct unit {
     UnitType type; // The type of unit this is
     const float defense; // The defense stat of the unit
     int ordinal; // Serial number of unit, assigned sequentially
@@ -155,7 +150,7 @@ typedef struct combatant {
     float attackDist; // How far the unit can engage the enemy, range of the unit
     ComponentMask enemyMask; // Components of other units that this unit attacks
     int attackTime; // Period of time for a projectile to be created
-    void (*projConstructor)(struct scene*, Vector pos, Vector tar, float attack, EntityID nation); // Function pointer to projectile constructor
+    void (*projConstructor)(struct scene*, Vector pos, Vector tar, float attack, struct nation* nation); // Function pointer to projectile constructor
     bool faceEnemy; // Whether or not the unit needs to face enemy (sea=no, else=yes)
     int randShoot; // A random timer to make shooting a bit random
 } Combatant;
@@ -204,15 +199,13 @@ typedef struct nation {
     Arraylist* highPrioritySpaces; // A list of vectors of spaces where enemies have been spotted
     bool* showOre; // Dynamic array, whether or not to show ore at a tile
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
+    Goap goap; // A Goal-Oritented Action Planner for the AI
 } Nation;
 ComponentKey NATION_COMPONENT_ID;
 ComponentKey PLAYER_FLAG_COMPONENT_ID;
 
 /* Assigned to nations that use a goal-oriented action planner to make decisions
 */
-typedef struct ai {
-    Goap goap; // A Goal-Oritented Action Planner for the AI
-} AI;
 ComponentKey AI_COMPONENT_ID;
 
 /* Data used by city entities
@@ -221,7 +214,7 @@ typedef struct city {
     char name[20]; // Name of the city
     bool isCapital; // Whether or not the city is a capital
     EntityID expansions[4]; // Corresponds to NWSE CardinalDirection id
-    EntityID captureNation; // The nation that this city will be captured by
+    Nation* captureNation; // The nation that this city will be captured by
 } City;
 ComponentKey CITY_COMPONENT_ID;
 
@@ -260,7 +253,7 @@ ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
 */
 typedef struct resourceProducer {
     float produceRate; // The number of labor-ticks between each production
-    void (*particleConstructor)(struct scene* scene, Vector pos, EntityID nationID); // Resource particle constructor
+    void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation); // Resource particle constructor
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
 

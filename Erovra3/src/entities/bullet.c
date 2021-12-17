@@ -6,7 +6,7 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
+EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation)
 {
     EntityID bulletID = Scene_NewEntity(scene);
 
@@ -50,7 +50,7 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     return bulletID;
 }
 
-EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, EntityID nation)
+EntityID AirBullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation)
 {
     EntityID airBulletID = Bullet_Create(scene, pos, tar, attack, nation);
     Scene_Unassign(scene, airBulletID, BULLET_COMPONENT_ID);

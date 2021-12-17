@@ -4,10 +4,9 @@
 #include "./entities.h"
 #include <string.h>
 
-EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
+EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
 {
     EntityID engineerID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -39,18 +38,15 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, engineerID, TARGET_COMPONENT_ID, &target);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, engineerID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_ENGINEER,
         0.0005f, // 1-shot kill,
-        nationStruct->unitCount[UnitType_ENGINEER]
+        nation->unitCount[UnitType_ENGINEER]
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
     strncpy_s(type.name, 32, "Engineer", 32);
@@ -75,6 +71,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, ENGINEER_UNIT_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, engineerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, engineerID, nation->controlFlag, NULL);
     return engineerID;
 }

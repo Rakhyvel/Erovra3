@@ -31,7 +31,7 @@ EntityID populationLabel;
 // Unit elements
 EntityID focusedGUIContainer;
 EntityID unitNameLabel;
-EntityID unitHealthBar;
+EntityID unitUnitBar;
 
 // Factory gui elements
 EntityID orderLabel;
@@ -54,6 +54,8 @@ static const int cityPop = 4;
 static const float taxRate = 0.25f;
 const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
 bool buildPorts = false;
+
+Arraylist* /*<Nation>*/ nations;
 
 static SDL_Texture* miniMapTexture = NULL;
 const int miniMapSize = 256.0f;
@@ -258,28 +260,27 @@ CardinalDirection Match_FindDir(Vector diff)
 	a new city, and deducts the approriate resources.
 	
 	Returns whether a city was/can be built */
-bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
+bool Match_BuyCity(struct scene* scene, Nation* nation, Vector pos)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
     if (Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build a city on a water tile");
     } else if (Terrain_ClosestMaskDist(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y) <= 2) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Too close to another city");
     } else if (Terrain_ClosestBuildingDist(terrain, (int)pos.x, (int)pos.y) == 0) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build a city on top of another building");
     } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][UnitType_CITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Not enough coins for a city");
     } else {
         char nameBuffer[10];
         memset(nameBuffer, 0, 10);
         Lexicon_GenerateWord(lexicon, nameBuffer, 10);
-        EntityID city = City_Create(scene, (Vector) { pos.x, pos.y }, nationID, nameBuffer, false);
+        EntityID city = City_Create(scene, (Vector) { pos.x, pos.y }, nation, nameBuffer, false);
         Terrain_SetBuildingAt(terrain, city, (int)pos.x, (int)pos.y);
         nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_CITY];
         nation->unitCount[UnitType_CITY]++;
@@ -289,9 +290,8 @@ bool Match_BuyCity(struct scene* scene, EntityID nationID, Vector pos)
     return false;
 }
 
-bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, Vector pos)
+bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vector pos)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
     pos.y = (float)floor(pos.y / 64) * 64 + 32;
 
@@ -300,22 +300,22 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
     Match_CopyUnitName(type, name);
     EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
     if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build %s on a water tile", name);
     } else if (type == UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build %s on a land tile", name);
     } else if (homeCity == INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "%s must be adjacent to a city", name);
     } else if (Terrain_GetBuildingAt(terrain, (int)pos.x, (int)pos.y) != INVALID_ENTITY_INDEX) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build %s on top of another building", name);
     } else if (nation->resources[ResourceType_COIN] < nation->costs[ResourceType_COIN][type]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Not enough coins for %s", name);
     } else if (type != UnitType_FARM && nation->resources[ResourceType_POPULATION] >= nation->resources[ResourceType_POPULATION_CAPACITY]) {
-        if (Scene_EntityHasComponents(scene, nationID, PLAYER_FLAG_COMPONENT_ID))
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Not enough available citizens for %s", name);
     } else {
         Sprite* homeCitySprite = (Sprite*)Scene_GetComponent(scene, homeCity, SPRITE_COMPONENT_ID);
@@ -325,22 +325,22 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
         EntityID building = INVALID_ENTITY_INDEX;
         switch (type) {
         case UnitType_MINE:
-            building = Mine_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Mine_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
         case UnitType_FACTORY:
-            building = Factory_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Factory_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
         case UnitType_PORT:
-            building = Port_Create(scene, pos, nationID, homeCity, dir);
+            building = Port_Create(scene, pos, nation, homeCity, dir);
             break;
         case UnitType_AIRFIELD:
-            building = Airfield_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Airfield_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
         case UnitType_FARM:
-            building = Farm_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Farm_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
         case UnitType_ACADEMY:
-            building = Academy_Create(scene, Vector_Add(diff, pos), nationID, homeCity, dir);
+            building = Academy_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
         default:
             PANIC("What");
@@ -360,9 +360,8 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, EntityID nationID, V
     return false;
 }
 
-bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float angle)
+bool Match_BuyWall(struct scene* scene, Nation* nation, Vector pos, float angle)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
     Vector cellMidPoint = { 64 * (float)floor(pos.x / 64) + 32, 64 * (float)floor(pos.y / 64) + 32 };
     float xOffset = cellMidPoint.x - pos.x;
     float yOffset = cellMidPoint.y - pos.y;
@@ -397,7 +396,7 @@ bool Match_BuyWall(struct scene* scene, EntityID nationID, Vector pos, float ang
     }
 
     if (nation->resources[ResourceType_COIN] >= 15 && Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
-        EntityID wall = Wall_Create(scene, cellMidPoint, angle, nationID);
+        EntityID wall = Wall_Create(scene, cellMidPoint, angle, nation);
         Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
         nation->resources[ResourceType_COIN] -= 15;
         return true;
@@ -458,9 +457,8 @@ void Match_SetUnitEngagedTicks(Sprite* sprite, Unit* unit)
 
 void Match_AIUpdateVisitedSpaces(struct scene* scene)
 {
-    system(scene, id, NATION_COMPONENT_ID, AI_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = Arraylist_Get(nations, i);
 
         for (int y = 0; y < nation->visitedSpacesSize; y++) {
             for (int x = 0; x < nation->visitedSpacesSize; x++) {
@@ -479,9 +477,9 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 }
 
 /*
-	Checks each health entity against all projectile entites. If the two are 
-	collided, the health of the entity is reduced based on the projectile's 
-	attack, and the health's defense. 
+	Checks each unit entity against all projectile entites. If the two are 
+	collided, the unit of the entity is reduced based on the projectile's 
+	attack, and the unit's defense. 
 	
 	Some projectiles have splash damage. If so, the damage of the projectile 
 	falls off as the distance from the projectile increases 
@@ -490,24 +488,23 @@ void Match_AIUpdateVisitedSpaces(struct scene* scene)
 	either the wall or building map in the terrain struct */
 void Match_DetectHit(struct scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
         if (sprite->hitTicks > 0) {
             sprite->hitTicks--;
         }
-        health->aliveTicks++;
+        unit->aliveTicks++;
 
         // Find closest enemy projectile
         Nation* otherNation = NULL;
         Sprite* otherSprite = NULL;
         system(scene, otherID, SPRITE_COMPONENT_ID, PROJECTILE_COMPONENT_ID)
         {
-            if (!Scene_EntityHasAnyComponents(scene, health->sensedProjectiles, otherID)) {
+            if (!Scene_EntityHasAnyComponents(scene, unit->sensedProjectiles, otherID)) {
                 continue;
             }
             otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
@@ -515,7 +512,7 @@ void Match_DetectHit(struct scene* scene)
                 continue;
             }
             Projectile* projectile = (Projectile*)Scene_GetComponent(scene, otherID, PROJECTILE_COMPONENT_ID);
-            otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+            otherNation = otherSprite->nation;
 
             float dist = Vector_Dist(sprite->pos, otherSprite->pos);
             if (projectile->armed && dist < projectile->splash) {
@@ -525,7 +522,7 @@ void Match_DetectHit(struct scene* scene)
                 } else {
                     splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
                 }
-                health->health -= projectile->attack * splashDamageModifier / unit->defense;
+                unit->health -= projectile->attack * splashDamageModifier / unit->defense;
                 // Building set engaged ticks, visited spaces (building defense should be top priority)
                 if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
                     Match_SetAlertedTile(nation, sprite->pos.x, sprite->pos.y, -10);
@@ -537,14 +534,14 @@ void Match_DetectHit(struct scene* scene)
                 if (sprite->z == 0.5f && Scene_EntityHasComponents(scene, id, TARGET_COMPONENT_ID)) {
                     Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
                     Vector displacement = Vector_Sub(sprite->pos, otherSprite->pos); // From other to me
-                    health->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, sprite->pos))) + 1.0f);
+                    unit->health -= projectile->attack * 10.0f * (Vector_Dot(Vector_Normalize(displacement), Vector_Normalize(Vector_Sub(target->lookat, sprite->pos))) + 1.0f);
                 }
                 sprite->hitTicks = 18;
                 Scene_MarkPurged(scene, otherID);
 
                 // If dead don't bother checking the rest of the particles
-                if (health->health <= 0) {
-                    health->isDead = true;
+                if (unit->health <= 0) {
+                    unit->isDead = true;
                     if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                         City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
                         city->captureNation = otherSprite->nation;
@@ -558,17 +555,16 @@ void Match_DetectHit(struct scene* scene)
 
 void Match_Death(Scene* scene)
 {
-    system(scene, id, HEALTH_COMPONENT_ID)
+    system(scene, id, UNIT_COMPONENT_ID)
     {
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        if (health->isDead) {
+        if (unit->isDead) {
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-            Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+            Nation* nation = sprite->nation;
 
-            if (health->deathTicks < 16) {
-                health->deathTicks += 1;
+            if (unit->deathTicks < 16) {
+                unit->deathTicks += 1;
             } else {
                 // Cities don't get destroyed, they're captured
                 City* homeCity = NULL;
@@ -577,7 +573,7 @@ void Match_Death(Scene* scene)
                     nation->resources[ResourceType_POPULATION]--;
                 } else {
                     City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
-                    Nation* otherNation = (Nation*)Scene_GetComponent(scene, city->captureNation, NATION_COMPONENT_ID);
+                    Nation* otherNation = city->captureNation;
                     Arraylist_Remove(nation->cities, Arraylist_IndexOf(nation->cities, &id));
                     Arraylist_Add(&otherNation->cities, &id);
                     sprite->nation = city->captureNation;
@@ -586,9 +582,9 @@ void Match_Death(Scene* scene)
                     sprite->sprite = CITY_TEXTURE_ID;
                     sprite->shadow = CITY_SHADOW_TEXTURE_ID;
                     sprite->spriteOutline = CITY_OUTLINE_TEXTURE_ID;
-                    health->health = 100;
-                    health->isDead = false;
-                    health->deathTicks = 0;
+                    unit->health = 100;
+                    unit->isDead = false;
+                    unit->deathTicks = 0;
                     nation->costs[ResourceType_COIN][unit->type] /= 2;
                 }
 
@@ -610,7 +606,9 @@ void Match_Death(Scene* scene)
                 }
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-                    nation->prodCount[producer->order]--;
+                    if (producer->order != -1) {
+                        nation->prodCount[producer->order]--;
+                    }
                 }
 
                 if (unit->type) {
@@ -631,14 +629,13 @@ void Match_CheckWin(Scene* scene)
         return;
     }
 #endif
-    system(scene, id, NATION_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = (Nation*)Arraylist_Get(nations, i);
         if (nation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
         Sprite* capitalRender = (Scene*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
-        if (capitalRender->nation != id) {
+        if (capitalRender->nation != nation) {
 #ifdef TOURNAMENT
             if (nation->ownNationFlag == HOME_NATION_FLAG_COMPONENT_ID) {
                 printf("Defeat\n");
@@ -662,7 +659,7 @@ void Match_CheckWin(Scene* scene)
 /*
 	Takes in a scene, iterates through all entites that have a sprite component. 
 	Their position is then incremented by their velocity. */
-void Match_Sprite(struct scene* scene)
+void Match_SpriteMove(struct scene* scene)
 {
     system(scene, id, SPRITE_COMPONENT_ID)
     {
@@ -691,7 +688,7 @@ void Match_SetVisitedSpace(struct scene* scene)
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
         if (!unit->engaged && sprite->speed > 0) {
             Match_ClearVisitedSpace(nation, sprite->pos.x, sprite->pos.y, combatant->attackDist);
@@ -755,7 +752,7 @@ void Match_Target(struct scene* scene)
                 }
 
                 // Check for enemy walls
-                Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+                Nation* nation = sprite->nation;
                 system(scene, wallID, WALL_FLAG_COMPONENT_ID)
                 {
                     // Can't pass through the walls of other nations (even if friendly)
@@ -1022,7 +1019,7 @@ void Match_Select(struct scene* scene)
     // If no unit targets were set previously
     if (!targeted) {
         // Go thru entities, check to see if they are now hovered and selected
-        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID)
+        system(scene, id, SELECTABLE_COMPONENT_ID, SPRITE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
             Hoverable* hoverable = (Hoverable*)Scene_GetComponent(scene, id, HOVERABLE_COMPONENT_ID);
@@ -1145,12 +1142,10 @@ void Match_Focus(struct scene* scene)
 
 void Match_AI(Scene* scene)
 {
-    system(scene, id, NATION_COMPONENT_ID, AI_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        if (nation->capital != INVALID_ENTITY_INDEX) {
-            AI* ai = (AI*)Scene_GetComponent(scene, id, AI_COMPONENT_ID);
-            Goap_Update(scene, &(ai->goap), id);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = (Nation*)Arraylist_Get(nations, i);
+        if (nation->controlFlag == AI_COMPONENT_ID && nation->capital != INVALID_ENTITY_INDEX) {
+            Goap_Update(scene, &(nation->goap), nation);
         }
     }
 }
@@ -1160,20 +1155,19 @@ void Match_AI(Scene* scene)
 	enemy to them, and finally shoot a projectile at them. */
 void Match_CombatantAttack(struct scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         // Exclude planes
         if (Scene_EntityHasComponents(scene, id, PATROL_COMPONENT_ID)) {
             continue;
         }
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
-        if (health->isDead) {
+        if (unit->isDead) {
             continue;
         }
 
@@ -1194,8 +1188,8 @@ void Match_CombatantAttack(struct scene* scene)
             if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
-            if (otherHealth->isDead) {
+            Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+            if (otherUnit->isDead) {
                 continue;
             }
             float dist = Vector_Dist(otherSprite->pos, sprite->pos);
@@ -1216,7 +1210,7 @@ void Match_CombatantAttack(struct scene* scene)
                 }
                 closestDist = dist;
                 closest = otherID;
-                otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+                otherNation = otherSprite->nation;
                 closestPos = otherSprite->pos;
                 closestVel = otherSprite->vel;
                 groundUnit = Scene_EntityHasComponents(scene, otherID, GROUND_UNIT_FLAG_COMPONENT_ID);
@@ -1261,9 +1255,9 @@ void Match_CombatantAttack(struct scene* scene)
         while (deflection < 0) {
             deflection += (float)M_PI * 2;
         }
-        if (health->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - sprite->angle) < 0.2 * sprite->speed || !combatant->faceEnemy)) {
+        if (unit->aliveTicks % combatant->attackTime == 0 && (fabs(deflection - sprite->angle) < 0.2 * sprite->speed || !combatant->faceEnemy)) {
             float homeFieldAdvantage = 1.0f; //0.6 * (Vector_Dist(capital->pos, sprite->pos) / sqrtf(terrain->size * terrain->size)) + 1;
-            float manPower = 1.0f; //health->health / 100.0f;
+            float manPower = 1.0f; //unit->unit / 100.0f;
             combatant->projConstructor(scene, sprite->pos, lead, manPower * homeFieldAdvantage * combatant->attack, sprite->nation);
         }
     }
@@ -1277,11 +1271,10 @@ void Match_AirplaneAttack(Scene* scene)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Patrol* patrol = (Patrol*)Scene_GetComponent(scene, id, PATROL_COMPONENT_ID);
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Nation* otherNation = NULL;
 
         // Find closest enemy ground unit
@@ -1296,17 +1289,17 @@ void Match_AirplaneAttack(Scene* scene)
             if (!Arraylist_Contains(nation->enemyNations, &otherSprite->nation)) {
                 continue;
             }
-            Health* otherHealth = (Health*)Scene_GetComponent(scene, otherID, HEALTH_COMPONENT_ID);
+            Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             float patrolDist = Vector_Dist(otherSprite->pos, patrol->patrolPoint);
 
             float dist = Vector_Dist(otherSprite->pos, sprite->pos);
             Vector innerCircle = Vector_Normalize(Vector_Sub(otherSprite->pos, sprite->pos)); // Points from pos to patrol
             float targetAlignment = Vector_Dot(Vector_Normalize(sprite->vel), innerCircle);
 
-            if (patrolDist + otherHealth->health < closestDist && dist < combatant->attackDist) {
-                closestDist = dist + otherHealth->health;
+            if (patrolDist + otherUnit->health < closestDist && dist < combatant->attackDist) {
+                closestDist = dist + otherUnit->health;
                 closest = otherID;
-                otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+                otherNation = otherSprite->nation;
                 closestPos = otherSprite->pos;
                 closestVel = otherSprite->vel;
                 closestZ = otherSprite->z;
@@ -1316,7 +1309,7 @@ void Match_AirplaneAttack(Scene* scene)
         // If no enemy units were found, stuckin and engaged are false, skip
         if (closest == INVALID_ENTITY_INDEX) {
             patrol->focalPoint = patrol->patrolPoint;
-        } else if (health->aliveTicks % combatant->attackTime == 0) {
+        } else if (unit->aliveTicks % combatant->attackTime == 0) {
             // Find lead angle
             /*
 			Special thanks to: https://www.gamedev.net/forums/topic/457840-calculating-target-lead/4020764/
@@ -1359,7 +1352,7 @@ void Match_AirplaneScout(struct scene* scene)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
         system(scene, otherID, UNIT_COMPONENT_ID)
         {
@@ -1368,7 +1361,7 @@ void Match_AirplaneScout(struct scene* scene)
                 continue;
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
-            Nation* otherNation = (Nation*)Scene_GetComponent(scene, otherSprite->nation, NATION_COMPONENT_ID);
+            Nation* otherNation = otherSprite->nation;
             if (Vector_Dist(sprite->pos, otherSprite->pos) < 128) {
                 if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
                     Match_SetUnitEngagedTicks(sprite, unit);
@@ -1396,14 +1389,14 @@ void Match_AirplaneScout(struct scene* scene)
 	Creates a resource particle every time a production period has passed */
 void Match_ProduceResources(struct scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, HEALTH_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
         int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
-        if (health->aliveTicks % ticks == 0) {
+        if (unit->aliveTicks % ticks == 0) {
             // Will not produce resources for a rump state
             resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
         }
@@ -1423,7 +1416,7 @@ void Match_DestroyResourceParticles(struct scene* scene)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         if (nation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
@@ -1438,18 +1431,17 @@ void Match_DestroyResourceParticles(struct scene* scene)
 
 void Match_EatFood(struct scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, HEALTH_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         int ticks = (int)(ticksPerLabor * 6);
-        if (health->aliveTicks % ticks == 0) {
+        if (unit->aliveTicks % ticks == 0) {
             if (nation->resources[ResourceType_FOOD] > 0) {
                 nation->resources[ResourceType_FOOD]--;
             } else {
-                health->health *= 0.5f;
+                unit->health *= 0.5f;
                 printf("Hungry!\n");
             }
         }
@@ -1466,7 +1458,6 @@ void Match_ProduceUnits(struct scene* scene)
     system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
@@ -1475,8 +1466,6 @@ void Match_ProduceUnits(struct scene* scene)
 
         producer->orderTicksRemaining--;
         if (producer->orderTicksRemaining == 0) {
-            nation->prodCount[producer->order]--;
-            nation->unitCount[producer->order]++;
             if (producer->order == UnitType_INFANTRY) {
                 Infantry_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ENGINEER) {
@@ -1500,23 +1489,25 @@ void Match_ProduceUnits(struct scene* scene)
             } else {
                 PANIC("Producer's can't build that UnitType");
             }
-            nation->resources[ResourceType_POPULATION]++;
+            sprite->nation->prodCount[producer->order]--;
+            sprite->nation->unitCount[producer->order]++;
+            sprite->nation->resources[ResourceType_POPULATION]++;
 
-            if (Scene_EntityHasComponents(scene, sprite->nation, PLAYER_FLAG_COMPONENT_ID)) {
+            if (sprite->nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
                 char buffer[32];
                 memset(buffer, 0, 32);
                 Match_CopyUnitName(unit->type, buffer);
                 Match_AddMessage(activeColor, "Order completed at %s %s", city->name, buffer);
             }
 
-            if (!producer->repeat || !Match_PlaceOrder(scene, nation, producer, expansion, producer->order)) {
-                if (producer->repeat && Scene_EntityHasComponents(scene, sprite->nation, PLAYER_FLAG_COMPONENT_ID)) {
+            if (!producer->repeat || !Match_PlaceOrder(scene, sprite->nation, producer, expansion, producer->order)) {
+                if (producer->repeat && sprite->nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
                     char buffer[32];
                     memset(buffer, 0, 32);
                     Match_CopyUnitName(unit->type, buffer);
                     Match_AddMessage(errorColor, "Insufficient resources at %s %s, auto re-order canceled", city->name, buffer);
                 }
-                producer->order = INVALID_ENTITY_INDEX;
+                producer->order = -1;
                 producer->repeat = false;
                 focusable->guiContainer = producer->readyGUIContainer;
                 guiChange = true;
@@ -1547,18 +1538,17 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
-        if (!health->isDead && Scene_EntityHasComponents(scene, expansion->homeCity, SPRITE_COMPONENT_ID)) {
+        Nation* nation = sprite->nation;
+        if (!unit->isDead && Scene_EntityHasComponents(scene, expansion->homeCity, SPRITE_COMPONENT_ID)) {
             Sprite* homeCitySprite = (Sprite*)Scene_GetComponent(scene, expansion->homeCity, SPRITE_COMPONENT_ID);
             if (sprite->nation != homeCitySprite->nation) {
-                Nation* newNation = (Nation*)Scene_GetComponent(scene, homeCitySprite->nation, NATION_COMPONENT_ID);
+                Nation* newNation = homeCitySprite->nation;
 
                 nation->costs[ResourceType_COIN][unit->type] /= 2;
 
                 // You don't get the farms of other people
                 if (unit->type == UnitType_FARM) {
-                    health->isDead = true;
+                    unit->isDead = true;
                 } else {
                     newNation->costs[ResourceType_COIN][unit->type] *= 2;
                     nation->resources[ResourceType_POPULATION]--;
@@ -1567,10 +1557,12 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-                    producer->orderTicksRemaining = -1;
-                    nation->prodCount[producer->order]--;
-                    newNation->prodCount[producer->order]++;
-                    producer->order = INVALID_ENTITY_INDEX;
+                    if (producer->order != -1) {
+                        producer->orderTicksRemaining = -1;
+                        nation->prodCount[producer->order]--;
+                        newNation->prodCount[producer->order]++;
+                        producer->order = -1;
+                    }
                 }
 
                 if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
@@ -1595,7 +1587,7 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
 	Takes in a scene, iterates through all entities with Sprite and 
 	Transform components. Translates texture based on Terrain's offset and zoom,
 	colorizes based on the nation color, and renders texture to screen. */
-void Match_SimpleRender(struct scene* scene, ComponentKey layer)
+void Match_SpriteRender(struct scene* scene, ComponentKey layer)
 {
     system(scene, id, SPRITE_COMPONENT_ID, layer)
     {
@@ -1606,7 +1598,7 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         }
 
         int shadowZ = (int)(sprite->z < 0.5 ? 2 : 60 * sprite->z - 28);
-        int deathTicks = !Scene_EntityHasComponents(scene, id, HEALTH_COMPONENT_ID) ? 16 : 16 - ((Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID))->deathTicks;
+        int deathTicks = !Scene_EntityHasComponents(scene, id, UNIT_COMPONENT_ID) ? 16 : 16 - ((Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID))->deathTicks;
 
         // Shadow
         SDL_SetTextureAlphaMod(sprite->shadow, 255.0f / 16.0f * deathTicks);
@@ -1629,7 +1621,7 @@ void Match_SimpleRender(struct scene* scene, ComponentKey layer)
         // Base image
         Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->width, (float)sprite->height);
         if (!sprite->destroyOnBounds) {
-            SDL_Color nationColor = ((Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID))->color;
+            SDL_Color nationColor = sprite->nation->color;
             SDL_SetTextureColorMod(sprite->sprite, nationColor.r, nationColor.g, nationColor.b);
         }
         SDL_SetTextureAlphaMod(sprite->sprite, 255.0f / 16.0f * deathTicks);
@@ -1666,7 +1658,7 @@ void Match_DrawSelectionArrows(Scene* scene)
     // If shift is held down, find center of mass of selected units
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         int numSelected = 0;
-        system(scene, id, SELECTABLE_COMPONENT_ID, TARGET_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             Selectable* selectable = (Selectable*)Scene_GetComponent(scene, id, SELECTABLE_COMPONENT_ID);
@@ -1679,7 +1671,7 @@ void Match_DrawSelectionArrows(Scene* scene)
             centerOfMass = Vector_Scalar(centerOfMass, 1.0f / numSelected);
         }
     }
-
+    // Draw all the shadows (so that one shadow of an arrow isnt on top of another)
     system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
@@ -1717,6 +1709,7 @@ void Match_DrawSelectionArrows(Scene* scene)
             Texture_DrawThickLine(NULL, (Vector) { dest.x, dest.y + 2 }, (Vector) { rect.x, rect.y + 2 }, (SDL_Color) { 0, 0, 0, 64 }, 8 * scale);
         }
     }
+    // Draw the arrows
     system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, SELECTABLE_COMPONENT_ID, HOVERABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
@@ -1767,7 +1760,6 @@ void Match_UpdateGUIElements(struct scene* scene)
     if (currShownEntity != INVALID_ENTITY_INDEX) {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, currShownEntity, FOCUSABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, currShownEntity, UNIT_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, currShownEntity, HEALTH_COMPONENT_ID);
 
         char buffer[32];
         memset(buffer, 0, 32);
@@ -1783,8 +1775,8 @@ void Match_UpdateGUIElements(struct scene* scene)
             GUI_SetLabelText(scene, unitNameLabel, "%s %s", homeCity->name, buffer);
         }
 
-        ProgressBar* healthBar = (ProgressBar*)Scene_GetComponent(scene, unitHealthBar, GUI_PROGRESS_BAR_COMPONENT_ID);
-        healthBar->value = health->health / 100.0f;
+        ProgressBar* unitBar = (ProgressBar*)Scene_GetComponent(scene, unitUnitBar, GUI_PROGRESS_BAR_COMPONENT_ID);
+        unitBar->value = unit->health / 100.0f;
 
         if (focusable->focused && Scene_EntityHasComponents(scene, currShownEntity, PRODUCER_COMPONENT_ID)) {
             Producer* producer = (Producer*)Scene_GetComponent(scene, currShownEntity, PRODUCER_COMPONENT_ID);
@@ -1806,9 +1798,8 @@ void Match_UpdateGUIElements(struct scene* scene)
 
 void Match_DrawVisitedSquares(Scene* scene)
 {
-    system(scene, id, NATION_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = (Nation*)Arraylist_Get(nations, i);
         SDL_Rect rect = { 0, 0, 0, 0 };
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
             for (int y = 0; y < nation->visitedSpacesSize; y++) {
@@ -1853,11 +1844,11 @@ void Match_DrawBoxSelect(Scene* scene)
 	Units are hidden when their engaged ticks are less than 0. */
 void Match_UpdateFogOfWar(struct scene* scene)
 {
-    system(scene, id, UNIT_COMPONENT_ID, AI_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, AI_COMPONENT_ID)
     {
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
         unit->engagedTicks--;
         sprite->hidden = nation->controlFlag != PLAYER_FLAG_COMPONENT_ID && unit->engagedTicks < 0;
@@ -1873,9 +1864,8 @@ void Match_DrawMiniMap(Scene* scene)
     SDL_RenderCopy(Apricot_Renderer, miniMapTexture, NULL, &rect);
 
     // Draw ore
-    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = (Nation*)Arraylist_Get(nations, i);
 
         for (int x = 0; x < terrain->tileSize; x++) {
             for (int y = 0; y < terrain->tileSize; y++) {
@@ -1894,7 +1884,7 @@ void Match_DrawMiniMap(Scene* scene)
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         if (sprite->hidden) {
             continue;
         }
@@ -1906,16 +1896,7 @@ void Match_DrawMiniMap(Scene* scene)
 
 void Match_RenderOrderButtons(Scene* scene)
 {
-    // Quickly find home nation
-    Nation* nation = NULL;
-    system(scene, id, NATION_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
-    {
-        nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-        break;
-    }
-    if (nation == NULL) {
-        return; // No nations found, happens when no capital point could be found
-    }
+    Nation* nation = Arraylist_Get(nations, 0);
     system(scene, id, ORDER_BUTTON_COMPONENT_ID, GUI_COMPONENT_ID)
     {
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
@@ -1980,25 +1961,21 @@ void Match_RenderNationInfo(Scene* scene)
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
-    system(scene, id, NATION_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    Nation* nation = Arraylist_Get(nations, 0);
 
-        Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
-        FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
-        Texture_Draw(ORE_TEXTURE_ID, 8, 32, 20, 20, 0);
-        FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_ORE]);
-        Texture_Draw(POPULATION_TEXTURE_ID, 8, 56, 20, 20, 0);
-        FC_Draw(font, Apricot_Renderer, 36, 53, "%d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
-        Texture_Draw(POPULATION_TEXTURE_ID, 8, 88, 20, 20, 0);
-        FC_Draw(font, Apricot_Renderer, 36, 84, "%d", nation->resources[ResourceType_FOOD]);
-        break;
-    }
+    Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
+    Texture_Draw(ORE_TEXTURE_ID, 8, 32, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_ORE]);
+    Texture_Draw(POPULATION_TEXTURE_ID, 8, 56, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 53, "%d/%d", nation->resources[ResourceType_POPULATION], nation->resources[ResourceType_POPULATION_CAPACITY]);
+    Texture_Draw(POPULATION_TEXTURE_ID, 8, 88, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 84, "%d", nation->resources[ResourceType_FOOD]);
 }
 
 void Match_RenderCityName(Scene* scene)
 {
-    system(scene, id, CITY_COMPONENT_ID, SPRITE_COMPONENT_ID, SPRITE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, CITY_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
@@ -2062,11 +2039,11 @@ void Match_RenderMessageContainer(Scene* scene)
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, PLAYER_FLAG_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
 
         if (producer->orderTicksRemaining > 0) {
             // Get the rectangle for full bar
@@ -2106,7 +2083,7 @@ void Match_Update(Scene* match)
 
     Match_Patrol(match);
     Match_Target(match);
-    Match_Sprite(match);
+    Match_SpriteMove(match);
     Match_ResourceParticleAccelerate(match);
     Match_BombMove(match);
     Match_CombatantAttack(match);
@@ -2151,14 +2128,14 @@ void Match_Render(Scene* match)
     if (doFogOfWar) { // Determined by a switch in the match creation menu
         Match_UpdateFogOfWar(match);
     }
-    Match_SimpleRender(match, BUILDING_LAYER_COMPONENT_ID);
+    Match_SpriteRender(match, BUILDING_LAYER_COMPONENT_ID);
     Match_RenderProducerBars(match);
     Match_RenderCityName(match);
     Match_DrawSelectionArrows(match);
-    Match_SimpleRender(match, SURFACE_LAYER_COMPONENT_ID);
-    Match_SimpleRender(match, AIR_LAYER_COMPONENT_ID);
-    Match_SimpleRender(match, PLANE_LAYER_COMPONENT_ID);
-    Match_SimpleRender(match, PARTICLE_LAYER_COMPONENT_ID);
+    Match_SpriteRender(match, SURFACE_LAYER_COMPONENT_ID);
+    Match_SpriteRender(match, AIR_LAYER_COMPONENT_ID);
+    Match_SpriteRender(match, PLANE_LAYER_COMPONENT_ID);
+    Match_SpriteRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
     //Match_DrawVisitedSquares(match);
     //Match_DrawPortTiles(match);
@@ -2177,7 +2154,7 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused) {
             Match_BuyCity(scene, sprite->nation, sprite->pos);
@@ -2193,7 +2170,7 @@ void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
 
         if (focusable->focused) {
@@ -2211,7 +2188,7 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
             Vector cellMidPoint = { 64.0f * (int)(sprite->pos.x / 64) + 32.0f, 64.0f * (int)(sprite->pos.y / 64) + 32.0f };
@@ -2264,7 +2241,7 @@ void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         if (focusable->focused) {
             for (int x = -1; x <= 1; x++) {
@@ -2292,7 +2269,7 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
@@ -2306,13 +2283,13 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 
 void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 {
-    system(scene, id, HEALTH_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, UNIT_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
     {
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        Health* health = (Health*)Scene_GetComponent(scene, id, HEALTH_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
         if (focusable->focused) {
-            health->isDead = true;
+            unit->isDead = true;
         }
     }
 }
@@ -2324,7 +2301,7 @@ void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
     system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, sprite->nation, NATION_COMPONENT_ID);
+        Nation* nation = sprite->nation;
         Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
@@ -2361,13 +2338,13 @@ void Match_Destroy(Scene* scene)
     Terrain_Destroy(terrain);
     SDL_DestroyTexture(miniMapTexture);
     Arraylist_Destroy(messages);
-    system(scene, id, NATION_COMPONENT_ID)
-    {
-        Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
+    for (int i = 0; i < nations->size; i++) {
+        Nation* nation = Arraylist_Get(nations, i);
         free(nation->visitedSpaces);
         free(nation->showOre);
         Arraylist_Destroy(nation->cities);
     }
+    Arraylist_Destroy(nations);
 }
 
 /*
@@ -2380,6 +2357,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     miniMapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
     Texture_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
     terrain = Terrain_Create(mapSize, map, texture);
+    nations = Arraylist_Create(1, sizeof(Nation));
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
     printf("Match: %p\n", match);
@@ -2390,7 +2368,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder);
 
     unitNameLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "Lol!");
-    unitHealthBar = GUI_CreateProgressBar(match, (Vector) { 0, 0 }, 168, 1.0f);
+    unitUnitBar = GUI_CreateProgressBar(match, (Vector) { 0, 0 }, 168, 1.0f);
 
     focusedGUIContainer = GUI_CreateContainer(match, (Vector) { 251, 389 }, 140, 202);
     GUI_SetBackgroundColor(match, focusedGUIContainer, (SDL_Color) { 21, 21, 21, 180 });
@@ -2398,7 +2376,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     GUI_SetPadding(match, focusedGUIContainer, 8);
     GUI_SetMargin(match, focusedGUIContainer, -5);
     GUI_ContainerAdd(match, focusedGUIContainer, unitNameLabel);
-    GUI_ContainerAdd(match, focusedGUIContainer, unitHealthBar);
+    GUI_ContainerAdd(match, focusedGUIContainer, unitUnitBar);
     GUI_ContainerAdd(match, focusedGUIContainer, orderLabel);
     GUI_ContainerAdd(match, focusedGUIContainer, autoReOrderRockerSwitch);
     GUI_ContainerAdd(match, focusedGUIContainer, timeLabel);
@@ -2538,12 +2516,6 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
 		*/
         Arraylist_Clear(terrain->ports);
 
-        // Create nations, with the first nation being player controlled
-        Arraylist* nations = Arraylist_Create(nNations, sizeof(EntityID));
-        for (int j = 0; j < nNations; j++) {
-            EntityID temp = INVALID_ENTITY_INDEX;
-            Arraylist_Add(&nations, &temp);
-        }
         SDL_Color nationColors[] = {
             (SDL_Color) { 0, 79, 206 }, // Blue
             (SDL_Color) { 202, 20, 21 }, // Red
@@ -2553,38 +2525,44 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
             (SDL_Color) { 255, 129, 18 }, // Orange
 
         };
+		// Add nations first. When lists are resized, their pointers change.
         for (int i = 0; i < nNations; i++) {
-            EntityID nation;
+            Nation temp;
+            memset(&temp, 0, sizeof(Nation));
+            Arraylist_Add(&nations, &temp); // Copy temp over, will be garbage until it's init'd
+        }
+        // Init nations, with the first nation being player controlled
+        for (int i = 0; i < nNations; i++) {
+            Nation* nation = (Nation*)Arraylist_Get(nations, i); // This is the real nation ptr that should be passed around
             EntityID capital;
             Vector nationVector = *(Vector*)Arraylist_Get(nationVectors, i);
+            // Init nation in place
             if (i == 0 && !AIControlled) {
-                nation = Nation_Create(match, NULL, nationColors[i], terrain->size, PLAYER_FLAG_COMPONENT_ID);
+                Nation_Create(match, nation, NULL, nationColors[i], terrain->size, PLAYER_FLAG_COMPONENT_ID);
                 Terrain_SetOffset(nationVector);
                 capital = City_Create(match, nationVector, nation, capitalName, true);
             } else {
                 char enemyNameBuffer[20];
                 Lexicon_GenerateWord(lexicon, enemyNameBuffer, 20);
-                nation = Nation_Create(match, AI_Init, nationColors[i], terrain->size, AI_COMPONENT_ID);
+                Nation_Create(match, nation, AI_Init, nationColors[i], terrain->size, AI_COMPONENT_ID);
                 capital = City_Create(match, nationVector, nation, enemyNameBuffer, true);
             }
-            // Register nation
-            Arraylist_Put(nations, i, &nation);
             // Register capital
             Terrain_SetBuildingAt(terrain, capital, (int)nationVector.x, (int)nationVector.y);
             Nation_SetCapital(match, nation, capital);
 
             // Create engineers
-            ((Nation*)Scene_GetComponent(match, nation, NATION_COMPONENT_ID))->unitCount[UnitType_ENGINEER]++; // Done first, so that engineer unit ordinal is correct
+            nation->unitCount[UnitType_ENGINEER]++; // Done first, so that engineer unit ordinal is correct
             Engineer_Create(match, nationVector, nation);
         }
 
         // Make all nations enemies of each other
         for (int i = 0; i < nNations - 1; i++) {
             for (int j = i + 1; j < nNations; j++) {
-                EntityID nation1 = *(EntityID*)Arraylist_Get(nations, i);
-                EntityID nation2 = *(EntityID*)Arraylist_Get(nations, j);
-                Arraylist_Add(&(GET_COMPONENT_FIELD(match, nation1, NATION_COMPONENT_ID, Nation, enemyNations)), &nation2);
-                Arraylist_Add(&(GET_COMPONENT_FIELD(match, nation2, NATION_COMPONENT_ID, Nation, enemyNations)), &nation1);
+                Nation* nation1 = (Nation*)Arraylist_Get(nations, i);
+                Nation* nation2 = (Nation*)Arraylist_Get(nations, j);
+                Arraylist_Add(&(nation1->enemyNations), &nation2);
+                Arraylist_Add(&(nation2->enemyNations), &nation1);
             }
         }
     } else {

@@ -3,10 +3,9 @@
 #include "../textures.h"
 #include "./entities.h"
 
-EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Airfield_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID airfieldID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -32,15 +31,12 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
     Scene_Assign(scene, airfieldID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, airfieldID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, airfieldID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_AIRFIELD,
         1,
         0
@@ -65,7 +61,7 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, EntityID nation, Entit
     Scene_Assign(scene, airfieldID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, airfieldID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, airfieldID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, airfieldID, nation->controlFlag, NULL);
 
     return airfieldID;
 }

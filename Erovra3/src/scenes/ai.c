@@ -10,14 +10,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bool leaveOneSpace)
+static void findExpansionSpot(Scene* scene, Nation* nation, UnitType type, bool leaveOneSpace)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -99,14 +97,12 @@ static void findExpansionSpot(Scene* scene, EntityID nationID, UnitType type, bo
     }
 }
 
-static void findPortTile(Scene* scene, EntityID nationID)
+static void findPortTile(Scene* scene, Nation* nation)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
-
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
@@ -162,17 +158,16 @@ static void findPortTile(Scene* scene, EntityID nationID)
     }
 }
 
-static void orderFromProducer(Scene* scene, EntityID nationID, UnitType producerType, UnitType orderType)
+static void orderFromProducer(Scene* scene, Nation* nation, UnitType producerType, UnitType orderType)
 {
     system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
 
         if (orderType == UnitType_FIGHTER || orderType == UnitType_ATTACKER || orderType == UnitType_BOMBER) {
@@ -187,16 +182,14 @@ static void orderFromProducer(Scene* scene, EntityID nationID, UnitType producer
     }
 }
 
-void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
+void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
 {
-    Nation* nation = (Nation*)Scene_GetComponent(scene, id, NATION_COMPONENT_ID);
-
     int knownEnemies = 0; // ground units
     int knownEnemySeaUnits = 0;
     int knownEnemyPlanes = 0; // air units
     bool knownEnemyCapital = false;
     for (int i = 0; i < nation->enemyNations->size; i++) {
-        Nation* enemyNation = (Nation*)Scene_GetComponent(scene, *(EntityID*)Arraylist_Get(nation->enemyNations, i), NATION_COMPONENT_ID);
+        Nation* enemyNation = *(Nation**)Arraylist_Get(nation->enemyNations, i);
         if (enemyNation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
@@ -272,7 +265,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     system(scene, otherID, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
-        if (sprite->nation != id) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, otherID, TARGET_COMPONENT_ID);
@@ -352,7 +345,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
     system(scene, otherID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
-        if (sprite->nation != id) {
+        if (sprite->nation != nation) {
             continue;
         }
         Unit* unit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
@@ -383,22 +376,21 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, EntityID id)
         goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
 		*/
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
-        printf("%d\n", goap->variables[HAS_ENGINEER]);
+        printf("%d\n", goap->variables[HAS_ATTACKER]);
     }
 }
 
 // Really only for tactical planning, let GOAP handle strategic stuff, it's good at that
-void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
+void AI_TargetGroundUnitsRandomly(Scene* scene, Nation* nation)
 {
     system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         if (unit->engaged) {
             continue;
@@ -478,12 +470,11 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
     system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         if (unit->engaged) {
             continue;
@@ -506,7 +497,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
             if (id == otherID)
                 continue;
             Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
-            if (otherSprite->nation != nationID) {
+            if (otherSprite->nation != nation) {
                 continue;
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
@@ -546,19 +537,18 @@ void AI_TargetGroundUnitsRandomly(Scene* scene, EntityID nationID)
     }
 }
 
-void AI_TargetEnemyCapital(Scene* scene, EntityID nationID)
+void AI_TargetEnemyCapital(Scene* scene, Nation* nation)
 {
     system(scene, id, SPRITE_COMPONENT_ID, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID, COMBATANT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         for (int i = 0; i < nation->enemyNations->size; i++) {
-            Nation* enemyNation = (Nation*)Scene_GetComponent(scene, *(EntityID*)Arraylist_Get(nation->enemyNations, i), NATION_COMPONENT_ID);
+            Nation* enemyNation = *(Nation**)Arraylist_Get(nation->enemyNations, i);
             if (enemyNation->capital == INVALID_ENTITY_INDEX) {
                 continue;
             }
@@ -573,51 +563,50 @@ void AI_TargetEnemyCapital(Scene* scene, EntityID nationID)
     }
 }
 
-void AI_OrderInfantry(Scene* scene, EntityID nationID)
+void AI_OrderInfantry(Scene* scene, Nation* nation)
 {
-    orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_INFANTRY);
+    orderFromProducer(scene, nation, UnitType_ACADEMY, UnitType_INFANTRY);
 }
 
-void AI_OrderCavalry(Scene* scene, EntityID nationID)
+void AI_OrderCavalry(Scene* scene, Nation* nation)
 {
     if (rand() % 2 == 0) {
-        orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_CAVALRY);
+        orderFromProducer(scene, nation, UnitType_FACTORY, UnitType_CAVALRY);
     } else {
-        orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_ARTILLERY);
+        orderFromProducer(scene, nation, UnitType_FACTORY, UnitType_ARTILLERY);
     }
 }
 
-void AI_OrderDestroyer(Scene* scene, EntityID nationID)
+void AI_OrderDestroyer(Scene* scene, Nation* nation)
 {
-    orderFromProducer(scene, nationID, UnitType_PORT, UnitType_DESTROYER);
+    orderFromProducer(scene, nation, UnitType_PORT, UnitType_DESTROYER);
 }
 
-void AI_OrderFighter(Scene* scene, EntityID nationID)
+void AI_OrderFighter(Scene* scene, Nation* nation)
 {
-    orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_FIGHTER);
+    orderFromProducer(scene, nation, UnitType_FACTORY, UnitType_FIGHTER);
 }
 
-void AI_OrderAttacker(Scene* scene, EntityID nationID)
+void AI_OrderAttacker(Scene* scene, Nation* nation)
 {
-    orderFromProducer(scene, nationID, UnitType_FACTORY, UnitType_ATTACKER);
+    orderFromProducer(scene, nation, UnitType_FACTORY, UnitType_ATTACKER);
 }
 
-void AI_OrderEngineer(Scene* scene, EntityID nationID)
+void AI_OrderEngineer(Scene* scene, Nation* nation)
 {
-    orderFromProducer(scene, nationID, UnitType_ACADEMY, UnitType_ENGINEER);
+    orderFromProducer(scene, nation, UnitType_ACADEMY, UnitType_ENGINEER);
 }
 
-void AI_BuildCity(Scene* scene, EntityID nationID)
+void AI_BuildCity(Scene* scene, Nation* nation)
 {
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = { -1, -1 };
@@ -656,17 +645,16 @@ void AI_BuildCity(Scene* scene, EntityID nationID)
     }
 }
 
-void AI_BuildPortCity(Scene* scene, EntityID nationID)
+void AI_BuildPortCity(Scene* scene, Nation* nation)
 {
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        if (sprite->nation != nationID) {
+        if (sprite->nation != nation) {
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Nation* nation = (Nation*)Scene_GetComponent(scene, nationID, NATION_COMPONENT_ID);
 
         float tempDistance = FLT_MAX;
         Vector tempTarget = { -1, -1 };
@@ -712,39 +700,39 @@ void AI_BuildPortCity(Scene* scene, EntityID nationID)
     }
 }
 
-void AI_BuildMine(Scene* scene, EntityID nationID)
+void AI_BuildMine(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_MINE, false);
+    findExpansionSpot(scene, nation, UnitType_MINE, false);
 }
 
-void AI_BuildFactory(Scene* scene, EntityID nationID)
+void AI_BuildFactory(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_FACTORY, false);
+    findExpansionSpot(scene, nation, UnitType_FACTORY, false);
 }
 
-void AI_BuildFactoryForAirfield(Scene* scene, EntityID nationID)
+void AI_BuildFactoryForAirfield(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_FACTORY, true);
+    findExpansionSpot(scene, nation, UnitType_FACTORY, true);
 }
 
-void AI_BuildPort(Scene* scene, EntityID nationID)
+void AI_BuildPort(Scene* scene, Nation* nation)
 {
-    findPortTile(scene, nationID);
+    findPortTile(scene, nation);
 }
 
-void AI_BuildAirfield(Scene* scene, EntityID nationID)
+void AI_BuildAirfield(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_AIRFIELD, false);
+    findExpansionSpot(scene, nation, UnitType_AIRFIELD, false);
 }
 
-void AI_BuildFarm(Scene* scene, EntityID nationID)
+void AI_BuildFarm(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_FARM, false);
+    findExpansionSpot(scene, nation, UnitType_FARM, false);
 }
 
-void AI_BuildAcademy(Scene* scene, EntityID nationID)
+void AI_BuildAcademy(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nationID, UnitType_ACADEMY, false);
+    findExpansionSpot(scene, nation, UnitType_ACADEMY, false);
 }
 
 void AI_Init(Goap* goap)

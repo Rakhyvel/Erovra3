@@ -4,10 +4,9 @@
 #include "./entities.h"
 #include <string.h>
 
-EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID farmID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -33,18 +32,15 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, farmID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, farmID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, farmID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_FARM,
         1,
-        nationStruct->unitCount[UnitType_FARM]
+        nation->unitCount[UnitType_FARM]
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
@@ -72,7 +68,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, EntityID nation, EntityID 
     Scene_Assign(scene, farmID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, farmID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, farmID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, farmID, nation->controlFlag, NULL);
 
     return farmID;
 }

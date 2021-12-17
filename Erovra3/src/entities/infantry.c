@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
+EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
 {
     EntityID infantryID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -38,18 +37,15 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, infantryID, TARGET_COMPONENT_ID, &target);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, infantryID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_INFANTRY,
         1.0f, // 1 damage every 30 ticks -> 300 ticks,
-        nationStruct->unitCount[UnitType_INFANTRY]
+        nation->unitCount[UnitType_INFANTRY]
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
@@ -82,6 +78,6 @@ EntityID Infantry_Create(Scene* scene, Vector pos, EntityID nation)
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, infantryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, infantryID, nation->controlFlag, NULL);
     return infantryID;
 }

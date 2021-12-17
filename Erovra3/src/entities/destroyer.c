@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
+EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
 {
     EntityID destroyerID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -38,18 +37,15 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
     };
     Scene_Assign(scene, destroyerID, TARGET_COMPONENT_ID, &target);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, destroyerID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_DESTROYER,
         0.5f, // Defense
-        nationStruct->unitCount[UnitType_DESTROYER]
+        nation->unitCount[UnitType_DESTROYER]
     };
     Scene_Assign(scene, destroyerID, UNIT_COMPONENT_ID, &type);
 
@@ -81,6 +77,6 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, EntityID nation)
 
     Scene_Assign(scene, destroyerID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, destroyerID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, destroyerID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, destroyerID, nation->controlFlag, NULL);
     return destroyerID;
 }

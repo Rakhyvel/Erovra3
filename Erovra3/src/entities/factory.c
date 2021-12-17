@@ -3,10 +3,9 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID factoryID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -32,18 +31,15 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, factoryID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, factoryID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, factoryID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_FACTORY,
         1,
-        nationStruct->unitCount[UnitType_FACTORY]
+        nation->unitCount[UnitType_FACTORY]
     };
     Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
 
@@ -60,7 +56,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     Producer producer = {
         -1,
-        INVALID_ENTITY_INDEX,
+        -1,
         false,
         FACTORY_READY_FOCUSED_GUI,
         FACTORY_BUSY_FOCUSED_GUI
@@ -74,7 +70,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, factoryID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, factoryID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, factoryID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, factoryID, nation->controlFlag, NULL);
 
     return factoryID;
 }

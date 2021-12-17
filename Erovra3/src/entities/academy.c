@@ -3,10 +3,9 @@
 #include "../textures.h"
 #include "./entities.h"
 
-EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, EntityID homeCity, CardinalDirection dir)
+EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
     EntityID academyID = Scene_NewEntity(scene);
-    Nation* nationStruct = (Nation*)Scene_GetComponent(scene, nation, NATION_COMPONENT_ID);
 
     Sprite sprite = {
         pos,
@@ -32,15 +31,12 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, academyID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Health health = {
+    Unit type = {
         100.0f,
         0,
         0,
-        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID)
-    };
-    Scene_Assign(scene, academyID, HEALTH_COMPONENT_ID, &health);
-
-    Unit type = {
+        Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
+        false,
         UnitType_ACADEMY,
         1,
         0
@@ -64,7 +60,7 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
 
     Producer producer = {
         -1,
-        INVALID_ENTITY_INDEX,
+        -1,
         false,
         ACADEMY_READY_FOCUSED_GUI,
         ACADEMY_BUSY_FOCUSED_GUI
@@ -78,7 +74,7 @@ EntityID Academy_Create(struct scene* scene, Vector pos, EntityID nation, Entity
     Scene_Assign(scene, academyID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, academyID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, academyID, GET_COMPONENT_FIELD(scene, nation, NATION_COMPONENT_ID, Nation, controlFlag), NULL);
+    Scene_Assign(scene, academyID, nation->controlFlag, NULL);
 
     return academyID;
 }
