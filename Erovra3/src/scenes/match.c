@@ -597,10 +597,10 @@ void Match_Death(Scene* scene)
                     nation->costs[ResourceType_COIN][unit->type] -= nation->unitCount[unit->type] * 5;
                 }
 
-                if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
-                    Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-                    if (focusable->focused) {
-                        focusable->focused = false;
+                if (Scene_EntityHasComponents(scene, id, UNIT_COMPONENT_ID)) {
+                    Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+                    if (unit->focused) {
+                        unit->focused = false;
                         instantDefocus = true;
                     }
                 }
@@ -944,11 +944,11 @@ void Match_EscapePressed(struct scene* scene)
                 selectable->selected = false;
             }
 
-            system(scene, id, FOCUSABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+            system(scene, id, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
             {
-                Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-                anyFlag |= focusable->focused;
-                focusable->focused = false;
+                Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+                anyFlag |= unit->focused;
+                unit->focused = false;
                 escFocus = true;
             }
 
@@ -1039,7 +1039,7 @@ void Match_Select(struct scene* scene)
 }
 
 /*
-	When the right mouse button is released, finds the focusable entity that
+	When the right mouse button is released, finds the unit entity that
 	is hovered, and shows its GUI. */
 void Match_Focus(struct scene* scene)
 {
@@ -1053,21 +1053,20 @@ void Match_Focus(struct scene* scene)
 
     if (Apricot_MouseRightUp || escFocus || instantDefocus) {
         guiChange = false;
-        Focusable* focusableComp = NULL;
+        Unit* unitComp = NULL;
         currFocused = INVALID_ENTITY_INDEX;
         currFocusedEntity = INVALID_ENTITY_INDEX;
         enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
-        // Search all focusable entities
-        system(scene, id, FOCUSABLE_COMPONENT_ID, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        // Search all unit entities
+        system(scene, id, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
-            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-            focusable->focused = false;
+            unit->focused = false;
             if (unit->isHovered && sprite->priority >= priority) {
-                currFocused = focusable->guiContainer;
+                currFocused = unit->guiContainer;
                 currFocusedEntity = id;
-                focusableComp = focusable;
+                unitComp = unit;
                 type = unit->type;
                 priority = sprite->priority;
             }
@@ -1075,8 +1074,8 @@ void Match_Focus(struct scene* scene)
         if (currFocusedEntity != currShownEntity || instantDefocus) {
             disappear = true;
         }
-        if (focusableComp != NULL) {
-            focusableComp->focused = true;
+        if (unitComp != NULL) {
+            unitComp->focused = true;
         }
         if (currFocusedEntity != INVALID_ENTITY_INDEX && Scene_EntityHasComponents(scene, currFocusedEntity, PRODUCER_COMPONENT_ID)) {
             focusedIsProducer = true;
@@ -1086,11 +1085,11 @@ void Match_Focus(struct scene* scene)
         escFocus = false;
     } else if (guiChange) {
         focusedIsProducer = false;
-        system(scene, id, FOCUSABLE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+        system(scene, id, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
-            Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-            if (focusable->focused) {
-                currFocused = focusable->guiContainer;
+            Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+            if (unit->focused) {
+                currFocused = unit->guiContainer;
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     focusedIsProducer = true;
                 }
@@ -1454,13 +1453,12 @@ void Match_EatFood(struct scene* scene)
 	If the producer's "repeat" flag is set, repeats the order a second time. */
 void Match_ProduceUnits(struct scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         City* city = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
 
         producer->orderTicksRemaining--;
@@ -1508,7 +1506,7 @@ void Match_ProduceUnits(struct scene* scene)
                 }
                 producer->order = -1;
                 producer->repeat = false;
-                focusable->guiContainer = producer->readyGUIContainer;
+                unit->guiContainer = producer->readyGUIContainer;
                 guiChange = true;
             }
         }
@@ -1564,10 +1562,10 @@ void Match_UpdateExpansionAllegiance(struct scene* scene)
                     }
                 }
 
-                if (Scene_EntityHasComponents(scene, id, FOCUSABLE_COMPONENT_ID)) {
-                    Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-                    if (focusable->focused) {
-                        GUI_SetShown(scene, focusable->focused, false);
+                if (Scene_EntityHasComponents(scene, id, UNIT_COMPONENT_ID)) {
+                    Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+                    if (unit->focused) {
+                        GUI_SetShown(scene, unit->focused, false);
                     }
                 }
                 nation->unitCount[unit->type]--;
@@ -1757,7 +1755,6 @@ void Match_DrawSelectionArrows(Scene* scene)
 void Match_UpdateGUIElements(struct scene* scene)
 {
     if (currShownEntity != INVALID_ENTITY_INDEX) {
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, currShownEntity, FOCUSABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, currShownEntity, UNIT_COMPONENT_ID);
 
         char buffer[32];
@@ -1777,7 +1774,7 @@ void Match_UpdateGUIElements(struct scene* scene)
         ProgressBar* unitBar = (ProgressBar*)Scene_GetComponent(scene, unitUnitBar, GUI_PROGRESS_BAR_COMPONENT_ID);
         unitBar->value = unit->health / 100.0f;
 
-        if (focusable->focused && Scene_EntityHasComponents(scene, currShownEntity, PRODUCER_COMPONENT_ID)) {
+        if (unit->focused && Scene_EntityHasComponents(scene, currShownEntity, PRODUCER_COMPONENT_ID)) {
             Producer* producer = (Producer*)Scene_GetComponent(scene, currShownEntity, PRODUCER_COMPONENT_ID);
             char orderBuffer[32] = "Order: ";
             Match_CopyUnitName(producer->order, orderBuffer);
@@ -2150,12 +2147,12 @@ void Match_Render(Scene* match)
 	Called when engineer build city button is pressed. Builds a city */
 void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        if (unit->focused) {
             Match_BuyCity(scene, sprite->nation, sprite->pos);
         }
     }
@@ -2166,13 +2163,13 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, guiID, GUI_CLICKABLE_COMPONENT_ID))->meta;
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        if (focusable->focused) {
+        if (unit->focused) {
             Match_BuyExpansion(scene, type, sprite->nation, sprite->pos);
         }
     }
@@ -2184,12 +2181,12 @@ void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 	already a wall in place. */
 void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        if (unit->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
             Vector cellMidPoint = { 64.0f * (int)(sprite->pos.x / 64) + 32.0f, 64.0f * (int)(sprite->pos.y / 64) + 32.0f };
             float angle;
             float xOffset = cellMidPoint.x - sprite->pos.x;
@@ -2237,12 +2234,12 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
 void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
-        if (focusable->focused) {
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        if (unit->focused) {
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     int x0 = (x + (int)sprite->pos.x / 64);
@@ -2265,16 +2262,16 @@ void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
 void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, buttonID, GUI_CLICKABLE_COMPONENT_ID))->meta;
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
 
-        if (focusable->focused && Match_PlaceOrder(scene, nation, producer, expansion, type)) {
-            focusable->guiContainer = producer->busyGUIContainer;
+        if (unit->focused && Match_PlaceOrder(scene, nation, producer, expansion, type)) {
+            unit->guiContainer = producer->busyGUIContainer;
             guiChange = true;
         }
     }
@@ -2282,12 +2279,11 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 
 void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 {
-    system(scene, id, UNIT_COMPONENT_ID, FOCUSABLE_COMPONENT_ID)
+    system(scene, id, UNIT_COMPONENT_ID)
     {
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        if (focusable->focused) {
+        if (unit->focused) {
             unit->isDead = true;
         }
     }
@@ -2297,18 +2293,18 @@ void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 	Called from producer's "Cancel Order" button. Cancels the order of the Producer that is focused */
 void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
-        if (focusable->focused) {
+        if (unit->focused) {
             producer->orderTicksRemaining = -10;
             producer->order = -1;
             producer->repeat = false;
-            focusable->guiContainer = producer->readyGUIContainer;
+            unit->guiContainer = producer->readyGUIContainer;
             guiChange = true;
         }
     }
@@ -2320,12 +2316,12 @@ void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 {
     RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, rockerID, GUI_ROCKER_SWITCH_COMPONENT_ID);
-    system(scene, id, FOCUSABLE_COMPONENT_ID, PRODUCER_COMPONENT_ID)
+    system(scene, id, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
-        Focusable* focusable = (Focusable*)Scene_GetComponent(scene, id, FOCUSABLE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
 
-        if (focusable->focused) {
+        if (unit->focused) {
             producer->repeat = rockerSwitch->value;
         }
     }

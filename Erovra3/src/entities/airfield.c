@@ -42,14 +42,10 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, Nation* nation, Entity
         0,
         0,
         false,
-    };
-    Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
-
-    Focusable focusable = {
         false,
         BUILDING_FOCUSED_GUI
     };
-    Scene_Assign(scene, airfieldID, FOCUSABLE_COMPONENT_ID, &focusable);
+    Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
 
     Expansion expansion = {
         homeCity,

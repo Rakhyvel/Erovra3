@@ -43,6 +43,8 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         nation->unitCount[UnitType_FARM],
         0,
         false,
+        false,
+        BUILDING_FOCUSED_GUI
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
@@ -51,12 +53,6 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         &Food_Create
     };
     Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
-
-    Focusable focusable = {
-        false,
-        BUILDING_FOCUSED_GUI
-    };
-    Scene_Assign(scene, farmID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Expansion expansion = {
         homeCity,

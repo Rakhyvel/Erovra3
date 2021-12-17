@@ -49,6 +49,8 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_ENGINEER],
         0,
         false,
+        false,
+        ENGINEER_FOCUSED_GUI
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
     strncpy_s(type.name, 32, "Engineer", 32);
@@ -57,12 +59,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, engineerID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        ENGINEER_FOCUSED_GUI
-    };
-    Scene_Assign(scene, engineerID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, engineerID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

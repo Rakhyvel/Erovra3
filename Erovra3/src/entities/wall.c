@@ -42,6 +42,8 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, Nation* nation)
         nation->unitCount[UnitType_WALL],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, wallID, UNIT_COMPONENT_ID, &type);
 

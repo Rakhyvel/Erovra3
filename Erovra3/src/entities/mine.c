@@ -48,6 +48,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         nation->unitCount[UnitType_MINE],
         0,
         false,
+        false,
+        BUILDING_FOCUSED_GUI
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
@@ -57,12 +59,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
-
-    Focusable focusable = {
-        false,
-        BUILDING_FOCUSED_GUI
-    };
-    Scene_Assign(scene, mineID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Expansion expansion = {
         homeCity,

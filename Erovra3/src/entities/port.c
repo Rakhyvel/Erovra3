@@ -42,14 +42,10 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         nation->unitCount[UnitType_PORT],
         0,
         false,
-    };
-    Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
-
-    Focusable focusable = {
         false,
         PORT_READY_FOCUSED_GUI
     };
-    Scene_Assign(scene, portID, FOCUSABLE_COMPONENT_ID, &focusable);
+    Scene_Assign(scene, portID, UNIT_COMPONENT_ID, &type);
 
     Producer producer = {
         -1,

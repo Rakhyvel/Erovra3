@@ -137,6 +137,8 @@ typedef struct unit {
     int ordinal; // Serial number of unit, assigned sequentially
     int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Only determines if other nation can see unit
     bool isHovered; // Whether or not the unit is hovered
+    bool focused; // Whether or not the unit is focused
+    EntityID guiContainer; // The GUI container to show when focused
     char name[32]; // Description of unit
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy
@@ -264,14 +266,6 @@ typedef struct selectable {
     bool selected; // Whether or not the unit is selected
 } Selectable;
 ComponentKey SELECTABLE_COMPONENT_ID;
-
-/* For units that can be focused by right-clicking
-*/
-typedef struct focusable {
-    bool focused; // Whether or not the unit is focused
-    EntityID guiContainer; // The GUI container to show when focused
-} Focusable;
-ComponentKey FOCUSABLE_COMPONENT_ID;
 
 /* For order buttons, which order units to be built in producers
 */

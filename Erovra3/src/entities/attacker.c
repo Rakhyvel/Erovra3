@@ -54,6 +54,8 @@ EntityID Attacker_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_ATTACKER],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, attackerID, UNIT_COMPONENT_ID, &type);
 
@@ -71,12 +73,6 @@ EntityID Attacker_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, attackerID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, attackerID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, attackerID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, attackerID, nation->controlFlag, NULL);

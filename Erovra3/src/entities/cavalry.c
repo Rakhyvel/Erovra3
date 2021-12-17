@@ -48,6 +48,8 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_CAVALRY],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, cavalryID, UNIT_COMPONENT_ID, &type);
 
@@ -67,12 +69,6 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, cavalryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, cavalryID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, cavalryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

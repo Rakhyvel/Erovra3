@@ -42,14 +42,10 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         0,
         0,
         false,
-    };
-    Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
-
-    Focusable focusable = {
         false,
         ACADEMY_READY_FOCUSED_GUI
     };
-    Scene_Assign(scene, academyID, FOCUSABLE_COMPONENT_ID, &focusable);
+    Scene_Assign(scene, academyID, UNIT_COMPONENT_ID, &type);
 
     Producer producer = {
         -1,

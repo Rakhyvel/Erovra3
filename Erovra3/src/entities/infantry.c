@@ -48,6 +48,8 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_INFANTRY],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
@@ -65,12 +67,6 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, infantryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, infantryID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

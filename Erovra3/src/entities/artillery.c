@@ -48,6 +48,8 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_ARTILLERY],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
 
@@ -65,12 +67,6 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, artilleryID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, artilleryID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, artilleryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, artilleryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

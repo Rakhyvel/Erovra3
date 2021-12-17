@@ -53,7 +53,9 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         0.5f, // Defense
         nation->unitCount[UnitType_BOMBER],
 		0,
-		false,
+        false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, bomberID, UNIT_COMPONENT_ID, &type);
 
@@ -71,12 +73,6 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, bomberID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, bomberID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, bomberID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, bomberID, nation->controlFlag, NULL);

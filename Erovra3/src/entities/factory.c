@@ -42,14 +42,10 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         nation->unitCount[UnitType_FACTORY],
         0,
         false,
-    };
-    Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
-
-    Focusable focusable = {
         false,
         FACTORY_READY_FOCUSED_GUI
     };
-    Scene_Assign(scene, factoryID, FOCUSABLE_COMPONENT_ID, &focusable);
+    Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
 
     Producer producer = {
         -1,

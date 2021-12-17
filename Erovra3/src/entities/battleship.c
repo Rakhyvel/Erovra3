@@ -48,6 +48,8 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
         nation->unitCount[UnitType_BATTLESHIP],
         0,
         false,
+        false,
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, battleshipID, UNIT_COMPONENT_ID, &type);
 
@@ -65,12 +67,6 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
         false,
     };
     Scene_Assign(scene, battleshipID, SELECTABLE_COMPONENT_ID, &selectable);
-
-    Focusable focusable = {
-        false,
-        UNIT_FOCUSED_GUI
-    };
-    Scene_Assign(scene, battleshipID, FOCUSABLE_COMPONENT_ID, &focusable);
 
     Scene_Assign(scene, battleshipID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, battleshipID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
