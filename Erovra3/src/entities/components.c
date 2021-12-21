@@ -45,6 +45,7 @@ void Components_Init()
 
 void Components_Register(struct scene* scene)
 {
+    int i = sizeof(Nation);
     Scene_RegisterComponent(scene, SPRITE_COMPONENT_ID, sizeof(Sprite));
     Scene_RegisterComponent(scene, TARGET_COMPONENT_ID, sizeof(Target));
     Scene_RegisterComponent(scene, PATROL_COMPONENT_ID, sizeof(Patrol));

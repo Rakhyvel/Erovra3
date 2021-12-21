@@ -8,23 +8,24 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID artilleryID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.2f,
-        false,
-		0,
-		0,
         ARTILLERY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
-        RenderPriorirty_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0.2f,
+		0,
+		0,
+        RenderPriorirty_SURFACE_LAYER,
         36,
-        20
+        20,
+        0,
+		false,
+        false,
+        false,
     };
     Scene_Assign(scene, artilleryID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, artilleryID, SURFACE_LAYER_COMPONENT_ID, 0);

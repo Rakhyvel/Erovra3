@@ -10,23 +10,24 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
     Arraylist_Add(&(nation->cities), &cityID);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0,
-        false,
-		0,
-        0,
         isCapital ? CAPITAL_TEXTURE_ID : CITY_TEXTURE_ID,
         isCapital ? CAPITAL_OUTLINE_TEXTURE_ID : CITY_OUTLINE_TEXTURE_ID,
         isCapital ? CAPITAL_SHADOW_TEXTURE_ID : CITY_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0,
+		0,
+        0,
+        RenderPriorirty_BUILDING_LAYER,
         32,
         32,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, cityID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cityID, BUILDING_LAYER_COMPONENT_ID, 0);

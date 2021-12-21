@@ -8,23 +8,24 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID bomberID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        1.0f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.56f, // speed
-        false,
-		0,
-        0,
         BOMBER_TEXTURE_ID,
         BOMBER_OUTLINE_TEXTURE_ID,
         BOMBER_SHADOW_TEXTURE_ID,
-        RenderPriorirty_AIR_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        1.0f,
+        0,
+        0.56f, // speed
+		0,
+        0,
+        RenderPriorirty_AIR_LAYER,
         84, //42
         54, //41
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, bomberID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bomberID, PLANE_LAYER_COMPONENT_ID, 0);

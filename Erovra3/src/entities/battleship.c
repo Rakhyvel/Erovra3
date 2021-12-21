@@ -8,23 +8,24 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID battleshipID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.0f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.1f,
-        false,
-		0,
-        0,
         BATTLESHIP_TEXTURE_ID,
         SHIP_OUTLINE_TEXTURE_ID,
         SHIP_SHADOW_TEXTURE_ID,
-        RenderPriorirty_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.0f,
+        0,
+        0.1f,
+		0,
+        0,
+        RenderPriorirty_SURFACE_LAYER,
         16,
         46,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, battleshipID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, battleshipID, SURFACE_LAYER_COMPONENT_ID, 0);

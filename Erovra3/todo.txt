@@ -315,10 +315,8 @@ x Game crashes when user adjusts map settings while map preview is loading
 x More than one nation (Maybe an array of enemy nations)
 	x Each unit has an entityID of their nation, not a flag
 	x Procedurally generate more than two nations
-	- Ports are reset, make that not so
 	x Fix AI making too many planes
 	x Fix AI not making replacement engineers
-	- Fix AI hesitation glitch
 	x Switch texture for captured capitals to city
 	x Make Magenta, Yellow, green not look so garish
 	x Add wall outline texture
@@ -326,11 +324,13 @@ x More than one nation (Maybe an array of enemy nations)
 	x Nation number is an option in matche creation menu
 		x Add notches to sliders
 		x Add tool-tip above slider-knob when changing value (maybe with callback fxn for slider value translation)
-		- Minmax discrete sliders
-	- AI ground units shouldn't care about plane sightings
+		x Minmax discrete sliders
 	x Reduce generate progress bar max
 	x Fix wall cost
 	x Farm cost goes up even if you capture other farms?
+	- Ports are reset, make that not so
+	- Fix AI hesitation glitch
+	- AI ground units shouldn't care about plane sightings
 - Resources change
 	- Farms produce food just like a resource producer
 		- Is consumed by the units of a city

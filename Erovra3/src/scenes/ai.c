@@ -113,7 +113,7 @@ static void findPortTile(Scene* scene, Nation* nation)
         for (int i = 0; i < nation->cities->size; i++) {
             EntityID cityID = *(EntityID*)Arraylist_Get(nation->cities, i);
 
-            Sprite* citySprite= (Sprite*)Scene_GetComponent(scene, cityID, SPRITE_COMPONENT_ID);
+            Sprite* citySprite = (Sprite*)Scene_GetComponent(scene, cityID, SPRITE_COMPONENT_ID);
             City* homeCity = (City*)Scene_GetComponent(scene, cityID, CITY_COMPONENT_ID);
 
             // Search port tiles
@@ -336,6 +336,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
             }
         }
     }
+    goap->variables[HAS_NO_PORT_TILES] = terrain->ports->size == 0;
 
     // Update has available variables
     goap->variables[HAS_AVAILABLE_FACTORY] = false;
@@ -376,7 +377,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
         goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
 		*/
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
-        printf("%d\n", goap->variables[HAS_ATTACKER]);
+        City* capitalCity = (City*)Scene_GetComponent(scene, nation->capital, CITY_COMPONENT_ID);
+        printf("%s: ", capitalCity->name);
     }
 }
 
@@ -622,7 +624,7 @@ void AI_BuildCity(Scene* scene, Nation* nation)
                 }
                 if (Terrain_GetHeight(terrain, (int)point.x, (int)point.y) < 0.5)
                     continue;
-                float distance = Vector_Dist(sprite->pos, point) - Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 10 - Terrain_GetOre(terrain, (int)point.x, (int)point.y) * 10;
+                float distance = Vector_Dist(sprite->pos, point) + Terrain_GetHeight(terrain, (int)point.x, (int)point.y) * 100 - Terrain_GetOre(terrain, (int)point.x, (int)point.y) * 10;
                 if (distance > tempDistance)
                     continue;
                 if (!Terrain_LineOfSight(terrain, sprite->pos, point, 0.5)) {
@@ -738,24 +740,23 @@ void AI_BuildAcademy(Scene* scene, Nation* nation)
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 1);
+    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 4);
 
-    Goap_AddAction(goap, "Target capital", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 2, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL, 1, 2);
+    Goap_AddAction(goap, "Target capital b", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 3, NO_KNOWN_ENEMY_UNITS, FOUND_ENEMY_CAPITAL, 1, 1, 2);
 
     // If there are enemies, order units
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 0, 0);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, SEA_SUPREMACY, 1, 5);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_INFANTRY, 1, 4);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_CAVALRY, 1, 3);
-    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_ATTACKER, 1, 1);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_INFANTRY, 4);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_CAVALRY, 3);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, HAS_ATTACKER, 2);
+    Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, NO_KNOWN_ENEMY_UNITS, 1, SEA_SUPREMACY, 1);
 
     // If you need to find the enemy capital
     // If you can build these things, then do so. Otherwise, set units targets
     Goap_AddAction(goap, "Rand target", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 0, 0);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, SEA_SUPREMACY, 5);
-    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_INFANTRY, 4);
-    Goap_AddAction(goap, "Rand fec c", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_CAVALRY, 3);
-    Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_ATTACKER, 1);
+    Goap_AddAction(goap, "Rand fec a", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_ATTACKER, 3);
+    Goap_AddAction(goap, "Rand fec i", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_INFANTRY, 2);
+    Goap_AddAction(goap, "Rand fec c", &AI_TargetGroundUnitsRandomly, FOUND_ENEMY_CAPITAL, 1, HAS_CAVALRY, 1);
 
     // Order ground units
     Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1, 1);
@@ -763,7 +764,7 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_POPULATION, 1, 1, 1);
 
     // Order ships
-    Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_ORE, HAS_AVAILABLE_PORT, HAS_POPULATION, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, HAS_AVAILABLE_PORT, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_ORE, HAS_POPULATION, 1, 1, 1, 1);
 
     // Order planes
     Goap_AddAction(goap, "Order fighter", &AI_OrderFighter, HAS_FIGHTER, 4, AFFORD_FIGHTER_COINS, AFFORD_FIGHTER_ORE, HAS_AVAILABLE_AIRFIELD, HAS_POPULATION, 1, 1, 1, 1);

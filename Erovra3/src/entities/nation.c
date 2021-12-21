@@ -55,8 +55,9 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
 
     nation->showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
-	nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
+    nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
     nation->cities = Arraylist_Create(10, sizeof(EntityID));
+    sizeof(Nation);
 
     if (controlFlag == AI_COMPONENT_ID) {
         Goap_Create(&(nation->goap), goapInit);

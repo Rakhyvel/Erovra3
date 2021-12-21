@@ -121,7 +121,7 @@ static int generatePreview(void* ptr)
     // Generate map
     status = 0;
     state = GENERATING;
-    map = Perlin_Generate(size, size / 1, getSeed(scene), &status);
+    map = Perlin_Generate(size, size / 4, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
@@ -160,7 +160,7 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Perlin_Generate(fullMapSize, fullMapSize / 1, getSeed(scene), &status);
+    map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
     Perlin_Normalize(map, fullMapSize);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {

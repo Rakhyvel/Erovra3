@@ -8,23 +8,24 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
     EntityID mineID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0,
-        false,
-		0,
-		0,
         MINE_TEXTURE_ID,
         MINE_OUTLINE_TEXTURE_ID,
         MINE_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0,
+		0,
+		0,
+        RenderPriorirty_BUILDING_LAYER,
         32,
         32,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, mineID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, mineID, BUILDING_LAYER_COMPONENT_ID, 0);

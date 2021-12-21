@@ -8,23 +8,24 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID fighterID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        1.0f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        1.13f, // speed
-        false,
-		0,
-        0,
         FIGHTER_TEXTURE_ID,
         FIGHTER_OUTLINE_TEXTURE_ID,
         FIGHTER_SHADOW_TEXTURE_ID,
-        RenderPriorirty_AIR_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        1.0f,
+        0,
+        1.13f, // speed
+		0,
+        0,
+        RenderPriorirty_AIR_LAYER,
         42,
-        41, 
+        41,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, fighterID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, fighterID, PLANE_LAYER_COMPONENT_ID, 0);

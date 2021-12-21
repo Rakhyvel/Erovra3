@@ -8,23 +8,24 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID cavalryID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.4f,
-        false,
-		0,
-        0,
         CAVALRY_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
-        RenderPriorirty_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0.4f,
+		0,
+        0,
+        RenderPriorirty_SURFACE_LAYER,
         36,
-        20
+        20,
+        0,
+		false,
+        false,
+        false,
     };
     Scene_Assign(scene, cavalryID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cavalryID, SURFACE_LAYER_COMPONENT_ID, 0);

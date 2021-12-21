@@ -13,23 +13,24 @@ EntityID Bomb_Create(struct scene* scene, Vector pos, Vector tar, float attack, 
     float angle = Vector_Angle(Vector_Sub(pos, tar));
     angle += 3.1415f / 2.0f;
     Sprite sprite = {
-        pos,
-        1.0f,
-        { 0.0f, 0.0f },
-        angle,
-        4,
-        true,
-        0.001, // Vel
-        -0.0005f, // Acc due to gravity
         BOMB_TEXTURE_ID,
         NULL,
         BOMB_SHADOW_TEXTURE_ID,
-        RenderPriority_HIGH_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        { 0.0f, 0.0f },
+        1.0f,
+        angle,
+        4,
+        0.001, // Vel
+        -0.0005f, // Acc due to gravity
+        RenderPriority_HIGH_SURFACE_LAYER,
         9,
         5,
+        0,
+        true,
+        false,
+        false,
     };
     Scene_Assign(scene, bombID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bombID, AIR_LAYER_COMPONENT_ID, 0);

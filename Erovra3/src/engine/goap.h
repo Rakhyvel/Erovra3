@@ -45,7 +45,7 @@ typedef struct action {
     Uint8 costs[MAX_PRECONDITIONS]; // The costs for each precondition
     int numPreconditions;
     void (*actionPtr)(Scene* scene, void* intelligence); // Action to complete
-    char name[16];
+    char name[20];
 } Action;
 
 /**

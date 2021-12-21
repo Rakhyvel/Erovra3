@@ -8,23 +8,24 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
     EntityID academyID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0,
-        false,
-		0,
-		0,
         ACADEMY_TEXTURE_ID,
         ACADEMY_OUTLINE_TEXTURE_ID,
         ACADEMY_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0,
+		0,
+		0,
+        RenderPriorirty_BUILDING_LAYER,
         32,
         32,
+		0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, academyID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, academyID, BUILDING_LAYER_COMPONENT_ID, 0);

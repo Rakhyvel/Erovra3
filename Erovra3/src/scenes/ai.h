@@ -38,6 +38,7 @@ enum variables {
     SPACE_FOR_AIRFIELD,
 	SPACE_FOR_PORT,
 	HAS_PORT_TILES,
+	HAS_NO_PORT_TILES,
     ENGINEER_CAN_SEE_PORT_CITY_TILE,
 
     // "Can afford unit" variables

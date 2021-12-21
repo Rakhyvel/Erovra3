@@ -8,23 +8,24 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, Nation* nation)
     EntityID wallID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        angle,
-        0.0f,
-        false,
-		0,
-        0,
         WALL_TEXTURE_ID,
         WALL_OUTLINE_TEXTURE_ID,
         WALL_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        angle,
+        0.0f,
+		0,
+        0,
+        RenderPriorirty_BUILDING_LAYER,
         64,
         64,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, wallID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, wallID, BUILDING_LAYER_COMPONENT_ID, 0);

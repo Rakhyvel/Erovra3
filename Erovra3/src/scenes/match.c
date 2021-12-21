@@ -135,9 +135,6 @@ void Match_CopyUnitName(UnitType type, char* buffer)
     case UnitType_WALL:
         strncat_s(buffer, 32, "Wall", 32);
         break;
-    case UnitType_LANDING_CRAFT:
-        strncat_s(buffer, 32, "Landing Craft Fleet", 32);
-        break;
     case UnitType_DESTROYER:
         strncat_s(buffer, 32, "Destroyer Fleet", 32);
         break;
@@ -146,9 +143,6 @@ void Match_CopyUnitName(UnitType type, char* buffer)
         break;
     case UnitType_BATTLESHIP:
         strncat_s(buffer, 32, "Battleship Fleet", 32);
-        break;
-    case UnitType_AIRCRAFT_CARRIER:
-        strncat_s(buffer, 32, "Aircraft Carrier Fleet", 32);
         break;
     case UnitType_FIGHTER:
         strncat_s(buffer, 32, "Fighter Wing", 32);
@@ -785,15 +779,14 @@ void Match_ResourceParticle(Scene* scene)
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
         Nation* nation = sprite->nation;
-        Sprite* capital = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
-
-        sprite->z = -1.0f * pow(Vector_Dist(sprite->pos, resourceParticle->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 0.75f;
         if (nation->capital == INVALID_ENTITY_INDEX) {
             continue;
         }
 
-		// Detect if at capital
-        if (Vector_Dist(sprite->pos, capital->pos) < 6) {
+        sprite->z = -1.0f * pow(Vector_Dist(sprite->pos, nation->capitalPos) / resourceParticle->distToCapital - 0.5f, 2) + 0.75f;
+
+        // Detect if at capital
+        if (Vector_Dist(sprite->pos, nation->capitalPos) < 6) {
             Scene_MarkPurged(scene, id);
             nation->resources[resourceParticle->type]++;
         }
@@ -1576,7 +1569,7 @@ void Match_SpriteRender(struct scene* scene, ComponentKey layer)
         Texture_Draw(sprite->shadow, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
 
         // Outline
-        if (deathTicks == 16) {
+        if (deathTicks == 16 && sprite->spriteOutline) {
             if (sprite->showOutline) {
                 SDL_SetTextureAlphaMod(sprite->spriteOutline, 255);
                 Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - shadowZ, (float)sprite->width, (float)sprite->height);
@@ -1593,6 +1586,8 @@ void Match_SpriteRender(struct scene* scene, ComponentKey layer)
         if (!sprite->destroyOnBounds) {
             SDL_Color nationColor = sprite->nation->color;
             SDL_SetTextureColorMod(sprite->sprite, nationColor.r, nationColor.g, nationColor.b);
+        } else {
+            SDL_SetTextureColorMod(sprite->sprite, 255, 255, 255);
         }
         SDL_SetTextureAlphaMod(sprite->sprite, 255.0f / 16.0f * deathTicks);
         Texture_Draw(sprite->sprite, rect.x, rect.y, (float)rect.w, (float)rect.h, sprite->angle);
@@ -2073,6 +2068,7 @@ void Match_Update(Scene* match)
     if (!lt && Apricot_Keys[SDL_SCANCODE_COMMA]) {
         Apricot_DeltaT *= 2.0;
         Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / Apricot_DeltaT);
+        ignoreMissedTicks = true;
     } else if (!gt && Apricot_Keys[SDL_SCANCODE_PERIOD]) {
         Apricot_DeltaT *= 0.5;
         Match_AddMessage(textColor, "Time warp: %.01fx", 16.0f / Apricot_DeltaT);
@@ -2467,19 +2463,6 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
     }
 
     if (largestDist > 0) {
-        // Locate all port cities between each nation
-        /*
-        bool foundKeyContinents = false;
-        for (int i = 0; i < nNations - 1; i++) {
-            for (int j = i + 1; j < nNations; j++) {
-                foundKeyContinents |= Terrain_FindCapitalPath(terrain, *(Vector*)Arraylist_Get(nationVectors, i), *(Vector*)Arraylist_Get(nationVectors, j));
-            }
-        }
-        if (!foundKeyContinents) {
-        }
-		*/
-        Arraylist_Clear(terrain->ports);
-
         SDL_Color nationColors[] = {
             (SDL_Color) { 0, 79, 206 }, // Blue
             (SDL_Color) { 202, 20, 21 }, // Red
@@ -2511,6 +2494,7 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
                 Nation_Create(match, nation, AI_Init, nationColors[i], terrain->size, AI_COMPONENT_ID);
                 capital = City_Create(match, nationVector, nation, enemyNameBuffer, true);
             }
+            nation->capitalPos = nationVector;
             // Register capital
             Terrain_SetBuildingAt(terrain, capital, (int)nationVector.x, (int)nationVector.y);
             Nation_SetCapital(match, nation, capital);
@@ -2520,15 +2504,17 @@ Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, 
             Engineer_Create(match, nationVector, nation);
         }
 
-        // Make all nations enemies of each other
+        // Make all nations enemies of each other, find their key continents
         for (int i = 0; i < nNations - 1; i++) {
             for (int j = i + 1; j < nNations; j++) {
                 Nation* nation1 = (Nation*)Arraylist_Get(nations, i);
                 Nation* nation2 = (Nation*)Arraylist_Get(nations, j);
                 Arraylist_Add(&(nation1->enemyNations), &nation2);
                 Arraylist_Add(&(nation2->enemyNations), &nation1);
+                Terrain_FindKeyContinents(terrain, nation1->capitalPos, nation2->capitalPos);
             }
         }
+        Terrain_EliminateUselessPortPoints(terrain);
     } else {
         Match_AddMessage(errorColor, "Space for capitals could not be found!");
     }

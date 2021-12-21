@@ -16,23 +16,24 @@ EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack
     float angle = Vector_Angle(vel);
     angle += 3.141592f / 2.0f;
     Sprite sprite = {
-        pos,
-        0.5f,
-        vel,
-        angle,
-        4,
-        true,
-		0,
-        0,
         BULLET_TEXTURE_ID,
         NULL,
         BULLET_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        vel,
+        0.5f,
+        angle,
+        4,
+		0,
+        0,
+        RenderPriorirty_BUILDING_LAYER,
         20,
         2,
+        0,
+        true,
+        false,
+        false,
     };
     Scene_Assign(scene, bulletID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, bulletID, BUILDING_LAYER_COMPONENT_ID, 0);

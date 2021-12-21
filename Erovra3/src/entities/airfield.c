@@ -8,23 +8,24 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, Nation* nation, Entity
     EntityID airfieldID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0,
-        false,
-		0,
-        0,
         AIRFIELD_TEXTURE_ID,
         AIRFIELD_OUTLINE_TEXTURE_ID,
         AIRFIELD_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0,
+		0,
+        0,
+        RenderPriorirty_BUILDING_LAYER,
         32,
         32,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, airfieldID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, airfieldID, BUILDING_LAYER_COMPONENT_ID, 0);

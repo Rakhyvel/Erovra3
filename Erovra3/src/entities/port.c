@@ -8,23 +8,24 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
     EntityID portID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0,
-        false,
-		0,
-        0,
         PORT_TEXTURE_ID,
         PORT_OUTLINE_TEXTURE_ID,
         PORT_SHADOW_TEXTURE_ID,
-        RenderPriorirty_BUILDING_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0,
+		0,
+        0,
+        RenderPriorirty_BUILDING_LAYER,
         32,
         32,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, portID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, portID, BUILDING_LAYER_COMPONENT_ID, 0);

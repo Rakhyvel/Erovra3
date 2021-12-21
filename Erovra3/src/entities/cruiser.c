@@ -9,23 +9,24 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID cruiserID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.0f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.2f, // speed
-        false,
-		0,
-        0,
         CRUISER_TEXTURE_ID,
         SHIP_OUTLINE_TEXTURE_ID,
         SHIP_SHADOW_TEXTURE_ID,
-        RenderPriorirty_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.0f,
+        0,
+        0.2f, // speed
+		0,
+        0,
+        RenderPriorirty_SURFACE_LAYER,
         16,
         46,
+        0,
+        false,
+        false,
+        false,
     };
     Scene_Assign(scene, cruiserID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, cruiserID, SURFACE_LAYER_COMPONENT_ID, 0);

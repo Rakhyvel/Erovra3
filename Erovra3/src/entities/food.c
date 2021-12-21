@@ -16,23 +16,24 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
     vel = Vector_Scalar(vel, 6);
     float angle = Vector_Angle(vel);
     Sprite sprite = {
-        pos,
-        0.5f,
-        vel,
-        0,
-        0.2f,
-        true,
-		0,
-        0,
-        ORE_TEXTURE_ID,
-        NULL,
-        ORE_SHADOW_TEXTURE_ID,
+        ORE_TEXTURE_ID, // sprite
+        NULL, // spriteOutline
+        ORE_SHADOW_TEXTURE_ID, // shadow
+        nation, // nation
+        pos, // pos
+        vel, // vel
+        0.5f, // z
+        0, // angle
+        0.2f, // speed
+        0, // dz
+        0, // az
         RenderPriorirty_PARTICLE_LAYER,
+        20,
+        20,
+        0,
+        true,
         nation->controlFlag == AI_COMPONENT_ID,
         false,
-        nation,
-        20,
-        20,
     };
     Scene_Assign(scene, foodID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, foodID, PARTICLE_LAYER_COMPONENT_ID, NULL);

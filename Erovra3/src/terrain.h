@@ -41,7 +41,8 @@ void Terrain_Render(struct terrain* terrain);
 // Continent stuff
 void Terrain_FindPorts(struct terrain* terrain);
 void Terrain_FindContinents(struct terrain* terrain);
-bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to);
+bool Terrain_FindKeyContinents(struct terrain* terrain, Vector from, Vector to);
+void Terrain_EliminateUselessPortPoints(struct terrain* terrain);
 struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to);
 
 // Some map functions

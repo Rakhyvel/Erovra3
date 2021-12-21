@@ -34,11 +34,9 @@ typedef enum unitType {
     UnitType_FARM,
     UnitType_ACADEMY,
     UnitType_WALL,
-    UnitType_LANDING_CRAFT,
     UnitType_DESTROYER,
     UnitType_CRUISER,
     UnitType_BATTLESHIP,
-    UnitType_AIRCRAFT_CARRIER,
     UnitType_FIGHTER,
     UnitType_ATTACKER,
     UnitType_BOMBER,
@@ -76,24 +74,24 @@ enum RenderPriority {
 /* Contains basic data for positioning an entity in the world space, as
    well as moving the entity with a target and velocity */
 typedef struct sprite {
-    struct vector pos; // The cartesian position of the unit in world-space
-    float z; // The z axis coordinate. Ranges from [0,1], 0 being sea, 0.5 being surface, and 0.5-1 being air
-    struct vector vel; // Difference in position over ticks
-    float angle; // Angle the entity is oriented towads
-    float speed; // Nominal speed of unit. Remains constant, while the velocity may change
-    bool destroyOnBounds; // Whether or not the entity is purged if it goes outside the bounds of the map
-    float dZ; // Change in z (height)
-    float aZ; // Change in dZ (vertical acceleration)
     SDL_Texture* sprite; // Texture to draw on screen
     SDL_Texture* spriteOutline; // Texture to draw when an outline around sprite is shown
     SDL_Texture* shadow; // Texture to draw under sprite as a shadow
-    enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
-    bool hidden; // Whether or not the sprite is hidden, and should not be rendered
-    bool showOutline; // Whether or not the sprite should have an outline
     struct nation* nation; // Nation EntityID to get color from
+    struct vector pos; // The cartesian position of the unit in world-space
+    struct vector vel; // Difference in position over ticks
+    float z; // The z axis coordinate. Ranges from [0,1], 0 being sea, 0.5 being surface, and 0.5-1 being air
+    float angle; // Angle the entity is oriented towads
+    float speed; // Nominal speed of unit. Remains constant, while the velocity may change
+    float dZ; // Change in z (height)
+    float aZ; // Change in dZ (vertical acceleration)
+    enum RenderPriority priority; // Render layer that the sprite is on, like in paint.net or photoshop
     int width; // Width of the sprite when drawing to screen (asset may vary)
     int height; // Height of the sprite when drawing to screen (asset may vary)
     int hitTicks; // Timer, set when sprite is hit, systems fade this out. Used to add opacity to outline
+    bool destroyOnBounds; // Whether or not the entity is purged if it goes outside the bounds of the map
+    bool hidden; // Whether or not the sprite is hidden, and should not be rendered
+    bool showOutline; // Whether or not the sprite should have an outline
 } Sprite;
 ComponentKey SPRITE_COMPONENT_ID;
 
@@ -138,7 +136,6 @@ typedef struct unit {
     bool isHovered; // Whether or not the unit is hovered
     bool focused; // Whether or not the unit is focused
     EntityID guiContainer; // The GUI container to show when focused
-    char name[32]; // Description of unit
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy
     bool foundAlertedSquare; // Whether or not this unit has found an alerted square and is investigating
@@ -195,6 +192,7 @@ typedef struct nation {
     int unitCount[_UnitType_Length]; // How many units there are
     int prodCount[_UnitType_Length]; // How many units are in production currently
     EntityID capital; // EntityID of nation's capital
+    Vector capitalPos;
     Arraylist* enemyNations; // EntityIDs of enemy nations
     float* visitedSpaces; // Dynamic array, spaces that units have been to. Only used by AI's
     size_t visitedSpacesSize;  // Twice the tile size

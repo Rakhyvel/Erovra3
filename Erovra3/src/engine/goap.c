@@ -25,11 +25,14 @@ void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
 
 void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, ComponentKey flag), VariableID effect, int numPrecoditions, Uint8 preconditions, ...)
 {
+    if (numPrecoditions > MAX_PRECONDITIONS) {
+        PANIC("Too many preconditions for GOAP action");
+    }
     Action action;
     action.actionPtr = actionPtr;
     action.numPreconditions = numPrecoditions;
-    memset(action.name, 0, 16);
-    strcpy_s(action.name, 16, name);
+    memset(action.name, 0, sizeof(action.name));
+    strcpy_s(action.name, sizeof(action.name), name);
 
     va_list args;
     va_start(args, preconditions);
@@ -45,7 +48,7 @@ void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, Comp
 
     // Add action to effects list corresponding to its effect
     if (goap->effects[effect] == NULL) {
-        goap->effects[effect] = Arraylist_Create(10, sizeof(ActionID));
+        goap->effects[effect] = Arraylist_Create(3, sizeof(ActionID));
     }
     Arraylist_Add(&goap->effects[effect], &(goap->numActions));
     // Add action to array of actions
@@ -60,7 +63,7 @@ void Goap_Update(Scene* scene, Goap* goap, void* intelligence)
     int dist[MAX_ACTIONS]; // The cost from each action the to the main goal
     ActionID parent[MAX_ACTIONS];
     bool processed[MAX_ACTIONS]; // Whether or not the action has been processed
-    bool isLeaf[MAX_ACTIONS]; // Whether or not the action is good
+    bool isLeaf[MAX_ACTIONS]; // Whether or not the action has no false pre-conditions
 
     for (int i = 0; i < MAX_ACTIONS; i++) {
         dist[i] = INT_MAX;
@@ -80,28 +83,29 @@ void Goap_Update(Scene* scene, Goap* goap, void* intelligence)
         // If action is a default action, automatically increase its cost to 1000
         if (action.numPreconditions == 0) {
             dist[u] += 1000;
-        }
+        } else {
         // For each false pre-condition in action:
-        for (int i = 0; i < action.numPreconditions; i++) {
-            VariableID precondition = action.preconditions[i];
-            Uint8 cost = action.costs[i];
-            if (!goap->variables[precondition]) {
-                isLeaf[u] = false;
+            for (int i = 0; i < action.numPreconditions; i++) {
+                VariableID precondition = action.preconditions[i];
+                Uint8 cost = action.costs[i];
+                if (!goap->variables[precondition]) {
+                    isLeaf[u] = false;
 
-                // For each action that makes this false pre-condition true:
-                Arraylist* children = goap->effects[precondition];
-                // The effects list will be null if there are no actions that have the effect
-                if (children != NULL) {
-                    for (int j = 0; j < children->size; j++) {
-                        ActionID v = *(ActionID*)Arraylist_Get(children, j);
+                    // For each action that makes this false pre-condition true:
+                    Arraylist* children = goap->effects[precondition];
+                    // The effects list will be null if there are no actions that have the effect
+                    if (children != NULL) {
+                        for (int j = 0; j < children->size; j++) {
+                            ActionID v = *(ActionID*)Arraylist_Get(children, j);
 
-                        // Update dist[v] only if is not processed, there is an
-                        // edge from u to v, and total weight of path from src to
-                        // v through u is smaller than current value of dist[v]
-                        if (!processed[v] && dist[u] != INT_MAX
-                            && dist[u] + cost < dist[v]) {
-                            dist[v] = dist[u] + cost;
-                            parent[v] = u;
+                            // Update dist[v] only if is not processed, there is an
+                            // edge from u to v, and total weight of path from src to
+                            // v through u is smaller than current value of dist[v]
+                            if (!processed[v] && dist[u] != INT_MAX
+                                && dist[u] + cost < dist[v]) {
+                                dist[v] = dist[u] + cost;
+                                parent[v] = u;
+                            }
                         }
                     }
                 }
@@ -133,6 +137,8 @@ void Goap_Update(Scene* scene, Goap* goap, void* intelligence)
         if (bestAction.actionPtr) {
             bestAction.actionPtr(scene, intelligence);
         }
+    } else {
+        printf("Yike! best=%d\n", best);
     }
 }
 

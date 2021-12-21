@@ -388,7 +388,11 @@ int Terrain_LineOfSightSeaToLand(struct terrain* terrain, Vector from, Vector in
     return -1;
 }
 
-bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
+/*
+	Mark out the continents that must be traveled through if a unit from one capital position to another.
+	These are key continents, and ports must be able to see at least two key continents.
+*/
+bool Terrain_FindKeyContinents(struct terrain* terrain, Vector from, Vector to)
 {
     clock_t time = clock();
     struct dijkstrasResult path = Terrain_Dijkstra(terrain, from, to);
@@ -408,6 +412,11 @@ bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
         printf("No key continents\n");
         return false;
     }
+    return true;
+}
+
+void Terrain_EliminateUselessPortPoints(struct terrain* terrain)
+{
     // Go through each port point, check to see if they are valid (can see (dist is less than 8 times the size) more than one key continent)
     for (int i = 0; i < terrain->ports->size; i++) {
         Vector portPoint = *(Vector*)Arraylist_Get(terrain->ports, i);
@@ -431,7 +440,6 @@ bool Terrain_FindCapitalPath(struct terrain* terrain, Vector from, Vector to)
             i--;
         }
     }
-    return true;
 }
 
 /*

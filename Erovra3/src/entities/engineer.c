@@ -9,23 +9,24 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
     EntityID engineerID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        pos,
-        0.5f,
-        (struct vector) { 0.0f, 0.0f },
-        0,
-        0.2f,
-        false,
-		0,
-        0,
         ENGINEER_TEXTURE_ID,
         GROUND_OUTLINE_TEXTURE_ID,
         GROUND_SHADOW_TEXTURE_ID,
-        RenderPriorirty_SURFACE_LAYER,
-        false,
-        false,
         nation,
+        pos,
+        (struct vector) { 0.0f, 0.0f },
+        0.5f,
+        0,
+        0.2f,
+		0,
+        0,
+        RenderPriorirty_SURFACE_LAYER,
         36,
-        20
+        20,
+        0,
+		false,
+        false,
+        false,
     };
     Scene_Assign(scene, engineerID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, engineerID, SURFACE_LAYER_COMPONENT_ID, 0);
@@ -51,7 +52,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         ENGINEER_FOCUSED_GUI
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
-    strncpy_s(type.name, 32, "Engineer", 32);
 
     Scene_Assign(scene, engineerID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
