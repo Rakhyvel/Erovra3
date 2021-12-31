@@ -38,11 +38,12 @@ EntityID Airfield_Create(struct scene* scene, Vector pos, Nation* nation, Entity
         false,
         UnitType_AIRFIELD,
         1,
+        nation->unitCount[UnitType_AIRFIELD],
         0,
-        0,
+        100,
         false,
         false,
-        BUILDING_FOCUSED_GUI
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, airfieldID, UNIT_COMPONENT_ID, &type);
 

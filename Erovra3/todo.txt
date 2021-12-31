@@ -120,7 +120,7 @@ x Factories not adjacent to a city are sometimes counted as adjacent
 
 
 3.6.x- Boats (6/17/21)
-- Add ports
+x Add ports
 	x Make sand color less red, more yellow
 	x Add port button for infantry
 	x Need center to be in water
@@ -328,81 +328,132 @@ x More than one nation (Maybe an array of enemy nations)
 	x Reduce generate progress bar max
 	x Fix wall cost
 	x Farm cost goes up even if you capture other farms?
-	- Ports are reset, make that not so
-	- Fix AI hesitation glitch
-	- AI ground units shouldn't care about plane sightings
+	x Ports are reset, make that not so
+	x Fix AI hesitation glitch
+	x fix ordinal for airfield, academy, city
+	x create and read in lexicon
+	x AI moves player units >:(
 - Resources change
 	- Farms produce food just like a resource producer
-		- Is consumed by the units of a city
-		- If no food, city happiness lowers (see lower)
-		- Grain silos to store excess food
-		- Does food go to the city? And units are assigned to each city?
-	- Wood to build buildings
+		x Is consumed by units
+		x Change in morale = amount of food + consumer goods
+		x If morale gets too low, cities and combatants rebel
+		x Captured units start with low morale
+		x Fix population and nation info
+		x Add morale indicator in unit gui, low med high
+		x City names in GUI
+	- Timber
+		x Gotten from timberland, from places where it's tree-y
+		x Not an expansion, they should be placed anywhere
+		x Add resource to nation GUI
+		x Used to build buildings
+		- AI know about timber
+		- LIMITED!
+	- New units in this order
+		- Timberland
+		- Power plant
+			- Coal = electricity
+		- Power line
+		- Foundry
+			- Coal + ore = metal
+		- Oil drill
+			- Electricity = crude oil
+		- Refinery
+			- electricity + crude oil = gas
+	- Coal is burned to produce energy (SHOULD BE A UNIT! Units make it feel real)
+		- Mined in mines depending on the coal content
+		- Can be burned to produce electricity in POWER PLANTS
+		- Can be burned in furnace to produce metal from ore
+		- LIMITED!
+	- Factories, ports, airfields, academy, need electricity to operate
+	- Ore
+		- Mined in a mine if there is a lot of ore at the mine
+		- Smelted in a FOUNDRY into metal
+		- LIMITED!
+	- Metal
+		- Used to make all units, replaces ore (whore)
+	- Stone
+		- Mined in mine as a byproduct
+		- Can be used to upgrade buildings, along with other resources probably
+	- Ammo & shells & bombs as ingredients to make units
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky
 		- Same thing as food, produced by other units, drained by each unit
-- More non-combat units like miners, farmers
-	- miners go out and can test soil, can set up mines, mines can pack up and leave
-	- farmers, "     " farms
-	- settlers "     " cities
-		- Cities should be cheap to settle, scale linearly with how many cities there are
-		- Quadratic to upgrade a city (or however much it would be depending on the coin rate, should remain relatively constant)
-		- This would make 'outposts' possible
-	- Gameplay:
-		- 
-- Academy trains other kinds of units
-	- Pilots
-- Cities can become restless, go rogue and spawn new rebel nations
-	- Not enough food
-	- Have a happiness meter
-		- Building consumer goods in factories increaes this happiness
-		- Naturally decreases
-		- Decreases if food production is too low
-		- Captured cities start with low happiness
+		- Crude oil is pumped out of the ground
+		- Turned into gasoline by a refinery, which is what planes actually use
+	- Make real icons for everything new
+	- Make it so that auto re-order keeps trying
 - Buildings can be upgraded, but require more upkeep
-- "Infinite" maps?
-	- You'd only be able to see the terrain of what you've explored (GOOD IDEA!)
-	- Store map data on disk, access when needed
-	- Temporarily load the segments that the player views as textures
-		- Would be efficient on memory
-		- But would mean only things could only happen when the user is viewing (bad)
 - TRANSPORT BOATS!!!!!! (cmon mane)
+- Defensive armament for bombers
+	- Destroyers get torpedos
+	- Cruisers get torpedos and AA
+	- Battleships get artillery (which can attack surface) and AA
+	- AirToGroundBullet for attackers, descends from the ground
+	- Attackers can attack ships
 - Debug menu
-	- Can time warp
-	- Can show other nations
-	- Show AI goals above the capital
-	- Show AI visited tiles
-	- Show port tiles
+	- Show fps instead of printing it (maybe always do this)
+	- toggle Show AI goals above the capital
+	- toggle Show AI visited tiles
+	- toggle Show port tiles
+	- toggle if a nation is AI controlled
 - Settings where you can turn down the volume!
-- Swap "Surrender" and "Back to game" buttons in menu
-- Fix city names, serialize the trie
-- Different shapes for the mini map
-- Build walls 3 tile radius around capital
-- Increase attacker to fighter ratio
+x Swap "Surrender" and "Back to game" buttons in menu
+- Different shapes for the units on mini map
+	- ESPECIALLY for walls
+- AI Build walls 3 tile radius around capital
+- Buff factory speed if city other factories, etc with others
+- A way to select to snap to a grid
+- more hints
+- Randomize buttons next to things people might want to randomize, instead of just one
+- Camera shouldn't go out of bounds
+- Check if capitals are all on the same continent first, to make it faster
+- A box in the minimap that shows where the camera is
+	- Can click on minimap to pan camera there
+- Slider for center bias in map maker
+- Tooltips?
+- Premade maps
+- Scroll for containers
+- Tabs for map creation
+	- Save map settings into a sharable string
+- Better OOBE
+	- Actual real speech box hints when you first start playing about what to do
+	- Time how long it takes to play, make sure the first 20% makes sense
+- Redo the loading circle with correct color and better transparency, also make sure it's anti aliased
+- Error messages are clipped
+- Map seeds should be base 64, only 6 or 7 long (5 * 6 = 8 * 4 = 32 bit integer seed)
+- In game hints that uses the AI to give hints
+- Warnings about food and low morale
+	- Difficulty settings, can be turned off before game is created
 
 3.11.x- Multiplayer
 - Order particles
-	- Originate from nation's command post
-	- Send messages to units to change their position, etc (this ties into my plans for multiplayer!)
-	- Can upgrade command post to get faster messages
+	- Originate from nation's capital
+	- Send messages to units to change their position, orders, etc (this ties into my plans for multiplayer!)
 - Multiplayer
-- Make it so that maps always have sea in the center only, and that AI will only build ships if they cant A* to other capital
-- Buff factory speed if city other factories, etc with others
-- Make mines way less lucrative
-- A way to select to snap to a grid
-- A way to reploy/retreat troops, would be a bit faster, wouldn't fight back, wouldnt be able to get closer to the enemy, but a smaller radius
-- Fertility, along with ore. Affects how much food a farm gives
-
-
+	- Lan
+	- Matchmaker server?
 ??? save game files
-	- MAKE SURE that all component id's and stuff that might get serialized are final
 
+- PUBLISH!!!!!!!!!
+	- erovra.net (maybe a different name?)
+	- Youtube channel, email account
+	- Video tutorials
+	- Make it cross platform?
+	- How does this make money?
+		- Free to play against AI
+		- Need to pay for an account to play with others
+	- Work out loud
+		- Streams
+		- Dev logs
+	- Twitter/Instagram
+		- GIFs and videos! Few text
+		- Different! Unique stuff!
+	- Buy ads
+		- Know your target audience
 
 misc.
-- Premade maps?
 - Stats at end of game?
 - Sequential movement?
-- Hints?
-- AirToGroundBullet for attackers, descends from the ground
 - Planes should originate from airfields, airfield should protect
-? Defensive armament for bombers
 - Can't stack units?
+- Modding API

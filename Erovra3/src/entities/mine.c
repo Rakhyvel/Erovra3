@@ -30,12 +30,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
     Scene_Assign(scene, mineID, SPRITE_COMPONENT_ID, &sprite);
     Scene_Assign(scene, mineID, BUILDING_LAYER_COMPONENT_ID, 0);
 
-    Target target = {
-        (struct vector) { 0.0f, 0.0f },
-        pos,
-    };
-    Scene_Assign(scene, mineID, TARGET_COMPONENT_ID, &target);
-
     Unit type = {
         100.0f,
         0,
@@ -46,9 +40,10 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         0.05f,
         nation->unitCount[UnitType_MINE],
         0,
+        100,
         false,
         false,
-        BUILDING_FOCUSED_GUI
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 

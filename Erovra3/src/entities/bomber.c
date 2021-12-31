@@ -51,7 +51,8 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         UnitType_BOMBER,
         0.5f, // Defense
         nation->unitCount[UnitType_BOMBER],
-		0,
+        0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
@@ -67,6 +68,11 @@ EntityID Bomber_Create(Scene* scene, Vector pos, Nation* nation)
         true
     };
     Scene_Assign(scene, bomberID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, bomberID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, bomberID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, bomberID, nation->controlFlag, NULL);

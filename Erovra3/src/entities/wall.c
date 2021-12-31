@@ -40,6 +40,7 @@ EntityID Wall_Create(Scene* scene, Vector pos, float angle, Nation* nation)
         1.0f,
         nation->unitCount[UnitType_WALL],
         0,
+		100,
         false,
         false,
         UNIT_FOCUSED_GUI

@@ -41,14 +41,15 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         1,
         nation->unitCount[UnitType_FARM],
         0,
+        100,
         false,
         false,
-        BUILDING_FOCUSED_GUI
+        UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
 	ResourceProducer resourceProducer = {
-        1.0f,
+        1.00f,
         &Food_Create
     };
     Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

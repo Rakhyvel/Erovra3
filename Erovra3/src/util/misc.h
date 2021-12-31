@@ -10,3 +10,4 @@
     }
 
 #endif
+double fastCos(double x);

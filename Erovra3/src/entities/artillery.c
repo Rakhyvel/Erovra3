@@ -17,13 +17,13 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         0.5f,
         0,
         0.2f,
-		0,
-		0,
+        0,
+        0,
         RenderPriorirty_SURFACE_LAYER,
         36,
         20,
         0,
-		false,
+        false,
         false,
         false,
     };
@@ -46,19 +46,25 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
         1.0f,
         nation->unitCount[UnitType_ARTILLERY],
         0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
 
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, artilleryID, MORALE_COMPONENT_ID, &morale);
+
     Combatant combatant = {
-        0.8f,
-        100.0f,
-        Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, LAND_UNIT_FLAG_COMPONENT_ID),
-        120,
-        &Shell_Create,
-        true
+        1.6f, 
+		100.0f, 
+		Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, LAND_UNIT_FLAG_COMPONENT_ID), 
+		120, 
+		&Shell_Create, 
+		true
     };
     Scene_Assign(scene, artilleryID, COMBATANT_COMPONENT_ID, &combatant);
 

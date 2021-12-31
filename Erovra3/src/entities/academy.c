@@ -38,8 +38,9 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         UnitType_ACADEMY,
         1,
+        nation->unitCount[UnitType_ACADEMY],
         0,
-        0,
+        100,
         false,
         false,
         ACADEMY_READY_FOCUSED_GUI

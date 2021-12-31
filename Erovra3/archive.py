@@ -10,7 +10,7 @@ from os.path import basename
 from pathlib import Path
 
 # Some configurations
-VERSION = "9"
+VERSION = "10"
 IN_PATH = str(Path.home()) + "\\source\\repos\\Erovra3\\"
 OUT_PATH = str(Path.home()) + "\\OneDrive\\Erovra versions\\"
 
@@ -28,7 +28,7 @@ filename = OUT_PATH + "Erovra3." + VERSION + "." + str(count_files(OUT_PATH)) + 
 # Create archive file
 with ZipFile(filename, 'w') as zip:
     # Add .exe file
-    zip.write(IN_PATH + "x64\\Debug\\Erovra3.exe", "Erovra3.exe")
+    zip.write(IN_PATH + "x64\\Release\\Erovra3.exe", "Erovra3.exe")
     # Add res dir and all files in res
     for res_filename in os.listdir(IN_PATH + "Erovra3\\res"):
         zip.write(IN_PATH + "Erovra3\\res\\" + res_filename, "res\\" + res_filename)

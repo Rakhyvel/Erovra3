@@ -52,6 +52,7 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation)
         0.5f, // Defense
         nation->unitCount[UnitType_FIGHTER],
         0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
@@ -67,6 +68,11 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation)
         true
     };
     Scene_Assign(scene, fighterID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, fighterID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, fighterID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, fighterID, nation->controlFlag, NULL);

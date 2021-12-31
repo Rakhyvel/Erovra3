@@ -13,7 +13,7 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
     Sprite* capitalSprite = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
     Vector vel = Vector_Sub(capitalSprite->pos, pos);
     vel = Vector_Normalize(vel);
-    vel = Vector_Scalar(vel, 6);
+    vel = Vector_Scalar(vel, min(6, Vector_Dist(pos, capitalSprite->pos) / 16.0f));
     float angle = Vector_Angle(vel);
     Sprite sprite = {
         ORE_TEXTURE_ID, // sprite

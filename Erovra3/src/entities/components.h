@@ -26,6 +26,7 @@ typedef enum unitType {
     UnitType_CAVALRY,
     UnitType_ARTILLERY,
     UnitType_ENGINEER,
+	UnitType_TIMBERLAND,
     UnitType_CITY,
     UnitType_MINE,
     UnitType_FACTORY,
@@ -48,8 +49,8 @@ typedef enum unitType {
 typedef enum resourceType {
     ResourceType_COIN,
     ResourceType_ORE,
+	ResourceType_TIMBER,
     ResourceType_POPULATION,
-    ResourceType_POPULATION_CAPACITY,
 	ResourceType_FOOD,
     _ResourceType_Length
 } ResourceType;
@@ -133,12 +134,12 @@ typedef struct unit {
     const float defense; // The defense stat of the unit
     int ordinal; // Serial number of unit, assigned sequentially
     int engagedTicks; // Timer, ranges from 0-1/(unitspeed). Only determines if other nation can see unit
+    int engagedLevel; // Whether or not this unit has found an alerted square and is investigating
     bool isHovered; // Whether or not the unit is hovered
     bool focused; // Whether or not the unit is focused
     EntityID guiContainer; // The GUI container to show when focused
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy
-    bool foundAlertedSquare; // Whether or not this unit has found an alerted square and is investigating
 } Unit;
 ComponentKey UNIT_COMPONENT_ID;
 
@@ -167,6 +168,11 @@ ComponentKey SHELL_ATTACK_FLAG_COMPONENT_ID;
 ComponentKey SHIP_FLAG_COMPONENT_ID;
 
 ComponentKey AIRCRAFT_FLAG_COMPONENT_ID;
+
+typedef struct morale {
+    float morale;
+} Morale;
+ComponentKey MORALE_COMPONENT_ID;
 
 // TODO: Add "origin" vector for projectiles, so that units can mark those areas as hostile
 /* For projectile entities, which move and inflict damage on enemies

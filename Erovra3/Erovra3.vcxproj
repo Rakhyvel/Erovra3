@@ -258,6 +258,14 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\entities\timber.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\entities\timberland.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\entities\wall.c">
       <SubType>
       </SubType>
@@ -332,7 +340,7 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\util\perlin.c">
+    <ClCompile Include="src\util\noise.c">
       <SubType>
       </SubType>
     </ClCompile>
@@ -372,7 +380,7 @@
     <ClInclude Include="src\util\heap.h" />
     <ClInclude Include="src\util\lexicon.h" />
     <ClInclude Include="src\util\misc.h" />
-    <ClInclude Include="src\util\perlin.h" />
+    <ClInclude Include="src\util\noise.h" />
     <ClInclude Include="src\util\polygon.h" />
     <ClInclude Include="src\util\vector.h" />
   </ItemGroup>

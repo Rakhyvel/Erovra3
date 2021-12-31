@@ -260,7 +260,6 @@ SDL_Texture* Texture_Load(char* filename)
     // Create a new texture that can be rendered on
     SDL_Rect rect = { 0, 0, 0, 0 };
     SDL_QueryTexture(imgTexture, 0, 0, &rect.w, &rect.h);
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
     SDL_Texture* accessibleTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, rect.w, rect.h);
 
     // Copy IMG texture to drawible texture
@@ -302,11 +301,25 @@ void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(c
             pixels[offset + 0] = terrainColor.b;
             pixels[offset + 1] = terrainColor.g;
             pixels[offset + 2] = terrainColor.r;
-            pixels[offset + 3] = SDL_ALPHA_OPAQUE;
+            pixels[offset + 3] = terrainColor.a;
         }
     }
     if (SDL_UpdateTexture(texture, NULL, pixels, mapSize * 4) == -1) {
         PANIC("%s", SDL_GetError());
     }
     free(pixels);
+}
+
+void Texture_Save(const char* filename, SDL_Texture* texture)
+{
+    SDL_Texture* target = SDL_GetRenderTarget(Apricot_Renderer);
+    SDL_SetRenderTarget(Apricot_Renderer, texture);
+    int width, height;
+    Uint32 format = SDL_PIXELFORMAT_ARGB8888;
+    SDL_QueryTexture(texture, &format, NULL, &width, &height);
+    SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, 32, 0xff0000, 0xff00, 0xff, 0xff000000);
+    SDL_RenderReadPixels(Apricot_Renderer, NULL, SDL_PIXELFORMAT_ARGB8888, surface->pixels, surface->pitch);
+    IMG_SavePNG(surface, filename);
+    SDL_FreeSurface(surface);
+    SDL_SetRenderTarget(Apricot_Renderer, target);
 }

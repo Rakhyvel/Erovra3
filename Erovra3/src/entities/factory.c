@@ -40,6 +40,7 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         1,
         nation->unitCount[UnitType_FACTORY],
         0,
+        100,
         false,
         false,
         FACTORY_READY_FOCUSED_GUI

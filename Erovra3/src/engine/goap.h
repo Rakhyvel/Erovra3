@@ -25,7 +25,7 @@
 
 #define MAX_VARIABLES 64
 #define MAX_ACTIONS 64
-#define MAX_PRECONDITIONS 8
+#define MAX_PRECONDITIONS 9
 
 typedef Uint8 VariableID;
 typedef Uint8 ActionID;

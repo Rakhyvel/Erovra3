@@ -137,8 +137,6 @@ void Goap_Update(Scene* scene, Goap* goap, void* intelligence)
         if (bestAction.actionPtr) {
             bestAction.actionPtr(scene, intelligence);
         }
-    } else {
-        printf("Yike! best=%d\n", best);
     }
 }
 

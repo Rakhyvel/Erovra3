@@ -19,8 +19,9 @@ extern Arraylist* nations;
 EntityID ENGINEER_FOCUSED_GUI;
 
 // Default containers
-EntityID BUILDING_FOCUSED_GUI;
 EntityID UNIT_FOCUSED_GUI;
+
+EntityID CITY_FOCUSED_GUI;
 
 EntityID FACTORY_READY_FOCUSED_GUI;
 EntityID FACTORY_BUSY_FOCUSED_GUI;
@@ -35,6 +36,7 @@ bool Match_CityHasType(Scene* scene, City* city, UnitType type);
 bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansion* expansion, UnitType type);
 bool Match_BuyCity(struct scene* scene, Nation* nation, Vector pos);
 bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vector pos);
+void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vector pos);
 
 void Match_Render(Scene* scene);
-Scene* Match_Init(float* map, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled, bool fogOfWar, int numNations);
+Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled, bool fogOfWar, int numNations);

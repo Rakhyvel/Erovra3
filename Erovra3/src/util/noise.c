@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./perlin.h"
+#include "./noise.h"
 #include "./debug.h"
 #include "arraylist.h"
 #include "vector.h"
@@ -22,7 +22,7 @@
 
  Returns:	 The y value of the unknown point (x2, y?)
  */
-float Perlin_LinearInterpolation(int x0, float y0, int x1, float y1, float x2)
+float Noise_LinearInterpolation(int x0, float y0, int x1, float y1, float x2)
 {
     return (float)y0 + (float)(x2 - x0) * (float)(y1 - y0) / (float)(x1 - x0);
 }
@@ -41,21 +41,22 @@ Parameters: int x0 - The x-coordinate of the top-right corner of the cell
 
 Returns:    The z value at the specified point (x2, y2)
 */
-float Perlin_BilinearInterpolation(float* map, int mapSize, int cellSize, int x0, int y0, float x2, float y2)
+void Noise_BilinearInterpolation(float* map, int mapSize, int cellSize, int x0, int y0)
 {
-    int x1 = x0 + cellSize;
-    int y1 = y0 + cellSize;
-    if (x1 >= mapSize) {
-        x1 = 0;
+    int x1, y1;
+    if ((x1 = x0 + cellSize) >= mapSize) {
+        x1 = x0;
     }
-    if (y1 >= mapSize) {
-        y1 = 0;
+    if ((y1 = y0 + cellSize) >= mapSize) {
+        y1 = y0;
     }
-
-    float top = Perlin_LinearInterpolation(x0, map[y0 * mapSize + x0], x0 + cellSize, map[y0 * mapSize + x1], x2);
-    float bottom = Perlin_LinearInterpolation(x0, map[y1 * mapSize + x0], x0 + cellSize, map[y1 * mapSize + x1], x2);
-
-    return Perlin_LinearInterpolation(y0, top, y0 + cellSize, bottom, y2);
+    for (int y = y0; y < y0 + cellSize; y++) {
+        float z0 = Noise_LinearInterpolation(y0, map[x0 + y0 * mapSize], y0 + cellSize, map[x0 + y1 * mapSize], y);
+        float z1 = Noise_LinearInterpolation(y0, map[x1 + y0 * mapSize], y0 + cellSize, map[x1 + y1 * mapSize], y);
+        for (int x = x0; x < x0 + cellSize; x++) {
+            map[x + y * mapSize] = Noise_LinearInterpolation(x0, z0, x0 + cellSize, z1, x);
+        }
+    }
 }
 
 /*
@@ -85,31 +86,78 @@ double fastCos(double x)
 
 /*
 	Cosine interpolation for x, given (x0, y0) and (x1, y1) */
-float Perlin_CosineInterpolation(int x0, float y0, int x1, float y1, float x)
+float Noise_CosineInterpolation(int x0, float y0, int x1, float y1, float x2)
 {
-    double xDiff = (double)(x1 - x0);
-    double mu2 = (1 - fastCos((double)(x - x0) * 3.141592653589793 / xDiff)) / 2;
-    double retval = (y0 * (1 - mu2) + y1 * mu2);
-    return (float)retval;
+    float mu2 = (1 - fastCos((x2 - x0) * M_PI / (x1 - x0))) / 2;
+    return y0 * (1 - mu2) + y1 * mu2;
 }
 
 /*
 	Cosine interpolation for (x2, y2) given a cell starting at (x0, y0) and a map */
-float Perlin_BicosineInterpolation(float* map, int mapSize, int cellSize, int x0, int y0, float x2, float y2)
+void Noise_BicosineInterpolation(float* map, int mapSize, int cellSize, int x0, int y0)
 {
-    int x1 = x0 + cellSize;
-    int y1 = y0 + cellSize;
-    if (x1 >= mapSize) {
-        x1 -= cellSize;
+    int x1, y1;
+    if ((x1 = x0 + cellSize) >= mapSize) {
+        x1 = x0;
     }
-    if (y1 >= mapSize) {
-        y1 -= cellSize;
+    if ((y1 = y0 + cellSize) >= mapSize) {
+        y1 = y0;
     }
+    for (int y = y0; y < y0 + cellSize; y++) {
+        float z0 = Noise_CosineInterpolation(y0, map[x0 + y0 * mapSize], y0 + cellSize, map[x0 + y1 * mapSize], y);
+        float z1 = Noise_CosineInterpolation(y0, map[x1 + y0 * mapSize], y0 + cellSize, map[x1 + y1 * mapSize], y);
+        for (int x = x0; x < x0 + cellSize; x++) {
+            map[x + y * mapSize] = Noise_CosineInterpolation(x0, z0, x0 + cellSize, z1, x);
+        }
+    }
+}
 
-    float top = Perlin_CosineInterpolation(x0, map[y0 * mapSize + x0], x0 + cellSize, map[(int)(y0 * mapSize + x1)], x2);
-    float bottom = Perlin_CosineInterpolation(x0, map[y1 * mapSize + x0], x0 + cellSize, map[(int)(y1 * mapSize + x1)], x2);
+/*
+y0 - y value of point to left
+x1 - x value of first known point
+y1 - y value of first known point
+x2 - x value of second known point
+y2 - y value of second known point
+y3 - y value of point to rihgt
+x  - x value to interpolate
+*/
+float Noise_CubicInterpolation(int cellSize, int x1, float x, float y0, float y1, float y2, float y3)
+{
+    float scale = (float)(x - x1) / (float)cellSize; // Map [x1,x2] to [0,1]
+    float a = (-0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3) * powf(scale, 3);
+    float b = (y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3) * powf(scale, 2);
+    float c = (-0.5 * y0 + 0.5 * y2) * scale;
+    return a + b + c + y1;
+}
 
-    return Perlin_CosineInterpolation(y0, top, y0 + cellSize, bottom, y2);
+/*
+	Cosine interpolation for (x2, y2) given a cell starting at (x0, y0) and a map */
+void Noise_BicubicInterpolation(float map[], int mapSize, int cellSize, int x1, int y1)
+{
+    int x0 = max(0, x1 - cellSize);
+    int y0 = max(0, y1 - cellSize);
+    int x2, y2, x3, y3;
+    if ((x2 = x1 + cellSize) >= mapSize) {
+        x2 = x1;
+    }
+    if ((y2 = y1 + cellSize) >= mapSize) {
+        y2 = y1;
+    }
+    if ((x3 = x2 + cellSize) >= mapSize) {
+        x3 = x2;
+    }
+    if ((y3 = y2 + cellSize) >= mapSize) {
+        y3 = y2;
+    }
+    for (int y = y1; y < y1 + cellSize; y++) {
+        float z0 = Noise_CubicInterpolation(cellSize, y1, y, map[x0 + y0 * mapSize], map[x0 + y1 * mapSize], map[x0 + y2 * mapSize], map[x0 + y3 * mapSize]);
+        float z1 = Noise_CubicInterpolation(cellSize, y1, y, map[x1 + y0 * mapSize], map[x1 + y1 * mapSize], map[x1 + y2 * mapSize], map[x1 + y3 * mapSize]);
+        float z2 = Noise_CubicInterpolation(cellSize, y1, y, map[x2 + y0 * mapSize], map[x2 + y1 * mapSize], map[x2 + y2 * mapSize], map[x2 + y3 * mapSize]);
+        float z3 = Noise_CubicInterpolation(cellSize, y1, y, map[x3 + y0 * mapSize], map[x3 + y1 * mapSize], map[x3 + y2 * mapSize], map[x3 + y3 * mapSize]);
+        for (int x = x1; x < x1 + cellSize; x++) {
+            map[x + y * mapSize] = Noise_CubicInterpolation(cellSize, x1, x, z0, z1, z2, z3);
+        }
+    }
 }
 
 /*
@@ -122,37 +170,95 @@ Parameters: int mapSize - Height and width of map (maps are squares)
 Returns: A pointer to the begining of the map. Map is row major ordered as an array of floats of size mapSize * mapSize.
 		 Callee is responsible for freeing map.
 */
-void Perlin_GenerateOctave(float* map, int mapSize, int cellSize, float amplitude, unsigned int seed, enum PerlinInterpolation interpolation)
+void Noise_GenerateOctave(float* map, int mapSize, int cellSize, float amplitude, unsigned int seed, enum PerlinInterpolation interpolation)
 {
-    srand(seed);
-
-    // For each node assign it a height
+    // Fill lattice with random points
     for (int y = 0; y < mapSize; y += cellSize) {
         for (int x = 0; x < mapSize; x += cellSize) {
-            float r = ((float)rand()) / ((float)RAND_MAX);
-            r = cosf(r);
-            map[y * mapSize + x] = amplitude * r;
+            map[y * mapSize + x] = amplitude * ((float)rand()) / ((float)RAND_MAX);
         }
     }
 
     // Interpolate the rest of the map
-    for (int i = 0; i < mapSize * mapSize; i++) {
-        int x = i % mapSize; // x coord of point
-        int y = i / mapSize; // y coord of point
-        int x1 = (int)((x / cellSize) * cellSize); // x coord of point's cell
-        int y1 = (int)((y / cellSize) * cellSize); // y coord of point's cell
-
-        if (x != x1 || y != y1) {
+    for (int y = 0; y < mapSize; y += cellSize) {
+        for (int x = 0; x < mapSize; x += cellSize) {
             switch (interpolation) {
             case BILINEAR:
-                map[x + y * mapSize] = Perlin_BilinearInterpolation(map, mapSize, cellSize, x1, y1, (float)x, (float)y);
+                Noise_BilinearInterpolation(map, mapSize, cellSize, x, y);
                 break;
             case BICOSINE:
-                map[x + y * mapSize] = Perlin_BicosineInterpolation(map, mapSize, cellSize, x1, y1, (float)x, (float)y);
+                Noise_BicosineInterpolation(map, mapSize, cellSize, x, y);
+                break;
+            case BICUBIC:
+                Noise_BicubicInterpolation(map, mapSize, cellSize, x, y);
                 break;
             }
         }
     }
+}
+
+static int hash[] = { 208, 34, 231, 213, 32, 248, 233, 56, 161, 78, 24, 140, 71, 48, 140, 254, 245, 255, 247, 247, 40,
+    185, 248, 251, 245, 28, 124, 204, 204, 76, 36, 1, 107, 28, 234, 163, 202, 224, 245, 128, 167, 204,
+    9, 92, 217, 54, 239, 174, 173, 102, 193, 189, 190, 121, 100, 108, 167, 44, 43, 77, 180, 204, 8, 81,
+    70, 223, 11, 38, 24, 254, 210, 210, 177, 32, 81, 195, 243, 125, 8, 169, 112, 32, 97, 53, 195, 13,
+    203, 9, 47, 104, 125, 117, 114, 124, 165, 203, 181, 235, 193, 206, 70, 180, 174, 0, 167, 181, 41,
+    164, 30, 116, 127, 198, 245, 146, 87, 224, 149, 206, 57, 4, 192, 210, 65, 210, 129, 240, 178, 105,
+    228, 108, 245, 148, 140, 40, 35, 195, 38, 58, 65, 207, 215, 253, 65, 85, 208, 76, 62, 3, 237, 55, 89,
+    232, 50, 217, 64, 244, 157, 199, 121, 252, 90, 17, 212, 203, 149, 152, 140, 187, 234, 177, 73, 174,
+    193, 100, 192, 143, 97, 53, 145, 135, 19, 103, 13, 90, 135, 151, 199, 91, 239, 247, 33, 39, 145,
+    101, 120, 99, 3, 186, 86, 99, 41, 237, 203, 111, 79, 220, 135, 158, 42, 30, 154, 120, 67, 87, 167,
+    135, 176, 183, 191, 253, 115, 184, 21, 233, 58, 129, 233, 142, 39, 128, 211, 118, 137, 139, 255,
+    114, 20, 218, 113, 154, 27, 127, 246, 250, 1, 8, 198, 250, 209, 92, 222, 173, 21, 88, 102, 219 };
+
+int noise2(int x, int y, int seed)
+{
+    int tmp = hash[(y + seed) % 256];
+    return hash[(tmp + x) % 256];
+}
+
+float lin_inter(float x, float y, float s)
+{
+    return x + s * (y - x);
+}
+
+float smooth_inter(float x, float y, float s)
+{
+    return lin_inter(x, y, s * s * (3 - 2 * s));
+}
+
+float noise2d(float x, float y, int seed)
+{
+    int x_int = x;
+    int y_int = y;
+    float x_frac = x - x_int;
+    float y_frac = y - y_int;
+    int s = noise2(x_int, y_int, seed);
+    int t = noise2(x_int + 1, y_int, seed);
+    int u = noise2(x_int, y_int + 1, seed);
+    int v = noise2(x_int + 1, y_int + 1, seed);
+    float low = smooth_inter(s, t, x_frac);
+    float high = smooth_inter(u, v, x_frac);
+    return smooth_inter(low, high, y_frac);
+}
+
+float perlin2d(float x, float y, float freq, int depth, int seed)
+{
+    float xa = x * freq;
+    float ya = y * freq;
+    float amp = 1.0;
+    float fin = 0;
+    float div = 0.0;
+
+    int i;
+    for (i = 0; i < depth; i++) {
+        div += 256 * amp;
+        fin += noise2d(xa, ya, seed) * amp;
+        amp /= 2;
+        xa *= 2;
+        ya *= 2;
+    }
+
+    return fin / div;
 }
 
 /**
@@ -167,14 +273,24 @@ Parameters: int mapSize - Height and width of the map (maps are squares)
 
 Returns: a pointer to a float array, with size of mapSize * mapSize, in row major order.
 */
-float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status)
+float* Noise_Generate(int mapSize, int cellSize, unsigned int seed, int* status)
 {
     float amplitude = 0.5f;
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
         PANIC("Memory error");
     }
-    Perlin_GenerateOctave(retval, mapSize, cellSize, amplitude, seed, BICOSINE);
+
+    for (int y = 0; y < mapSize; y++) {
+        for (int x = 0; x < mapSize; x++) {
+            retval[x + y * mapSize] = perlin2d(x, y, cellSize * 2.0f / mapSize, 10, seed)
+                - 0.00f * sqrtf(powf(x - mapSize / 2, 2) + powf(y - mapSize / 2, 2));
+        }
+        (*status)++;
+    }
+    return retval; /*
+
+    Noise_GenerateOctave(retval, mapSize, cellSize, amplitude, seed, BICUBIC);
     float* map = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!map) {
         PANIC("Memory error");
@@ -184,7 +300,7 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
     int j = 1;
 
     while (cellSize >= 1) {
-        Perlin_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICOSINE);
+        Noise_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICUBIC);
         if (!map) {
             PANIC("Memory error");
         }
@@ -197,13 +313,10 @@ float* Perlin_Generate(int mapSize, int cellSize, unsigned int seed, int* status
         amplitude *= 0.5f;
         j++;
     }
-    
-    Perlin_GenerateOctave(map, mapSize, mapSize / 4, 1, seed, BICOSINE);
-    for (int i = 0; i < mapSize * mapSize; i++) {
-        retval[i] = retval[i] * 0.75 + map[i] * 0.25;
-    }
+
     free(map);
     return retval;
+	*/
 }
 
 /*
@@ -212,7 +325,7 @@ Normalizes a map so that the lowest value is 0, highest value is 1, and the aver
 Parameters: float* map - map to normalize
 			int mapSize - height and width of map (maps are squares)
 */
-void Perlin_Normalize(float* map, int mapSize)
+void Noise_Normalize(float* map, int mapSize)
 {
     float maxValue = FLT_MIN;
     float minValue = FLT_MAX;
@@ -247,7 +360,7 @@ void Perlin_Normalize(float* map, int mapSize)
 
 /*
 	Finds the gradient on the map at a given point */
-Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY)
+Gradient Noise_GetGradient(float* map, int mapSize, float posX, float posY)
 {
     if (posX + 1 == mapSize || posY + 1 == mapSize) {
         return (Gradient) { 0, 0 };
@@ -275,7 +388,7 @@ Gradient Perlin_GetGradient(float* map, int mapSize, float posX, float posY)
     return grad;
 }
 
-Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float posY)
+Gradient Noise_GetSecondGradient(float* map, int mapSize, float posX, float posY)
 {
     int offset = mapSize / 512;
     if (posX + offset >= mapSize || posY + offset >= mapSize) {
@@ -305,8 +418,9 @@ Gradient Perlin_GetSecondGradient(float* map, int mapSize, float posX, float pos
 }
 
 // Erodes away some terrain
-void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
+void Noise_Erode(float* map, int mapSize, float intensity, int* status)
 {
+    srand(0);
     float inertia = 0.1f; // higher/medium values produce smoother maps
     float sedimentCapacityFactor = 400;
     float minSedimentCapacity = 10.0f; // Small values := more deposit
@@ -333,7 +447,7 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
             float cellOffsetX = posX - nodeX;
             float cellOffsetY = posY - nodeY;
 
-            Gradient grad = Perlin_GetGradient(map, mapSize, posX, posY);
+            Gradient grad = Noise_GetGradient(map, mapSize, posX, posY);
             // Update the droplet's movement
             dirX = (dirX * inertia - grad.gradX * (1 - inertia));
             dirY = (dirY * inertia - grad.gradY * (1 - inertia));
@@ -352,7 +466,7 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
             }
 
             // Find the droplet's new height and calculate the deltaHeight
-            float newHeight = Perlin_GetGradient(map, mapSize, posX, posY).z;
+            float newHeight = Noise_GetGradient(map, mapSize, posX, posY).z;
             float deltaHeight = newHeight - grad.z;
 
             // Calculate the droplet's sediment capacity (higher when moving fast down a slope and contains lots of water)
@@ -379,7 +493,7 @@ void Perlin_Erode(float* map, int mapSize, float intensity, int* status)
     }
 }
 
-bool Perlin_IsBorder(float* terrain, int width, int height, int x, int y, float z, int i)
+bool Noise_IsBorder(float* terrain, int width, int height, int x, int y, float z, int i)
 {
     bool containsWater = terrain[x + y * width] <= z;
     if (x > 0)

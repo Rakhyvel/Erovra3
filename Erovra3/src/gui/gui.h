@@ -26,13 +26,14 @@ EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char*
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
 EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...);
-EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, int nNotches, GUICallback);
+EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, int min, int max, GUICallback);
 EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
 EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue);
 EntityID GUI_CreateImage(Scene* scene, Vector pos, int width, int height, SDL_Texture* texture);
 EntityID GUI_CreateProgressBar(Scene* scene, Vector pos, int width, float defaultValue);
 EntityID GUI_CreateSpacer(Scene* scene, Vector pos, int width, int height);
 EntityID GUI_CreateContainer(Scene* scene, Vector pos, int maxWidth, int maxHeight);
+EntityID GUI_CreateStackContainer(Scene* scene, Vector pos, int maxWidth, int maxHeight);
 void GUI_SetLabelText(Scene* scene, EntityID labelID, char* format, ...);
 void GUI_SetRockerSwitchValue(Scene* scene, EntityID labelID, bool value);
 void GUI_ContainerAdd(Scene* scene, EntityID containerID, EntityID object);
@@ -94,6 +95,7 @@ ComponentKey GUI_RADIO_BUTTONS_COMPONENT_ID;
 typedef struct slider {
     GUICallback onupdate; // Called whenever the user changes the slider value
     float value; // Will be [0, nNotches-1] when nNotches != 0; otherwise will be [0.0, 1.0]
+    int min;
     int nNotches; // The number of notches
     char label[32];
 } Slider;
@@ -132,4 +134,5 @@ typedef struct container {
     int maxWidth;
 } Container;
 ComponentKey GUI_CONTAINER_COMPONENT_ID;
+ComponentKey GUI_STACK_CONTAINER_COMPONENT_ID;
 ComponentKey GUI_CENTERED_COMPONENT_ID;

@@ -1,9 +1,10 @@
 #ifndef LEXICON_H
 #define LEXICON_H
 
+#include <stdio.h>
 #include <stdbool.h>
 
-#define PARTICLE_SIZE 2
+#define PARTICLE_SIZE 3
 
 /*
 
@@ -35,7 +36,9 @@ struct lexicon_node {
 };
 typedef struct lexicon_node Lexicon;
 
-Lexicon* Lexicon_Create(char* filename, int* status);
+void Lexicon_Create(char* filename, char* outFilename, int* status);
+Lexicon* Lexicon_Read(char* filename);
 void Lexicon_GenerateWord(Lexicon* lex, char* buffer, int maxLength);
+void Lexicon_PrintGraph(Lexicon* graph, FILE* out);
 
 #endif

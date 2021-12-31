@@ -10,26 +10,23 @@ terrain.h
 
 typedef struct terrain {
     float* map;
+    float* timber;
+    float* coal;
     float* ore;
-    int* continents;
-    Arraylist* continentPoints;
+    unsigned short* continents;
     int numContinents;
+    unsigned short* oceans;
+    int numOceans;
+    Arraylist* contOceanAdjacency;
     size_t size;
     size_t tileSize;
     SDL_Texture* texture;
     EntityID* buildings;
     EntityID* walls;
     Arraylist* ports;
-    Arraylist* keyContinents;
 } Terrain;
 
-struct dijkstrasResult {
-    float* dist;
-    int* parent;
-    int crossings;
-};
-
-struct terrain* Terrain_Create(int mapSize, float* map, SDL_Texture* texture);
+struct terrain* Terrain_Create(int mapSize, float* map, float* trees, SDL_Texture* texture);
 void Terrain_Destroy(struct terrain*);
 
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i);
@@ -40,10 +37,8 @@ void Terrain_Render(struct terrain* terrain);
 
 // Continent stuff
 void Terrain_FindPorts(struct terrain* terrain);
-void Terrain_FindContinents(struct terrain* terrain);
-bool Terrain_FindKeyContinents(struct terrain* terrain, Vector from, Vector to);
-void Terrain_EliminateUselessPortPoints(struct terrain* terrain);
-struct dijkstrasResult Terrain_Dijkstra(struct terrain* terrain, Vector from, Vector to);
+void Terrain_FindContinentsAndOceans(struct terrain* terrain);
+void Terrain_EliminateUselessPortPoints(struct terrain* terrain, Arraylist* capitalPoints);
 
 // Some map functions
 float Terrain_GetHeight(struct terrain*, int x, int y);
@@ -54,6 +49,7 @@ Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to,
 
 // Resources
 float Terrain_GetOre(struct terrain*, int x, int y);
+float Terrain_GetTimber(struct terrain* terrain, int x, int y);
 
 // Building map functions
 float Terrain_GetHeightForBuilding(struct terrain*, int x, int y);
@@ -69,6 +65,7 @@ void Terrain_SetWallAt(struct terrain*, EntityID id, int x, int y);
 
 // Map affine transformations
 void Terrain_Translate(SDL_Rect* newPos, float x, float y, float width, float height);
+SDL_Point Terrain_InverseTranslate(int x, int y);
 struct vector Terrain_MousePos();
 
 // Some color mod. functions

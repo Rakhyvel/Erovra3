@@ -40,6 +40,7 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         1,
         nation->unitCount[UnitType_PORT],
         0,
+        100,
         false,
         false,
         PORT_READY_FOCUSED_GUI

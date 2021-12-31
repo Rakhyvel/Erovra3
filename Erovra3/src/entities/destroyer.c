@@ -46,6 +46,7 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
         0.5f, // Defense
         nation->unitCount[UnitType_DESTROYER],
         0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
@@ -61,6 +62,11 @@ EntityID Destroyer_Create(Scene* scene, Vector pos, Nation* nation)
         false
     };
     Scene_Assign(scene, destroyerID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, destroyerID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, destroyerID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, destroyerID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);

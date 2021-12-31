@@ -275,6 +275,10 @@ EntityID Port_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCit
 */
 EntityID Shell_Create(struct scene*, Vector pos, Vector tar, float attack, Nation* nation);
 
+EntityID Timber_Create(struct scene* scene, Vector pos, Nation* nation);
+
+EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation);
+
 /*	Creates a wall entity with components assigned
 * 
 *	@param scene	Pointer to the match scene

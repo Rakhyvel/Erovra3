@@ -475,7 +475,6 @@ char* U8_strdup(const char* string)
         return NULL;
 
 	int size = strlen(string) + 1;
-    printf("%d\n", size);
     result = (char*)malloc(size);
     strcpy_s(result, size, string);
 
@@ -938,7 +937,7 @@ Uint8 FC_UploadGlyphCache(FC_Font* font, int cache_level, SDL_Surface* data_surf
         SDL_SetTextureBlendMode(new_level, SDL_BLENDMODE_BLEND);
 
         // Reset filter mode for the temp texture
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
         {
             Uint8 r, g, b, a;

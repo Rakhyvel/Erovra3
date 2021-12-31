@@ -42,9 +42,10 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
         1.0f,
         0,
         0,
+        100,
         false,
         false,
-		UNIT_FOCUSED_GUI
+		CITY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
@@ -60,7 +61,13 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
     for (int i = 0; i < 4; i++) {
         city.expansions[i] = INVALID_ENTITY_INDEX;
     }
+    city.captureNation = NULL;
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, cityID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, BUILDING_FLAG_COMPONENT_ID, NULL);

@@ -34,25 +34,32 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 #include "./scenes/tournament.h"
 #include "./util/debug.h"
 #include "./util/heap.h"
+#include "./util/lexicon.h"
 #include "engine/apricot.h"
 #include "textures.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <string.h>
 
+//#define CREATE_LEXICON
+#define CREATE_TEXTURES
+
 /*
 	Entry point of program. Inits the game, then starts the game loop */
 int SDL_main(int argc, char** argv)
 {
-    Apricot_Init("Erovra 3.9.5", 1280, 720);
+#ifdef CREATE_LEXICON
+    int status;
+    Lexicon_Create("res/countryNames.txt", "res/countryNames.lex", &status);
+#endif
+    Apricot_Init("Erovra 3.10.0", 1280, 720);
+#ifdef CREATE_TEXTURES
+    Textures_Draw();
+#endif
     GUI_Init();
     Components_Init();
-    Textures_Init();
-#ifdef TOURNAMENT
-    Tournament_Init();
-#else
     Menu_Init();
-#endif
+    Textures_Init();
     Apricot_Run();
     return 0;
 }

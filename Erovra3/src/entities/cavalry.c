@@ -46,6 +46,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         1.0f,
         nation->unitCount[UnitType_CAVALRY],
         0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
@@ -55,7 +56,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
     // -0.25 a second -> 5 * 400 seconds of being alive
 
     Combatant combatant = {
-        0.2f,
+        0.416f,
         68.0f,
         Scene_CreateMask(scene, 2, SPRITE_COMPONENT_ID, LAND_UNIT_FLAG_COMPONENT_ID),
         30,
@@ -63,6 +64,11 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
         true
     };
     Scene_Assign(scene, cavalryID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, cavalryID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, cavalryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

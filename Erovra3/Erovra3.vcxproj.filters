@@ -147,7 +147,7 @@
     <ClCompile Include="src\scenes\pause.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\perlin.c">
+    <ClCompile Include="src\util\noise.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\entities\orderButton.c">
@@ -172,6 +172,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\entities\food.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\entities\timberland.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\entities\timber.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -224,7 +230,7 @@
     <ClInclude Include="src\scenes\pause.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\perlin.h">
+    <ClInclude Include="src\util\noise.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui\SDL_FontCache.h">

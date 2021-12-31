@@ -51,12 +51,14 @@ void Apricot_Init(char* windowTitle, int width, int height)
     atexit(&apricotExit);
 
     // Init SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    printf("Init SDL\n");
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Error: Initializing SDL: %s\n", SDL_GetError());
         exit(1);
     }
 
     // Create Window
+    printf("Create Window\n");
     *_width = width;
     *_height = height;
     *_window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED,
@@ -66,29 +68,38 @@ void Apricot_Init(char* windowTitle, int width, int height)
         exit(2);
     }
 
+	
+    printf("OpenGL hints\n");
+	// HAS TO BE DONE before the renderer is created, otherwise textures will disappear when the window is resized
+	// This however makes it super slow to create the renderer
     if (SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl") == SDL_FALSE) {
         printf("Warning: opengl not set as driver\n");
     }
-    if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0") == SDL_FALSE) {
+    if (SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1") == SDL_FALSE) {
         printf("Didnt work");
     }
 
     // Create Renderer
+    printf("Create Renderer\n");
     *_renderer = SDL_CreateRenderer(Apricot_Window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (Apricot_Renderer == NULL) {
         printf("Error: Creating SDL renderer: %s\n", SDL_GetError());
         exit(3);
     }
     SDL_SetRenderDrawBlendMode(Apricot_Renderer, SDL_BLENDMODE_BLEND);
+    
+    
 
     // Init sound
+    printf("Init sound\n");
     Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, AUDIO_S16SYS, 2, 512);
     Mix_AllocateChannels(4);
 
     // Init scene stack
+    printf("Init scene stack\n");
     sceneStack = Arraylist_Create(3, sizeof(Scene*));
 
-    printf("Started.");
+    printf("Started.\n");
 }
 
 void Apricot_PushScene(Scene* scene)
@@ -154,7 +165,7 @@ void Apricot_Run()
 
         if (!sceneStale && !Apricot_ASAP) { // Do not render if scene is stale. Do not render if ASAP
             elapsedFrames = 0;
-            SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 255);
+            SDL_SetRenderDrawColor(Apricot_Renderer, 19, 20, 23, 255);
             SDL_RenderClear(Apricot_Renderer);
             scene->render(scene);
             SDL_RenderPresent(Apricot_Renderer);

@@ -121,4 +121,6 @@ SDL_Texture* Texture_Create(int width, int height);
 */
 void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i));
 
+void Texture_Save(const char* filename, SDL_Texture* texture);
+
 #endif

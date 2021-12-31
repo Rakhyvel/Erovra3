@@ -9,8 +9,9 @@
 #include "../engine/scene.h"
 #include "../entities/components.h"
 #include "../gui/gui.h"
+#include "../textures.h"
 #include "../util/lexicon.h"
-#include "../util/perlin.h"
+#include "../util/noise.h"
 #include "match.h"
 #include <stdio.h>
 #include <string.h>
@@ -31,7 +32,9 @@ EntityID mapSeedTextBox;
 EntityID AIControlledCheckBox;
 EntityID fogOfWarCheckBox;
 EntityID numNationsSlider;
+EntityID mapStack;
 EntityID terrainImage;
+EntityID treesImage;
 EntityID logoSpacer;
 SDL_Texture* logo;
 
@@ -54,12 +57,12 @@ float logoSpacerAcc;
 
 // Preview map size
 const int size = 4 * 64;
-// Preview map data
+// Preview maps data
 float* map = NULL;
+float* trees = NULL;
 // Preview map texture
 SDL_Texture* previewTexture = NULL;
-// Swapped with previewTexture when updating preview
-SDL_Texture* loading = NULL;
+SDL_Texture* treesTexture = NULL;
 
 // Contains language data for nation name
 Lexicon* lexicon;
@@ -102,7 +105,7 @@ static int getSeed(Scene* scene)
 static int loadAssets(Scene* scene)
 {
     status = 0;
-    lexicon = Lexicon_Create("res/countryNames.txt", &status);
+    lexicon = Lexicon_Read("res/countryNames.lex");
     assetsLoaded = true;
     return 0;
 }
@@ -117,13 +120,12 @@ static int generatePreview(void* ptr)
 {
     Scene* scene = (Scene*)ptr;
     free(map);
+    free(trees);
 
-    // Generate map
+    // Generate terrain
     status = 0;
-    state = GENERATING;
-    map = Perlin_Generate(size, size / 4, getSeed(scene), &status);
+    map = Noise_Generate(size, 1, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
-    Perlin_Normalize(map, size);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
             //map[x + y * size] = map[x + y * size] * 0.5f + (1.0f - seaLevel->value) * 0.5f;
@@ -134,9 +136,17 @@ static int generatePreview(void* ptr)
     // Do erosion
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
     status = 0;
-    state = EROSION;
-    Perlin_Erode(map, size, erosion->value, &status);
-    state = IDLE;
+    Noise_Erode(map, size, erosion->value, &status);
+
+    // Generate trees
+    trees = Noise_Generate(size, 2, getSeed(scene), &status);
+    for (int i = 0; i < size * size; i++) {
+        if (trees[i] < 0.5) {
+            trees[i] = 0;
+        } else {
+            trees[i] = 1;
+        }
+    }
 
     // Set needsRepaint flag. Menu_Update() will monitor this flag and repaint texutre, and unset this flag.
     needsRepaint = 1;
@@ -152,16 +162,17 @@ static int generateFullTerrain(void* ptr)
 
     RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
     int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
+    int tileSize = fullMapSize / 64;
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
 
     /* Generate map */
     free(map);
+    free(trees);
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Perlin_Generate(fullMapSize, fullMapSize / 4, getSeed(scene), &status);
-    Perlin_Normalize(map, fullMapSize);
+    map = Noise_Generate(fullMapSize, 1, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
             map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.33f * powf(map[x + y * fullMapSize], 2) + 0.55f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
@@ -172,7 +183,11 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = EROSION;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    Perlin_Erode(map, fullMapSize, erosion->value, &status);
+    Noise_Erode(map, fullMapSize, erosion->value, &status);
+
+    // Generate trees
+    trees = Noise_Generate(tileSize, 2, getSeed(scene), &status);
+
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
     state = IDLE; // Let other threads start
     done = true;
@@ -186,21 +201,10 @@ static int generateFullTerrain(void* ptr)
  */
 void Menu_ReconstructMap(Scene* scene, EntityID id)
 {
-    // Copy current preview texture to loading texture
-    SDL_SetRenderTarget(Apricot_Renderer, loading);
-    SDL_RenderCopy(Apricot_Renderer, previewTexture, NULL, NULL);
-    // Darken loading texture a bit, return renderer to window
-    SDL_SetRenderDrawColor(Apricot_Renderer, 0, 0, 0, 50);
-    SDL_RenderFillRect(Apricot_Renderer, NULL);
-    SDL_SetRenderTarget(Apricot_Renderer, NULL);
-
-    // Set map preview image entity to display the loading image
-    Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
-    terrain->texture = loading;
-    // (will be reset back to new previewTexture once the following thread finishes updating the map)
-
-    // Call the generatePreview to update the map
+    // Guard against calls while terrain generation is going on
     if (state == IDLE) {
+        state = GENERATING;
+        // Call the generatePreview to update the map
         SDL_Thread* thread = SDL_CreateThread(generatePreview, "Generate preview", scene);
     }
 
@@ -222,7 +226,6 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
 
     /* Reset slider positions */
     srand(time(0));
-    seaLevel->value = ((float)rand()) / ((float)RAND_MAX);
 
     /* Randomize seed */
     char randSeed[32];
@@ -232,6 +235,7 @@ void Menu_RandomizeValues(Scene* scene, EntityID id)
     randSeed[31] = '\0';
     strncpy_s(mapSeed->text, 32, randSeed, 32);
     mapSeed->length = 32;
+    seaLevel->value = ((float)rand()) / ((float)RAND_MAX);
 
     /* Randomize name */
     char randName[10];
@@ -287,6 +291,15 @@ void Menu_Exit(Scene* scene, EntityID id)
     exit(0);
 }
 
+SDL_Color Menu_PaintTrees(float* treesMap, int mapSize, int x, int y, float i)
+{
+    if (treesMap[x + y * mapSize] > 0.5f && map[x + y * size] > 0.5f) {
+        return (SDL_Color) { 22, 50, 22, 100 };
+    } else {
+        return (SDL_Color) { 0, 0, 0, 0 };
+    }
+}
+
 /*	Called every tick. Handles camera velocity and acceleration and GUI 
  *	containers positions on screen, and updates the progress bar and status
  *	text.
@@ -298,7 +311,7 @@ void Menu_Update(Scene* scene)
     // Check to see if the main menu is currently loading in assets
     if (!assetsLoaded) {
         Image* image = (Image*)Scene_GetComponent(scene, loadingAssetsImage, GUI_IMAGE_COMPONENT_ID);
-        image->angle += 6.28f;
+        image->angle += 0.1f;
     }
     // Check to see if the main menu is currently generating a full map
     else if (generating) {
@@ -322,7 +335,7 @@ void Menu_Update(Scene* scene)
             done = false;
             state = IDLE; // Let other threads start
 
-            Match_Init(map, capitalName->text, lexicon, fullMapSize, AIControlled->value, fogOfWar->value, numNations->value);
+            Match_Init(map, trees, capitalName->text, lexicon, fullMapSize, AIControlled->value, fogOfWar->value, numNations->value);
             return; // Always return after scene stack disruption!
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
@@ -335,7 +348,7 @@ void Menu_Update(Scene* scene)
             // Calculate progress bar max status counts based on state
             double denominator = 1;
             if (state == GENERATING) {
-                denominator = log(fullMapSize / 64.0f) / log(2) + 5;
+                denominator = fullMapSize;
                 strncpy_s(label->text, 32, "Generating...", 32);
             } else if (state == EROSION) {
                 strncpy_s(label->text, 32, "Eroding...", 32);
@@ -348,9 +361,9 @@ void Menu_Update(Scene* scene)
         // Signifies that preview map is updated and the preview needs to be redrawn
         if (needsRepaint) {
             Texture_PaintMap(map, size, previewTexture, Terrain_RealisticColor);
+            Texture_PaintMap(trees, size, treesTexture, Menu_PaintTrees);
             needsRepaint = false;
-            Image* terrain = (Image*)Scene_GetComponent(scene, terrainImage, GUI_IMAGE_COMPONENT_ID);
-            terrain->texture = previewTexture;
+            state = IDLE;
         }
 
         GUIComponent* logoSpacerGUI = (GUIComponent*)Scene_GetComponent(scene, logoSpacer, GUI_COMPONENT_ID);
@@ -396,11 +409,13 @@ Scene* Menu_Init()
     Scene* scene = Scene_Create(GUI_Register, &Menu_Update, &Menu_Render, NULL);
 
     logo = Texture_Load("res/logo.png");
-    loading = Texture_Load("res/loading.png");
     loadingCircle = Texture_Load("res/loadingCircle.png");
 
     SDL_Thread* assetLoadingThread = SDL_CreateThread(loadAssets, "Load assets", scene);
     previewTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
+    treesTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
+    SDL_SetTextureBlendMode(previewTexture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureBlendMode(treesTexture, SDL_BLENDMODE_BLEND);
 
     camera = (Vector) { -4000, -4000 };
     vel = (Vector) { 0, 0 };
@@ -411,14 +426,18 @@ Scene* Menu_Init()
     logoSpacerAcc = -20;
 
     mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
-    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, 0, &Menu_ReconstructMap);
-    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, 0, &Menu_ReconstructMap);
+    seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, 0, 0, &Menu_ReconstructMap);
+    erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, 0, 0, &Menu_ReconstructMap);
     nationNameTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", NULL);
     mapSeedTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Map seed", "", &Menu_ReconstructMap);
     AIControlledCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "AI controlled", false);
     fogOfWarCheckBox = GUI_CreateCheckBox(scene, (Vector) { 0, 0 }, "Fog of war", true);
-    numNationsSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Number of nations", 2, 7, NULL);
+    numNationsSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Number of nations", 2, 1, 8, NULL);
+    mapStack = GUI_CreateStackContainer(scene, (Vector) { 0, 0 }, 447, 447);
     terrainImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 447, 447, previewTexture);
+    treesImage = GUI_CreateImage(scene, (Vector) { 0, 0 }, 447, 447, treesTexture);
+    GUI_ContainerAdd(scene, mapStack, terrainImage);
+    GUI_ContainerAdd(scene, mapStack, treesImage);
 
     statusText = GUI_CreateLabel(scene, (Vector) { 0, 0 }, "Um, lol?");
     progressBar = GUI_CreateProgressBar(scene, (Vector) { 0, 0 }, 840, 0.7f);
@@ -453,7 +472,7 @@ Scene* Menu_Init()
     GUI_ContainerAdd(scene, newGameForm, AIControlledCheckBox);
     GUI_ContainerAdd(scene, newGameForm, fogOfWarCheckBox);
     GUI_ContainerAdd(scene, newGameForm, numNationsSlider);
-    GUI_ContainerAdd(scene, newGameForm, terrainImage);
+    GUI_ContainerAdd(scene, newGameForm, mapStack);
 
     newGameActions = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, 51);
     GUI_SetBackgroundColor(scene, newGameActions, (SDL_Color) { 0, 0, 0, 0 });

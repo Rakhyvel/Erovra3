@@ -31,7 +31,7 @@ enum variables {
     HAS_AVAILABLE_ACADEMY, // Any academy that isn't producing an order
     HAS_COINS, // More like "has enough coin production"
     HAS_ORE, // More like "has enough ore production"
-    HAS_POPULATION,
+    HAS_FOOD, // More like "has enough food production"
 
     SPACE_FOR_EXPANSION,
     SPACE_FOR_TWO_EXPANSIONS,
@@ -52,15 +52,32 @@ enum variables {
     AFFORD_ATTACKER_COINS,
     AFFORD_ATTACKER_ORE,
     AFFORD_ENGINEER_COINS,
+
     AFFORD_CITY_COINS,
-    AFFORD_MINE_COINS,
-    AFFORD_FACTORY_COINS,
-    AFFORD_PORT_COINS,
-    AFFORD_AIRFIELD_COINS,
+	AFFORD_CITY_TIMBER,
+
+	AFFORD_TIMBERLAND_COINS,
+
     AFFORD_FARM_COINS,
+    AFFORD_FARM_TIMBER,
+
+    AFFORD_MINE_COINS,
+    AFFORD_MINE_TIMBER,
+
     AFFORD_ACADEMY_COINS,
+    AFFORD_ACADEMY_TIMBER,
+
+    AFFORD_FACTORY_COINS,
+    AFFORD_FACTORY_TIMBER,
+
+    AFFORD_PORT_COINS,
+    AFFORD_PORT_TIMBER,
+
+    AFFORD_AIRFIELD_COINS,
+    AFFORD_AIRFIELD_TIMBER,
 };
 
+void AI_TargetGroundUnitsRandomly(Scene* scene);
 void AI_Init(Goap* goap);
 
 #endif

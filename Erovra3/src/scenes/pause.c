@@ -175,9 +175,9 @@ Scene* Pause_Init(Scene* mScene, enum pauseState s)
 
     pauseMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, pauseMenuContainer, GUI_CENTERED_COMPONENT_ID, NULL);
-    GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Surrender", 0, &Pause_Surrender));
-    GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Settings", 0, NULL));
     GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Back to game", 0, &Pause_BackToGame));
+    GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Settings", 0, NULL));
+    GUI_ContainerAdd(scene, pauseMenuContainer, GUI_CreateButton(scene, (Vector) { 0, 0 }, 280, 50, "Surrender", 0, &Pause_Surrender));
 
     victoryMenuContainer = GUI_CreateContainer(scene, (Vector) { 0, 0 }, -1, -1);
     Scene_Assign(scene, victoryMenuContainer, GUI_CENTERED_COMPONENT_ID, NULL);

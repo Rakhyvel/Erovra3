@@ -3,18 +3,20 @@
 
 void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag)
 {
+    nation->capital = INVALID_ENTITY_INDEX;
     nation->color = color;
     nation->controlFlag = controlFlag;
 
     // Initial resources
-    nation->resources[ResourceType_COIN] = 25;
-    nation->resources[ResourceType_ORE] = 0;
     nation->resources[ResourceType_POPULATION] = 1;
-    nation->resources[ResourceType_POPULATION_CAPACITY] = 1;
-    nation->resources[ResourceType_FOOD] = 0;
+    nation->resources[ResourceType_COIN] = 25;
+    nation->resources[ResourceType_FOOD] = 5;
+    nation->resources[ResourceType_TIMBER] = 0;
+    nation->resources[ResourceType_ORE] = 0;
 
     // Coin costs
     nation->costs[ResourceType_COIN][UnitType_CITY] = 10;
+    nation->costs[ResourceType_COIN][UnitType_TIMBERLAND] = 10;
     nation->costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation->costs[ResourceType_COIN][UnitType_MINE] = 10;
     nation->costs[ResourceType_COIN][UnitType_PORT] = 10;
@@ -33,20 +35,31 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->costs[ResourceType_COIN][UnitType_ATTACKER] = 15;
     nation->costs[ResourceType_COIN][UnitType_BOMBER] = 400;
 
+	// Wood costs
+    nation->costs[ResourceType_TIMBER][UnitType_CITY] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_FACTORY] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_MINE] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_PORT] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_AIRFIELD] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_ACADEMY] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_WALL] = 5;
+
     // Ore costs
     nation->costs[ResourceType_ORE][UnitType_CITY] = 0;
+    nation->costs[ResourceType_ORE][UnitType_TIMBERLAND] = 0;
     nation->costs[ResourceType_ORE][UnitType_FACTORY] = 0;
     nation->costs[ResourceType_ORE][UnitType_PORT] = 0;
     nation->costs[ResourceType_ORE][UnitType_MINE] = 0;
     nation->costs[ResourceType_ORE][UnitType_AIRFIELD] = 0;
-    nation->costs[ResourceType_ORE][UnitType_CAVALRY] = 5;
-    nation->costs[ResourceType_ORE][UnitType_ARTILLERY] = 5;
-    nation->costs[ResourceType_ORE][UnitType_DESTROYER] = 5;
-    nation->costs[ResourceType_ORE][UnitType_CRUISER] = 5;
-    nation->costs[ResourceType_ORE][UnitType_BATTLESHIP] = 5;
-    nation->costs[ResourceType_ORE][UnitType_FIGHTER] = 5;
-    nation->costs[ResourceType_ORE][UnitType_ATTACKER] = 5;
-    nation->costs[ResourceType_ORE][UnitType_BOMBER] = 5;
+    nation->costs[ResourceType_ORE][UnitType_INFANTRY] = 15;
+    nation->costs[ResourceType_ORE][UnitType_CAVALRY] = 15;
+    nation->costs[ResourceType_ORE][UnitType_ARTILLERY] = 15;
+    nation->costs[ResourceType_ORE][UnitType_DESTROYER] = 15;
+    nation->costs[ResourceType_ORE][UnitType_CRUISER] = 15;
+    nation->costs[ResourceType_ORE][UnitType_BATTLESHIP] = 15;
+    nation->costs[ResourceType_ORE][UnitType_FIGHTER] = 15;
+    nation->costs[ResourceType_ORE][UnitType_ATTACKER] = 15;
+    nation->costs[ResourceType_ORE][UnitType_BOMBER] = 15;
 
     nation->visitedSpacesSize = mapSize / 32 + 1;
     nation->visitedSpaces = malloc(nation->visitedSpacesSize * nation->visitedSpacesSize * sizeof(float));
@@ -57,7 +70,6 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
 
     nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
     nation->cities = Arraylist_Create(10, sizeof(EntityID));
-    sizeof(Nation);
 
     if (controlFlag == AI_COMPONENT_ID) {
         Goap_Create(&(nation->goap), goapInit);

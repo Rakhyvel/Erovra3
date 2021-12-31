@@ -46,6 +46,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         1.0f, // 1 damage every 30 ticks -> 300 ticks,
         nation->unitCount[UnitType_INFANTRY],
         0,
+        100,
         false,
         false,
         UNIT_FOCUSED_GUI
@@ -53,7 +54,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.2f,
+        0.416f,
         68.0f,
         Scene_CreateMask(scene, 1, LAND_UNIT_FLAG_COMPONENT_ID),
         30,
@@ -61,6 +62,11 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
         true
     };
     Scene_Assign(scene, infantryID, COMBATANT_COMPONENT_ID, &combatant);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, infantryID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, infantryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, infantryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);

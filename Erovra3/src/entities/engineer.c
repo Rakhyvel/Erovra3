@@ -47,11 +47,17 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         0.0005f, // 1-shot kill,
         nation->unitCount[UnitType_ENGINEER],
         0,
+        100,
         false,
         false,
         ENGINEER_FOCUSED_GUI
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
+
+    Morale morale = {
+        1.0f
+    };
+    Scene_Assign(scene, engineerID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, engineerID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
