@@ -286,25 +286,37 @@ SDL_Texture* Texture_Create(int width, int height)
     return texture;
 }
 
-void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i))
+Uint8* Texture_PaintMap_ThreadSafe(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i), int* status)
 {
-    Uint8* pixels = calloc(mapSize * mapSize, 4);
+    int width, height;
+    SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+    float dx = (float)mapSize / (float)width;
+    float dy = (float)mapSize / (float)height;
+    Uint8* pixels = calloc(width * height, 4);
     if (!pixels) {
         PANIC("Memory error Texture_PaintMap() creating pixels\n");
     }
-    for (int x = 0; x < mapSize; x++) {
-        for (int y = 0; y < mapSize; y++) {
-            const unsigned int offset = (mapSize * 4 * y) + x * 4;
-            float i = map[y * mapSize + x];
+    for (int i = 0; i < width * height; i++) {
+        int x = (i % width) * dx;
+        int y = (i / width) * dy;
 
-            SDL_Color terrainColor = colorFunction(map, mapSize, x, y, i);
-            pixels[offset + 0] = terrainColor.b;
-            pixels[offset + 1] = terrainColor.g;
-            pixels[offset + 2] = terrainColor.r;
-            pixels[offset + 3] = terrainColor.a;
-        }
+        SDL_Color terrainColor = colorFunction(map, mapSize, x, y, map[y * mapSize + x]);
+        pixels[i * 4 + 0] = terrainColor.b;
+        pixels[i * 4 + 1] = terrainColor.g;
+        pixels[i * 4 + 2] = terrainColor.r;
+        pixels[i * 4 + 3] = terrainColor.a;
+        (*status)++;
     }
-    if (SDL_UpdateTexture(texture, NULL, pixels, mapSize * 4) == -1) {
+    return pixels;
+}
+
+void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i))
+{
+    int status = 0;
+    Uint8* pixels = Texture_PaintMap_ThreadSafe(map, mapSize, texture, colorFunction, &status);
+    int width, height;
+    SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+    if (SDL_UpdateTexture(texture, NULL, pixels, width * 4) == -1) {
         PANIC("%s", SDL_GetError());
     }
     free(pixels);

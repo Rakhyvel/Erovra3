@@ -331,9 +331,6 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vect
         CardinalDirection dir = Match_FindDir(diff);
         EntityID building = INVALID_ENTITY_INDEX;
         switch (type) {
-        case UnitType_MINE:
-            building = Mine_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
-            break;
         case UnitType_FACTORY:
             building = Factory_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
@@ -393,6 +390,7 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
             building = Timberland_Create(scene, pos, nation);
             break;
         case UnitType_MINE:
+            building = Mine_Create(scene, pos, nation);
             break;
         default:
             PANIC("Add the building, dumby!");
@@ -1591,7 +1589,7 @@ void Match_ProduceResources(struct scene* scene)
             resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
             if (unit->type == UnitType_TIMBERLAND) {
                 terrain->timber[(int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize] *= 0.999f;
-                resourceProducer->produceRate = (3.0f / Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y) > 0.5 ? 1 : 0);
+                resourceProducer->produceRate = (2.0f / Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y) > 0.5 ? 1 : 0);
             }
         }
     }
@@ -1752,15 +1750,23 @@ void Match_SpriteRender(struct scene* scene, ComponentKey layer)
 
 void Match_RenderResources(Scene* scene)
 {
-    SDL_SetTextureAlphaMod(TIMBER_INDICATOR_TEXTURE_ID, 200);
     SDL_Rect rect = { 0, 0, 0, 0 };
     for (int x = 16; x < terrain->size; x += 32) {
         float cos = fastCos(((int)(Apricot_Ticks + x) % 628) / 100.0);
         for (int y = 16; y < terrain->size; y += 32) {
             float height = Terrain_GetHeight(terrain, x, y);
-            if (perlin2d(x, y, 0.01f, 3, 0) < sqrtf(2.0f * Terrain_GetTimber(terrain, x, y) - 1.0f) && height > 0.5 && Terrain_GetTimber(terrain, x, y) > 0.5) {
+            if (height <= 0.5f) {
+                continue;
+            }
+            if (perlin2d(x, y, 0.01f, 1, 0) < sqrtf(2.0f * Terrain_GetTimber(terrain, x, y) - 1.0f) && Terrain_GetTimber(terrain, x, y) > 0.5) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 40);
                 Texture_Draw(TIMBER_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, cos * height * 0.2f);
+            } else if (perlin2d(x, y, 0.1f, 1, 1) < sqrtf(2.0f * Terrain_GetOre(terrain, x, y) - 1.0f) && Terrain_GetOre(terrain, x, y) > 0.5) {
+                Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
+                Texture_Draw(ORE_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
+            } else if (Terrain_GetCoal(terrain, x, y) > 0.5) {
+                Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
+                Texture_Draw(COAL_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
             }
         }
     }
@@ -2083,7 +2089,7 @@ void Match_RenderOrderButtons(Scene* scene)
 
 void Match_RenderNationInfo(Scene* scene)
 {
-    SDL_Rect rect = { 0, 0, 140, 82 };
+    SDL_Rect rect = { 0, 0, 140, 124 };
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
@@ -2094,7 +2100,11 @@ void Match_RenderNationInfo(Scene* scene)
     Texture_Draw(POPULATION_TEXTURE_ID, 8, 32, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_FOOD]);
     Texture_Draw(TIMBER_TEXTURE_ID, 8, 56, 20, 20, 0);
-    FC_Draw(font, Apricot_Renderer, 36, 53, "%d", nation->resources[ResourceType_TIMBER]);
+    FC_Draw(font, Apricot_Renderer, 36, 54, "%d", nation->resources[ResourceType_TIMBER]);
+    Texture_Draw(COAL_TEXTURE_ID, 8, 80, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 78, "%d", nation->resources[ResourceType_COAL]);
+    Texture_Draw(ORE_TEXTURE_ID, 8, 104, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 102, "%d", nation->resources[ResourceType_ORE]);
 }
 
 void Match_RenderCityName(Scene* scene)
@@ -2373,30 +2383,6 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
     }
 }
 
-/*
-	Called by the Engineer's "Test Soil" button. Gives the user the info for the soil */
-void Match_EngineerTestSoil(Scene* scene, EntityID guiID)
-{
-    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
-    {
-        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Nation* nation = sprite->nation;
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        if (unit->focused) {
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    int x0 = (x + (int)sprite->pos.x / 64);
-                    int y0 = (y + (int)sprite->pos.y / 64);
-                    if (x0 < 0 || x0 >= terrain->tileSize || y0 < 0 || y0 >= terrain->tileSize || Terrain_GetHeightForBuilding(terrain, x * 64 + sprite->pos.x, y * 64 + sprite->pos.y) <= 0.5) {
-                        continue;
-                    }
-                    nation->showOre[x0 + y0 * terrain->tileSize] = true;
-                }
-            }
-        }
-    }
-}
-
 /*	Callback for factory and port GUI buttons. GUI buttons should have UnitType
 	stored in their meta data. 
 	
@@ -2479,7 +2465,6 @@ void Match_Destroy(Scene* scene)
     for (int i = 0; i < nations->size; i++) {
         Nation* nation = Arraylist_Get(nations, i);
         free(nation->visitedSpaces);
-        free(nation->showOre);
         Arraylist_Destroy(nation->cities);
     }
     Arraylist_Destroy(nations);
@@ -2487,19 +2472,17 @@ void Match_Destroy(Scene* scene)
 
 /*
 	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
-Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled, bool fogOfWar, int nNations)
+Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool AIControlled, bool fogOfWar, int nNations)
 {
+    terrain = _terrain;
     Scene* match = Scene_Create(&Components_Register, &Match_Update, &Match_Render, &Match_Destroy);
-    SDL_Texture* texture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
-    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
-    miniMapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, mapSize, mapSize);
-    Texture_PaintMap(map, mapSize, miniMapTexture, Terrain_MiniMapColor);
-    terrain = Terrain_Create(mapSize, map, trees, texture);
+    miniMapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, miniMapSize, miniMapSize);
+    Texture_PaintMap(terrain->map, terrain->size, miniMapTexture, Terrain_MiniMapColor);
     nations = Arraylist_Create(1, sizeof(Nation));
     messages = Arraylist_Create(10, sizeof(struct message));
     GUI_Register(match);
-    printf("Match: %p\n", match);
     doFogOfWar = fogOfWar;
+    printf("Match: %p\n", match);
 
     orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
@@ -2530,14 +2513,13 @@ Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon,
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build City", CITY_TEXTURE_ID, UnitType_CITY, &Match_EngineerAddCity));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Timberland", MINE_TEXTURE_ID, UnitType_TIMBERLAND, &Match_EngineerAddBuilding));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddBuilding));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Academy", ACADEMY_TEXTURE_ID, UnitType_ACADEMY, &Match_EngineerAddExpansion));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Factory", FACTORY_TEXTURE_ID, UnitType_FACTORY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Airfield", AIRFIELD_TEXTURE_ID, UnitType_AIRFIELD, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Wall", WALL_TEXTURE_ID, UnitType_WALL, &Match_EngineerAddWall));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 204, 48));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Test Soil", 0, &Match_EngineerTestSoil));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ENGINEER_FOCUSED_GUI, false);
 
@@ -2598,9 +2580,7 @@ Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon,
     GUI_ContainerAdd(match, PORT_BUSY_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 204, 48, "Cancel Order", 0, &Match_ProducerCancelOrder));
     GUI_SetShown(match, PORT_BUSY_FOCUSED_GUI, false);
 
-    Texture_PaintMap(map, mapSize, texture, Terrain_RealisticColor);
-
-    int tileSize = mapSize / 64;
+    int tileSize = terrain->size / 64;
     int trySize = 10000;
     Arraylist* nationVectors = Arraylist_Create(nNations, sizeof(Vector));
     Arraylist* tempVectors = Arraylist_Create(nNations, sizeof(Vector));
@@ -2616,7 +2596,7 @@ Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon,
             float randX = 64 * (rand() % tileSize) + 32;
             float randY = 64 * (rand() % tileSize) + 32;
             Vector v = { randX, randY };
-            if (!Terrain_IsSolidSquare(terrain, v)) {
+            if (!Terrain_IsSolidSquare(terrain, v) || (Terrain_GetTimber(terrain, randX, randY) > 0.5 && Terrain_GetOre(terrain, randX, randY) > 0.5 && Terrain_GetCoal(terrain, randX, randY) > 0.5)) {
                 j--;
                 continue;
             }

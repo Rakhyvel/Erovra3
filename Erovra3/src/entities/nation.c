@@ -11,14 +11,14 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->resources[ResourceType_POPULATION] = 1;
     nation->resources[ResourceType_COIN] = 25;
     nation->resources[ResourceType_FOOD] = 5;
-    nation->resources[ResourceType_TIMBER] = 0;
+    nation->resources[ResourceType_TIMBER] = 4;
     nation->resources[ResourceType_ORE] = 0;
 
     // Coin costs
     nation->costs[ResourceType_COIN][UnitType_CITY] = 10;
-    nation->costs[ResourceType_COIN][UnitType_TIMBERLAND] = 10;
+    nation->costs[ResourceType_COIN][UnitType_TIMBERLAND] = 5;
     nation->costs[ResourceType_COIN][UnitType_FACTORY] = 10;
-    nation->costs[ResourceType_COIN][UnitType_MINE] = 10;
+    nation->costs[ResourceType_COIN][UnitType_MINE] = 5;
     nation->costs[ResourceType_COIN][UnitType_PORT] = 10;
     nation->costs[ResourceType_COIN][UnitType_AIRFIELD] = 20;
     nation->costs[ResourceType_COIN][UnitType_FARM] = 10;
@@ -65,8 +65,6 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->visitedSpaces = malloc(nation->visitedSpacesSize * nation->visitedSpacesSize * sizeof(float));
 
     nation->highPrioritySpaces = Arraylist_Create(10, sizeof(Vector));
-
-    nation->showOre = calloc(mapSize / 64 * mapSize / 64, sizeof(bool));
 
     nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
     nation->cities = Arraylist_Create(10, sizeof(EntityID));

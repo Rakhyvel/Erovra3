@@ -28,7 +28,7 @@ Scene* Tournament_Init()
             map[x + y * 1024] = 0.5f * map[x + y * 1024] + 0.5f;
         }
     }
-    Terrain* terrain = Terrain_Create(1024, map, NULL, NULL);
+    Terrain* terrain = Terrain_Create(1024, map, NULL, NULL, NULL, NULL);
 
     while (1) {
         clock_t time = clock();

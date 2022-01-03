@@ -1,9 +1,3 @@
-/*
-SDL_FontCache: A font cache for SDL and SDL_ttf
-by Jonathan Dearborn
-See SDL_FontCache.h for license info.
-*/
-
 #include "SDL_FontCache.h"
 
 #include <stdio.h>

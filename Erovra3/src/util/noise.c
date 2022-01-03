@@ -429,7 +429,7 @@ void Noise_Erode(float* map, int mapSize, float intensity, int* status)
     float evaporateSpeed = 100.0f;
     float gravity = 4.0f;
 
-    for (int i = 0; i < mapSize * mapSize * intensity; i++) {
+    for (int i = 0; i < mapSize * intensity; i++) {
         float posX = ((float)rand() / (float)RAND_MAX) * (mapSize - 2);
         float posY = ((float)rand() / (float)RAND_MAX) * (mapSize - 2);
         float initPosX = posX;

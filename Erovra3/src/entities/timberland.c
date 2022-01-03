@@ -48,7 +48,7 @@ EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, timberlandID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        (3.0f / Terrain_GetTimber(terrain, (int)pos.x, (int)pos.y) > 0.5 ? 1 : 0), // Doesn't matter, is updated by match_produceresources
+        (2.0f / Terrain_GetTimber(terrain, (int)pos.x, (int)pos.y) > 0.5 ? 1 : 0), // Doesn't matter, is updated by match_produceresources
         &Timber_Create
     };
     Scene_Assign(scene, timberlandID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

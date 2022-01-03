@@ -65,12 +65,20 @@ void Textures_Init()
     COIN_SHADOW_TEXTURE_ID = Texture_Load("res/coin_shadow.png");
     ORE_TEXTURE_ID = Texture_Load("res/ore.png");
     ORE_SHADOW_TEXTURE_ID = Texture_Load("res/ore_shadow.png");
+    COAL_TEXTURE_ID = Texture_Load("res/coal.png");
+    COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal_shadow.png");
     TIMBER_TEXTURE_ID = Texture_Load("res/timber.png");
     TIMBER_SHADOW_TEXTURE_ID = Texture_Load("res/timber_shadow.png");
     POPULATION_TEXTURE_ID = Texture_Load("res/population.png");
     ARROW_TEXTURE_ID = Texture_Load("res/arrow.png");
     ARROW_SHADOW_TEXTURE_ID = Texture_Load("res/arrow_shadow.png");
     TIMBER_INDICATOR_TEXTURE_ID = Texture_Load("res/timber_indicator.png");
+    ORE_INDICATOR_TEXTURE_ID = Texture_Load("res/ore_indicator.png");
+    COAL_INDICATOR_TEXTURE_ID = Texture_Load("res/coal_indicator.png");
+
+    SDL_SetTextureAlphaMod(TIMBER_INDICATOR_TEXTURE_ID, 100); // So that strokes don't overlap
+    SDL_SetTextureAlphaMod(ORE_INDICATOR_TEXTURE_ID, 140);
+    SDL_SetTextureAlphaMod(COAL_INDICATOR_TEXTURE_ID, 140);
 }
 
 void Textures_Draw()
@@ -94,7 +102,8 @@ void Textures_Draw()
     Polygon bomberTail = Polygon_Create("res/bomber_tail.gon");
     Polygon bomberNacelle = Polygon_Create("res/bomber_nacelle.gon");
     Polygon tree = Polygon_Create("res/tree.gon");
-    Polygon treeTrunk = Polygon_Create("res/tree_trunk.gon");
+    Polygon rock0 = Polygon_Create("res/rock0.gon");
+    Polygon rock0_highlight = Polygon_Create("res/rock0_highlight.gon");
 
     BULLET_TEXTURE_ID = Texture_Load("res/bullet.png");
     BULLET_SHADOW_TEXTURE_ID = Texture_Load("res/bullet.png");
@@ -108,6 +117,8 @@ void Textures_Draw()
     ORE_SHADOW_TEXTURE_ID = Texture_Load("res/ore.png");
     TIMBER_TEXTURE_ID = Texture_Load("res/timber.png");
     TIMBER_SHADOW_TEXTURE_ID = Texture_Load("res/timber.png");
+    COAL_TEXTURE_ID = Texture_Load("res/coal.png");
+    COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal.png");
 
     CITY_TEXTURE_ID = Texture_Create(320, 320);
     CITY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
@@ -162,6 +173,8 @@ void Textures_Draw()
     ARROW_SHADOW_TEXTURE_ID = Texture_Create(64, 64);
 
     TIMBER_INDICATOR_TEXTURE_ID = Texture_Create(200, 500);
+    ORE_INDICATOR_TEXTURE_ID = Texture_Create(250, 250);
+    COAL_INDICATOR_TEXTURE_ID = Texture_Create(250, 250);
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
@@ -171,6 +184,7 @@ void Textures_Draw()
     Texture_CreateShadow(COIN_SHADOW_TEXTURE_ID, COIN_TEXTURE_ID);
     Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
     Texture_CreateShadow(TIMBER_SHADOW_TEXTURE_ID, TIMBER_TEXTURE_ID);
+    Texture_CreateShadow(COAL_SHADOW_TEXTURE_ID, COAL_TEXTURE_ID);
 
     Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 0, 79, 206, 255 });
     Texture_CreateShadow(ARROW_SHADOW_TEXTURE_ID, ARROW_TEXTURE_ID);
@@ -186,8 +200,9 @@ void Textures_Draw()
     Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_pole.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_flag.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
 
-    Texture_DrawPolygon(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 0, 0, 0, 255 }, 20);
-    Texture_DrawPolygon(MINE_OUTLINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 60);
+    Texture_DrawBezier(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 0, 0, 0, 255 }, 60);
+    Texture_DrawBezier(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 20);
+    Texture_DrawBezier(MINE_OUTLINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 100);
 
     Texture_FillPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -320,7 +335,11 @@ void Textures_Draw()
 
     tree.x = 100;
     tree.y = 125;
-    Texture_DrawPolygon(TIMBER_INDICATOR_TEXTURE_ID, tree, (SDL_Color) { 15, 42, 30, 255 }, 20);
+    Texture_DrawPolygon(TIMBER_INDICATOR_TEXTURE_ID, tree, (SDL_Color) { 15, 42, 30, 255 }, 20); // Has to be opaque so that strokes don't overlap
+    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0, (SDL_Color) { 90, 90, 90, 255 });
+    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0_highlight, (SDL_Color) { 140, 140, 140, 255 });
+    Texture_FillPolygon(COAL_INDICATOR_TEXTURE_ID, rock0, (SDL_Color) { 0, 0, 0, 255 });
+    Texture_FillPolygon(COAL_INDICATOR_TEXTURE_ID, rock0_highlight, (SDL_Color) { 40, 40, 40, 255 });
 
     Texture_Save("res/bullet_shadow.png", BULLET_SHADOW_TEXTURE_ID);
     Texture_Save("res/bomb_shadow.png", BOMB_SHADOW_TEXTURE_ID);
@@ -328,6 +347,7 @@ void Textures_Draw()
     Texture_Save("res/shell_shadow.png", SHELL_SHADOW_TEXTURE_ID);
     Texture_Save("res/coin_shadow.png", COIN_SHADOW_TEXTURE_ID);
     Texture_Save("res/ore_shadow.png", ORE_SHADOW_TEXTURE_ID);
+    Texture_Save("res/coal_shadow.png", COAL_SHADOW_TEXTURE_ID);
     Texture_Save("res/timber_shadow.png", TIMBER_SHADOW_TEXTURE_ID);
     Texture_Save("res/city.png", CITY_TEXTURE_ID);
     Texture_Save("res/city_outline.png", CITY_OUTLINE_TEXTURE_ID);
@@ -382,4 +402,6 @@ void Textures_Draw()
     Texture_Save("res/arrow_shadow.png", ARROW_SHADOW_TEXTURE_ID);
 
     Texture_Save("res/timber_indicator.png", TIMBER_INDICATOR_TEXTURE_ID);
+    Texture_Save("res/ore_indicator.png", ORE_INDICATOR_TEXTURE_ID);
+    Texture_Save("res/coal_indicator.png", COAL_INDICATOR_TEXTURE_ID);
 }

@@ -212,7 +212,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation);
 *	@param nation	Nation EntityID for unit
 *	@return EntityID of created mine
 */
-EntityID Mine_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
+EntityID Mine_Create(struct scene*, Vector pos, Nation* nation);
 
 /*	Creates a nation entity with components assigned
 * 

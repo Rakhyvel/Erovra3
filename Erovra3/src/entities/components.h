@@ -49,7 +49,8 @@ typedef enum unitType {
 typedef enum resourceType {
     ResourceType_COIN,
     ResourceType_ORE,
-	ResourceType_TIMBER,
+    ResourceType_TIMBER,
+    ResourceType_COAL,
     ResourceType_POPULATION,
 	ResourceType_FOOD,
     _ResourceType_Length
@@ -203,7 +204,6 @@ typedef struct nation {
     float* visitedSpaces; // Dynamic array, spaces that units have been to. Only used by AI's
     size_t visitedSpacesSize;  // Twice the tile size
     Arraylist* highPrioritySpaces; // A list of vectors of spaces where enemies have been spotted
-    bool* showOre; // Dynamic array, whether or not to show ore at a tile
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
     Goap goap; // A Goal-Oritented Action Planner for the AI
 } Nation;

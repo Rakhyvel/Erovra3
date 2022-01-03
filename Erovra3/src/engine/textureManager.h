@@ -120,6 +120,7 @@ SDL_Texture* Texture_Create(int width, int height);
  * @param colorFunction The function that takes in the map, mapSize, position, and the height on the map and returns a color for that pixel.
 */
 void Texture_PaintMap(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i));
+Uint8* Texture_PaintMap_ThreadSafe(float* map, int mapSize, SDL_Texture* texture, SDL_Color(colorFunction)(float* map, int mapSize, int x, int y, float i), int* status);
 
 void Texture_Save(const char* filename, SDL_Texture* texture);
 

@@ -39,4 +39,4 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vect
 void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vector pos);
 
 void Match_Render(Scene* scene);
-Scene* Match_Init(float* map, float* trees, char* capitalName, Lexicon* lexicon, int mapSize, bool AIControlled, bool fogOfWar, int numNations);
+Scene* Match_Init(Terrain* terrain, char* capitalName, Lexicon* lexicon, bool AIControlled, bool fogOfWar, int numNations);

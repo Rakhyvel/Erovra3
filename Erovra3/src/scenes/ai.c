@@ -101,7 +101,7 @@ static void findExpansionSpot(Scene* scene, Nation* nation, UnitType type, bool 
 }
 
 // Finds a good tile for a timberland unit and sends an engineer there to buy it
-static void findTimberlandTile(Scene* scene, Nation* nation)
+static void findBuildingTile(Scene* scene, Nation* nation, UnitType type)
 {
     // Find an engineer for our nation
     system(scene, id, ENGINEER_UNIT_FLAG_COMPONENT_ID)
@@ -126,12 +126,18 @@ static void findTimberlandTile(Scene* scene, Nation* nation)
         int dy = yOffsets[r];
         for (int i = 0; i < terrain->tileSize * terrain->tileSize; i++) {
             Vector point = { (x + (int)(sprite->pos.x / 64)) * 64 + 32, (y + (int)(sprite->pos.y / 64)) * 64 + 32 };
-            if (Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_GetTimber(terrain, point.x, point.y) > 0.5f && Terrain_LineOfSight(terrain, sprite->pos, point, sprite->z)) {
+            if (type == UnitType_TIMBERLAND && Terrain_GetTimber(terrain, point.x, point.y) < 0.5f) {
+                continue;
+            } else if (type == UnitType_MINE && Terrain_GetOre(terrain, point.x, point.y) < 0.5f) {
+                continue;
+            }
+            if (Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, sprite->pos, point, sprite->z)) {
                 target->tar = point;
                 target->lookat = point;
                 if (Vector_CabDist(sprite->pos, target->tar) < 32) {
-                    Match_BuyBuilding(scene, UnitType_TIMBERLAND, sprite->nation, sprite->pos);
+                    Match_BuyBuilding(scene, type, sprite->nation, sprite->pos);
                 }
+                printf("Done! Timberland: %d\n", type == UnitType_TIMBERLAND);
                 return;
             }
             // Update spiral
@@ -781,12 +787,12 @@ void AI_BuildPortCity(Scene* scene, Nation* nation)
 
 void AI_BuildTimberland(Scene* scene, Nation* nation)
 {
-    findTimberlandTile(scene, nation);
+    findBuildingTile(scene, nation, UnitType_TIMBERLAND);
 }
 
 void AI_BuildMine(Scene* scene, Nation* nation)
 {
-    findExpansionSpot(scene, nation, UnitType_MINE, false);
+    findBuildingTile(scene, nation, UnitType_MINE);
 }
 
 void AI_BuildFactory(Scene* scene, Nation* nation)

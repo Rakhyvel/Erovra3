@@ -334,7 +334,7 @@ x More than one nation (Maybe an array of enemy nations)
 	x create and read in lexicon
 	x AI moves player units >:(
 - Resources change
-	- Farms produce food just like a resource producer
+	x Farms produce food just like a resource producer
 		x Is consumed by units
 		x Change in morale = amount of food + consumer goods
 		x If morale gets too low, cities and combatants rebel
@@ -342,15 +342,15 @@ x More than one nation (Maybe an array of enemy nations)
 		x Fix population and nation info
 		x Add morale indicator in unit gui, low med high
 		x City names in GUI
-	- Timber
+	x Timber
 		x Gotten from timberland, from places where it's tree-y
 		x Not an expansion, they should be placed anywhere
 		x Add resource to nation GUI
 		x Used to build buildings
-		- AI know about timber
-		- LIMITED!
+		x AI know about timber
+		x LIMITED!
 	- New units in this order
-		- Timberland
+		x Timberland
 		- Power plant
 			- Coal = electricity
 		- Power line
@@ -360,20 +360,27 @@ x More than one nation (Maybe an array of enemy nations)
 			- Electricity = crude oil
 		- Refinery
 			- electricity + crude oil = gas
-	- Coal is burned to produce energy (SHOULD BE A UNIT! Units make it feel real)
-		- Mined in mines depending on the coal content
+	- Coal is burned to produce energy
+		- Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
+			x In order to save space, coal ranges from [-1, 0], ore ranges from [0, 1]
+		x Add to nation info
 		- Can be burned to produce electricity in POWER PLANTS
+			- Expansions need their home city to have electricity to operate
+			- Cities with power plants have power
+			- Power lines carry power
 		- Can be burned in furnace to produce metal from ore
 		- LIMITED!
-	- Factories, ports, airfields, academy, need electricity to operate
+			- multiply ground array element by 0.999
 	- Ore
 		- Mined in a mine if there is a lot of ore at the mine
+			- ranges from [0, 1]
 		- Smelted in a FOUNDRY into metal
 		- LIMITED!
 	- Metal
 		- Used to make all units, replaces ore (whore)
 	- Stone
 		- Mined in mine as a byproduct
+		- Stone ranges from [-1, 1]
 		- Can be used to upgrade buildings, along with other resources probably
 	- Ammo & shells & bombs as ingredients to make units
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky

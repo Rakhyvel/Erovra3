@@ -26,7 +26,7 @@ typedef struct terrain {
     Arraylist* ports;
 } Terrain;
 
-struct terrain* Terrain_Create(int mapSize, float* map, float* trees, SDL_Texture* texture);
+struct terrain* Terrain_Create(int mapSize, float* map, float* trees, float* ore, SDL_Texture* texture, int* status);
 void Terrain_Destroy(struct terrain*);
 
 SDL_Color Terrain_RealisticColor(float* map, int mapSize, int x, int y, float i);
@@ -37,7 +37,7 @@ void Terrain_Render(struct terrain* terrain);
 
 // Continent stuff
 void Terrain_FindPorts(struct terrain* terrain);
-void Terrain_FindContinentsAndOceans(struct terrain* terrain);
+void Terrain_FindContinentsAndOceans(struct terrain* terrain, int* status);
 void Terrain_EliminateUselessPortPoints(struct terrain* terrain, Arraylist* capitalPoints);
 
 // Some map functions
@@ -49,6 +49,7 @@ Vector Terrain_LineOfSightPoint(struct terrain* terrain, Vector from, Vector to,
 
 // Resources
 float Terrain_GetOre(struct terrain*, int x, int y);
+float Terrain_GetCoal(struct terrain* terrain, int x, int y);
 float Terrain_GetTimber(struct terrain* terrain, int x, int y);
 
 // Building map functions

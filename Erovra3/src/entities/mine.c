@@ -3,7 +3,7 @@
 #include "./components.h"
 #include "./entities.h"
 
-EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
+EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
 {
     EntityID mineID = Scene_NewEntity(scene);
 
@@ -53,12 +53,6 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         &Ore_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
-
-    Expansion expansion = {
-        homeCity,
-        dir
-    };
-    Scene_Assign(scene, mineID, EXPANSION_COMPONENT_ID, &expansion);
 
     Scene_Assign(scene, mineID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, mineID, BUILDING_FLAG_COMPONENT_ID, NULL);

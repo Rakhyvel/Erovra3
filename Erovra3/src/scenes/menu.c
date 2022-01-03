@@ -10,6 +10,7 @@
 #include "../entities/components.h"
 #include "../gui/gui.h"
 #include "../textures.h"
+#include "../util/debug.h"
 #include "../util/lexicon.h"
 #include "../util/noise.h"
 #include "match.h"
@@ -60,9 +61,14 @@ const int size = 4 * 64;
 // Preview maps data
 float* map = NULL;
 float* trees = NULL;
+float* ore = NULL;
+Terrain* _terrain = NULL;
 // Preview map texture
 SDL_Texture* previewTexture = NULL;
 SDL_Texture* treesTexture = NULL;
+
+SDL_Texture* mapTexture = NULL;
+Uint8* pixels = NULL;
 
 // Contains language data for nation name
 Lexicon* lexicon;
@@ -70,6 +76,9 @@ Lexicon* lexicon;
 enum state {
     GENERATING,
     EROSION,
+    PAINTING_REQ_TEXTURE,
+    PAINTING,
+    DISCOVERING,
     IDLE
 };
 volatile enum state state;
@@ -83,6 +92,7 @@ volatile bool needsRepaint = false;
 volatile bool generating = false;
 // Set by generatedFullTerrain, full map is done, start match. Reset on menu return.
 volatile bool done = false;
+volatile bool updateMapPixels = false;
 
 /*	Calculates seed based on seed text box
 * 
@@ -139,8 +149,9 @@ static int generatePreview(void* ptr)
     Noise_Erode(map, size, erosion->value, &status);
 
     // Generate trees
-    trees = Noise_Generate(size, 2, getSeed(scene), &status);
+    trees = Noise_Generate(size, 4, getSeed(scene), &status);
     for (int i = 0; i < size * size; i++) {
+        trees[i] = powf(trees[i], 1.5);
         if (trees[i] < 0.5) {
             trees[i] = 0;
         } else {
@@ -178,15 +189,36 @@ static int generateFullTerrain(void* ptr)
             map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.33f * powf(map[x + y * fullMapSize], 2) + 0.55f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
         }
     }
+    // Generate trees
+    trees = Noise_Generate(tileSize, 4, getSeed(scene), &status);
+    ore = Noise_Generate(tileSize, 8, (unsigned)time(0), &status);
+    for (int y = 0; y < tileSize; y++) {
+        for (int x = 0; x < tileSize; x++) {
+            if (ore[x + y * tileSize] > 0.5) {
+                ore[x + y * tileSize] = powf(2 * ore[x + y * tileSize] - 1, 0.75);
+            } else {
+                ore[x + y * tileSize] = -powf(-(2 * ore[x + y * tileSize] - 1), 0.75);
+            }
+            trees[x + y * tileSize] = powf(trees[x + y * tileSize], 1.5);
+        }
+    }
 
     /* Erode map */
     status = 0;
     state = EROSION;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    Noise_Erode(map, fullMapSize, erosion->value, &status);
+    Noise_Erode(map, fullMapSize, erosion->value * 1024, &status);
 
-    // Generate trees
-    trees = Noise_Generate(tileSize, 2, getSeed(scene), &status);
+    status = 0;
+    state = PAINTING;
+    pixels = Texture_PaintMap_ThreadSafe(map, fullMapSize, mapTexture, Terrain_RealisticColor, &status);
+    updateMapPixels = true; // Updating textures must be done on the same thread as the renderer
+    while (updateMapPixels)
+        ;
+
+    status = 0;
+    state = DISCOVERING;
+    _terrain = Terrain_Create(fullMapSize, map, trees, ore, mapTexture, &status);
 
     // Set done flag to true. Update monitors done flag, will call Match_Init() when map is finished
     state = IDLE; // Let other threads start
@@ -276,6 +308,9 @@ void Menu_Back(Scene* scene, EntityID id)
 void Menu_StartMatch(Scene* scene, EntityID id)
 {
     generating = true; // Means that game is generating match map, pan to progress bar
+    RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
+    int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
+    mapTexture = SDL_CreateTexture(Apricot_Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, fullMapSize, fullMapSize);
     SDL_Thread* thread = SDL_CreateThread(generateFullTerrain, "Generate full terrain", scene);
     camera.x = -2000;
     camera.y = -2000;
@@ -335,8 +370,17 @@ void Menu_Update(Scene* scene)
             done = false;
             state = IDLE; // Let other threads start
 
-            Match_Init(map, trees, capitalName->text, lexicon, fullMapSize, AIControlled->value, fogOfWar->value, numNations->value);
+            Match_Init(_terrain, capitalName->text, lexicon, AIControlled->value, fogOfWar->value, numNations->value);
             return; // Always return after scene stack disruption!
+        } else if (updateMapPixels) {
+            RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
+            int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
+
+            if (SDL_UpdateTexture(mapTexture, NULL, pixels, fullMapSize * 4) == -1) {
+                PANIC("%s", SDL_GetError());
+            }
+            free(pixels);
+            updateMapPixels = false;
         } else {
             RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
             Slider* erosion = (Slider*)Scene_GetComponent(scene, erosionSlider, GUI_SLIDER_COMPONENT_ID);
@@ -344,17 +388,24 @@ void Menu_Update(Scene* scene)
             Label* label = (Label*)Scene_GetComponent(scene, statusText, GUI_LABEL_ID);
 
             int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
+            int tileSize = fullMapSize / 64;
 
             // Calculate progress bar max status counts based on state
-            double denominator = 1;
+            float denominator = 1;
             if (state == GENERATING) {
                 denominator = fullMapSize;
                 strncpy_s(label->text, 32, "Generating...", 32);
             } else if (state == EROSION) {
                 strncpy_s(label->text, 32, "Eroding...", 32);
-                denominator = (double)(fullMapSize * fullMapSize * erosion->value);
+                denominator = fullMapSize * erosion->value * 1024;
+            } else if (state == PAINTING) {
+                strncpy_s(label->text, 32, "Painting...", 32);
+                denominator = fullMapSize * fullMapSize;
+            } else if (state == DISCOVERING) {
+                strncpy_s(label->text, 32, "Discovering...", 32);
+                denominator = fullMapSize * fullMapSize;
             }
-            progress->value = (float)((double)status / denominator);
+            progress->value = (float)status / denominator;
         }
     } else {
         // needsRepaint flag is called by generatePreview thread
