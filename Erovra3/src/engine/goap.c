@@ -26,7 +26,7 @@ void Goap_Create(Goap* goap, void (*goapInit)(Goap* goap))
 void Goap_AddAction(Goap* goap, char* name, void (*actionPtr)(Scene* scene, ComponentKey flag), VariableID effect, int numPrecoditions, Uint8 preconditions, ...)
 {
     if (numPrecoditions > MAX_PRECONDITIONS) {
-        PANIC("Too many preconditions for GOAP action");
+        PANIC("Too many preconditions for GOAP action. Max is %d, received %d", MAX_PRECONDITIONS, numPrecoditions);
     }
     Action action;
     action.actionPtr = actionPtr;

@@ -1,7 +1,7 @@
 #pragma once
 #include "ai.h"
 #include "../engine/apricot.h"
-#include "../entities/components.h"
+#include "../assemblages/components.h"
 #include "../util/debug.h"
 #include "./match.h"
 #include <ctype.h>
@@ -111,10 +111,6 @@ static void findBuildingTile(Scene* scene, Nation* nation, UnitType type)
             continue;
         }
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-        float dist = Vector_Dist(sprite->pos, target->tar);
-        if (dist > 1) {
-            continue;
-        }
 
         // Spiral search around engineer, find timber tile
         int xOffsets[] = { 1, 0, -1, 0 };
@@ -126,20 +122,6 @@ static void findBuildingTile(Scene* scene, Nation* nation, UnitType type)
         int dy = yOffsets[r];
         for (int i = 0; i < terrain->tileSize * terrain->tileSize; i++) {
             Vector point = { (x + (int)(sprite->pos.x / 64)) * 64 + 32, (y + (int)(sprite->pos.y / 64)) * 64 + 32 };
-            if (type == UnitType_TIMBERLAND && Terrain_GetTimber(terrain, point.x, point.y) < 0.5f) {
-                continue;
-            } else if (type == UnitType_MINE && Terrain_GetOre(terrain, point.x, point.y) < 0.5f) {
-                continue;
-            }
-            if (Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, sprite->pos, point, sprite->z)) {
-                target->tar = point;
-                target->lookat = point;
-                if (Vector_CabDist(sprite->pos, target->tar) < 32) {
-                    Match_BuyBuilding(scene, type, sprite->nation, sprite->pos);
-                }
-                printf("Done! Timberland: %d\n", type == UnitType_TIMBERLAND);
-                return;
-            }
             // Update spiral
             if (x == y || (x < 0 && x == -y) || (x > 0 && x == 1 - y)) {
                 int temp = dx;
@@ -148,6 +130,19 @@ static void findBuildingTile(Scene* scene, Nation* nation, UnitType type)
             }
             x += dx;
             y += dy;
+            if (type == UnitType_TIMBERLAND && Terrain_GetTimber(terrain, point.x, point.y) < 0.5f) {
+                continue;
+            } else if (type == UnitType_MINE && Terrain_GetOre(terrain, point.x, point.y) < 0.5f) {
+                continue;
+            }
+            if (Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, sprite->pos, point, 0.5)) {
+                target->tar = point;
+                target->lookat = point;
+                if (Vector_CabDist(sprite->pos, target->tar) < 32) {
+                    Match_BuyBuilding(scene, type, sprite->nation, sprite->pos);
+                }
+                return;
+            }   
         }
     }
 }
@@ -297,6 +292,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
     goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
     goap->variables[HAS_FOOD] = averageTicksPerFoodMade < averageTicksPerFoodUsed;
+    goap->variables[HAS_TIMBER] = nation->unitCount[UnitType_TIMBERLAND] >= 1;
 
     goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
     goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
@@ -848,132 +844,67 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "Order attacker", &AI_OrderAttacker, HAS_ATTACKER, 5, AFFORD_ATTACKER_COINS, AFFORD_ATTACKER_ORE, HAS_FIGHTER, HAS_AVAILABLE_AIRFIELD, HAS_FOOD, 1, 1, 1, 1, 1);
 
     // Build cities
-    Goap_AddAction(goap, "city 4 coins", &AI_BuildCity, HAS_COINS, 4,
+    Goap_AddAction(goap, "city 4 coins", &AI_BuildCity, HAS_COINS, 5,
         AFFORD_CITY_COINS,
         AFFORD_CITY_TIMBER,
         ENGINEER_ISNT_BUSY,
         HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 farm", &AI_BuildCity, AFFORD_FARM_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 timb", &AI_BuildCity, AFFORD_TIMBERLAND_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 mine", &AI_BuildCity, AFFORD_MINE_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 acad", &AI_BuildCity, AFFORD_ACADEMY_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 fact", &AI_BuildCity, AFFORD_FACTORY_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 port", &AI_BuildCity, AFFORD_PORT_COINS, 4,
-        AFFORD_CITY_COINS,
-        AFFORD_CITY_TIMBER,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 airf", &AI_BuildCity, AFFORD_AIRFIELD_COINS, 4,
-        AFFORD_CITY_COINS,
-        ENGINEER_ISNT_BUSY,
-        HAS_ENGINEER,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 expa tile", &AI_BuildCity, SPACE_FOR_EXPANSION, 4,
+        HAS_TIMBER,
+        1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "city 4 expa tile", &AI_BuildCity, SPACE_FOR_EXPANSION, 5,
         HAS_ENGINEER,
         AFFORD_CITY_COINS,
         AFFORD_CITY_TIMBER,
         ENGINEER_ISNT_BUSY,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 2expa tile", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 4,
+        HAS_TIMBER,
+        1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "city 4 2expa tile", &AI_BuildCity, SPACE_FOR_TWO_EXPANSIONS, 5,
         HAS_ENGINEER,
         AFFORD_CITY_COINS,
         AFFORD_CITY_TIMBER,
         ENGINEER_ISNT_BUSY,
-        1, 1, 1, 1);
-    Goap_AddAction(goap, "city 4 port tile", &AI_BuildPortCity, SPACE_FOR_PORT, 6,
+        HAS_TIMBER,
+        1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "city 4 port tile", &AI_BuildPortCity, SPACE_FOR_PORT, 7,
         HAS_ENGINEER,
         HAS_PORT_TILES,
         ENGINEER_CAN_SEE_PORT_CITY_TILE,
         AFFORD_CITY_COINS,
         AFFORD_CITY_TIMBER,
         ENGINEER_ISNT_BUSY,
-        1, 1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1);
 
     // Build timberlands
-    Goap_AddAction(goap, "timb 4 city", &AI_BuildTimberland, AFFORD_CITY_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 farm", &AI_BuildTimberland, AFFORD_FARM_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 mine", &AI_BuildTimberland, AFFORD_MINE_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 acad", &AI_BuildTimberland, AFFORD_ACADEMY_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 fact", &AI_BuildTimberland, AFFORD_FACTORY_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 port", &AI_BuildTimberland, AFFORD_PORT_TIMBER, 3,
-        HAS_ENGINEER,
-        ENGINEER_ISNT_BUSY,
-        AFFORD_TIMBERLAND_COINS,
-        1, 1, 1);
-    Goap_AddAction(goap, "timb 4 airf", &AI_BuildTimberland, AFFORD_AIRFIELD_TIMBER, 3,
+    Goap_AddAction(goap, "build timb", &AI_BuildTimberland, HAS_TIMBER, 3,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         AFFORD_TIMBERLAND_COINS,
         1, 1, 1);
 
     // Build farm
-    Goap_AddAction(goap, "farm 4 food", &AI_BuildFarm, HAS_FOOD, 5,
+    Goap_AddAction(goap, "farm 4 food", &AI_BuildFarm, HAS_FOOD, 6,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
         AFFORD_FARM_COINS,
         AFFORD_FARM_TIMBER,
-        1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1);
 
     // Build mine
-    Goap_AddAction(goap, "mine 4 ore", &AI_BuildMine, HAS_ORE, 6,
+    Goap_AddAction(goap, "mine 4 ore", &AI_BuildMine, HAS_ORE, 7,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
         AFFORD_MINE_COINS,
         AFFORD_MINE_TIMBER,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1);
 
     // Build academy
-    Goap_AddAction(goap, "acad", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 7,
+    Goap_AddAction(goap, "acad", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 8,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
@@ -981,10 +912,11 @@ void AI_Init(Goap* goap)
         AFFORD_ACADEMY_TIMBER,
         HAS_COINS,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build factory
-    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 8,
+    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 9,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
@@ -993,8 +925,9 @@ void AI_Init(Goap* goap)
         HAS_COINS,
         HAS_ORE,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "fact 4 airf", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 8,
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "fact 4 airf", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 9,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_TWO_EXPANSIONS,
@@ -1003,10 +936,11 @@ void AI_Init(Goap* goap)
         HAS_COINS,
         HAS_ORE,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build port
-    Goap_AddAction(goap, "port", &AI_BuildPort, HAS_AVAILABLE_PORT, 9,
+    Goap_AddAction(goap, "port", &AI_BuildPort, HAS_AVAILABLE_PORT, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         HAS_PORT_TILES,
@@ -1016,10 +950,11 @@ void AI_Init(Goap* goap)
         HAS_COINS,
         HAS_ORE,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1, 2, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1);
 
     // Build airfield
-    Goap_AddAction(goap, "airf", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 8,
+    Goap_AddAction(goap, "airf", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 9,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
@@ -1028,5 +963,6 @@ void AI_Init(Goap* goap)
         AFFORD_AIRFIELD_TIMBER,
         HAS_AVAILABLE_FACTORY,
         HAS_FOOD,
-        1, 1, 1, 1, 1, 1, 1, 1);
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1, 1, 1);
 }

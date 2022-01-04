@@ -1,5 +1,5 @@
 #include "./components.h"
-#include "./entities.h"
+#include "./assemblages.h"
 
 void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag)
 {
@@ -7,6 +7,23 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->color = color;
     nation->controlFlag = controlFlag;
 
+	Nation_ResetResources(scene, nation);
+
+    nation->visitedSpacesSize = mapSize / 32 + 1;
+    nation->visitedSpaces = malloc(nation->visitedSpacesSize * nation->visitedSpacesSize * sizeof(float));
+
+    nation->highPrioritySpaces = Arraylist_Create(10, sizeof(Vector));
+
+    nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
+    nation->cities = Arraylist_Create(10, sizeof(EntityID));
+
+    if (controlFlag == AI_COMPONENT_ID) {
+        Goap_Create(&(nation->goap), goapInit);
+    }
+}
+
+void Nation_ResetResources(Scene* scene, Nation* nation)
+{
     // Initial resources
     nation->resources[ResourceType_POPULATION] = 1;
     nation->resources[ResourceType_COIN] = 25;
@@ -35,10 +52,10 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->costs[ResourceType_COIN][UnitType_ATTACKER] = 15;
     nation->costs[ResourceType_COIN][UnitType_BOMBER] = 400;
 
-	// Wood costs
+    // Wood costs
     nation->costs[ResourceType_TIMBER][UnitType_CITY] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_FACTORY] = 5;
-    nation->costs[ResourceType_TIMBER][UnitType_MINE] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_MINE] = 10;
     nation->costs[ResourceType_TIMBER][UnitType_PORT] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_AIRFIELD] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_ACADEMY] = 5;
@@ -60,18 +77,6 @@ void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* g
     nation->costs[ResourceType_ORE][UnitType_FIGHTER] = 15;
     nation->costs[ResourceType_ORE][UnitType_ATTACKER] = 15;
     nation->costs[ResourceType_ORE][UnitType_BOMBER] = 15;
-
-    nation->visitedSpacesSize = mapSize / 32 + 1;
-    nation->visitedSpaces = malloc(nation->visitedSpacesSize * nation->visitedSpacesSize * sizeof(float));
-
-    nation->highPrioritySpaces = Arraylist_Create(10, sizeof(Vector));
-
-    nation->enemyNations = Arraylist_Create(5, sizeof(Nation*));
-    nation->cities = Arraylist_Create(10, sizeof(EntityID));
-
-    if (controlFlag == AI_COMPONENT_ID) {
-        Goap_Create(&(nation->goap), goapInit);
-    }
 }
 
 void Nation_SetCapital(struct scene* scene, Nation* nation, EntityID capital)
@@ -81,7 +86,8 @@ void Nation_SetCapital(struct scene* scene, Nation* nation, EntityID capital)
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
-            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(5 * Vector_Dist(capitalSprite->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f }) + 1000);
+            float dist = Vector_Dist(capitalSprite->pos, (Vector) { x * 32.0f + 16.0f, y * 32.0f + 16.0f });
+            nation->visitedSpaces[x + y * nation->visitedSpacesSize] = (float)floor(1 * dist + 1000);
         }
     }
 }

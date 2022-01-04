@@ -115,8 +115,8 @@ void Textures_Draw()
     COIN_SHADOW_TEXTURE_ID = Texture_Load("res/coin.png");
     ORE_TEXTURE_ID = Texture_Load("res/ore.png");
     ORE_SHADOW_TEXTURE_ID = Texture_Load("res/ore.png");
-    TIMBER_TEXTURE_ID = Texture_Load("res/timber.png");
-    TIMBER_SHADOW_TEXTURE_ID = Texture_Load("res/timber.png");
+    TIMBER_TEXTURE_ID = Texture_Create(320, 320);
+    TIMBER_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     COAL_TEXTURE_ID = Texture_Load("res/coal.png");
     COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal.png");
 
@@ -180,6 +180,11 @@ void Textures_Draw()
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
     Texture_FillCircle(SHELL_TEXTURE_ID, (Vector) { 20, 20 }, 15, (SDL_Color) { 255, 255, 255, 255 });
     Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
+
+	
+    Texture_FillPolygon(TIMBER_TEXTURE_ID, Polygon_Create("res/timber.gon"), (SDL_Color) { 144, 80, 36, 255 });
+    Texture_FillCircle(TIMBER_TEXTURE_ID, (Vector) { 80, 240 }, 80, (SDL_Color) { 198, 176, 129, 255 });
+    Texture_FillCircle(TIMBER_TEXTURE_ID, (Vector) { 240, 80 }, 80, (SDL_Color) { 144, 80, 36, 255 });
 
     Texture_CreateShadow(COIN_SHADOW_TEXTURE_ID, COIN_TEXTURE_ID);
     Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
@@ -348,6 +353,7 @@ void Textures_Draw()
     Texture_Save("res/coin_shadow.png", COIN_SHADOW_TEXTURE_ID);
     Texture_Save("res/ore_shadow.png", ORE_SHADOW_TEXTURE_ID);
     Texture_Save("res/coal_shadow.png", COAL_SHADOW_TEXTURE_ID);
+    Texture_Save("res/timber.png", TIMBER_TEXTURE_ID);
     Texture_Save("res/timber_shadow.png", TIMBER_SHADOW_TEXTURE_ID);
     Texture_Save("res/city.png", CITY_TEXTURE_ID);
     Texture_Save("res/city_outline.png", CITY_OUTLINE_TEXTURE_ID);

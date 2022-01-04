@@ -1,4 +1,4 @@
-/*	entities.h
+/*	assemblages.h
 *	
 *	Used to declare entity creation functions all in one location
 * 
@@ -125,6 +125,8 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation);
 */
 EntityID City_Create(struct scene*, Vector pos, Nation* nation, char* nameBuffer, bool isCapital);
 
+EntityID Coal_Create(struct scene*, Vector pos, Nation* nation);
+
 /*	Creates a coin entity with components assigned
 * 
 *	@param scene	Pointer to the match scene
@@ -226,6 +228,8 @@ EntityID Mine_Create(struct scene*, Vector pos, Nation* nation);
 *	@return EntityID of created nation
 */
 void Nation_Create(struct scene* scene, Nation* nation, void (*goapInit)(Goap* goap), SDL_Color color, int mapSize, ComponentKey controlFlag);
+
+void Nation_ResetResources(Scene* scene, Nation* nation);
 
 /*	Assigns the capital for a nation
 * 

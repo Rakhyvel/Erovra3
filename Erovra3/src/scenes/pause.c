@@ -1,5 +1,5 @@
 #include "pause.h"
-#include "../entities/components.h"
+#include "../assemblages/components.h"
 #include "../engine/apricot.h"
 #include "../engine/scene.h"
 #include "../gui/gui.h"

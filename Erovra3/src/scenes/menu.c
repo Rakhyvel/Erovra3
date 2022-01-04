@@ -7,7 +7,7 @@
 #pragma once
 #include "../engine/apricot.h"
 #include "../engine/scene.h"
-#include "../entities/components.h"
+#include "../assemblages/components.h"
 #include "../gui/gui.h"
 #include "../textures.h"
 #include "../util/debug.h"
@@ -150,12 +150,14 @@ static int generatePreview(void* ptr)
 
     // Generate trees
     trees = Noise_Generate(size, 4, getSeed(scene), &status);
-    for (int i = 0; i < size * size; i++) {
-        trees[i] = powf(trees[i], 1.5);
-        if (trees[i] < 0.5) {
-            trees[i] = 0;
-        } else {
-            trees[i] = 1;
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            trees[x + y * size] = powf(trees[x + y * size], 2);
+            if (trees[x + y * size] > 0.5) {
+                trees[x + y * size] = 1;
+            } else {
+                trees[x + y * size] = 0;
+            }
         }
     }
 
@@ -190,16 +192,17 @@ static int generateFullTerrain(void* ptr)
         }
     }
     // Generate trees
-    trees = Noise_Generate(tileSize, 4, getSeed(scene), &status);
-    ore = Noise_Generate(tileSize, 8, (unsigned)time(0), &status);
-    for (int y = 0; y < tileSize; y++) {
-        for (int x = 0; x < tileSize; x++) {
-            if (ore[x + y * tileSize] > 0.5) {
-                ore[x + y * tileSize] = powf(2 * ore[x + y * tileSize] - 1, 0.75);
+    trees = Noise_Generate(tileSize * 2, 4, getSeed(scene), &status);
+    ore = Noise_Generate(tileSize * 2, 4, (unsigned)time(0), &status);
+    Noise_Normalize(ore, tileSize * 2);
+    for (int y = 0; y < tileSize * 2; y++) {
+        for (int x = 0; x < tileSize * 2; x++) {
+            if (ore[x + y * tileSize * 2] > 0.5) {
+                ore[x + y * tileSize * 2] = powf(2 * ore[x + y * tileSize * 2] - 1, 1);
             } else {
-                ore[x + y * tileSize] = -powf(-(2 * ore[x + y * tileSize] - 1), 0.75);
+                ore[x + y * tileSize * 2] = -powf(-(2 * ore[x + y * tileSize * 2] - 1), 1);
             }
-            trees[x + y * tileSize] = powf(trees[x + y * tileSize], 1.5);
+            trees[x + y * tileSize * 2] = powf(trees[x + y * tileSize * 2], 2);
         }
     }
 
@@ -207,7 +210,7 @@ static int generateFullTerrain(void* ptr)
     status = 0;
     state = EROSION;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    Noise_Erode(map, fullMapSize, erosion->value * 1024, &status);
+    Noise_Erode(map, fullMapSize, erosion->value * 512, &status);
 
     status = 0;
     state = PAINTING;
@@ -397,7 +400,7 @@ void Menu_Update(Scene* scene)
                 strncpy_s(label->text, 32, "Generating...", 32);
             } else if (state == EROSION) {
                 strncpy_s(label->text, 32, "Eroding...", 32);
-                denominator = fullMapSize * erosion->value * 1024;
+                denominator = fullMapSize * erosion->value * 512;
             } else if (state == PAINTING) {
                 strncpy_s(label->text, 32, "Painting...", 32);
                 denominator = fullMapSize * fullMapSize;

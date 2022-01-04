@@ -28,7 +28,7 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 */
 
 #include "./main.h"
-#include "./entities/components.h"
+#include "./assemblages/components.h"
 #include "./gui/gui.h"
 #include "./scenes/menu.h"
 #include "./scenes/tournament.h"
@@ -42,7 +42,7 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 #include <string.h>
 
 //#define CREATE_LEXICON
-#define CREATE_TEXTURES
+//#define CREATE_TEXTURES
 
 /*
 	Entry point of program. Inits the game, then starts the game loop */
@@ -52,7 +52,7 @@ int SDL_main(int argc, char** argv)
     int status;
     Lexicon_Create("res/countryNames.txt", "res/countryNames.lex", &status);
 #endif
-    Apricot_Init("Erovra 3.10.0", 1280, 720);
+    Apricot_Init("Erovra 3.10.1", 1280, 720);
 #ifdef CREATE_TEXTURES
     Textures_Draw();
 #endif

@@ -48,11 +48,11 @@ struct terrain* Terrain_Create(int mapSize, float* map, float* trees, float* ore
 
     retval->continents = calloc(retval->size * retval->size, sizeof(int));
     retval->oceans = calloc(retval->size * retval->size, sizeof(int));
-    retval->buildings = malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
+    retval->buildings = (EntityID*)malloc(retval->tileSize * retval->tileSize * sizeof(EntityID));
     for (int i = 0; i < (retval->tileSize * retval->tileSize); i++) {
         retval->buildings[i] = INVALID_ENTITY_INDEX;
     }
-    retval->walls = (EntityID*)calloc(((mapSize + 1) * (mapSize + 1)) / (32 * 32), sizeof(EntityID));
+    retval->walls = (EntityID*)malloc(((mapSize + 1) * (mapSize + 1)) / (32 * 32) * sizeof(EntityID));
     for (int i = 0; i < ((mapSize + 1) * (mapSize + 1)) / (32 * 32); i++) {
         retval->walls[i] = INVALID_ENTITY_INDEX;
     }
@@ -126,7 +126,7 @@ void Terrain_Update(struct terrain* terrain)
 {
     terrain_zoom *= (float)pow(1.1, Apricot_MouseWheel.y - oldWheel);
     oldWheel = Apricot_MouseWheel.y;
-	#define MAX_ZOOM 0.75
+#define MAX_ZOOM 0.75
     if (terrain_zoom < MAX_ZOOM * Apricot_Height / 1024.0f) {
         terrain_zoom = MAX_ZOOM * Apricot_Height / 1024.0f;
     }
@@ -359,8 +359,41 @@ float Terrain_GetZoom()
     return terrain_zoom;
 }
 
+
+float Terrain_GetTimber(struct terrain* terrain, int x, int y)
+{
+    x /= 64;
+    y /= 64;
+    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
+        return 0;
+    }
+    x /= 2;
+    y /= 2;
+    return (terrain->timber[x + y * (terrain->tileSize * 2)]
+               + terrain->timber[x + 1 + y * (terrain->tileSize * 2)]
+               + terrain->timber[x + (y + 1) * (terrain->tileSize * 2)]
+               + terrain->timber[x + 1 + (y + 1) * (terrain->tileSize * 2)])
+        / 4.0f;
+}
+
+float Terrain_GetCoal(struct terrain* terrain, int x, int y)
+{
+    x /= 64;
+    y /= 64;
+    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
+        return 0;
+    }
+    x /= 2;
+    y /= 2;
+    return -(max(0, -terrain->ore[x + y * (terrain->tileSize * 2)])
+               + max(0, -terrain->ore[x + 1 + y * (terrain->tileSize * 2)])
+               + max(0, -terrain->ore[x + (y + 1) * (terrain->tileSize * 2)])
+               + max(0, -terrain->ore[x + 1 + (y + 1) * (terrain->tileSize * 2)]))
+        / 4.0f;
+}
+
 /*
-* Returns the ore content of the tile at the point (x / 64, y / 64)
+* Returns the ore content of the tile at the point (x / 32, y / 32)
 * 
 * @param x	X coordinate on the map
 * @param y	Y coordinate on the map
@@ -369,24 +402,16 @@ float Terrain_GetOre(struct terrain* terrain, int x, int y)
 {
     x /= 64;
     y /= 64;
-    return max(0, terrain->ore[x + y * (terrain->tileSize)]);
-}
-
-float Terrain_GetCoal(struct terrain* terrain, int x, int y)
-{
-    x /= 64;
-    y /= 64;
-    return max(0, -terrain->ore[x + y * (terrain->tileSize)]);
-}
-
-float Terrain_GetTimber(struct terrain* terrain, int x, int y)
-{
-    x /= 64;
-    y /= 64;
-    if (x < 0 || y < 0 || x >= terrain->tileSize || y >= terrain->tileSize) {
+    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
         return 0;
     }
-    return terrain->timber[x + y * (terrain->tileSize)];
+    x /= 2;
+    y /= 2;
+    return (max(0, terrain->ore[x + y * (terrain->tileSize * 2)])
+               + max(0, terrain->ore[x + 1 + y * (terrain->tileSize * 2)])
+               + max(0, terrain->ore[x + (y + 1) * (terrain->tileSize * 2)])
+               + max(0, terrain->ore[x + 1 + (y + 1) * (terrain->tileSize * 2)]))
+        / 4.0f;
 }
 
 float Terrain_GetHeightForBuilding(struct terrain* terrain, int x, int y)

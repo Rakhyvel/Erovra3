@@ -30,8 +30,9 @@ enum variables {
     HAS_AVAILABLE_AIRFIELD, // Any factory that isn't producing an order AND has an airfield
     HAS_AVAILABLE_ACADEMY, // Any academy that isn't producing an order
     HAS_COINS, // More like "has enough coin production"
-    HAS_ORE, // More like "has enough ore production"
     HAS_FOOD, // More like "has enough food production"
+	HAS_TIMBER,
+    HAS_ORE, // More like "has enough ore production"
 
     SPACE_FOR_EXPANSION,
     SPACE_FOR_TWO_EXPANSIONS,

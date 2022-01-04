@@ -351,24 +351,24 @@ x More than one nation (Maybe an array of enemy nations)
 		x LIMITED!
 	- New units in this order
 		x Timberland
+		- Foundry
+			- Coal + ore = metal
 		- Power plant
 			- Coal = electricity
 		- Power line
-		- Foundry
-			- Coal + ore = metal
 		- Oil drill
 			- Electricity = crude oil
 		- Refinery
 			- electricity + crude oil = gas
 	- Coal is burned to produce energy
-		- Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
+		x Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
 			x In order to save space, coal ranges from [-1, 0], ore ranges from [0, 1]
 		x Add to nation info
+		- Can be burned in furnace to produce metal from ore
 		- Can be burned to produce electricity in POWER PLANTS
 			- Expansions need their home city to have electricity to operate
 			- Cities with power plants have power
 			- Power lines carry power
-		- Can be burned in furnace to produce metal from ore
 		- LIMITED!
 			- multiply ground array element by 0.999
 	- Ore

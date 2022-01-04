@@ -2,7 +2,7 @@
 #include "match.h"
 #include "../engine/apricot.h"
 #include "../engine/textureManager.h"
-#include "../entities/entities.h"
+#include "../assemblages/assemblages.h"
 #include "../gui/gui.h"
 #include "../main.h"
 #include "../scenes/pause.h"
@@ -531,6 +531,7 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
         unit->isDead = false;
         unit->deathTicks = 0;
         if (newNation->capital == INVALID_ENTITY_INDEX) {
+            Nation_ResetResources(scene, newNation);
             Nation_SetCapital(scene, newNation, id);
             city->isCapital = true;
             sprite->sprite = CAPITAL_TEXTURE_ID;
@@ -539,7 +540,6 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
             if (newNation->unitCount[UnitType_ENGINEER] == 0) {
                 newNation->unitCount[UnitType_ENGINEER]++; // Done first, so that engineer unit ordinal is correct
                 Engineer_Create(scene, sprite->pos, newNation);
-                newNation->resources[ResourceType_COIN] = max(25, newNation->resources[ResourceType_COIN]);
             }
         } else {
             city->isCapital = false;
@@ -759,30 +759,31 @@ void Match_Morale(Scene* scene)
                 Nation* chosen = NULL;
                 float closestDist = 7 * 64;
                 for (int i = 0; i < nations->size; i++) {
-                    Nation* nation = (Nation*)Arraylist_Get(nations, i);
+                    Nation* nation2 = (Nation*)Arraylist_Get(nations, i);
                     if (nation == sprite->nation) {
                         continue;
                     }
                     if (nation->capital != INVALID_ENTITY_INDEX) {
-                        float dist = Vector_Dist(nation->capitalPos, sprite->pos);
+                        float dist = Vector_Dist(nation2->capitalPos, sprite->pos);
                         if (dist < closestDist) {
                             closestDist = dist;
-                            chosen = nation;
+                            chosen = nation2;
                         }
                     }
                 }
                 if (chosen == NULL) {
                     for (int i = 0; i < nations->size; i++) {
-                        Nation* nation = (Nation*)Arraylist_Get(nations, i);
-                        if (nation == sprite->nation) {
+                        Nation* nation2 = (Nation*)Arraylist_Get(nations, i);
+                        if (nation2 == sprite->nation) {
                             continue;
                         }
                         if (nation->capital == INVALID_ENTITY_INDEX) {
-                            chosen = nation;
+                            chosen = nation2;
                             break;
                         }
                     }
-                }
+                } // no else on purpose
+
                 if (chosen != NULL) {
                     Match_SwapAllegiance(scene, sprite->nation, chosen, id);
                 }
@@ -1582,6 +1583,12 @@ void Match_ProduceResources(struct scene* scene)
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
+        if (unit->type == UnitType_TIMBERLAND) {
+            resourceProducer->produceRate = (2.0f / (Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y) > 0.5 ? 1 : 0));
+        } else if (unit->type == UnitType_MINE) {
+            float maxOreCoal = max(Terrain_GetOre(terrain, (int)sprite->pos.x, (int)sprite->pos.y), Terrain_GetCoal(terrain, (int)sprite->pos.x, (int)sprite->pos.y));
+            resourceProducer->produceRate = (3.0f / (maxOreCoal > 0.5 ? 1 : 0));
+        }
 
         int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
         if (unit->aliveTicks % ticks == 0) {
@@ -1589,7 +1596,8 @@ void Match_ProduceResources(struct scene* scene)
             resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
             if (unit->type == UnitType_TIMBERLAND) {
                 terrain->timber[(int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize] *= 0.999f;
-                resourceProducer->produceRate = (2.0f / Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y) > 0.5 ? 1 : 0);
+            } else if (unit->type == UnitType_MINE) {
+                terrain->ore[(int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize] *= 0.999f;
             }
         }
     }
@@ -1754,17 +1762,19 @@ void Match_RenderResources(Scene* scene)
     for (int x = 16; x < terrain->size; x += 32) {
         float cos = fastCos(((int)(Apricot_Ticks + x) % 628) / 100.0);
         for (int y = 16; y < terrain->size; y += 32) {
+            int x0 = x / 32;
+            int y0 = y / 32;
             float height = Terrain_GetHeight(terrain, x, y);
             if (height <= 0.5f) {
                 continue;
             }
-            if (perlin2d(x, y, 0.01f, 1, 0) < sqrtf(2.0f * Terrain_GetTimber(terrain, x, y) - 1.0f) && Terrain_GetTimber(terrain, x, y) > 0.5) {
+            if (terrain->timber[x0 + y0 * terrain->tileSize * 2] > 0.5) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 40);
                 Texture_Draw(TIMBER_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, cos * height * 0.2f);
-            } else if (perlin2d(x, y, 0.1f, 1, 1) < sqrtf(2.0f * Terrain_GetOre(terrain, x, y) - 1.0f) && Terrain_GetOre(terrain, x, y) > 0.5) {
+            } else if (terrain->ore[x0 + y0 * terrain->tileSize * 2] > 0.5) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
                 Texture_Draw(ORE_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
-            } else if (Terrain_GetCoal(terrain, x, y) > 0.5) {
+            } else if (-terrain->ore[x0 + y0 * terrain->tileSize * 2] > 0.5) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
                 Texture_Draw(COAL_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
             }
@@ -2122,7 +2132,8 @@ void Match_RenderCityName(Scene* scene)
         if (city->isCapital) {
             scale = (FC_Scale) { (Terrain_GetZoom() + 0.5f) * 0.08f, (Terrain_GetZoom() + 0.5f) * 0.08f };
         } else {
-            scale = (FC_Scale) { (Terrain_GetZoom() + 0.3f) * 0.08f, (Terrain_GetZoom() + 0.3f) * 0.08f };
+            // TODO: Change back to +0.3f scale
+            scale = (FC_Scale) { (Terrain_GetZoom() + 0.5f) * 0.08f, (Terrain_GetZoom() + 0.5f) * 0.08f };
         }
         int width = FC_GetWidth(bigFont, city->name) * scale.x;
         int height = FC_GetAscent(bigFont, city->name) * scale.y;
@@ -2624,6 +2635,7 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     }
 
     if (largestDist > 0) {
+        Terrain_SetOffset((Vector) { terrain->size / 2, terrain->size / 2 });
         SDL_Color nationColors[] = {
             (SDL_Color) { 0, 79, 206 }, // 1 Blue
             (SDL_Color) { 202, 20, 21 }, // 2 Red

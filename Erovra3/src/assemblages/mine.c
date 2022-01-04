@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "./components.h"
-#include "./entities.h"
+#include "./assemblages.h"
 
 EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
 {
@@ -49,8 +49,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
 
     ResourceProducer resourceProducer = {
         // A good mine is roughly able to support two factories
-        (3.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)),
-        &Ore_Create
+        (3.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)), // This is redundant, resource production is updated in match scene
+        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > 0 ? &Ore_Create : &Coal_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 

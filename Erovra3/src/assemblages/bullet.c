@@ -4,7 +4,7 @@
 #include "../textures.h"
 #include "../util/arraylist.h"
 #include "./components.h"
-#include "./entities.h"
+#include "./assemblages.h"
 
 EntityID Bullet_Create(struct scene* scene, Vector pos, Vector tar, float attack, Nation* nation)
 {

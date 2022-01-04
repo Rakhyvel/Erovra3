@@ -1,7 +1,7 @@
 #include "./components.h"
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./entities.h"
+#include "./assemblages.h"
 
 EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {

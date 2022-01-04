@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "./components.h"
-#include "./entities.h"
+#include "./assemblages.h"
 
 EntityID Ore_Create(struct scene* scene, Vector pos, Nation* nation)
 {
