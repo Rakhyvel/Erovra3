@@ -37,6 +37,7 @@ void Components_Init()
 
     RESOURCE_PARTICLE_COMPONENT_ID = rand();
     RESOURCE_PRODUCER_COMPONENT_ID = rand();
+    RESOURCE_ACCEPTER_COMPONENT_ID = rand();
 
     PLAYER_FLAG_COMPONENT_ID = rand();
     AI_COMPONENT_ID = rand();
@@ -81,6 +82,7 @@ void Components_Register(struct scene* scene)
 
     Scene_RegisterComponent(scene, RESOURCE_PARTICLE_COMPONENT_ID, sizeof(ResourceParticle));
     Scene_RegisterComponent(scene, RESOURCE_PRODUCER_COMPONENT_ID, sizeof(ResourceProducer));
+    Scene_RegisterComponent(scene, RESOURCE_ACCEPTER_COMPONENT_ID, sizeof(ResourceAccepter));
 
     Scene_RegisterComponent(scene, PLAYER_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, AI_COMPONENT_ID, 0);

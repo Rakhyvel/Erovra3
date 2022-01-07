@@ -17,6 +17,12 @@ void Textures_Init()
     MINE_TEXTURE_ID = Texture_Load("res/mine.png");
     MINE_OUTLINE_TEXTURE_ID = Texture_Load("res/mine_outline.png");
     MINE_SHADOW_TEXTURE_ID = Texture_Load("res/mine_shadow.png");
+    POWERPLANT_TEXTURE_ID = Texture_Load("res/powerplant.png");
+    POWERPLANT_OUTLINE_TEXTURE_ID = Texture_Load("res/powerplant.png");
+    POWERPLANT_SHADOW_TEXTURE_ID = Texture_Load("res/powerplant_shadow.png");
+    FOUNDRY_TEXTURE_ID = Texture_Load("res/foundry.png");
+    FOUNDRY_OUTLINE_TEXTURE_ID = Texture_Load("res/foundry.png");
+    FOUNDRY_SHADOW_TEXTURE_ID = Texture_Load("res/foundry_shadow.png");
     FACTORY_TEXTURE_ID = Texture_Load("res/factory.png");
     FACTORY_OUTLINE_TEXTURE_ID = Texture_Load("res/factory_outline.png");
     FACTORY_SHADOW_TEXTURE_ID = Texture_Load("res/factory_shadow.png");
@@ -69,6 +75,10 @@ void Textures_Init()
     COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal_shadow.png");
     TIMBER_TEXTURE_ID = Texture_Load("res/timber.png");
     TIMBER_SHADOW_TEXTURE_ID = Texture_Load("res/timber_shadow.png");
+    METAL_TEXTURE_ID = Texture_Load("res/metal.png");
+    METAL_SHADOW_TEXTURE_ID = Texture_Load("res/metal_shadow.png");
+    POWER_TEXTURE_ID = Texture_Load("res/power.png");
+    POWER_SHADOW_TEXTURE_ID = Texture_Load("res/power_shadow.png");
     POPULATION_TEXTURE_ID = Texture_Load("res/population.png");
     ARROW_TEXTURE_ID = Texture_Load("res/arrow.png");
     ARROW_SHADOW_TEXTURE_ID = Texture_Load("res/arrow_shadow.png");
@@ -115,10 +125,14 @@ void Textures_Draw()
     COIN_SHADOW_TEXTURE_ID = Texture_Load("res/coin.png");
     ORE_TEXTURE_ID = Texture_Load("res/ore.png");
     ORE_SHADOW_TEXTURE_ID = Texture_Load("res/ore.png");
+    METAL_TEXTURE_ID = Texture_Load("res/metal.png");
+    METAL_SHADOW_TEXTURE_ID = Texture_Load("res/metal.png");
     TIMBER_TEXTURE_ID = Texture_Create(320, 320);
     TIMBER_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     COAL_TEXTURE_ID = Texture_Load("res/coal.png");
     COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal.png");
+    POWER_TEXTURE_ID = Texture_Load("res/power.png");
+    POWER_SHADOW_TEXTURE_ID = Texture_Load("res/power.png");
 
     CITY_TEXTURE_ID = Texture_Create(320, 320);
     CITY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
@@ -129,6 +143,10 @@ void Textures_Draw()
     MINE_TEXTURE_ID = Texture_Create(640, 640);
     MINE_OUTLINE_TEXTURE_ID = Texture_Create(640, 640);
     MINE_SHADOW_TEXTURE_ID = Texture_Create(640, 640);
+    POWERPLANT_TEXTURE_ID = Texture_Load("res/powerplant.png");
+    POWERPLANT_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
+    FOUNDRY_TEXTURE_ID = Texture_Load("res/foundry.png");
+    FOUNDRY_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     FACTORY_TEXTURE_ID = Texture_Create(320, 320);
     FACTORY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
     FACTORY_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
@@ -181,7 +199,6 @@ void Textures_Draw()
     Texture_FillCircle(SHELL_TEXTURE_ID, (Vector) { 20, 20 }, 15, (SDL_Color) { 255, 255, 255, 255 });
     Texture_CreateShadow(SHELL_SHADOW_TEXTURE_ID, SHELL_TEXTURE_ID);
 
-	
     Texture_FillPolygon(TIMBER_TEXTURE_ID, Polygon_Create("res/timber.gon"), (SDL_Color) { 144, 80, 36, 255 });
     Texture_FillCircle(TIMBER_TEXTURE_ID, (Vector) { 80, 240 }, 80, (SDL_Color) { 198, 176, 129, 255 });
     Texture_FillCircle(TIMBER_TEXTURE_ID, (Vector) { 240, 80 }, 80, (SDL_Color) { 144, 80, 36, 255 });
@@ -190,6 +207,8 @@ void Textures_Draw()
     Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
     Texture_CreateShadow(TIMBER_SHADOW_TEXTURE_ID, TIMBER_TEXTURE_ID);
     Texture_CreateShadow(COAL_SHADOW_TEXTURE_ID, COAL_TEXTURE_ID);
+    Texture_CreateShadow(METAL_SHADOW_TEXTURE_ID, METAL_TEXTURE_ID);
+    Texture_CreateShadow(POWER_SHADOW_TEXTURE_ID, POWER_TEXTURE_ID);
 
     Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 0, 79, 206, 255 });
     Texture_CreateShadow(ARROW_SHADOW_TEXTURE_ID, ARROW_TEXTURE_ID);
@@ -243,12 +262,14 @@ void Textures_Draw()
 
     Texture_CreateShadow(CAPITAL_SHADOW_TEXTURE_ID, CAPITAL_TEXTURE_ID);
     Texture_CreateShadow(CITY_SHADOW_TEXTURE_ID, CITY_TEXTURE_ID);
+    Texture_CreateShadow(FOUNDRY_SHADOW_TEXTURE_ID, FOUNDRY_TEXTURE_ID);
     Texture_CreateShadow(FACTORY_SHADOW_TEXTURE_ID, FACTORY_TEXTURE_ID);
     Texture_CreateShadow(PORT_SHADOW_TEXTURE_ID, PORT_TEXTURE_ID);
     Texture_CreateShadow(MINE_SHADOW_TEXTURE_ID, MINE_TEXTURE_ID);
     Texture_CreateShadow(ACADEMY_SHADOW_TEXTURE_ID, ACADEMY_TEXTURE_ID);
     Texture_CreateShadow(AIRFIELD_SHADOW_TEXTURE_ID, AIRFIELD_TEXTURE_ID);
     Texture_CreateShadow(FARM_SHADOW_TEXTURE_ID, FARM_TEXTURE_ID);
+    Texture_CreateShadow(POWERPLANT_SHADOW_TEXTURE_ID, POWERPLANT_TEXTURE_ID);
 
     Texture_FillPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(INFANTRY_TEXTURE_ID, groundBorderPoly, (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -353,8 +374,10 @@ void Textures_Draw()
     Texture_Save("res/coin_shadow.png", COIN_SHADOW_TEXTURE_ID);
     Texture_Save("res/ore_shadow.png", ORE_SHADOW_TEXTURE_ID);
     Texture_Save("res/coal_shadow.png", COAL_SHADOW_TEXTURE_ID);
+    Texture_Save("res/metal_shadow.png", METAL_SHADOW_TEXTURE_ID);
     Texture_Save("res/timber.png", TIMBER_TEXTURE_ID);
     Texture_Save("res/timber_shadow.png", TIMBER_SHADOW_TEXTURE_ID);
+    Texture_Save("res/power_shadow.png", POWER_SHADOW_TEXTURE_ID);
     Texture_Save("res/city.png", CITY_TEXTURE_ID);
     Texture_Save("res/city_outline.png", CITY_OUTLINE_TEXTURE_ID);
     Texture_Save("res/city_shadow.png", CITY_SHADOW_TEXTURE_ID);
@@ -364,6 +387,8 @@ void Textures_Draw()
     Texture_Save("res/mine.png", MINE_TEXTURE_ID);
     Texture_Save("res/mine_outline.png", MINE_OUTLINE_TEXTURE_ID);
     Texture_Save("res/mine_shadow.png", MINE_SHADOW_TEXTURE_ID);
+    Texture_Save("res/powerplant_shadow.png", POWERPLANT_SHADOW_TEXTURE_ID);
+    Texture_Save("res/foundry_shadow.png", FOUNDRY_SHADOW_TEXTURE_ID);
     Texture_Save("res/factory.png", FACTORY_TEXTURE_ID);
     Texture_Save("res/factory_outline.png", FACTORY_OUTLINE_TEXTURE_ID);
     Texture_Save("res/factory_shadow.png", FACTORY_SHADOW_TEXTURE_ID);

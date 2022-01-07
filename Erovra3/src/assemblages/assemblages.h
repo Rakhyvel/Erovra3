@@ -125,7 +125,7 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation);
 */
 EntityID City_Create(struct scene*, Vector pos, Nation* nation, char* nameBuffer, bool isCapital);
 
-EntityID Coal_Create(struct scene*, Vector pos, Nation* nation);
+EntityID Coal_Create(struct scene*, Vector pos, Nation* nation, EntityID accepter);
 
 /*	Creates a coin entity with components assigned
 * 
@@ -134,7 +134,7 @@ EntityID Coal_Create(struct scene*, Vector pos, Nation* nation);
 *	@param nation	Nation EntityID for coin
 *	@return EntityID of created coin
 */
-EntityID Coin_Create(struct scene*, Vector pos, Nation* nation);
+EntityID Coin_Create(struct scene*, Vector pos, Nation* nation, EntityID accepter);
 
 /*	Creates a cruiser entity with components assigned
 * 
@@ -196,7 +196,9 @@ EntityID Fighter_Create(Scene* scene, Vector pos, Nation* nation);
  * @param pos		Position that the food particle starts on
  * @param nationID	Nation that the food particle belongs to
  */
-EntityID Food_Create(struct scene* scene, Vector pos, Nation* nationID);
+EntityID Food_Create(struct scene* scene, Vector pos, Nation* nationID, EntityID accepter);
+
+EntityID Foundry_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a infantry entity with components assigned
 * 
@@ -206,6 +208,8 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nationID);
 *	@return EntityID of created infantry
 */
 EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation);
+
+EntityID Metal_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter);
 
 /*	Creates a mine entity with components assigned
 * 
@@ -257,7 +261,7 @@ EntityID OrderButton_Create(struct scene* scene, char* text, SDL_Texture* icon, 
 *	@param nation	Nation EntityID for ore
 *	@return EntityID of created ore
 */
-EntityID Ore_Create(struct scene*, Vector pos, Nation* nationID);
+EntityID Ore_Create(struct scene*, Vector pos, Nation* nationID, EntityID accepter);
 
 /*	Creates a port entity with components assigned
 * 
@@ -267,6 +271,10 @@ EntityID Ore_Create(struct scene*, Vector pos, Nation* nationID);
 *	@return EntityID of created port
 */
 EntityID Port_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
+
+EntityID Power_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter);
+
+EntityID PowerPlant_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir);
 
 /*	Creates a shell entity with components assigned
 * 
@@ -279,7 +287,7 @@ EntityID Port_Create(struct scene*, Vector pos, Nation* nation, EntityID homeCit
 */
 EntityID Shell_Create(struct scene*, Vector pos, Vector tar, float attack, Nation* nation);
 
-EntityID Timber_Create(struct scene* scene, Vector pos, Nation* nation);
+EntityID Timber_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter);
 
 EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation);
 

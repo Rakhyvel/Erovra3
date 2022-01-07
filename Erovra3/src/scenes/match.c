@@ -1,8 +1,8 @@
 #pragma once
 #include "match.h"
+#include "../assemblages/assemblages.h"
 #include "../engine/apricot.h"
 #include "../engine/textureManager.h"
-#include "../assemblages/assemblages.h"
 #include "../gui/gui.h"
 #include "../main.h"
 #include "../scenes/pause.h"
@@ -94,8 +94,8 @@ SDL_Texture* Match_LookupResourceTypeIcon(ResourceType type)
         return COIN_TEXTURE_ID;
     case ResourceType_TIMBER:
         return TIMBER_TEXTURE_ID;
-    case ResourceType_ORE:
-        return ORE_TEXTURE_ID;
+    case ResourceType_METAL:
+        return METAL_TEXTURE_ID;
     }
     PANIC("Not a resource type: %d", type);
     return -1;
@@ -124,6 +124,12 @@ void Match_CopyUnitName(UnitType type, char* buffer)
         break;
     case UnitType_MINE:
         strncat_s(buffer, 32, "Mine", 32);
+        break;
+    case UnitType_POWERPLANT:
+        strncat_s(buffer, 32, "Power Plant", 32);
+        break;
+    case UnitType_FOUNDRY:
+        strncat_s(buffer, 32, "Foundry", 32);
         break;
     case UnitType_FACTORY:
         strncat_s(buffer, 32, "Factory", 32);
@@ -212,10 +218,12 @@ enum ResourceType Match_CheckResources(Nation* nation, UnitType type)
     return -1;
 }
 
-void Match_DeductResources(Nation* nation, UnitType type)
+void Match_DeductResources(Scene* scene, Nation* nation, UnitType type)
 {
+    ResourceAccepter* capitalAccepter = (ResourceAccepter*)Scene_GetComponent(scene, nation->capital, RESOURCE_ACCEPTER_COMPONENT_ID);
     for (int i = 0; i < _ResourceType_Length; i++) {
         nation->resources[i] -= nation->costs[i][type];
+        capitalAccepter->storage[i] -= nation->costs[i][type];
     }
 }
 
@@ -234,7 +242,7 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     if (Match_CheckResources(nation, type) != -1) {
         return false;
     }
-    Match_DeductResources(nation, type);
+    Match_DeductResources(scene, nation, type);
     // Set order duration
     producer->orderTicksTotal = 2 * nation->costs[ResourceType_COIN][type] * ticksPerLabor;
     if (type == UnitType_INFANTRY) {
@@ -289,10 +297,11 @@ bool Match_BuyCity(struct scene* scene, Nation* nation, Vector pos)
         Lexicon_GenerateWord(lexicon, nameBuffer, 15);
         EntityID city = City_Create(scene, (Vector) { pos.x, pos.y }, nation, nameBuffer, false);
         Terrain_SetBuildingAt(terrain, city, (int)pos.x, (int)pos.y);
-        Match_DeductResources(nation, UnitType_CITY);
+        Match_DeductResources(scene, nation, UnitType_CITY);
         nation->unitCount[UnitType_CITY]++;
         nation->costs[ResourceType_COIN][UnitType_CITY] *= 2;
         nation->costs[ResourceType_TIMBER][UnitType_CITY] += 5 * nation->unitCount[UnitType_CITY];
+        nation->resources[ResourceType_POPULATION]++;
         return true;
     }
     return false;
@@ -346,16 +355,22 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vect
         case UnitType_ACADEMY:
             building = Academy_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
             break;
+        case UnitType_FOUNDRY:
+            building = Foundry_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
+            break;
+        case UnitType_POWERPLANT:
+            building = PowerPlant_Create(scene, Vector_Add(diff, pos), nation, homeCity, dir);
+            break;
         default:
             PANIC("Add the building, dumby!");
         }
         homeCityComponent->expansions[dir] = building;
         Terrain_SetBuildingAt(terrain, building, (int)pos.x, (int)pos.y);
-        Match_DeductResources(nation, type);
+        Match_DeductResources(scene, nation, type);
         nation->unitCount[type]++;
         nation->costs[ResourceType_COIN][type] *= 2;
         nation->costs[ResourceType_TIMBER][type] += 5 * nation->unitCount[type];
-        nation->resources[ResourceType_POPULATION] += 1;
+        nation->resources[ResourceType_POPULATION]++;
         return true;
     }
     return false;
@@ -396,9 +411,9 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
             PANIC("Add the building, dumby!");
         }
         Terrain_SetBuildingAt(terrain, building, (int)pos.x, (int)pos.y);
-        Match_DeductResources(nation, type);
+        Match_DeductResources(scene, nation, type);
         nation->unitCount[type]++;
-        nation->resources[ResourceType_POPULATION] += 1;
+        nation->resources[ResourceType_POPULATION]++;
         nation->costs[ResourceType_COIN][type] *= 2;
         return true;
     }
@@ -561,6 +576,29 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
     Scene_Unassign(scene, id, AI_COMPONENT_ID);
     Scene_Unassign(scene, id, PLAYER_FLAG_COMPONENT_ID);
     Scene_Assign(scene, id, newNation->controlFlag, NULL);
+}
+
+static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, EntityID id)
+{
+    // TODO: Check that entity isn't dead
+    Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+    ResourceAccepter* accepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
+    Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+    accepter->transit[resourceType]--;
+    accepter->storage[resourceType]++;
+
+    switch (unit->type) {
+    case UnitType_CITY:
+        sprite->nation->resources[resourceType]++;
+        break;
+    case UnitType_FOUNDRY: {
+        ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
+        if (accepter->storage[ResourceType_ORE] >= 1 && accepter->storage[ResourceType_COAL] >= 1 && resourceProducer->resourceTicksRemaining == -1) {
+            resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
+        }
+        break;
+    }
+    }
 }
 
 // SYSTEMS
@@ -735,23 +773,24 @@ void Match_Morale(Scene* scene)
             }
         }
         // Eat food
-        int ticks = (int)(ticksPerLabor * 6);
+        int ticks = (int)(ticksPerLabor * 0.6f);
         if (unit->aliveTicks % ticks == 0) {
             if (nation->resources[ResourceType_FOOD] > 0) {
+                ResourceAccepter* capitalAccepter = (ResourceAccepter*)Scene_GetComponent(scene, nation->capital, RESOURCE_ACCEPTER_COMPONENT_ID);
                 if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                     City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
                     for (int i = 0; i < 4; i++) {
                         if (city->expansions[i] != INVALID_ENTITY_INDEX) {
-                            nation->resources[ResourceType_FOOD] -= 1 + (int)(0.1f * nation->resources[ResourceType_FOOD]);
-                            nation->resources[ResourceType_FOOD] = max(0, nation->resources[ResourceType_FOOD]);
+                            nation->resources[ResourceType_FOOD]--;
+                            capitalAccepter->storage[ResourceType_FOOD]--;
                         }
                     }
                 }
-                nation->resources[ResourceType_FOOD] -= 1 + (int)(0.1f * nation->resources[ResourceType_FOOD]);
-                nation->resources[ResourceType_FOOD] = max(0, nation->resources[ResourceType_FOOD]);
-                morale->morale += (2.0f - morale->morale) / 5.0f; // Regains morale from 0 logistically in 4 hungry ticks
+                nation->resources[ResourceType_FOOD]--;
+                capitalAccepter->storage[ResourceType_FOOD]--;
+                morale->morale += (2.0f - morale->morale) / 50.0f; // Regains morale from 0 logistically in 4 hungry ticks
             } else {
-                morale->morale -= 0.5;
+                morale->morale -= 0.05;
                 printf("Hungry! %f\n", morale->morale);
             }
             if (morale->morale <= 0) {
@@ -760,10 +799,10 @@ void Match_Morale(Scene* scene)
                 float closestDist = 7 * 64;
                 for (int i = 0; i < nations->size; i++) {
                     Nation* nation2 = (Nation*)Arraylist_Get(nations, i);
-                    if (nation == sprite->nation) {
+                    if (nation2 == sprite->nation) {
                         continue;
                     }
-                    if (nation->capital != INVALID_ENTITY_INDEX) {
+                    if (nation2->capital != INVALID_ENTITY_INDEX) {
                         float dist = Vector_Dist(nation2->capitalPos, sprite->pos);
                         if (dist < closestDist) {
                             closestDist = dist;
@@ -777,7 +816,7 @@ void Match_Morale(Scene* scene)
                         if (nation2 == sprite->nation) {
                             continue;
                         }
-                        if (nation->capital == INVALID_ENTITY_INDEX) {
+                        if (nation2->capital == INVALID_ENTITY_INDEX) {
                             chosen = nation2;
                             break;
                         }
@@ -959,27 +998,6 @@ void Match_Target(struct scene* scene)
         }
         while (sprite->angle < 0) {
             sprite->angle += (float)M_PI * 2.0f;
-        }
-    }
-}
-
-void Match_ResourceParticle(Scene* scene)
-{
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
-    {
-        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
-        Nation* nation = sprite->nation;
-        if (nation->capital == INVALID_ENTITY_INDEX) {
-            continue;
-        }
-
-        sprite->z = -10.0f * pow(Vector_Dist(sprite->pos, nation->capitalPos) / resourceParticle->distToCapital - 0.5f, 4) + 1;
-
-        // Detect if at capital
-        if (Vector_Dist(sprite->pos, nation->capitalPos) < 6) {
-            Scene_MarkPurged(scene, id);
-            nation->resources[resourceParticle->type]++;
         }
     }
 }
@@ -1574,6 +1592,28 @@ void Match_AirplaneScout(struct scene* scene)
     }
 }
 
+void Match_ResourceParticle(Scene* scene)
+{
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PARTICLE_COMPONENT_ID)
+    {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        ResourceParticle* resourceParticle = (ResourceParticle*)Scene_GetComponent(scene, id, RESOURCE_PARTICLE_COMPONENT_ID);
+        Nation* nation = sprite->nation;
+        if (!Scene_EntityIsValid(scene, resourceParticle->accepter)) {
+            Scene_MarkPurged(scene, id);
+            continue;
+        }
+
+        sprite->z = -10.0f * pow(Vector_Dist(sprite->pos, resourceParticle->accepterPos) / resourceParticle->distToAccepter - 0.5f, 4) + 1;
+
+        // Detect if at accepter
+        if (Vector_Dist(sprite->pos, resourceParticle->accepterPos) < 6) {
+            Scene_MarkPurged(scene, id);
+            Match_AcceptParticle(scene, resourceParticle->type, resourceParticle->accepter);
+        }
+    }
+}
+
 /*
 	Creates a resource particle every time a production period has passed */
 void Match_ProduceResources(struct scene* scene)
@@ -1583,23 +1623,64 @@ void Match_ProduceResources(struct scene* scene)
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
-        if (unit->type == UnitType_TIMBERLAND) {
-            resourceProducer->produceRate = (2.0f / (Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y) > 0.5 ? 1 : 0));
-        } else if (unit->type == UnitType_MINE) {
-            float maxOreCoal = max(Terrain_GetOre(terrain, (int)sprite->pos.x, (int)sprite->pos.y), Terrain_GetCoal(terrain, (int)sprite->pos.x, (int)sprite->pos.y));
-            resourceProducer->produceRate = (3.0f / (maxOreCoal > 0.5 ? 1 : 0));
-        }
 
-        int ticks = (int)(ticksPerLabor * resourceProducer->produceRate);
-        if (unit->aliveTicks % ticks == 0) {
-            // Will not produce resources for a rump state
-            resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation);
-            if (unit->type == UnitType_TIMBERLAND) {
-                terrain->timber[(int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize] *= 0.999f;
-            } else if (unit->type == UnitType_MINE) {
-                terrain->ore[(int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize] *= 0.999f;
+        if (resourceProducer->resourceTicksRemaining == 0) {
+            EntityID accepter = INVALID_ENTITY_INDEX;
+            float closestDist = FLT_MAX;
+            // Search through all foundries, see if there's one you can send a particle to
+            system(scene, otherID, RESOURCE_ACCEPTER_COMPONENT_ID)
+            {
+                Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
+                if (otherSprite->nation != sprite->nation) {
+                    continue;
+                }
+                ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, otherID, RESOURCE_ACCEPTER_COMPONENT_ID);
+                Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+
+                if (resourceAccepter->transit[resourceProducer->type] + resourceAccepter->storage[resourceProducer->type] >= resourceAccepter->capacity[resourceProducer->type]) {
+                    continue;
+                }
+
+                float dist = Vector_Dist(sprite->pos, otherSprite->pos);
+                if (Scene_EntityHasComponents(scene, otherID, CITY_COMPONENT_ID)) {
+                    dist *= 512; // De-prioritize cities (capital)
+                }
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    accepter = otherID;
+                }
             }
-        }
+
+            if (accepter != INVALID_ENTITY_INDEX) {
+                resourceProducer->particleConstructor(scene, sprite->pos, sprite->nation, accepter);
+                if (unit->type == UnitType_TIMBERLAND) {
+                    terrain->timber[(int)(sprite->pos.x / 64) * 2 + (int)(sprite->pos.y / 64) * 2 * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->timber[(int)(sprite->pos.x / 64) * 2 + 1 + (int)(sprite->pos.y / 64) * 2 * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->timber[(int)(sprite->pos.x / 64) * 2 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->timber[(int)(sprite->pos.x / 64) * 2 + 1 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
+
+                    resourceProducer->resourceTicksTotal = 1.0f * ticksPerLabor / Terrain_GetTimber(terrain, (int)sprite->pos.x, (int)sprite->pos.y);
+                } else if (unit->type == UnitType_MINE) {
+                    terrain->ore[(int)(sprite->pos.x / 64) * 2 + (int)(sprite->pos.y / 64) * 2 * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->ore[(int)(sprite->pos.x / 64) * 2 + 1 + (int)(sprite->pos.y / 64) * 2 * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->ore[(int)(sprite->pos.x / 64) * 2 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
+                    terrain->ore[(int)(sprite->pos.x / 64) * 2 + 1 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
+
+                    resourceProducer->resourceTicksTotal = 1.0f * ticksPerLabor / (resourceProducer->type == ResourceType_ORE ? Terrain_GetOre(terrain, (int)sprite->pos.x, (int)sprite->pos.y) : Terrain_GetCoal(terrain, (int)sprite->pos.x, (int)sprite->pos.y));
+                }
+
+                if (unit->type == UnitType_FOUNDRY) { // Intentional no else-if
+                    ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
+                    resourceProducer->resourceTicksRemaining = -1; // This is reset whenever a foundry receives particles from mines
+                    resourceAccepter->storage[ResourceType_ORE] = 0;
+                    resourceAccepter->storage[ResourceType_COAL] = 0;
+                } else {
+                    resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
+                }
+            }
+        } else if (resourceProducer->resourceTicksRemaining > 0) {
+            resourceProducer->resourceTicksRemaining--;
+        } // Don't decrement if < 0
     }
 }
 
@@ -1764,19 +1845,25 @@ void Match_RenderResources(Scene* scene)
         for (int y = 16; y < terrain->size; y += 32) {
             int x0 = x / 32;
             int y0 = y / 32;
+
             float height = Terrain_GetHeight(terrain, x, y);
             if (height <= 0.5f) {
                 continue;
             }
-            if (terrain->timber[x0 + y0 * terrain->tileSize * 2] > 0.5) {
+
+            float timber = terrain->timber[x0 + y0 * terrain->tileSize * 2];
+            float coal = -terrain->ore[x0 + y0 * terrain->tileSize * 2];
+            float ore = terrain->ore[x0 + y0 * terrain->tileSize * 2];
+
+            if (timber > 0.5 && timber >= coal && timber >= ore) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 40);
                 Texture_Draw(TIMBER_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, cos * height * 0.2f);
-            } else if (terrain->ore[x0 + y0 * terrain->tileSize * 2] > 0.5) {
-                Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
-                Texture_Draw(ORE_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
-            } else if (-terrain->ore[x0 + y0 * terrain->tileSize * 2] > 0.5) {
+            } else if (coal > 0.5 && coal > timber && coal >= ore) {
                 Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
                 Texture_Draw(COAL_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
+            } else if (ore > 0.5 && ore > coal && ore > timber) {
+                Terrain_Translate(&rect, x, y - (height - 0.5f) * 16.0f, 16, 16);
+                Texture_Draw(ORE_INDICATOR_TEXTURE_ID, rect.x, rect.y, rect.w, rect.h, 0);
             }
         }
     }
@@ -2099,7 +2186,7 @@ void Match_RenderOrderButtons(Scene* scene)
 
 void Match_RenderNationInfo(Scene* scene)
 {
-    SDL_Rect rect = { 0, 0, 140, 124 };
+    SDL_Rect rect = { 0, 0, 140, 150 };
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
@@ -2108,13 +2195,11 @@ void Match_RenderNationInfo(Scene* scene)
     Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
     Texture_Draw(POPULATION_TEXTURE_ID, 8, 32, 20, 20, 0);
-    FC_Draw(font, Apricot_Renderer, 36, 30, "%d", nation->resources[ResourceType_FOOD]);
+    FC_Draw(font, Apricot_Renderer, 36, 30, "%d%%", min(100, (int)(100.0f * (nation->resources[ResourceType_FOOD]) / 100.0f) + 1));
     Texture_Draw(TIMBER_TEXTURE_ID, 8, 56, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 54, "%d", nation->resources[ResourceType_TIMBER]);
-    Texture_Draw(COAL_TEXTURE_ID, 8, 80, 20, 20, 0);
-    FC_Draw(font, Apricot_Renderer, 36, 78, "%d", nation->resources[ResourceType_COAL]);
-    Texture_Draw(ORE_TEXTURE_ID, 8, 104, 20, 20, 0);
-    FC_Draw(font, Apricot_Renderer, 36, 102, "%d", nation->resources[ResourceType_ORE]);
+    Texture_Draw(METAL_TEXTURE_ID, 8, 80, 20, 20, 0);
+    FC_Draw(font, Apricot_Renderer, 36, 78, "%d", nation->resources[ResourceType_METAL]);
 }
 
 void Match_RenderCityName(Scene* scene)
@@ -2182,30 +2267,43 @@ void Match_RenderMessageContainer(Scene* scene)
     FC_SetDefaultColor(font, (SDL_Color) { 255, 255, 255, 255 });
 }
 
+static void Match_RenderBar(Vector pos, int remaining, int total, SDL_Color color)
+{
+    // Get the rectangle for full bar
+    SDL_Rect rect;
+    Terrain_Translate(&rect, pos.x, pos.y - 13, 22, 6);
+
+    // Draw the background bar
+    SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
+    SDL_RenderFillRect(Apricot_Renderer, &rect);
+
+    // Draw inner bar, slightly inset
+    rect.x += Terrain_GetZoom() * 2;
+    rect.y += Terrain_GetZoom() * 2;
+    rect.w = Terrain_GetZoom() * 18 * (1.0f - (float)remaining / (float)total);
+    rect.h -= Terrain_GetZoom() * 4 - 1;
+    SDL_SetRenderDrawColor(Apricot_Renderer, color.r, color.g, color.b, 255);
+    SDL_RenderFillRect(Apricot_Renderer, &rect);
+}
+
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        Nation* nation = sprite->nation;
 
         if (producer->orderTicksRemaining > 0) {
-            // Get the rectangle for full bar
-            SDL_Rect rect;
-            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y - 13, 22, 6);
+            Match_RenderBar(sprite->pos, producer->orderTicksRemaining, producer->orderTicksTotal, sprite->nation->color);
+        }
+    }
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
+    {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        ResourceProducer* producer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
-            // Draw the background bar
-            SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
-            SDL_RenderFillRect(Apricot_Renderer, &rect);
-
-            // Draw inner bar, slightly inset
-            rect.x += Terrain_GetZoom() * 2;
-            rect.y += Terrain_GetZoom() * 2;
-            rect.w = Terrain_GetZoom() * 18 * (1.0f - (float)producer->orderTicksRemaining / (float)producer->orderTicksTotal);
-            rect.h -= Terrain_GetZoom() * 4 - 1;
-            SDL_SetRenderDrawColor(Apricot_Renderer, nation->color.r, nation->color.g, nation->color.b, 255);
-            SDL_RenderFillRect(Apricot_Renderer, &rect);
+        if (producer->type == ResourceType_METAL && producer->resourceTicksRemaining >= 0) {
+            Match_RenderBar(sprite->pos, producer->resourceTicksRemaining, producer->resourceTicksTotal, sprite->nation->color);
         }
     }
 }
@@ -2258,6 +2356,11 @@ void Match_Update(Scene* match)
     }
     lt = Apricot_Keys[SDL_SCANCODE_COMMA];
     gt = Apricot_Keys[SDL_SCANCODE_PERIOD];
+
+    if (Apricot_MouseRightDown) {
+        Vector m = Terrain_MousePos();
+        printf("%f %f %f\n", Terrain_GetTimber(terrain, m.x, m.y), Terrain_GetCoal(terrain, m.x, m.y), Terrain_GetOre(terrain, m.x, m.y));
+    }
 
     // Placed at end because they pop game scene
     Match_CheckWin(match);
@@ -2525,6 +2628,8 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Timberland", MINE_TEXTURE_ID, UnitType_TIMBERLAND, &Match_EngineerAddBuilding));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddBuilding));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Power Plant", POWERPLANT_TEXTURE_ID, UnitType_POWERPLANT, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Foundry", FACTORY_TEXTURE_ID, UnitType_FOUNDRY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Academy", ACADEMY_TEXTURE_ID, UnitType_ACADEMY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Factory", FACTORY_TEXTURE_ID, UnitType_FACTORY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddExpansion));

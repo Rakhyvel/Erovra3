@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 #include <string.h>
 
 EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* nameBuffer, bool isCapital)
@@ -19,7 +19,7 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
         0.5f,
         0,
         0,
-		0,
+        0,
         0,
         RenderPriorirty_BUILDING_LAYER,
         32,
@@ -45,12 +45,14 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
         100,
         false,
         false,
-		CITY_FOCUSED_GUI
+        CITY_FOCUSED_GUI
     };
     Scene_Assign(scene, cityID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        1.0f,
+		ResourceType_COIN,
+        0,
+        ticksPerLabor,
         &Coin_Create
     };
     Scene_Assign(scene, cityID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 #include <string.h>
 
 EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
@@ -18,7 +18,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         0.5f,
         0,
         0,
-		0,
+        0,
         0,
         RenderPriorirty_BUILDING_LAYER,
         32,
@@ -38,7 +38,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
         false,
         UnitType_FARM,
-        1,
+        0.04f,
         nation->unitCount[UnitType_FARM],
         0,
         100,
@@ -48,8 +48,10 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
 
-	ResourceProducer resourceProducer = {
-        1.00f,
+    ResourceProducer resourceProducer = {
+        ResourceType_FOOD,
+        0,
+        ticksPerLabor * 0.1f,
         &Food_Create
     };
     Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

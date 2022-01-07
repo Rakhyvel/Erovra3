@@ -193,16 +193,16 @@ static int generateFullTerrain(void* ptr)
     }
     // Generate trees
     trees = Noise_Generate(tileSize * 2, 4, getSeed(scene), &status);
-    ore = Noise_Generate(tileSize * 2, 4, (unsigned)time(0), &status);
+    ore = Noise_Generate(tileSize * 2, 8, (unsigned)time(0), &status);
     Noise_Normalize(ore, tileSize * 2);
     for (int y = 0; y < tileSize * 2; y++) {
         for (int x = 0; x < tileSize * 2; x++) {
             if (ore[x + y * tileSize * 2] > 0.5) {
-                ore[x + y * tileSize * 2] = powf(2 * ore[x + y * tileSize * 2] - 1, 1);
+                ore[x + y * tileSize * 2] = powf(2 * ore[x + y * tileSize * 2] - 1, 0.5);
             } else {
-                ore[x + y * tileSize * 2] = -powf(-(2 * ore[x + y * tileSize * 2] - 1), 1);
+                ore[x + y * tileSize * 2] = -powf(-(2 * ore[x + y * tileSize * 2] - 1), 0.5);
             }
-            trees[x + y * tileSize * 2] = powf(trees[x + y * tileSize * 2], 2);
+            trees[x + y * tileSize * 2] = powf(trees[x + y * tileSize * 2], 1.5);
         }
     }
 

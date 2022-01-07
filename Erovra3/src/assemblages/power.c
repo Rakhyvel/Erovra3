@@ -1,14 +1,14 @@
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 
-EntityID Coal_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter)
+EntityID Power_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter)
 {
-    if (nation->capital == INVALID_ENTITY_INDEX) { // If the nation is defeated, no coal for you!
+    if (nation->capital == INVALID_ENTITY_INDEX) { // If the nation is defeated, no ore for you!
         return INVALID_ENTITY_INDEX;
     }
-    EntityID coalID = Scene_NewEntity(scene);
+    EntityID powerID = Scene_NewEntity(scene);
 
     Sprite* accepterSprite = (Sprite*)Scene_GetComponent(scene, accepter, SPRITE_COMPONENT_ID);
     Vector vel = Vector_Sub(accepterSprite->pos, pos);
@@ -16,9 +16,9 @@ EntityID Coal_Create(struct scene* scene, Vector pos, Nation* nation, EntityID a
     vel = Vector_Scalar(vel, min(6, Vector_Dist(pos, accepterSprite->pos) / 16.0f));
     float angle = Vector_Angle(vel);
     Sprite sprite = {
-        COAL_TEXTURE_ID,
+        POWER_TEXTURE_ID,
         NULL,
-        COAL_SHADOW_TEXTURE_ID,
+        POWER_SHADOW_TEXTURE_ID,
         nation,
         pos,
         vel,
@@ -32,25 +32,25 @@ EntityID Coal_Create(struct scene* scene, Vector pos, Nation* nation, EntityID a
         20,
         0,
         true,
-        nation->controlFlag == AI_COMPONENT_ID,
+        false, //nation->controlFlag == AI_COMPONENT_ID,
         false,
     };
-    Scene_Assign(scene, coalID, SPRITE_COMPONENT_ID, &sprite);
-    Scene_Assign(scene, coalID, PARTICLE_LAYER_COMPONENT_ID, NULL);
+    Scene_Assign(scene, powerID, SPRITE_COMPONENT_ID, &sprite);
+    Scene_Assign(scene, powerID, PARTICLE_LAYER_COMPONENT_ID, NULL);
 
     ResourceParticle resourceParticle = {
-        ResourceType_COAL,
+        ResourceType_POWER,
         Vector_Dist(pos, accepterSprite->pos),
         accepterSprite->pos,
         accepter
     };
-    Scene_Assign(scene, coalID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
+    Scene_Assign(scene, powerID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
 
-	// Increment transit for resource particle
+    // Increment transit for resource particle
     ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, resourceParticle.accepter, RESOURCE_ACCEPTER_COMPONENT_ID);
     resourceAccepter->transit[resourceParticle.type]++;
 
-    Scene_Assign(scene, coalID, nation->controlFlag, NULL);
+    Scene_Assign(scene, powerID, nation->controlFlag, NULL);
 
-    return coalID;
+    return powerID;
 }

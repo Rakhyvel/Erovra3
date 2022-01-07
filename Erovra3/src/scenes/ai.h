@@ -29,10 +29,12 @@ enum variables {
 	HAS_AVAILABLE_PORT, // Any port that isn't producing an order
     HAS_AVAILABLE_AIRFIELD, // Any factory that isn't producing an order AND has an airfield
     HAS_AVAILABLE_ACADEMY, // Any academy that isn't producing an order
-    HAS_COINS, // More like "has enough coin production"
-    HAS_FOOD, // More like "has enough food production"
-	HAS_TIMBER,
-    HAS_ORE, // More like "has enough ore production"
+    HAS_COINS, // MMETAL like "has enough coin production"
+    HAS_FOOD, // MMETAL like "has enough food production"
+    HAS_TIMBER,
+    HAS_ORE,
+    HAS_COAL,
+    HAS_METAL, // MMETAL like "has enough METAL production"
 
     SPACE_FOR_EXPANSION,
     SPACE_FOR_TWO_EXPANSIONS,
@@ -45,13 +47,13 @@ enum variables {
     // "Can afford unit" variables
     AFFORD_INFANTRY_COINS,
     AFFORD_CAVALRY_COINS,
-    AFFORD_CAVALRY_ORE,
+    AFFORD_CAVALRY_METAL,
     AFFORD_DESTROYER_COINS,
-    AFFORD_DESTROYER_ORE,
+    AFFORD_DESTROYER_METAL,
     AFFORD_FIGHTER_COINS,
-    AFFORD_FIGHTER_ORE,
+    AFFORD_FIGHTER_METAL,
     AFFORD_ATTACKER_COINS,
-    AFFORD_ATTACKER_ORE,
+    AFFORD_ATTACKER_METAL,
     AFFORD_ENGINEER_COINS,
 
     AFFORD_CITY_COINS,
@@ -64,6 +66,9 @@ enum variables {
 
     AFFORD_MINE_COINS,
     AFFORD_MINE_TIMBER,
+
+    AFFORD_FOUNDRY_COINS,
+    AFFORD_FOUNDRY_TIMBER,
 
     AFFORD_ACADEMY_COINS,
     AFFORD_ACADEMY_TIMBER,

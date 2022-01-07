@@ -2,10 +2,10 @@
 #include <SDL.h>
 #include <stdbool.h>
 
+#include "../engine/goap.h"
 #include "../engine/scene.h"
 #include "../engine/textureManager.h"
 #include "../util/vector.h"
-#include "../engine/goap.h"
 
 struct nation;
 
@@ -26,9 +26,11 @@ typedef enum unitType {
     UnitType_CAVALRY,
     UnitType_ARTILLERY,
     UnitType_ENGINEER,
-	UnitType_TIMBERLAND,
+    UnitType_TIMBERLAND,
     UnitType_CITY,
     UnitType_MINE,
+	UnitType_POWERPLANT,
+    UnitType_FOUNDRY,
     UnitType_FACTORY,
     UnitType_PORT,
     UnitType_AIRFIELD,
@@ -51,8 +53,10 @@ typedef enum resourceType {
     ResourceType_ORE,
     ResourceType_TIMBER,
     ResourceType_COAL,
+    ResourceType_METAL,
+	ResourceType_POWER,
     ResourceType_POPULATION,
-	ResourceType_FOOD,
+    ResourceType_FOOD,
     _ResourceType_Length
 } ResourceType;
 
@@ -202,7 +206,7 @@ typedef struct nation {
     Vector capitalPos;
     Arraylist* enemyNations; // EntityIDs of enemy nations
     float* visitedSpaces; // Dynamic array, spaces that units have been to. Only used by AI's
-    size_t visitedSpacesSize;  // Twice the tile size
+    size_t visitedSpacesSize; // Twice the tile size
     Arraylist* highPrioritySpaces; // A list of vectors of spaces where enemies have been spotted
     Arraylist* cities; // List of cities, used by AI engineer to search for cities to build
     Goap goap; // A Goal-Oritented Action Planner for the AI
@@ -249,8 +253,9 @@ ComponentKey EXPANSION_COMPONENT_ID;
 */
 typedef struct resourceParticle {
     ResourceType type; // Resource type that this particle carries
-    float distToCapital; // Initial distance from the resource producer to the capital
-    Vector capitalPos; // Position of the capital at the time of creation
+    float distToAccepter; // Initial distance from the resource producer to the accepter
+    Vector accepterPos; // Position of the accepter at the time of creation
+    EntityID accepter; // The ID of the accepter (what if accepter dies?)
 } ResourceParticle;
 ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
 
@@ -258,10 +263,19 @@ ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
 * to increment the nation's resources
 */
 typedef struct resourceProducer {
-    float produceRate; // The number of labor-ticks between each production
-    void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation); // Resource particle constructor
+    ResourceType type; // Resource type that this entity produces 
+    int resourceTicksRemaining;
+    int resourceTicksTotal;
+    void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter); // Resource particle constructor
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
+
+typedef struct resourceAccepter {
+    int transit[_ResourceType_Length]; // How many particles are on their way to accepter
+    int storage[_ResourceType_Length]; // How many particles are inside accepter
+    int capacity[_ResourceType_Length]; // How many particles the accepter can hold
+} ResourceAccepter;
+ComponentKey RESOURCE_ACCEPTER_COMPONENT_ID;
 
 /* For order buttons, which order units to be built in producers
 */

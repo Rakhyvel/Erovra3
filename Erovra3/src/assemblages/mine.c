@@ -37,7 +37,7 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
         Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
         false,
         UnitType_MINE,
-        0.05f,
+        0.04f, // Defense
         nation->unitCount[UnitType_MINE],
         0,
         100,
@@ -48,8 +48,9 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        // A good mine is roughly able to support two factories
-        (3.0f / Terrain_GetOre(terrain, (int)pos.x, (int)pos.y)), // This is redundant, resource production is updated in match scene
+        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > 0 ? ResourceType_ORE : ResourceType_COAL,
+		0,
+		10000,
         Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > 0 ? &Ore_Create : &Coal_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

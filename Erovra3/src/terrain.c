@@ -359,37 +359,32 @@ float Terrain_GetZoom()
     return terrain_zoom;
 }
 
-
 float Terrain_GetTimber(struct terrain* terrain, int x, int y)
 {
-    x /= 64;
-    y /= 64;
-    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
+    if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
         return 0;
     }
-    x /= 2;
-    y /= 2;
+    x = (int)(x / 64) * 2;
+    y = (int)(y / 64) * 2;
     return (terrain->timber[x + y * (terrain->tileSize * 2)]
                + terrain->timber[x + 1 + y * (terrain->tileSize * 2)]
                + terrain->timber[x + (y + 1) * (terrain->tileSize * 2)]
                + terrain->timber[x + 1 + (y + 1) * (terrain->tileSize * 2)])
-        / 4.0f;
+        * 0.25f;
 }
 
 float Terrain_GetCoal(struct terrain* terrain, int x, int y)
 {
-    x /= 64;
-    y /= 64;
-    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
+    if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
         return 0;
     }
-    x /= 2;
-    y /= 2;
-    return -(max(0, -terrain->ore[x + y * (terrain->tileSize * 2)])
+    x = (int)(x / 64) * 2;
+    y = (int)(y / 64) * 2;
+    return (max(0, -terrain->ore[x + y * (terrain->tileSize * 2)])
                + max(0, -terrain->ore[x + 1 + y * (terrain->tileSize * 2)])
                + max(0, -terrain->ore[x + (y + 1) * (terrain->tileSize * 2)])
                + max(0, -terrain->ore[x + 1 + (y + 1) * (terrain->tileSize * 2)]))
-        / 4.0f;
+        * 0.25f;
 }
 
 /*
@@ -400,18 +395,16 @@ float Terrain_GetCoal(struct terrain* terrain, int x, int y)
 */
 float Terrain_GetOre(struct terrain* terrain, int x, int y)
 {
-    x /= 64;
-    y /= 64;
-    if (x < 0 || y < 0 || x >= 2 * terrain->tileSize - 1 || y >= 2 * terrain->tileSize - 1) {
+    if (x < 0 || y < 0 || x >= terrain->size || y >= terrain->size) {
         return 0;
     }
-    x /= 2;
-    y /= 2;
+    x = (int)(x / 64) * 2;
+    y = (int)(y / 64) * 2;
     return (max(0, terrain->ore[x + y * (terrain->tileSize * 2)])
                + max(0, terrain->ore[x + 1 + y * (terrain->tileSize * 2)])
                + max(0, terrain->ore[x + (y + 1) * (terrain->tileSize * 2)])
                + max(0, terrain->ore[x + 1 + (y + 1) * (terrain->tileSize * 2)]))
-        / 4.0f;
+        * 0.25f;
 }
 
 float Terrain_GetHeightForBuilding(struct terrain* terrain, int x, int y)

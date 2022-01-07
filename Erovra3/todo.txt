@@ -311,7 +311,8 @@ x Bug whenever enemy team takes city
 x Make sea slightly darker on right-rising gradients, using the same logic as land
 x Game crashes when user adjusts map settings while map preview is loading
 
-3.10.x- Pivot
+3.10.x- Resources (12/1/21)
+x Swap "Surrender" and "Back to game" buttons in menu
 x More than one nation (Maybe an array of enemy nations)
 	x Each unit has an entityID of their nation, not a flag
 	x Procedurally generate more than two nations
@@ -364,20 +365,25 @@ x More than one nation (Maybe an array of enemy nations)
 		x Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
 			x In order to save space, coal ranges from [-1, 0], ore ranges from [0, 1]
 		x Add to nation info
-		- Can be burned in furnace to produce metal from ore
+		x Can be burned in furnace to produce metal from ore
+			x AI knows about foundries
+		x Particle AI
+			x Mines send particles to the closest foundry
+				x Flag foundry that it has a particle in transit, so no weird race conditions
+			x Do not mine if no foundry is at capacity
+			- Add GUI for foundry
 		- Can be burned to produce electricity in POWER PLANTS
-			- Expansions need their home city to have electricity to operate
-			- Cities with power plants have power
-			- Power lines carry power
-		- LIMITED!
-			- multiply ground array element by 0.999
-	- Ore
-		- Mined in a mine if there is a lot of ore at the mine
+			- Power plant is a particle accepter for coal
+			- Power plant is a particle producer for electricity
+			- Unit producers are particle accepters for electricity, need it to function
+		x LIMITED!
+	x Ore
+		x Mined in a mine if there is a lot of ore at the mine
 			- ranges from [0, 1]
-		- Smelted in a FOUNDRY into metal
-		- LIMITED!
-	- Metal
-		- Used to make all units, replaces ore (whore)
+		x Smelted in a FOUNDRY into metal
+		x LIMITED!
+	x Metal
+		x Used to make all units, replaces ore
 	- Stone
 		- Mined in mine as a byproduct
 		- Stone ranges from [-1, 1]
@@ -388,51 +394,58 @@ x More than one nation (Maybe an array of enemy nations)
 		- Crude oil is pumped out of the ground
 		- Turned into gasoline by a refinery, which is what planes actually use
 	- Make real icons for everything new
+	- Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
 	- Make it so that auto re-order keeps trying
-- Buildings can be upgraded, but require more upkeep
+
+3.11.x- Misc.
 - TRANSPORT BOATS!!!!!! (cmon mane)
+	- An other boats, this may expand to a boat update
 - Defensive armament for bombers
 	- Destroyers get torpedos
 	- Cruisers get torpedos and AA
 	- Battleships get artillery (which can attack surface) and AA
 	- AirToGroundBullet for attackers, descends from the ground
 	- Attackers can attack ships
-- Debug menu
+- Cheats menu
 	- Show fps instead of printing it (maybe always do this)
 	- toggle Show AI goals above the capital
 	- toggle Show AI visited tiles
 	- toggle Show port tiles
 	- toggle if a nation is AI controlled
-- Settings where you can turn down the volume!
-x Swap "Surrender" and "Back to game" buttons in menu
-- Different shapes for the units on mini map
-	- ESPECIALLY for walls
+	- toggle if you can focus enemy units
 - AI Build walls 3 tile radius around capital
-- Buff factory speed if city other factories, etc with others
-- A way to select to snap to a grid
-- more hints
-- Randomize buttons next to things people might want to randomize, instead of just one
-- Camera shouldn't go out of bounds
+- Buff factory speed if city other factories, etc with others (?)
 - Check if capitals are all on the same continent first, to make it faster
 - A box in the minimap that shows where the camera is
 	- Can click on minimap to pan camera there
-- Slider for center bias in map maker
-- Tooltips?
+- Camera shouldn't go out of bounds
+- Different shapes for the units on mini map
+	- ESPECIALLY for walls
 - Premade maps
-- Scroll for containers
 - Tabs for map creation
 	- Save map settings into a sharable string
-- Better OOBE
-	- Actual real speech box hints when you first start playing about what to do
-	- Time how long it takes to play, make sure the first 20% makes sense
+- Map seeds should be base 64, only 6 or 7 long (5 * 6 = 8 * 4 = 32 bit integer seed)
+- Randomize buttons next to things people might want to randomize, instead of just one
+- Slider for center bias in map maker
+- Settings where you can turn down the volume!
 - Redo the loading circle with correct color and better transparency, also make sure it's anti aliased
 - Error messages are clipped
-- Map seeds should be base 64, only 6 or 7 long (5 * 6 = 8 * 4 = 32 bit integer seed)
+- Scroll for containers
+- more hints, hints.txt file
+- Better OOBE:
+	- Actual real speech box hints when you first start playing about what to do
+	- Time how long it takes to play, make sure the first 20% makes sense
 - In game hints that uses the AI to give hints
 - Warnings about food and low morale
 	- Difficulty settings, can be turned off before game is created
+- A way to select to snap to a grid
+- Arrow spines should be curved back a bit
+- Arrows should begin slightly after units (make it happen)
+- Arrows should not overlap at the tip
+- Scrolling while giving arrow orders should scroll the offset for units
+- Tooltips?
 
-3.11.x- Multiplayer
+3.12.x- Multiplayer
 - Order particles
 	- Originate from nation's capital
 	- Send messages to units to change their position, orders, etc (this ties into my plans for multiplayer!)

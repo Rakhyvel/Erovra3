@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 
 EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
 {
@@ -37,7 +37,7 @@ EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
         Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
         false,
         UnitType_TIMBERLAND,
-        0.05f,
+        0.04f,
         nation->unitCount[UnitType_TIMBERLAND],
         0,
         100,
@@ -48,7 +48,9 @@ EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, timberlandID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        (2.0f / Terrain_GetTimber(terrain, (int)pos.x, (int)pos.y) > 0.5 ? 1 : 0), // Doesn't matter, is updated by match_produceresources
+        ResourceType_TIMBER,
+        0,
+        10000,
         &Timber_Create
     };
     Scene_Assign(scene, timberlandID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

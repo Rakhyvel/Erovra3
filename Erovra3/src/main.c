@@ -52,7 +52,7 @@ int SDL_main(int argc, char** argv)
     int status;
     Lexicon_Create("res/countryNames.txt", "res/countryNames.lex", &status);
 #endif
-    Apricot_Init("Erovra 3.10.1", 1280, 720);
+    Apricot_Init("Erovra 3.10.2", 1280, 720);
 #ifdef CREATE_TEXTURES
     Textures_Draw();
 #endif

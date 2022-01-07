@@ -1,19 +1,20 @@
+#include "../engine/apricot.h"
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 
-EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
+EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation, EntityID accepter)
 {
     if (nation->capital == INVALID_ENTITY_INDEX) { // If the nation is defeated, no food for you!
         return INVALID_ENTITY_INDEX;
     }
     EntityID foodID = Scene_NewEntity(scene);
 
-    Sprite* capitalSprite = (Sprite*)Scene_GetComponent(scene, nation->capital, SPRITE_COMPONENT_ID);
-    Vector vel = Vector_Sub(capitalSprite->pos, pos);
+    Sprite* accepterSprite = (Sprite*)Scene_GetComponent(scene, accepter, SPRITE_COMPONENT_ID);
+    Vector vel = Vector_Sub(accepterSprite->pos, pos);
     vel = Vector_Normalize(vel);
-    vel = Vector_Scalar(vel, min(6, Vector_Dist(pos, capitalSprite->pos) / 16.0f));
+    vel = Vector_Scalar(vel, min(6, Vector_Dist(pos, accepterSprite->pos) / 16.0f));
     float angle = Vector_Angle(vel);
     Sprite sprite = {
         ORE_TEXTURE_ID, // sprite
@@ -32,7 +33,7 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
         20,
         0,
         true,
-        nation->controlFlag == AI_COMPONENT_ID,
+        true,
         false,
     };
     Scene_Assign(scene, foodID, SPRITE_COMPONENT_ID, &sprite);
@@ -40,10 +41,15 @@ EntityID Food_Create(struct scene* scene, Vector pos, Nation* nation)
 
     ResourceParticle resourceParticle = {
         ResourceType_FOOD,
-        Vector_Dist(pos, capitalSprite->pos),
-        capitalSprite->pos
+        Vector_Dist(pos, accepterSprite->pos),
+        accepterSprite->pos,
+        accepter
     };
     Scene_Assign(scene, foodID, RESOURCE_PARTICLE_COMPONENT_ID, &resourceParticle);
+
+    // Increment transit for resource particle
+    ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, resourceParticle.accepter, RESOURCE_ACCEPTER_COMPONENT_ID);
+    resourceAccepter->transit[resourceParticle.type]++;
 
     Scene_Assign(scene, foodID, nation->controlFlag, NULL);
 

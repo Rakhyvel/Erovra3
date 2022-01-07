@@ -201,7 +201,7 @@ void Scene_Purge(struct scene* scene)
     while (scene->purgedEntities->size > 0) {
         EntityIndex index = *(EntityIndex*)Arraylist_Pop(scene->purgedEntities);
         struct entity* purgedEntity = (struct entity*)Arraylist_Get(scene->entities, index);
-        purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | getVersion(purgedEntity->id);
+        purgedEntity->id = (INVALID_ENTITY_INDEX << 16) | (getVersion(purgedEntity->id));
         purgedEntity->mask = 0;
         scene->numEntities--;
         // must gaurd against duplicates, otherwise allocated entity would be marked "free"
@@ -209,6 +209,12 @@ void Scene_Purge(struct scene* scene)
             Arraylist_Add(&scene->freeIndices, &index);
         }
     }
+}
+
+bool Scene_EntityIsValid(struct scene* scene, EntityID id)
+{
+    struct entity* entt = (struct entity*)Arraylist_Get(scene->entities, getIndex(id));
+    return entt->mask != 0 && entt->id == id;
 }
 
 const ComponentMask Scene_CreateMask(struct scene* scene, int number, ComponentKey components, ...)

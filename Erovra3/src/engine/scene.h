@@ -31,6 +31,7 @@
 
 #define MAX_COMPONENTS 64
 #define INVALID_ENTITY_INDEX ((EntityID)65535)
+#define INVALID_ENTITY_ID (INVALID_ENTITY_INDEX << 16);
 #define MAX_ENTITIES 1000
 
 #define GET_COMPONENT_FIELD(scene, id, componentid, structName, fieldName) ((structName*)Scene_GetComponent(scene, id, componentid))->fieldName
@@ -172,6 +173,8 @@ void Scene_MarkPurged(struct scene* scene, EntityID id);
  * @param scene Relevant scene
 */
 void Scene_Purge(struct scene* scene);
+
+bool Scene_EntityIsValid(struct scene* scene, EntityID id);
 
 /**
  * @brief Takes a list of ComponentKeys and forms a ComponentMask for the relevant scene.
