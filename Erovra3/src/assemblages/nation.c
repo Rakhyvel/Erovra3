@@ -26,11 +26,12 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
 {
     // Initial resources
     nation->resources[ResourceType_POPULATION] = 1;
-    nation->resources[ResourceType_COIN] = 25;
+    nation->resources[ResourceType_COIN] = 125;
     nation->resources[ResourceType_FOOD] = 50;
-    nation->resources[ResourceType_TIMBER] = 5;
+    nation->resources[ResourceType_TIMBER] = 15;
     nation->resources[ResourceType_COAL] = 0;
     nation->resources[ResourceType_ORE] = 0;
+    nation->resources[ResourceType_METAL] = 230;
 
     // Coin costs
     nation->costs[ResourceType_COIN][UnitType_CITY] = 5;

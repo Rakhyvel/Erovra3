@@ -352,11 +352,10 @@ x More than one nation (Maybe an array of enemy nations)
 		x LIMITED!
 	- New units in this order
 		x Timberland
-		- Foundry
-			- Coal + ore = metal
-		- Power plant
-			- Coal = electricity
-		- Power line
+		x Foundry
+			x Coal + ore = metal
+		x Power plant
+			x Coal = electricity
 		- Oil drill
 			- Electricity = crude oil
 		- Refinery
@@ -371,23 +370,23 @@ x More than one nation (Maybe an array of enemy nations)
 			x Mines send particles to the closest foundry
 				x Flag foundry that it has a particle in transit, so no weird race conditions
 			x Do not mine if no foundry is at capacity
-			- Add GUI for foundry
 		- Can be burned to produce electricity in POWER PLANTS
-			- Power plant is a particle accepter for coal
-			- Power plant is a particle producer for electricity
-			- Unit producers are particle accepters for electricity, need it to function
+			x Power plant is a particle accepter for coal
+			x Power plant is a particle producer for power
+			x Unit producers are particle accepters for electricity, need it to function
+			x Add "No power" indicator if ticks without power gets too big, add in general for other accepters
+			- Unify unit and resource producers
+				- Add ready and focus GUI for foundry
+			- AI knows about power
 		x LIMITED!
 	x Ore
 		x Mined in a mine if there is a lot of ore at the mine
-			- ranges from [0, 1]
+			x ranges from [0, 1]
 		x Smelted in a FOUNDRY into metal
 		x LIMITED!
 	x Metal
 		x Used to make all units, replaces ore
-	- Stone
-		- Mined in mine as a byproduct
-		- Stone ranges from [-1, 1]
-		- Can be used to upgrade buildings, along with other resources probably
+	? Storage units that accept particles, reemit them, have a lower priority distance multiplier (512)
 	- Ammo & shells & bombs as ingredients to make units
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky
 		- Same thing as food, produced by other units, drained by each unit
@@ -398,6 +397,7 @@ x More than one nation (Maybe an array of enemy nations)
 	- Make it so that auto re-order keeps trying
 
 3.11.x- Misc.
+- Upgrade buildings
 - TRANSPORT BOATS!!!!!! (cmon mane)
 	- An other boats, this may expand to a boat update
 - Defensive armament for bombers
@@ -413,8 +413,8 @@ x More than one nation (Maybe an array of enemy nations)
 	- toggle Show port tiles
 	- toggle if a nation is AI controlled
 	- toggle if you can focus enemy units
+	- Can give spawn any resource particles! Or any units!
 - AI Build walls 3 tile radius around capital
-- Buff factory speed if city other factories, etc with others (?)
 - Check if capitals are all on the same continent first, to make it faster
 - A box in the minimap that shows where the camera is
 	- Can click on minimap to pan camera there

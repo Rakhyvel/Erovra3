@@ -55,7 +55,7 @@ EntityID PowerPlant_Create(struct scene* scene, Vector pos, Nation* nation, Enti
     ResourceProducer resourceProducer = {
         ResourceType_POWER,
         -1, // Start at -1 so that it doesn't automatically create power (only creates on 0)
-        240,
+        40,
         &Power_Create
     };
     Scene_Assign(scene, powerPlantID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);

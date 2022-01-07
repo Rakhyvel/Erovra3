@@ -598,6 +598,21 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
         }
         break;
     }
+    case UnitType_POWERPLANT: {
+        ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
+        if (accepter->storage[ResourceType_COAL] >= 1 && resourceProducer->resourceTicksRemaining == -1) {
+            resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
+            resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
+        }
+        break;
+    }
+    case UnitType_FACTORY:
+    case UnitType_PORT:
+    case UnitType_ACADEMY: {
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+        producer->ticksSinceLastPowered = 0;
+        break;
+    }
     }
 }
 
@@ -1666,13 +1681,13 @@ void Match_ProduceResources(struct scene* scene)
                     terrain->ore[(int)(sprite->pos.x / 64) * 2 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
                     terrain->ore[(int)(sprite->pos.x / 64) * 2 + 1 + ((int)(sprite->pos.y / 64) * 2 + 1) * 2 * terrain->tileSize] *= 0.999f;
 
-                    resourceProducer->resourceTicksTotal = 1.0f * ticksPerLabor / (resourceProducer->type == ResourceType_ORE ? Terrain_GetOre(terrain, (int)sprite->pos.x, (int)sprite->pos.y) : Terrain_GetCoal(terrain, (int)sprite->pos.x, (int)sprite->pos.y));
+                    resourceProducer->resourceTicksTotal = 1.0f * ticksPerLabor / (resourceProducer->type == ResourceType_ORE ? Terrain_GetOre(terrain, (int)sprite->pos.x, (int)sprite->pos.y) : (2 * Terrain_GetCoal(terrain, (int)sprite->pos.x, (int)sprite->pos.y)));
                 }
 
-                if (unit->type == UnitType_FOUNDRY) { // Intentional no else-if
+                if (unit->type == UnitType_FOUNDRY || unit->type == UnitType_POWERPLANT) { // Intentional no else-if
                     ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
                     resourceProducer->resourceTicksRemaining = -1; // This is reset whenever a foundry receives particles from mines
-                    resourceAccepter->storage[ResourceType_ORE] = 0;
+                    resourceAccepter->storage[ResourceType_ORE] = 0; // Ok to do for powerplant
                     resourceAccepter->storage[ResourceType_COAL] = 0;
                 } else {
                     resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
@@ -1698,8 +1713,20 @@ void Match_ProduceUnits(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Expansion* expansion = (Expansion*)Scene_GetComponent(scene, id, EXPANSION_COMPONENT_ID);
         City* city = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
+        ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
 
-        producer->orderTicksRemaining--;
+        producer->ticksSinceLastPowered++;
+
+        if (producer->order != -1) {
+            if (producer->ticksSinceLastPowered < 3 * ticksPerLabor) {
+                producer->orderTicksRemaining--;
+            } else {
+                resourceAccepter->storage[ResourceType_POWER] = 0;
+            }
+        } else {
+            producer->orderTicksRemaining--;
+            resourceAccepter->storage[ResourceType_POWER] = 1; // no need to take power if not producing anything
+        }
         if (producer->orderTicksRemaining == 0) {
             if (producer->order == UnitType_INFANTRY) {
                 Infantry_Create(scene, sprite->pos, sprite->nation);
@@ -2308,6 +2335,25 @@ void Match_RenderProducerBars(Scene* scene)
     }
 }
 
+void Match_NoPowerSymbols(Scene* scene)
+{
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
+        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+        SDL_Rect rect = { 0, 0, 0, 0 };
+        SDL_Rect rect2 = { 0, 0, 0, 0 };
+
+        if (producer->ticksSinceLastPowered >= 3 * ticksPerLabor && (producer->ticksSinceLastPowered % 60) < 30) {
+            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, (float)sprite->width / 2, (float)sprite->height / 2);
+            Terrain_Translate(&rect2, sprite->pos.x, sprite->pos.y, (float)sprite->width / 4, (float)sprite->height / 4);
+            SDL_SetTextureColorMod(WARNING_TEXTURE_ID, 254, 237, 5);
+            Texture_Draw(WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
+            Texture_Draw(POWER_SHADOW_TEXTURE_ID, rect2.x, rect2.y, (float)rect2.w, (float)rect2.h, 0);
+        }
+    }
+}
+
 /*
 	Runs each update system, every tick */
 void Match_Update(Scene* match)
@@ -2377,6 +2423,7 @@ void Match_Render(Scene* match)
     }
     Match_RenderResources(match);
     Match_SpriteRender(match, BUILDING_LAYER_COMPONENT_ID);
+    Match_NoPowerSymbols(match);
     Match_RenderProducerBars(match);
     Match_RenderCityName(match);
     Match_DrawSelectionArrows(match);

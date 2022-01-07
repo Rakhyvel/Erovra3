@@ -1,7 +1,7 @@
-#include "./components.h"
 #include "../scenes/match.h"
 #include "../textures.h"
 #include "./assemblages.h"
+#include "./components.h"
 
 EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
@@ -17,12 +17,12 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         0.5f,
         0,
         0,
-		0,
-		0,
+        0,
+        0,
         RenderPriorirty_BUILDING_LAYER,
         32,
         32,
-		0,
+        0,
         false,
         false,
         false,
@@ -52,9 +52,15 @@ EntityID Academy_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         -1,
         false,
         ACADEMY_READY_FOCUSED_GUI,
-        ACADEMY_BUSY_FOCUSED_GUI
+        ACADEMY_BUSY_FOCUSED_GUI,
+        720
     };
     Scene_Assign(scene, academyID, PRODUCER_COMPONENT_ID, &producer);
+
+    ResourceAccepter accepter;
+    memset(&accepter, 0, sizeof(accepter));
+    accepter.capacity[ResourceType_POWER] = 1;
+    Scene_Assign(scene, academyID, RESOURCE_ACCEPTER_COMPONENT_ID, &accepter);
 
     Expansion expansion = {
         homeCity,

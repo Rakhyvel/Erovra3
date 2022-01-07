@@ -29,7 +29,7 @@ typedef enum unitType {
     UnitType_TIMBERLAND,
     UnitType_CITY,
     UnitType_MINE,
-	UnitType_POWERPLANT,
+    UnitType_POWERPLANT,
     UnitType_FOUNDRY,
     UnitType_FACTORY,
     UnitType_PORT,
@@ -54,7 +54,7 @@ typedef enum resourceType {
     ResourceType_TIMBER,
     ResourceType_COAL,
     ResourceType_METAL,
-	ResourceType_POWER,
+    ResourceType_POWER,
     ResourceType_POPULATION,
     ResourceType_FOOD,
     _ResourceType_Length
@@ -236,9 +236,39 @@ typedef struct producer {
     bool repeat; // Whether or not to repeat the order after it is completed
     const EntityID readyGUIContainer; // GUI container for when producer is not producing. Constant value to copy from for the focusable component
     const EntityID busyGUIContainer; // GUI container for when producer is producing. Constant value to copy from for the focusable component
+    int ticksSinceLastPowered;
     int orderTicksTotal; // Total number of ticks the order will take
 } Producer;
 ComponentKey PRODUCER_COMPONENT_ID;
+
+/* Resource producers create resource particles, which then fly to the capital 
+* to increment the nation's resources
+*/
+typedef struct resourceProducer {
+    ResourceType type; // Resource type that this entity produces
+    int resourceTicksRemaining;
+    int resourceTicksTotal;
+    void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter); // Resource particle constructor
+} ResourceProducer;
+ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
+
+typedef struct newProducer {
+    union {
+        void (*unit)(struct scene* scene, Vector pos, Nation* nation);
+        void (*particle)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter);
+    } constructor;
+    union {
+        ResourceType resource;
+        UnitType unit;
+    } type;
+    int ticksRemaining;
+    int ticksTotal;
+    const EntityID readyGUIContainer; // GUI container for when producer is not producing. Constant value to copy from for the focusable component
+    const EntityID busyGUIContainer; // GUI container for when producer is producing. Constant value to copy from for the focusable component
+    bool orderIsUnit;
+    bool repeat;
+} NewProducer;
+
 
 /* Data for expansions, which are building units built adjacent to cities
 */
@@ -258,17 +288,6 @@ typedef struct resourceParticle {
     EntityID accepter; // The ID of the accepter (what if accepter dies?)
 } ResourceParticle;
 ComponentKey RESOURCE_PARTICLE_COMPONENT_ID;
-
-/* Resource producers create resource particles, which then fly to the capital 
-* to increment the nation's resources
-*/
-typedef struct resourceProducer {
-    ResourceType type; // Resource type that this entity produces 
-    int resourceTicksRemaining;
-    int resourceTicksTotal;
-    void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter); // Resource particle constructor
-} ResourceProducer;
-ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
 
 typedef struct resourceAccepter {
     int transit[_ResourceType_Length]; // How many particles are on their way to accepter

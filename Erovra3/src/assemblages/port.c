@@ -52,9 +52,15 @@ EntityID Port_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         -1,
         false,
         PORT_READY_FOCUSED_GUI,
-        PORT_BUSY_FOCUSED_GUI
+        PORT_BUSY_FOCUSED_GUI,
+        720
     };
     Scene_Assign(scene, portID, PRODUCER_COMPONENT_ID, &producer);
+
+    ResourceAccepter accepter;
+    memset(&accepter, 0, sizeof(accepter));
+    accepter.capacity[ResourceType_POWER] = 1;
+    Scene_Assign(scene, portID, RESOURCE_ACCEPTER_COMPONENT_ID, &accepter);
 
     Expansion expansion = {
         homeCity,

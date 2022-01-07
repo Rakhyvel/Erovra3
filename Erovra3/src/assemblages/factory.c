@@ -5,7 +5,7 @@
 
 EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityID homeCity, CardinalDirection dir)
 {
-    EntityID foundryID = Scene_NewEntity(scene);
+    EntityID factoryID = Scene_NewEntity(scene);
 
     Sprite sprite = {
         FACTORY_TEXTURE_ID,
@@ -27,8 +27,8 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         false,
     };
-    Scene_Assign(scene, foundryID, SPRITE_COMPONENT_ID, &sprite);
-    Scene_Assign(scene, foundryID, BUILDING_LAYER_COMPONENT_ID, 0);
+    Scene_Assign(scene, factoryID, SPRITE_COMPONENT_ID, &sprite);
+    Scene_Assign(scene, factoryID, BUILDING_LAYER_COMPONENT_ID, 0);
 
     Unit type = {
         100.0f,
@@ -45,25 +45,31 @@ EntityID Factory_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         false,
         FACTORY_READY_FOCUSED_GUI
     };
-    Scene_Assign(scene, foundryID, UNIT_COMPONENT_ID, &type);
+    Scene_Assign(scene, factoryID, UNIT_COMPONENT_ID, &type);
 
     Producer producer = {
         -1,
         -1,
         false,
         FACTORY_READY_FOCUSED_GUI,
-        FACTORY_BUSY_FOCUSED_GUI
+        FACTORY_BUSY_FOCUSED_GUI,
+		720
     };
-    Scene_Assign(scene, foundryID, PRODUCER_COMPONENT_ID, &producer);
+    Scene_Assign(scene, factoryID, PRODUCER_COMPONENT_ID, &producer);
+
+    ResourceAccepter accepter;
+    memset(&accepter, 0, sizeof(accepter));
+    accepter.capacity[ResourceType_POWER] = 1;
+    Scene_Assign(scene, factoryID, RESOURCE_ACCEPTER_COMPONENT_ID, &accepter);
 
     Expansion expansion = {
         homeCity,
         dir
     };
-    Scene_Assign(scene, foundryID, EXPANSION_COMPONENT_ID, &expansion);
+    Scene_Assign(scene, factoryID, EXPANSION_COMPONENT_ID, &expansion);
 
-    Scene_Assign(scene, foundryID, BUILDING_FLAG_COMPONENT_ID, NULL);
-    Scene_Assign(scene, foundryID, nation->controlFlag, NULL);
+    Scene_Assign(scene, factoryID, BUILDING_FLAG_COMPONENT_ID, NULL);
+    Scene_Assign(scene, factoryID, nation->controlFlag, NULL);
 
-    return foundryID;
+    return factoryID;
 }
