@@ -2335,7 +2335,7 @@ static void Match_RenderBar(Vector pos, int remaining, int total, SDL_Color colo
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID , PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
@@ -2344,7 +2344,7 @@ void Match_RenderProducerBars(Scene* scene)
             Match_RenderBar(sprite->pos, producer->orderTicksRemaining, producer->orderTicksTotal, sprite->nation->color);
         }
     }
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID , PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceProducer* producer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
@@ -2453,7 +2453,7 @@ void Match_Update(Scene* match)
 void Match_Render(Scene* match)
 {
     Terrain_Render(terrain);
-    Match_DrawVisitedSquares(match);
+    //Match_DrawVisitedSquares(match);
     if (doFogOfWar) { // Determined by a switch in the match creation menu
         Match_UpdateFogOfWar(match);
     }
@@ -2708,10 +2708,10 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     GUI_SetPadding(match, ENGINEER_FOCUSED_GUI, 2);
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build City", CITY_TEXTURE_ID, UnitType_CITY, &Match_EngineerAddCity));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddExpansion));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Timberland", MINE_TEXTURE_ID, UnitType_TIMBERLAND, &Match_EngineerAddBuilding));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Timberland", TIMBERLAND_TEXTURE_ID, UnitType_TIMBERLAND, &Match_EngineerAddBuilding));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddBuilding));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Power Plant", POWERPLANT_TEXTURE_ID, UnitType_POWERPLANT, &Match_EngineerAddExpansion));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Foundry", FACTORY_TEXTURE_ID, UnitType_FOUNDRY, &Match_EngineerAddExpansion));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Foundry", FOUNDRY_TEXTURE_ID, UnitType_FOUNDRY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Academy", ACADEMY_TEXTURE_ID, UnitType_ACADEMY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Factory", FACTORY_TEXTURE_ID, UnitType_FACTORY, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddExpansion));

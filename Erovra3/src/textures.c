@@ -21,10 +21,10 @@ void Textures_Init()
     MINE_OUTLINE_TEXTURE_ID = Texture_Load("res/mine_outline.png");
     MINE_SHADOW_TEXTURE_ID = Texture_Load("res/mine_shadow.png");
     POWERPLANT_TEXTURE_ID = Texture_Load("res/powerplant.png");
-    POWERPLANT_OUTLINE_TEXTURE_ID = Texture_Load("res/powerplant.png");
+    POWERPLANT_OUTLINE_TEXTURE_ID = Texture_Load("res/powerplant_outline.png");
     POWERPLANT_SHADOW_TEXTURE_ID = Texture_Load("res/powerplant_shadow.png");
     FOUNDRY_TEXTURE_ID = Texture_Load("res/foundry.png");
-    FOUNDRY_OUTLINE_TEXTURE_ID = Texture_Load("res/foundry.png");
+    FOUNDRY_OUTLINE_TEXTURE_ID = Texture_Load("res/foundry_outline.png");
     FOUNDRY_SHADOW_TEXTURE_ID = Texture_Load("res/foundry_shadow.png");
     FACTORY_TEXTURE_ID = Texture_Load("res/factory.png");
     FACTORY_OUTLINE_TEXTURE_ID = Texture_Load("res/factory_outline.png");
@@ -154,8 +154,10 @@ void Textures_Draw()
     MINE_OUTLINE_TEXTURE_ID = Texture_Create(640, 640);
     MINE_SHADOW_TEXTURE_ID = Texture_Create(640, 640);
     POWERPLANT_TEXTURE_ID = Texture_Create(320, 320);
+    POWERPLANT_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
     POWERPLANT_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
-    FOUNDRY_TEXTURE_ID = Texture_Load("res/foundry.png");
+    FOUNDRY_TEXTURE_ID = Texture_Create(320, 320);
+    FOUNDRY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
     FOUNDRY_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     FACTORY_TEXTURE_ID = Texture_Create(320, 320);
     FACTORY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
@@ -244,12 +246,22 @@ void Textures_Draw()
     Texture_DrawBezier(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 20);
     Texture_DrawBezier(MINE_OUTLINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 100);
 
-    Texture_FillPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 255, 255, 255, 255 });
-    Texture_DrawPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_FillPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
     Texture_DrawPolygon(POWERPLANT_OUTLINE_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_DrawPolygon(POWERPLANT_OUTLINE_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+
+    Texture_FillBezier(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_molten.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawBezier(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_molten.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillPolygon(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_bucket.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_bucket.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillBezier(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_handle.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawBezier(FOUNDRY_TEXTURE_ID, Polygon_Create("res/foundry_handle.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawBezier(FOUNDRY_OUTLINE_TEXTURE_ID, Polygon_Create("res/foundry_molten.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(FOUNDRY_OUTLINE_TEXTURE_ID, Polygon_Create("res/foundry_bucket.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawBezier(FOUNDRY_OUTLINE_TEXTURE_ID, Polygon_Create("res/foundry_handle.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
 
     Texture_FillPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -289,6 +301,7 @@ void Textures_Draw()
     Texture_CreateShadow(FACTORY_SHADOW_TEXTURE_ID, FACTORY_TEXTURE_ID);
     Texture_CreateShadow(PORT_SHADOW_TEXTURE_ID, PORT_TEXTURE_ID);
     Texture_CreateShadow(MINE_SHADOW_TEXTURE_ID, MINE_TEXTURE_ID);
+    Texture_CreateShadow(TIMBERLAND_SHADOW_TEXTURE_ID, TIMBERLAND_TEXTURE_ID);
     Texture_CreateShadow(ACADEMY_SHADOW_TEXTURE_ID, ACADEMY_TEXTURE_ID);
     Texture_CreateShadow(AIRFIELD_SHADOW_TEXTURE_ID, AIRFIELD_TEXTURE_ID);
     Texture_CreateShadow(FARM_SHADOW_TEXTURE_ID, FARM_TEXTURE_ID);
@@ -405,13 +418,13 @@ void Textures_Draw()
     power.y = 122;
     Texture_FillPolygon(NO_POWER_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 });
     Texture_DrawPolygon(NO_POWER_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 }, 30);
-    Texture_FillPolygon(NO_POWER_WARNING_TEXTURE_ID, power, (SDL_Color) { 30, 30, 30, 255 });
+    Texture_FillPolygon(NO_POWER_WARNING_TEXTURE_ID, power, (SDL_Color) { 32, 32, 32, 255 });
 
     rock1.x = 80;
     rock1.y = 150;
     Texture_FillPolygon(NO_COAL_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 });
     Texture_DrawPolygon(NO_COAL_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 }, 30);
-    Texture_FillPolygon(NO_COAL_WARNING_TEXTURE_ID, rock1, (SDL_Color) { 30, 30, 30, 255 });
+    Texture_FillPolygon(NO_COAL_WARNING_TEXTURE_ID, rock1, (SDL_Color) { 32, 32, 32, 255 });
 
     Texture_Save("res/bullet_shadow.png", BULLET_SHADOW_TEXTURE_ID);
     Texture_Save("res/bomb_shadow.png", BOMB_SHADOW_TEXTURE_ID);
@@ -441,7 +454,10 @@ void Textures_Draw()
     Texture_Save("res/mine_outline.png", MINE_OUTLINE_TEXTURE_ID);
     Texture_Save("res/mine_shadow.png", MINE_SHADOW_TEXTURE_ID);
     Texture_Save("res/powerplant.png", POWERPLANT_TEXTURE_ID);
+    Texture_Save("res/powerplant_outline.png", POWERPLANT_OUTLINE_TEXTURE_ID);
     Texture_Save("res/powerplant_shadow.png", POWERPLANT_SHADOW_TEXTURE_ID);
+    Texture_Save("res/foundry.png", FOUNDRY_TEXTURE_ID);
+    Texture_Save("res/foundry_outline.png", FOUNDRY_OUTLINE_TEXTURE_ID);
     Texture_Save("res/foundry_shadow.png", FOUNDRY_SHADOW_TEXTURE_ID);
     Texture_Save("res/factory.png", FACTORY_TEXTURE_ID);
     Texture_Save("res/factory_outline.png", FACTORY_OUTLINE_TEXTURE_ID);

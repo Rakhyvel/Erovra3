@@ -51,7 +51,7 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
     nation->costs[ResourceType_COIN][UnitType_BATTLESHIP] = 60;
     nation->costs[ResourceType_COIN][UnitType_FIGHTER] = 15;
     nation->costs[ResourceType_COIN][UnitType_ATTACKER] = 15;
-    nation->costs[ResourceType_COIN][UnitType_BOMBER] = 400;
+    nation->costs[ResourceType_COIN][UnitType_BOMBER] = 20;
 
     // Timber costs
     nation->costs[ResourceType_TIMBER][UnitType_CITY] = 5;

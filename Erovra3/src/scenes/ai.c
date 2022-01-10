@@ -124,7 +124,7 @@ static void findBuildingTile(Scene* scene, Nation* nation, UnitType type, float(
             }
             x += dx;
             y += dy;
-            if (getResource(terrain, point.x, point.y) < 0.4) {
+            if (getResource(terrain, point.x, point.y) < 0.5) {
                 continue;
             }
             if (Terrain_GetBuildingAt(terrain, point.x, point.y) == INVALID_ENTITY_INDEX && Terrain_LineOfSight(terrain, sprite->pos, point, 0.5)) {
@@ -318,17 +318,18 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
 
     goap->variables[NO_KNOWN_ENEMY_UNITS] = knownEnemies == 0;
     goap->variables[FOUND_ENEMY_CAPITAL] = knownEnemyCapital;
-    goap->variables[SEA_SUPREMACY] = nation->unitCount[UnitType_DESTROYER] > max(1, knownEnemySeaUnits);
+    goap->variables[SEA_SUPREMACY] = (nation->unitCount[UnitType_DESTROYER] > max(1, knownEnemySeaUnits)) || terrain->ports->size == 0;
 
     goap->variables[HAS_FIGHTER] = nation->unitCount[UnitType_FIGHTER] + nation->prodCount[UnitType_FIGHTER] >= 1;
-    goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] > knownEnemies;
+    goap->variables[HAS_ATTACKER] = nation->unitCount[UnitType_ATTACKER] + nation->prodCount[UnitType_ATTACKER] >= 1;
     goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
     goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
     goap->variables[HAS_COAL] = averageTicksPerCoalMade < averageTicksPerCoalUsed;
     goap->variables[HAS_POWER] = averageTicksPerPowerMade < averageTicksPerPowerUsed;
     goap->variables[HAS_METAL] = averageTicksPerMetalMade < averageTicksPerMetalUsed;
     goap->variables[HAS_FOOD] = averageTicksPerFoodMade < averageTicksPerFoodUsed;
-    goap->variables[HAS_TIMBER] = averageTicksPerTimberMade * 0.45 < ticksPerLabor || nation->resources[ResourceType_TIMBER] > 30;
+    // ticksToTimberCost < ticksToCoinCost
+    goap->variables[HAS_TIMBER] = nation->unitCount[UnitType_TIMBERLAND] >= 2 && averageTicksPerTimberMade * 0.5f < ticksPerLabor;
 
     goap->variables[AFFORD_INFANTRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_INFANTRY];
     goap->variables[AFFORD_CAVALRY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_CAVALRY];
@@ -667,8 +668,9 @@ void AI_TargetEnemyCapital(Scene* scene, Nation* nation)
                 continue;
             }
             Sprite* enemyCapital = (Sprite*)Scene_GetComponent(scene, enemyNation->capital, SPRITE_COMPONENT_ID);
+            Unit* enemyCapitalUnit = (Unit*)Scene_GetComponent(scene, enemyNation->capital, UNIT_COMPONENT_ID);
 
-            if (Terrain_LineOfSight(terrain, sprite->pos, enemyCapital->pos, sprite->z)) {
+            if (enemyCapitalUnit->engagedTicks > 0 && Terrain_LineOfSight(terrain, sprite->pos, enemyCapital->pos, sprite->z)) {
                 target->tar = enemyCapital->pos;
                 target->lookat = enemyCapital->pos;
                 break;
@@ -876,16 +878,12 @@ void AI_BuildAcademy(Scene* scene, Nation* nation)
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 1);
-
-    Goap_AddAction(goap, "Target capital a", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_INFANTRY, 6);
-    Goap_AddAction(goap, "Target capital b", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_CAVALRY, 3);
-    Goap_AddAction(goap, "Target capital c", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_ATTACKER, 2);
-    Goap_AddAction(goap, "Target capital d", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, SEA_SUPREMACY, 1);
-
+    Goap_AddAction(goap, "Win", &AI_TargetEnemyCapital, HAS_WON, 4, HAS_INFANTRY, HAS_CAVALRY, HAS_ATTACKER, SEA_SUPREMACY, 6, 3, 1, 1);
     // Order ground units
-    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_METAL, HAS_AVAILABLE_FACTORY, HAS_FOOD, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY,
+        HAS_COINS, HAS_FOOD, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_METAL, HAS_AVAILABLE_FACTORY,
+        HAS_COINS, HAS_FOOD, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1);
 
     // Order ships
@@ -896,14 +894,13 @@ void AI_Init(Goap* goap)
     Goap_AddAction(goap, "Order attacker", &AI_OrderAttacker, HAS_ATTACKER, 5, AFFORD_ATTACKER_COINS, AFFORD_ATTACKER_METAL, HAS_FIGHTER, HAS_AVAILABLE_AIRFIELD, HAS_FOOD, 1, 1, 1, 1, 1);
 
     // Build cities
-    Goap_AddAction(goap, "city 4 coins", &AI_BuildCity, HAS_COINS, 6,
+    Goap_AddAction(goap, "city 4 coins", &AI_BuildCity, HAS_COINS, 5,
         AFFORD_CITY_COINS,
         AFFORD_CITY_TIMBER,
         ENGINEER_ISNT_BUSY,
         HAS_ENGINEER,
         HAS_TIMBER,
-        HAS_FOOD,
-        1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1);
     Goap_AddAction(goap, "city 4 expa tile", &AI_BuildCity, SPACE_FOR_EXPANSION, 5,
         HAS_ENGINEER,
         AFFORD_CITY_COINS,

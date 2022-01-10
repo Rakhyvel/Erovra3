@@ -32,7 +32,7 @@ EntityID Metal_Create(struct scene* scene, Vector pos, Nation* nation, EntityID 
         20,
         0,
         true,
-        false, //nation->controlFlag == AI_COMPONENT_ID,
+        nation->controlFlag == AI_COMPONENT_ID,
         false,
     };
     Scene_Assign(scene, metalID, SPRITE_COMPONENT_ID, &sprite);

@@ -392,8 +392,8 @@ x More than one nation (Maybe an array of enemy nations)
 		x Warning icon
 		x Metal
 		x Powerplant
-		- Timberland
-		- Foundry (update engineer GUI)
+		x Timberland
+		- Foundry
 		- Revert all particles to be player nation only
 	x Mines choose based on which is bigger, not if ore > 0
 	! Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
