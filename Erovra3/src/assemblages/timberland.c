@@ -8,9 +8,9 @@ EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
     EntityID timberlandID = Scene_NewEntity(scene);
 
     Sprite sprite = {
-        MINE_TEXTURE_ID,
-        MINE_OUTLINE_TEXTURE_ID,
-        MINE_SHADOW_TEXTURE_ID,
+        TIMBERLAND_TEXTURE_ID,
+        TIMBERLAND_OUTLINE_TEXTURE_ID,
+        TIMBERLAND_SHADOW_TEXTURE_ID,
         nation,
         pos,
         (struct vector) { 0.0f, 0.0f },

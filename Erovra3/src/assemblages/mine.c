@@ -1,7 +1,7 @@
 #include "../scenes/match.h"
 #include "../textures.h"
-#include "./components.h"
 #include "./assemblages.h"
+#include "./components.h"
 
 EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
 {
@@ -17,8 +17,8 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
         0.5f,
         0,
         0,
-		0,
-		0,
+        0,
+        0,
         RenderPriorirty_BUILDING_LAYER,
         32,
         32,
@@ -48,10 +48,10 @@ EntityID Mine_Create(struct scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, mineID, UNIT_COMPONENT_ID, &type);
 
     ResourceProducer resourceProducer = {
-        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > 0 ? ResourceType_ORE : ResourceType_COAL,
-		0,
-		10000,
-        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > 0 ? &Ore_Create : &Coal_Create
+        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > Terrain_GetCoal(terrain, (int)pos.x, (int)pos.y) ? ResourceType_ORE : ResourceType_COAL,
+        0,
+        10000,
+        Terrain_GetOre(terrain, (int)pos.x, (int)pos.y) > Terrain_GetCoal(terrain, (int)pos.x, (int)pos.y) ? &Ore_Create : &Coal_Create
     };
     Scene_Assign(scene, mineID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 

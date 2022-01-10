@@ -51,13 +51,15 @@ EntityID Foundry_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
     memset(&accepter, 0, sizeof(accepter));
     accepter.capacity[ResourceType_COAL] = 1; // Keep capacity at 1 so that mines don't send resources to the foundry over and over again
     accepter.capacity[ResourceType_ORE] = 1;
+    accepter.capacity[ResourceType_POWER] = 1;
     Scene_Assign(scene, foundryID, RESOURCE_ACCEPTER_COMPONENT_ID, &accepter);
 
     ResourceProducer resourceProducer = {
         ResourceType_METAL,
         -1, // Start at -1 so that it doesn't automatically create metal (only creates on 0)
         480,
-        &Metal_Create
+        &Metal_Create,
+        720
     };
     Scene_Assign(scene, foundryID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 

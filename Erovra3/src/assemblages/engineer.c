@@ -17,7 +17,7 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
         (struct vector) { 0.0f, 0.0f },
         0.5f,
         0,
-        0.2f,
+        0.4f,
 		0,
         0,
         RenderPriorirty_SURFACE_LAYER,

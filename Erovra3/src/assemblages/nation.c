@@ -26,25 +26,23 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
 {
     // Initial resources
     nation->resources[ResourceType_POPULATION] = 1;
-    nation->resources[ResourceType_COIN] = 125;
+    nation->resources[ResourceType_COIN] = 25;
     nation->resources[ResourceType_FOOD] = 50;
-    nation->resources[ResourceType_TIMBER] = 15;
-    nation->resources[ResourceType_COAL] = 0;
-    nation->resources[ResourceType_ORE] = 0;
-    nation->resources[ResourceType_METAL] = 230;
+    nation->resources[ResourceType_TIMBER] = 4;
 
     // Coin costs
     nation->costs[ResourceType_COIN][UnitType_CITY] = 5;
     nation->costs[ResourceType_COIN][UnitType_TIMBERLAND] = 5;
     nation->costs[ResourceType_COIN][UnitType_FACTORY] = 10;
     nation->costs[ResourceType_COIN][UnitType_MINE] = 5;
+    nation->costs[ResourceType_COIN][UnitType_POWERPLANT] = 10;
     nation->costs[ResourceType_COIN][UnitType_FOUNDRY] = 10;
     nation->costs[ResourceType_COIN][UnitType_PORT] = 10;
-    nation->costs[ResourceType_COIN][UnitType_AIRFIELD] = 20;
+    nation->costs[ResourceType_COIN][UnitType_AIRFIELD] = 10;
     nation->costs[ResourceType_COIN][UnitType_FARM] = 5;
     nation->costs[ResourceType_COIN][UnitType_ACADEMY] = 10;
     nation->costs[ResourceType_COIN][UnitType_WALL] = 10;
-    nation->costs[ResourceType_COIN][UnitType_INFANTRY] = 15;
+    nation->costs[ResourceType_COIN][UnitType_INFANTRY] = 20;
     nation->costs[ResourceType_COIN][UnitType_ENGINEER] = 15;
     nation->costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation->costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
@@ -55,10 +53,11 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
     nation->costs[ResourceType_COIN][UnitType_ATTACKER] = 15;
     nation->costs[ResourceType_COIN][UnitType_BOMBER] = 400;
 
-    // Wood costs
+    // Timber costs
     nation->costs[ResourceType_TIMBER][UnitType_CITY] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_FACTORY] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_MINE] = 5;
+    nation->costs[ResourceType_TIMBER][UnitType_POWERPLANT] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_FOUNDRY] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_PORT] = 5;
     nation->costs[ResourceType_TIMBER][UnitType_AIRFIELD] = 5;
@@ -66,14 +65,13 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
     nation->costs[ResourceType_TIMBER][UnitType_WALL] = 5;
 
     // Metal costs
-    nation->costs[ResourceType_METAL][UnitType_INFANTRY] = 10;
-    nation->costs[ResourceType_METAL][UnitType_CAVALRY] = 10;
-    nation->costs[ResourceType_METAL][UnitType_ARTILLERY] = 10;
+    nation->costs[ResourceType_METAL][UnitType_CAVALRY] = 5;
+    nation->costs[ResourceType_METAL][UnitType_ARTILLERY] = 5;
     nation->costs[ResourceType_METAL][UnitType_DESTROYER] = 10;
     nation->costs[ResourceType_METAL][UnitType_CRUISER] = 10;
     nation->costs[ResourceType_METAL][UnitType_BATTLESHIP] = 10;
-    nation->costs[ResourceType_METAL][UnitType_FIGHTER] = 10;
-    nation->costs[ResourceType_METAL][UnitType_ATTACKER] = 10;
+    nation->costs[ResourceType_METAL][UnitType_FIGHTER] = 5;
+    nation->costs[ResourceType_METAL][UnitType_ATTACKER] = 5;
     nation->costs[ResourceType_METAL][UnitType_BOMBER] = 10;
 }
 
@@ -85,10 +83,10 @@ void Nation_SetCapital(struct scene* scene, Nation* nation, EntityID capital)
     ResourceAccepter accepter;
     memset(&accepter, 0, sizeof(accepter));
     accepter.storage[ResourceType_FOOD] = 50;
-    accepter.capacity[ResourceType_COIN] = 10000;
+    accepter.capacity[ResourceType_COIN] = 1000000;
     accepter.capacity[ResourceType_FOOD] = 100;
-    accepter.capacity[ResourceType_TIMBER] = 10000;
-    accepter.capacity[ResourceType_METAL] = 10000;
+    accepter.capacity[ResourceType_TIMBER] = 1000000;
+    accepter.capacity[ResourceType_METAL] = 1000000;
     Scene_Assign(scene, capital, RESOURCE_ACCEPTER_COMPONENT_ID, &accepter);
 
     for (int y = 0; y < nation->visitedSpacesSize; y++) {

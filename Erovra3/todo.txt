@@ -360,7 +360,7 @@ x More than one nation (Maybe an array of enemy nations)
 			- Electricity = crude oil
 		- Refinery
 			- electricity + crude oil = gas
-	- Coal is burned to produce energy
+	x Coal is burned to produce energy
 		x Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
 			x In order to save space, coal ranges from [-1, 0], ore ranges from [0, 1]
 		x Add to nation info
@@ -370,14 +370,12 @@ x More than one nation (Maybe an array of enemy nations)
 			x Mines send particles to the closest foundry
 				x Flag foundry that it has a particle in transit, so no weird race conditions
 			x Do not mine if no foundry is at capacity
-		- Can be burned to produce electricity in POWER PLANTS
+		x Can be burned to produce electricity in POWER PLANTS
 			x Power plant is a particle accepter for coal
 			x Power plant is a particle producer for power
 			x Unit producers are particle accepters for electricity, need it to function
 			x Add "No power" indicator if ticks without power gets too big, add in general for other accepters
-			- Unify unit and resource producers
-				- Add ready and focus GUI for foundry
-			- AI knows about power
+			x AI knows about power
 		x LIMITED!
 	x Ore
 		x Mined in a mine if there is a lot of ore at the mine
@@ -386,15 +384,27 @@ x More than one nation (Maybe an array of enemy nations)
 		x LIMITED!
 	x Metal
 		x Used to make all units, replaces ore
+	! Make real icons for everything new
+		x Coal
+		x Ore
+		x Food
+		x Power
+		x Warning icon
+		x Metal
+		x Powerplant
+		- Timberland
+		- Foundry (update engineer GUI)
+		- Revert all particles to be player nation only
+	x Mines choose based on which is bigger, not if ore > 0
+	! Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
+	! Balance
+	- Do building prices decrease correctly when a building is destroyed?
 	? Storage units that accept particles, reemit them, have a lower priority distance multiplier (512)
 	- Ammo & shells & bombs as ingredients to make units
 	- Oil for planes, drains and needs to be replenished or else they fall from the sky
 		- Same thing as food, produced by other units, drained by each unit
 		- Crude oil is pumped out of the ground
 		- Turned into gasoline by a refinery, which is what planes actually use
-	- Make real icons for everything new
-	- Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
-	- Make it so that auto re-order keeps trying
 
 3.11.x- Misc.
 - Upgrade buildings
@@ -435,11 +445,13 @@ x More than one nation (Maybe an array of enemy nations)
 - Better OOBE:
 	- Actual real speech box hints when you first start playing about what to do
 	- Time how long it takes to play, make sure the first 20% makes sense
+	- Alert icon about low morale
 - In game hints that uses the AI to give hints
 - Warnings about food and low morale
 	- Difficulty settings, can be turned off before game is created
 - A way to select to snap to a grid
 - Arrow spines should be curved back a bit
+	- Bezier curve, like the inverse of the axe blade
 - Arrows should begin slightly after units (make it happen)
 - Arrows should not overlap at the tip
 - Scrolling while giving arrow orders should scroll the offset for units

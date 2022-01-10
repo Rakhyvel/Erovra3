@@ -42,7 +42,7 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 #include <string.h>
 
 //#define CREATE_LEXICON
-//#define CREATE_TEXTURES
+#define CREATE_TEXTURES
 
 /*
 	Entry point of program. Inits the game, then starts the game loop */

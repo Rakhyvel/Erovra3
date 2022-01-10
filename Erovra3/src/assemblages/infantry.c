@@ -54,7 +54,7 @@ EntityID Infantry_Create(Scene* scene, Vector pos, Nation* nation)
     Scene_Assign(scene, infantryID, UNIT_COMPONENT_ID, &type);
 
     Combatant combatant = {
-        0.416f,
+        0.2f,
         68.0f,
         Scene_CreateMask(scene, 1, LAND_UNIT_FLAG_COMPONENT_ID),
         30,

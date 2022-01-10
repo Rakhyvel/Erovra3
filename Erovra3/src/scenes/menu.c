@@ -5,9 +5,9 @@
  */
 
 #pragma once
+#include "../assemblages/components.h"
 #include "../engine/apricot.h"
 #include "../engine/scene.h"
-#include "../assemblages/components.h"
 #include "../gui/gui.h"
 #include "../textures.h"
 #include "../util/debug.h"
@@ -149,10 +149,10 @@ static int generatePreview(void* ptr)
     Noise_Erode(map, size, erosion->value, &status);
 
     // Generate trees
-    trees = Noise_Generate(size, 4, getSeed(scene), &status);
+    trees = Noise_Generate(size, 4 / size, getSeed(scene), &status);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
-            trees[x + y * size] = powf(trees[x + y * size], 2);
+            trees[x + y * size] = powf(trees[x + y * size], 1.5);
             if (trees[x + y * size] > 0.5) {
                 trees[x + y * size] = 1;
             } else {
@@ -198,9 +198,9 @@ static int generateFullTerrain(void* ptr)
     for (int y = 0; y < tileSize * 2; y++) {
         for (int x = 0; x < tileSize * 2; x++) {
             if (ore[x + y * tileSize * 2] > 0.5) {
-                ore[x + y * tileSize * 2] = powf(2 * ore[x + y * tileSize * 2] - 1, 0.5);
+                ore[x + y * tileSize * 2] = 1.0f - powf(cosf(M_PI * 0.5f * (2 * ore[x + y * tileSize * 2] - 1)), 4);
             } else {
-                ore[x + y * tileSize * 2] = -powf(-(2 * ore[x + y * tileSize * 2] - 1), 0.5);
+                ore[x + y * tileSize * 2] = powf(cosf(-M_PI * 0.5f * (2 * ore[x + y * tileSize * 2] - 1)), 4) - 1.0f;
             }
             trees[x + y * tileSize * 2] = powf(trees[x + y * tileSize * 2], 1.5);
         }

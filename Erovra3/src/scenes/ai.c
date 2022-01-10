@@ -260,6 +260,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     float averageTicksPerOreMade = 0;
     float averageTicksPerCoalMade = 0;
     float averageTicksPerTimberMade = 0;
+    const int expansions = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT];
     {
 
         int oreMineCount = 0;
@@ -290,25 +291,28 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     const float averageTicksPerOreUsed = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (1.0f * nation->unitCount[UnitType_FOUNDRY]);
     // Build an ore mine if it takes more ticks to make ore than it does to use ore
 
-    // How many ticks does it take to use coal
-    const float averageTicksPerCoalUsed = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (1.0f * nation->unitCount[UnitType_FOUNDRY]);
+    // How many ticks does it take to use coal (need coal for foundry and powerplant and producer)
+    const float averageTicksPerCoalUsed = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (3.0f * nation->unitCount[UnitType_FOUNDRY]);
     // Build a coal mine if it takes more ticks to make coal than it does to use coal
 
     // How many ticks does it take to make metal
     const float averageTicksPerMetalMade = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (1.0f * nation->unitCount[UnitType_FOUNDRY]);
     // How many ticks does it take to use metal
-    const float averageTicksPerMetalUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 216000.0f : (ticksPerLabor * 15.0f) / (10.0f * nation->unitCount[UnitType_FACTORY]);
+    const float averageTicksPerMetalUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 216000.0f : (ticksPerLabor * 15.0f) / (5.0f * nation->unitCount[UnitType_FACTORY]);
     // Build a foundry if it takes more ticks to make metal than it does to use metal
+
+    const float averageTicksPerPowerMade = nation->unitCount[UnitType_POWERPLANT] == 0 ? 216000.0f : (ticksPerLabor / 2.0f) / (1.0f * nation->unitCount[UnitType_POWERPLANT]);
+    // How many ticks does it take to use metal
+    const float averageTicksPerPowerUsed = expansions == 0 ? 216000.0f : (ticksPerLabor * 3.0f) / (1.0f * expansions);
 
     // How many ticks does it take to make a coin
     const float averageTicksPerCoinMade = nation->unitCount[UnitType_CITY] == 0 ? 54000.0f : ticksPerLabor / nation->unitCount[UnitType_CITY];
     // How many ticks does it take to use a coin
-    const int coinUsers = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT];
-    const float averageTicksPerCoinUsed = coinUsers == 0 ? 54000.0f : (ticksPerLabor * 22.0f) / (15.0f * coinUsers);
+    const float averageTicksPerCoinUsed = expansions == 0 ? 54000.0f : (ticksPerLabor * 22.0f) / (15.0f * expansions);
     // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
 
     const float averageTicksPerFoodMade = nation->unitCount[UnitType_FARM] == 0 ? 54000.0f : 1 * ticksPerLabor / (nation->unitCount[UnitType_FARM]);
-    const float averageTicksPerFoodUsed = (ticksPerLabor * 6.0f) / (nation->resources[ResourceType_POPULATION]);
+    const float averageTicksPerFoodUsed = (ticksPerLabor * 6.0f) / (nation->resources[ResourceType_POPULATION] - nation->unitCount[UnitType_MINE] - nation->unitCount[UnitType_TIMBERLAND]);
 
     goap->variables[COMBATANTS_AT_ENEMY_CAPITAL] = false;
 
@@ -321,6 +325,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     goap->variables[HAS_COINS] = averageTicksPerCoinMade < averageTicksPerCoinUsed;
     goap->variables[HAS_ORE] = averageTicksPerOreMade < averageTicksPerOreUsed;
     goap->variables[HAS_COAL] = averageTicksPerCoalMade < averageTicksPerCoalUsed;
+    goap->variables[HAS_POWER] = averageTicksPerPowerMade < averageTicksPerPowerUsed;
     goap->variables[HAS_METAL] = averageTicksPerMetalMade < averageTicksPerMetalUsed;
     goap->variables[HAS_FOOD] = averageTicksPerFoodMade < averageTicksPerFoodUsed;
     goap->variables[HAS_TIMBER] = averageTicksPerTimberMade * 0.45 < ticksPerLabor || nation->resources[ResourceType_TIMBER] > 30;
@@ -341,6 +346,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     goap->variables[AFFORD_TIMBERLAND_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_TIMBERLAND];
     goap->variables[AFFORD_MINE_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_MINE];
     goap->variables[AFFORD_MINE_TIMBER] = nation->resources[ResourceType_TIMBER] >= nation->costs[ResourceType_TIMBER][UnitType_MINE];
+    goap->variables[AFFORD_POWERPLANT_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_POWERPLANT];
+    goap->variables[AFFORD_POWERPLANT_TIMBER] = nation->resources[ResourceType_TIMBER] >= nation->costs[ResourceType_TIMBER][UnitType_POWERPLANT];
     goap->variables[AFFORD_FACTORY_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_FACTORY];
     goap->variables[AFFORD_FACTORY_TIMBER] = nation->resources[ResourceType_TIMBER] >= nation->costs[ResourceType_TIMBER][UnitType_FACTORY];
     goap->variables[AFFORD_PORT_COINS] = nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_PORT];
@@ -473,7 +480,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
 		*/
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         City* capitalCity = (City*)Scene_GetComponent(scene, nation->capital, CITY_COMPONENT_ID);
-        printf("%s timber:%d\n", capitalCity->name, goap->variables[HAS_TIMBER]);
+        printf("%s metal:%d ore:%d coal:%d\n", capitalCity->name, goap->variables[HAS_METAL], goap->variables[HAS_ORE], goap->variables[HAS_COAL]);
     }
 }
 
@@ -826,6 +833,11 @@ void AI_BuildCoalMine(Scene* scene, Nation* nation)
     findBuildingTile(scene, nation, UnitType_MINE, Terrain_GetCoal);
 }
 
+void AI_BuildPowerPlant(Scene* scene, Nation* nation)
+{
+    findExpansionSpot(scene, nation, UnitType_POWERPLANT, false);
+}
+
 void AI_BuildFoundry(Scene* scene, Nation* nation)
 {
     findExpansionSpot(scene, nation, UnitType_FOUNDRY, false);
@@ -864,15 +876,15 @@ void AI_BuildAcademy(Scene* scene, Nation* nation)
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 4);
+    Goap_AddAction(goap, "Win", NULL, HAS_WON, 2, COMBATANTS_AT_ENEMY_CAPITAL, HAS_FIGHTER, 1, 1);
 
-    Goap_AddAction(goap, "Target capital a", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_INFANTRY, 4);
+    Goap_AddAction(goap, "Target capital a", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_INFANTRY, 6);
     Goap_AddAction(goap, "Target capital b", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_CAVALRY, 3);
     Goap_AddAction(goap, "Target capital c", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, HAS_ATTACKER, 2);
     Goap_AddAction(goap, "Target capital d", &AI_TargetEnemyCapital, COMBATANTS_AT_ENEMY_CAPITAL, 1, SEA_SUPREMACY, 1);
 
     // Order ground units
-    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 5, HAS_ENGINEER, AFFORD_INFANTRY_COINS, AFFORD_CAVALRY_METAL, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_METAL, HAS_AVAILABLE_FACTORY, HAS_FOOD, 1, 1, 1, 1);
     Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1);
 
@@ -891,7 +903,7 @@ void AI_Init(Goap* goap)
         HAS_ENGINEER,
         HAS_TIMBER,
         HAS_FOOD,
-        1, 1, 1, 1, 1,1);
+        1, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "city 4 expa tile", &AI_BuildCity, SPACE_FOR_EXPANSION, 5,
         HAS_ENGINEER,
         AFFORD_CITY_COINS,
@@ -906,7 +918,7 @@ void AI_Init(Goap* goap)
         ENGINEER_ISNT_BUSY,
         HAS_FOOD,
         HAS_TIMBER,
-        1, 1, 1, 1, 1,1);
+        1, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "city 4 port tile", &AI_BuildPortCity, SPACE_FOR_PORT, 8,
         HAS_ENGINEER,
         HAS_PORT_TILES,
@@ -936,27 +948,37 @@ void AI_Init(Goap* goap)
         1, 1, 1, 1, 1);
 
     // Build mine
-    Goap_AddAction(goap, "mine 4 ore", &AI_BuildOreMine, HAS_ORE, 7,
+    Goap_AddAction(goap, "mine 4 ore", &AI_BuildOreMine, HAS_ORE, 6,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
-        SPACE_FOR_EXPANSION,
         AFFORD_MINE_COINS,
         AFFORD_MINE_TIMBER,
         HAS_FOOD,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "mine 4 coal", &AI_BuildCoalMine, HAS_COAL, 7,
+        1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "mine 4 coal", &AI_BuildCoalMine, HAS_COAL, 6,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
-        SPACE_FOR_EXPANSION,
         AFFORD_MINE_COINS,
         AFFORD_MINE_TIMBER,
         HAS_FOOD,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1, 1);
+
+    // Build powerplant
+    Goap_AddAction(goap, "powe 4 power", &AI_BuildPowerPlant, HAS_POWER, 8,
+        HAS_ENGINEER,
+        ENGINEER_ISNT_BUSY,
+        SPACE_FOR_EXPANSION,
+        AFFORD_FOUNDRY_COINS,
+        AFFORD_FOUNDRY_TIMBER,
+        HAS_FOOD,
+        HAS_COAL,
+        HAS_TIMBER,
+        1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build foundry
-    Goap_AddAction(goap, "foun 4 metal", &AI_BuildFoundry, HAS_METAL, 9,
+    Goap_AddAction(goap, "foun 4 metal", &AI_BuildFoundry, HAS_METAL, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
@@ -965,23 +987,26 @@ void AI_Init(Goap* goap)
         HAS_FOOD,
         HAS_ORE,
         HAS_COAL,
+        HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build academy
-    Goap_AddAction(goap, "acad", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 8,
+    Goap_AddAction(goap, "acad", &AI_BuildAcademy, HAS_AVAILABLE_ACADEMY, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
         AFFORD_ACADEMY_COINS,
         AFFORD_ACADEMY_TIMBER,
         HAS_COINS,
+        HAS_METAL, // Yeah I know, but this balances academies and factories
         HAS_FOOD,
+        HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build factory
-    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 11,
+    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
@@ -989,12 +1014,11 @@ void AI_Init(Goap* goap)
         AFFORD_FACTORY_TIMBER,
         HAS_COINS,
         HAS_METAL,
-        HAS_ORE,
-        HAS_COAL,
         HAS_FOOD,
+        HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "fact 4 airf", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 11,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "fact 4 airf", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_TWO_EXPANSIONS,
@@ -1002,14 +1026,13 @@ void AI_Init(Goap* goap)
         AFFORD_FACTORY_TIMBER,
         HAS_COINS,
         HAS_METAL,
-        HAS_ORE,
-        HAS_COAL,
         HAS_FOOD,
+        HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build port
-    Goap_AddAction(goap, "port", &AI_BuildPort, HAS_AVAILABLE_PORT, 10,
+    Goap_AddAction(goap, "port", &AI_BuildPort, HAS_AVAILABLE_PORT, 11,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         HAS_PORT_TILES,
@@ -1019,8 +1042,9 @@ void AI_Init(Goap* goap)
         HAS_COINS,
         HAS_METAL,
         HAS_FOOD,
+        HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1);
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1);
 
     // Build airfield
     Goap_AddAction(goap, "airf", &AI_BuildAirfield, HAS_AVAILABLE_AIRFIELD, 9,

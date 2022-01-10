@@ -14,6 +14,9 @@ void Textures_Init()
     CAPITAL_TEXTURE_ID = Texture_Load("res/capital.png");
     CAPITAL_OUTLINE_TEXTURE_ID = Texture_Load("res/capital_outline.png");
     CAPITAL_SHADOW_TEXTURE_ID = Texture_Load("res/capital_shadow.png");
+    TIMBERLAND_TEXTURE_ID = Texture_Load("res/timberland.png");
+    TIMBERLAND_OUTLINE_TEXTURE_ID = Texture_Load("res/timberland_outline.png");
+    TIMBERLAND_SHADOW_TEXTURE_ID = Texture_Load("res/timberland_shadow.png");
     MINE_TEXTURE_ID = Texture_Load("res/mine.png");
     MINE_OUTLINE_TEXTURE_ID = Texture_Load("res/mine_outline.png");
     MINE_SHADOW_TEXTURE_ID = Texture_Load("res/mine_shadow.png");
@@ -79,10 +82,10 @@ void Textures_Init()
     METAL_SHADOW_TEXTURE_ID = Texture_Load("res/metal_shadow.png");
     POWER_TEXTURE_ID = Texture_Load("res/power.png");
     POWER_SHADOW_TEXTURE_ID = Texture_Load("res/power_shadow.png");
-    POPULATION_TEXTURE_ID = Texture_Load("res/population.png");
+    FOOD_TEXTURE_ID = Texture_Load("res/food.png");
     ARROW_TEXTURE_ID = Texture_Load("res/arrow.png");
     ARROW_SHADOW_TEXTURE_ID = Texture_Load("res/arrow_shadow.png");
-    WARNING_TEXTURE_ID = Texture_Load("res/warning.png");
+    NO_POWER_WARNING_TEXTURE_ID = Texture_Load("res/no_power.png");
     TIMBER_INDICATOR_TEXTURE_ID = Texture_Load("res/timber_indicator.png");
     ORE_INDICATOR_TEXTURE_ID = Texture_Load("res/ore_indicator.png");
     COAL_INDICATOR_TEXTURE_ID = Texture_Load("res/coal_indicator.png");
@@ -115,6 +118,9 @@ void Textures_Draw()
     Polygon tree = Polygon_Create("res/tree.gon");
     Polygon rock0 = Polygon_Create("res/rock0.gon");
     Polygon rock0_highlight = Polygon_Create("res/rock0_highlight.gon");
+    Polygon rock1 = Polygon_Create("res/rock1.gon");
+    Polygon rock1_highlight = Polygon_Create("res/rock1_highlight.gon");
+    Polygon power = Polygon_Create("res/power.gon");
 
     BULLET_TEXTURE_ID = Texture_Load("res/bullet.png");
     BULLET_SHADOW_TEXTURE_ID = Texture_Load("res/bullet.png");
@@ -124,16 +130,16 @@ void Textures_Draw()
     BOMB_SHADOW_TEXTURE_ID = Texture_Load("res/bomb.png");
     COIN_TEXTURE_ID = Texture_Load("res/coin.png");
     COIN_SHADOW_TEXTURE_ID = Texture_Load("res/coin.png");
-    ORE_TEXTURE_ID = Texture_Load("res/ore.png");
-    ORE_SHADOW_TEXTURE_ID = Texture_Load("res/ore.png");
+    ORE_TEXTURE_ID = Texture_Create(320, 320);
+    ORE_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     METAL_TEXTURE_ID = Texture_Load("res/metal.png");
     METAL_SHADOW_TEXTURE_ID = Texture_Load("res/metal.png");
     TIMBER_TEXTURE_ID = Texture_Create(320, 320);
     TIMBER_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
-    COAL_TEXTURE_ID = Texture_Load("res/coal.png");
-    COAL_SHADOW_TEXTURE_ID = Texture_Load("res/coal.png");
-    POWER_TEXTURE_ID = Texture_Load("res/power.png");
-    POWER_SHADOW_TEXTURE_ID = Texture_Load("res/power.png");
+    COAL_TEXTURE_ID = Texture_Create(320, 320);
+    COAL_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
+    POWER_TEXTURE_ID = Texture_Create(320, 320);
+    POWER_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
 
     CITY_TEXTURE_ID = Texture_Create(320, 320);
     CITY_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
@@ -141,10 +147,13 @@ void Textures_Draw()
     CAPITAL_TEXTURE_ID = Texture_Create(320, 320);
     CAPITAL_OUTLINE_TEXTURE_ID = Texture_Create(320, 320);
     CAPITAL_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
+    TIMBERLAND_TEXTURE_ID = Texture_Create(640, 640);
+    TIMBERLAND_OUTLINE_TEXTURE_ID = Texture_Create(640, 640);
+    TIMBERLAND_SHADOW_TEXTURE_ID = Texture_Create(640, 640);
     MINE_TEXTURE_ID = Texture_Create(640, 640);
     MINE_OUTLINE_TEXTURE_ID = Texture_Create(640, 640);
     MINE_SHADOW_TEXTURE_ID = Texture_Create(640, 640);
-    POWERPLANT_TEXTURE_ID = Texture_Load("res/powerplant.png");
+    POWERPLANT_TEXTURE_ID = Texture_Create(320, 320);
     POWERPLANT_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
     FOUNDRY_TEXTURE_ID = Texture_Load("res/foundry.png");
     FOUNDRY_SHADOW_TEXTURE_ID = Texture_Create(320, 320);
@@ -194,6 +203,8 @@ void Textures_Draw()
     TIMBER_INDICATOR_TEXTURE_ID = Texture_Create(200, 500);
     ORE_INDICATOR_TEXTURE_ID = Texture_Create(250, 250);
     COAL_INDICATOR_TEXTURE_ID = Texture_Create(250, 250);
+    NO_POWER_WARNING_TEXTURE_ID = Texture_Create(480, 480);
+    NO_COAL_WARNING_TEXTURE_ID = Texture_Create(480, 480);
 
     Texture_CreateShadow(BULLET_SHADOW_TEXTURE_ID, BULLET_TEXTURE_ID);
     Texture_CreateShadow(BOMB_SHADOW_TEXTURE_ID, BOMB_TEXTURE_ID);
@@ -205,11 +216,8 @@ void Textures_Draw()
     Texture_FillCircle(TIMBER_TEXTURE_ID, (Vector) { 240, 80 }, 80, (SDL_Color) { 144, 80, 36, 255 });
 
     Texture_CreateShadow(COIN_SHADOW_TEXTURE_ID, COIN_TEXTURE_ID);
-    Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
     Texture_CreateShadow(TIMBER_SHADOW_TEXTURE_ID, TIMBER_TEXTURE_ID);
-    Texture_CreateShadow(COAL_SHADOW_TEXTURE_ID, COAL_TEXTURE_ID);
     Texture_CreateShadow(METAL_SHADOW_TEXTURE_ID, METAL_TEXTURE_ID);
-    Texture_CreateShadow(POWER_SHADOW_TEXTURE_ID, POWER_TEXTURE_ID);
 
     Texture_FillPolygon(ARROW_TEXTURE_ID, Polygon_Create("res/arrow.gon"), (SDL_Color) { 0, 79, 206, 255 });
     Texture_CreateShadow(ARROW_SHADOW_TEXTURE_ID, ARROW_TEXTURE_ID);
@@ -225,9 +233,23 @@ void Textures_Draw()
     Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_pole.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
     Texture_DrawPolygon(CAPITAL_OUTLINE_TEXTURE_ID, Polygon_Create("res/capital_flag.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
 
+    Texture_DrawBezier(TIMBERLAND_TEXTURE_ID, Polygon_Create("res/axe_handle.gon"), (SDL_Color) { 0, 0, 0, 255 }, 60);
+    Texture_DrawBezier(TIMBERLAND_TEXTURE_ID, Polygon_Create("res/axe_blade.gon"), (SDL_Color) { 0, 0, 0, 255 }, 40);
+    Texture_DrawBezier(TIMBERLAND_TEXTURE_ID, Polygon_Create("res/axe_handle.gon"), (SDL_Color) { 255, 255, 255, 255 }, 20);
+    Texture_FillBezier(TIMBERLAND_TEXTURE_ID, Polygon_Create("res/axe_blade.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawBezier(TIMBERLAND_OUTLINE_TEXTURE_ID, Polygon_Create("res/axe_handle.gon"), (SDL_Color) { 255, 255, 255, 255 }, 100);
+    Texture_DrawBezier(TIMBERLAND_OUTLINE_TEXTURE_ID, Polygon_Create("res/axe_blade.gon"), (SDL_Color) { 255, 255, 255, 255 }, 80);
+
     Texture_DrawBezier(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 0, 0, 0, 255 }, 60);
     Texture_DrawBezier(MINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 20);
     Texture_DrawBezier(MINE_OUTLINE_TEXTURE_ID, Polygon_Create("res/mine.gon"), (SDL_Color) { 255, 255, 255, 255 }, 100);
+
+    Texture_FillPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_FillPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 255, 255, 255, 255 });
+    Texture_DrawPolygon(POWERPLANT_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
+    Texture_DrawPolygon(POWERPLANT_OUTLINE_TEXTURE_ID, Polygon_Create("res/powerplant_building.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
+    Texture_DrawPolygon(POWERPLANT_OUTLINE_TEXTURE_ID, Polygon_Create("res/powerplant_stack.gon"), (SDL_Color) { 255, 255, 255, 255 }, 30);
 
     Texture_FillPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 255, 255, 255, 255 });
     Texture_DrawPolygon(FACTORY_TEXTURE_ID, Polygon_Create("res/factory.gon"), (SDL_Color) { 0, 0, 0, 255 }, 10);
@@ -363,17 +385,44 @@ void Textures_Draw()
     tree.x = 100;
     tree.y = 125;
     Texture_DrawPolygon(TIMBER_INDICATOR_TEXTURE_ID, tree, (SDL_Color) { 15, 42, 30, 255 }, 20); // Has to be opaque so that strokes don't overlap
-    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0, (SDL_Color) { 90, 90, 90, 255 });
-    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0_highlight, (SDL_Color) { 140, 140, 140, 255 });
+
     Texture_FillPolygon(COAL_INDICATOR_TEXTURE_ID, rock0, (SDL_Color) { 0, 0, 0, 255 });
     Texture_FillPolygon(COAL_INDICATOR_TEXTURE_ID, rock0_highlight, (SDL_Color) { 40, 40, 40, 255 });
+    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0, (SDL_Color) { 89, 77, 71, 255 });
+    Texture_FillPolygon(ORE_INDICATOR_TEXTURE_ID, rock0_highlight, (SDL_Color) { 137, 128, 123, 255 });
+
+    Texture_FillPolygon(COAL_TEXTURE_ID, rock1, (SDL_Color) { 52, 52, 51, 255 });
+    Texture_FillPolygon(COAL_TEXTURE_ID, rock1_highlight, (SDL_Color) { 78, 78, 78, 255 });
+    Texture_CreateShadow(COAL_SHADOW_TEXTURE_ID, COAL_TEXTURE_ID);
+    Texture_FillPolygon(ORE_TEXTURE_ID, rock1, (SDL_Color) { 103, 89, 82, 255 });
+    Texture_FillPolygon(ORE_TEXTURE_ID, rock1_highlight, (SDL_Color) { 130, 121, 116, 255 });
+    Texture_CreateShadow(ORE_SHADOW_TEXTURE_ID, ORE_TEXTURE_ID);
+
+    Texture_FillPolygon(POWER_TEXTURE_ID, power, (SDL_Color) { 255, 255, 48, 255 });
+    Texture_CreateShadow(POWER_SHADOW_TEXTURE_ID, POWER_TEXTURE_ID);
+
+    power.x = 80;
+    power.y = 122;
+    Texture_FillPolygon(NO_POWER_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 });
+    Texture_DrawPolygon(NO_POWER_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 }, 30);
+    Texture_FillPolygon(NO_POWER_WARNING_TEXTURE_ID, power, (SDL_Color) { 30, 30, 30, 255 });
+
+    rock1.x = 80;
+    rock1.y = 150;
+    Texture_FillPolygon(NO_COAL_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 });
+    Texture_DrawPolygon(NO_COAL_WARNING_TEXTURE_ID, Polygon_Create("res/warning.gon"), (SDL_Color) { 255, 255, 48, 255 }, 30);
+    Texture_FillPolygon(NO_COAL_WARNING_TEXTURE_ID, rock1, (SDL_Color) { 30, 30, 30, 255 });
 
     Texture_Save("res/bullet_shadow.png", BULLET_SHADOW_TEXTURE_ID);
     Texture_Save("res/bomb_shadow.png", BOMB_SHADOW_TEXTURE_ID);
     Texture_Save("res/shell.png", SHELL_TEXTURE_ID);
     Texture_Save("res/shell_shadow.png", SHELL_SHADOW_TEXTURE_ID);
     Texture_Save("res/coin_shadow.png", COIN_SHADOW_TEXTURE_ID);
+    Texture_Save("res/ore.png", ORE_TEXTURE_ID);
     Texture_Save("res/ore_shadow.png", ORE_SHADOW_TEXTURE_ID);
+    Texture_Save("res/power.png", POWER_TEXTURE_ID);
+    Texture_Save("res/power_shadow.png", POWER_SHADOW_TEXTURE_ID);
+    Texture_Save("res/coal.png", COAL_TEXTURE_ID);
     Texture_Save("res/coal_shadow.png", COAL_SHADOW_TEXTURE_ID);
     Texture_Save("res/metal_shadow.png", METAL_SHADOW_TEXTURE_ID);
     Texture_Save("res/timber.png", TIMBER_TEXTURE_ID);
@@ -385,9 +434,13 @@ void Textures_Draw()
     Texture_Save("res/capital.png", CAPITAL_TEXTURE_ID);
     Texture_Save("res/capital_outline.png", CAPITAL_OUTLINE_TEXTURE_ID);
     Texture_Save("res/capital_shadow.png", CAPITAL_SHADOW_TEXTURE_ID);
+    Texture_Save("res/timberland.png", TIMBERLAND_TEXTURE_ID);
+    Texture_Save("res/timberland_outline.png", TIMBERLAND_OUTLINE_TEXTURE_ID);
+    Texture_Save("res/timberland_shadow.png", TIMBERLAND_SHADOW_TEXTURE_ID);
     Texture_Save("res/mine.png", MINE_TEXTURE_ID);
     Texture_Save("res/mine_outline.png", MINE_OUTLINE_TEXTURE_ID);
     Texture_Save("res/mine_shadow.png", MINE_SHADOW_TEXTURE_ID);
+    Texture_Save("res/powerplant.png", POWERPLANT_TEXTURE_ID);
     Texture_Save("res/powerplant_shadow.png", POWERPLANT_SHADOW_TEXTURE_ID);
     Texture_Save("res/foundry_shadow.png", FOUNDRY_SHADOW_TEXTURE_ID);
     Texture_Save("res/factory.png", FACTORY_TEXTURE_ID);
@@ -436,4 +489,6 @@ void Textures_Draw()
     Texture_Save("res/timber_indicator.png", TIMBER_INDICATOR_TEXTURE_ID);
     Texture_Save("res/ore_indicator.png", ORE_INDICATOR_TEXTURE_ID);
     Texture_Save("res/coal_indicator.png", COAL_INDICATOR_TEXTURE_ID);
+    Texture_Save("res/no_power.png", NO_POWER_WARNING_TEXTURE_ID);
+    Texture_Save("res/no_coal.png", NO_COAL_WARNING_TEXTURE_ID);
 }

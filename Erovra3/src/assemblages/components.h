@@ -249,26 +249,9 @@ typedef struct resourceProducer {
     int resourceTicksRemaining;
     int resourceTicksTotal;
     void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter); // Resource particle constructor
+    int ticksSinceLastPowered;
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
-
-typedef struct newProducer {
-    union {
-        void (*unit)(struct scene* scene, Vector pos, Nation* nation);
-        void (*particle)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter);
-    } constructor;
-    union {
-        ResourceType resource;
-        UnitType unit;
-    } type;
-    int ticksRemaining;
-    int ticksTotal;
-    const EntityID readyGUIContainer; // GUI container for when producer is not producing. Constant value to copy from for the focusable component
-    const EntityID busyGUIContainer; // GUI container for when producer is producing. Constant value to copy from for the focusable component
-    bool orderIsUnit;
-    bool repeat;
-} NewProducer;
-
 
 /* Data for expansions, which are building units built adjacent to cities
 */

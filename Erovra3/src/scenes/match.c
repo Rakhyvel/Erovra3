@@ -245,9 +245,6 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     Match_DeductResources(scene, nation, type);
     // Set order duration
     producer->orderTicksTotal = 2 * nation->costs[ResourceType_COIN][type] * ticksPerLabor;
-    if (type == UnitType_INFANTRY) {
-        producer->orderTicksTotal += 3600;
-    }
     producer->orderTicksRemaining = producer->orderTicksTotal;
     producer->order = type;
     nation->prodCount[type]++;
@@ -596,6 +593,9 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
         if (accepter->storage[ResourceType_ORE] >= 1 && accepter->storage[ResourceType_COAL] >= 1 && resourceProducer->resourceTicksRemaining == -1) {
             resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
         }
+        if (resourceType == ResourceType_POWER) {
+            resourceProducer->ticksSinceLastPowered = 0;
+        }
         break;
     }
     case UnitType_POWERPLANT: {
@@ -790,7 +790,7 @@ void Match_Morale(Scene* scene)
         // Eat food
         int ticks = (int)(ticksPerLabor * 0.6f);
         if (unit->aliveTicks % ticks == 0) {
-            if (nation->resources[ResourceType_FOOD] > 0) {
+            if (nation->resources[ResourceType_FOOD] > 0 && nation->capital != INVALID_ENTITY_INDEX) {
                 ResourceAccepter* capitalAccepter = (ResourceAccepter*)Scene_GetComponent(scene, nation->capital, RESOURCE_ACCEPTER_COMPONENT_ID);
                 if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                     City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
@@ -1639,6 +1639,8 @@ void Match_ProduceResources(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
+        resourceProducer->ticksSinceLastPowered++;
+
         if (resourceProducer->resourceTicksRemaining == 0) {
             EntityID accepter = INVALID_ENTITY_INDEX;
             float closestDist = FLT_MAX;
@@ -1694,8 +1696,23 @@ void Match_ProduceResources(struct scene* scene)
                 }
             }
         } else if (resourceProducer->resourceTicksRemaining > 0) {
-            resourceProducer->resourceTicksRemaining--;
+            if (unit->type == UnitType_FOUNDRY) {
+                ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
+                if (resourceProducer->ticksSinceLastPowered < 3 * ticksPerLabor) {
+                    resourceProducer->resourceTicksRemaining--;
+                    resourceAccepter->storage[ResourceType_POWER] = 1; // no need to take power if not producing anything
+                } else {
+                    resourceAccepter->storage[ResourceType_POWER] = 0; // Signify that you need power
+                }
+            } else {
+                resourceProducer->resourceTicksRemaining--;
+            }
         } // Don't decrement if < 0
+
+        // If building and no capital, kys
+        if ((unit->type == UnitType_MINE || unit->type == UnitType_TIMBERLAND) && sprite->nation->capital == INVALID_ENTITY_INDEX) {
+            unit->isDead = true;
+        }
     }
 }
 
@@ -2074,6 +2091,9 @@ void Match_DrawVisitedSquares(Scene* scene)
 {
     for (int i = 0; i < nations->size; i++) {
         Nation* nation = (Nation*)Arraylist_Get(nations, i);
+        if (nation->capital == INVALID_ENTITY_INDEX) {
+            continue;
+        }
         SDL_Rect rect = { 0, 0, 0, 0 };
         for (int x = 0; x < nation->visitedSpacesSize; x++) {
             for (int y = 0; y < nation->visitedSpacesSize; y++) {
@@ -2213,7 +2233,7 @@ void Match_RenderOrderButtons(Scene* scene)
 
 void Match_RenderNationInfo(Scene* scene)
 {
-    SDL_Rect rect = { 0, 0, 140, 150 };
+    SDL_Rect rect = { 0, 0, 140, 102 };
     SDL_SetRenderDrawColor(Apricot_Renderer, 21, 21, 21, 180);
     SDL_RenderFillRect(Apricot_Renderer, &rect);
 
@@ -2221,7 +2241,7 @@ void Match_RenderNationInfo(Scene* scene)
 
     Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
-    Texture_Draw(POPULATION_TEXTURE_ID, 8, 32, 20, 20, 0);
+    Texture_Draw(FOOD_TEXTURE_ID, 8, 32, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 30, "%d%%", min(100, (int)(100.0f * (nation->resources[ResourceType_FOOD]) / 100.0f) + 1));
     Texture_Draw(TIMBER_TEXTURE_ID, 8, 56, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 54, "%d", nation->resources[ResourceType_TIMBER]);
@@ -2337,19 +2357,32 @@ void Match_RenderProducerBars(Scene* scene)
 
 void Match_NoPowerSymbols(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_ACCEPTER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        SDL_Rect rect = { 0, 0, 0, 0 };
-        SDL_Rect rect2 = { 0, 0, 0, 0 };
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+        ResourceAccepter* accepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
 
-        if (producer->ticksSinceLastPowered >= 3 * ticksPerLabor && (producer->ticksSinceLastPowered % 60) < 30) {
-            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, (float)sprite->width / 2, (float)sprite->height / 2);
-            Terrain_Translate(&rect2, sprite->pos.x, sprite->pos.y, (float)sprite->width / 4, (float)sprite->height / 4);
-            SDL_SetTextureColorMod(WARNING_TEXTURE_ID, 254, 237, 5);
-            Texture_Draw(WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
-            Texture_Draw(POWER_SHADOW_TEXTURE_ID, rect2.x, rect2.y, (float)rect2.w, (float)rect2.h, 0);
+        SDL_Rect rect = { 0, 0, 0, 0 };
+
+        if (unit->aliveTicks % 60 < 30) {
+            if (accepter->storage[ResourceType_POWER] + accepter->transit[ResourceType_POWER] < accepter->capacity[ResourceType_POWER]) {
+                int ticksSinceLastPowered = 0;
+                if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
+                    Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
+                    ticksSinceLastPowered = producer->ticksSinceLastPowered;
+                } else if (Scene_EntityHasComponents(scene, id, RESOURCE_PRODUCER_COMPONENT_ID)) {
+                    ResourceProducer* producer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
+                    ticksSinceLastPowered = producer->ticksSinceLastPowered;
+                }
+                if (ticksSinceLastPowered >= 3 * ticksPerLabor) {
+                    Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
+                    Texture_Draw(NO_POWER_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
+                }
+            } else if (accepter->storage[ResourceType_COAL] + accepter->transit[ResourceType_COAL] < accepter->capacity[ResourceType_COAL]) {
+                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
+                Texture_Draw(NO_COAL_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
+            }
         }
     }
 }
@@ -2384,7 +2417,9 @@ void Match_Update(Scene* match)
     Match_UpdateExpansionAllegiance(match);
 
     Match_AI(match);
-    Terrain_ClosestMaskDist(match, CITY_COMPONENT_ID, terrain, 0, 0);
+#ifdef _DEBUG
+    Terrain_ClosestMaskDist(match, CITY_COMPONENT_ID, terrain, 0, 0); // If an error was thrown here, means a building didn't update the building map when it died.
+#endif
 
     Match_UpdateMessageContainer(match);
     GUI_Update(match);
@@ -2418,6 +2453,7 @@ void Match_Update(Scene* match)
 void Match_Render(Scene* match)
 {
     Terrain_Render(terrain);
+    Match_DrawVisitedSquares(match);
     if (doFogOfWar) { // Determined by a switch in the match creation menu
         Match_UpdateFogOfWar(match);
     }
@@ -2432,7 +2468,6 @@ void Match_Render(Scene* match)
     Match_SpriteRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SpriteRender(match, PARTICLE_LAYER_COMPONENT_ID);
     Match_UpdateGUIElements(match);
-    //Match_DrawVisitedSquares(match);
     //Match_DrawPortTiles(match);
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);
