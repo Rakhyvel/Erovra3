@@ -69,11 +69,6 @@ EntityID Attacker_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, attackerID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, attackerID, MORALE_COMPONENT_ID, &morale);
-
     Scene_Assign(scene, attackerID, AIRCRAFT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, attackerID, nation->controlFlag, NULL);
     return attackerID;

@@ -273,9 +273,8 @@ Parameters: int mapSize - Height and width of the map (maps are squares)
 
 Returns: a pointer to a float array, with size of mapSize * mapSize, in row major order.
 */
-float* Noise_Generate(int mapSize, int cellSize, unsigned int seed, int* status)
+float* Noise_Generate(int mapSize, float amplitude, unsigned int seed, int* status)
 {
-    float amplitude = 0.5f;
     float* retval = (float*)malloc(mapSize * mapSize * sizeof(float));
     if (!retval) {
         PANIC("Memory error");
@@ -283,40 +282,12 @@ float* Noise_Generate(int mapSize, int cellSize, unsigned int seed, int* status)
 
     for (int y = 0; y < mapSize; y++) {
         for (int x = 0; x < mapSize; x++) {
-            retval[x + y * mapSize] = perlin2d(x, y, cellSize * 2.0f / mapSize, 10, seed)
+            retval[x + y * mapSize] = perlin2d(x, y, amplitude, 10, seed)
                 - 0.00f * sqrtf(powf(x - mapSize / 2, 2) + powf(y - mapSize / 2, 2));
         }
         (*status)++;
     }
-    return retval; /*
-
-    Noise_GenerateOctave(retval, mapSize, cellSize, amplitude, seed, BICUBIC);
-    float* map = (float*)malloc(mapSize * mapSize * sizeof(float));
-    if (!map) {
-        PANIC("Memory error");
-    }
-    cellSize /= 2;
-    amplitude /= 2;
-    int j = 1;
-
-    while (cellSize >= 1) {
-        Noise_GenerateOctave(map, mapSize, cellSize, amplitude, seed, BICUBIC);
-        if (!map) {
-            PANIC("Memory error");
-        }
-        for (int i = 0; i < mapSize * mapSize; i++) {
-            retval[i] += map[i];
-        }
-        (*status)++;
-
-        cellSize /= 2;
-        amplitude *= 0.5f;
-        j++;
-    }
-
-    free(map);
     return retval;
-	*/
 }
 
 /*

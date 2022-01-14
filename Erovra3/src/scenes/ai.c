@@ -260,9 +260,8 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     float averageTicksPerOreMade = 0;
     float averageTicksPerCoalMade = 0;
     float averageTicksPerTimberMade = 0;
-    const int expansions = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT];
+    const int expansions = nation->unitCount[UnitType_FACTORY] + nation->unitCount[UnitType_ACADEMY] + nation->unitCount[UnitType_PORT] + nation->unitCount[UnitType_FOUNDRY];
     {
-
         int oreMineCount = 0;
         int coalMineCount = 0;
         system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID)
@@ -282,9 +281,9 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
                 averageTicksPerTimberMade += resourceProducer->resourceTicksTotal;
             }
         }
-        averageTicksPerOreMade /= (float)oreMineCount;
-        averageTicksPerCoalMade /= (float)coalMineCount;
-        averageTicksPerTimberMade /= (float)nation->unitCount[UnitType_TIMBERLAND];
+        averageTicksPerOreMade = oreMineCount == 0 ? 216000.0f : averageTicksPerOreMade / (float)oreMineCount;
+        averageTicksPerCoalMade = coalMineCount == 0 ? 216000.0f : averageTicksPerCoalMade / (float)coalMineCount;
+        averageTicksPerTimberMade = nation->unitCount[UnitType_TIMBERLAND] == 0 ? 216000.0f : averageTicksPerTimberMade / (float)nation->unitCount[UnitType_TIMBERLAND];
     }
 
     // How many ticks does it take to use ore
@@ -292,13 +291,13 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     // Build an ore mine if it takes more ticks to make ore than it does to use ore
 
     // How many ticks does it take to use coal (need coal for foundry and powerplant and producer)
-    const float averageTicksPerCoalUsed = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (3.0f * nation->unitCount[UnitType_FOUNDRY]);
+    const float averageTicksPerCoalUsed = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (1.0 * expansions);
     // Build a coal mine if it takes more ticks to make coal than it does to use coal
 
     // How many ticks does it take to make metal
     const float averageTicksPerMetalMade = nation->unitCount[UnitType_FOUNDRY] == 0 ? 216000.0f : (ticksPerLabor * 2.6) / (1.0f * nation->unitCount[UnitType_FOUNDRY]);
     // How many ticks does it take to use metal
-    const float averageTicksPerMetalUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 216000.0f : (ticksPerLabor * 15.0f) / (5.0f * nation->unitCount[UnitType_FACTORY]);
+    const float averageTicksPerMetalUsed = nation->unitCount[UnitType_FACTORY] == 0 ? 216000.0f : (ticksPerLabor * 15.0f) / (nation->costs[ResourceType_METAL][UnitType_CAVALRY] * nation->unitCount[UnitType_FACTORY]);
     // Build a foundry if it takes more ticks to make metal than it does to use metal
 
     const float averageTicksPerPowerMade = nation->unitCount[UnitType_POWERPLANT] == 0 ? 216000.0f : (ticksPerLabor / 2.0f) / (1.0f * nation->unitCount[UnitType_POWERPLANT]);
@@ -309,10 +308,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     const float averageTicksPerCoinMade = nation->unitCount[UnitType_CITY] == 0 ? 54000.0f : ticksPerLabor / nation->unitCount[UnitType_CITY];
     // How many ticks does it take to use a coin
     const float averageTicksPerCoinUsed = expansions == 0 ? 54000.0f : (ticksPerLabor * 22.0f) / (15.0f * expansions);
-    // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above)
-
-    const float averageTicksPerFoodMade = nation->unitCount[UnitType_FARM] == 0 ? 54000.0f : 1 * ticksPerLabor / (nation->unitCount[UnitType_FARM]);
-    const float averageTicksPerFoodUsed = (ticksPerLabor * 6.0f) / (nation->resources[ResourceType_POPULATION] - nation->unitCount[UnitType_MINE] - nation->unitCount[UnitType_TIMBERLAND]);
+    // Build a factory if it takes less ticks to make a coin than it does to use one (Different from ore above
 
     goap->variables[COMBATANTS_AT_ENEMY_CAPITAL] = false;
 
@@ -327,7 +323,7 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     goap->variables[HAS_COAL] = averageTicksPerCoalMade < averageTicksPerCoalUsed;
     goap->variables[HAS_POWER] = averageTicksPerPowerMade < averageTicksPerPowerUsed;
     goap->variables[HAS_METAL] = averageTicksPerMetalMade < averageTicksPerMetalUsed;
-    goap->variables[HAS_FOOD] = averageTicksPerFoodMade < averageTicksPerFoodUsed;
+    goap->variables[HAS_FOOD] = nation->resources[ResourceType_POPULATION] - (nation->unitCount[UnitType_FARM] + nation->unitCount[UnitType_CITY]) < 5 * nation->unitCount[UnitType_FARM];
     // ticksToTimberCost < ticksToCoinCost
     goap->variables[HAS_TIMBER] = nation->unitCount[UnitType_TIMBERLAND] >= 2 && averageTicksPerTimberMade * 0.5f < ticksPerLabor;
 
@@ -476,12 +472,13 @@ void AI_UpdateVariables(Scene* scene, Goap* goap, Nation* nation)
     }
 
     /*
-        goap->variables[HAS_CAVALRY] = nation->unitCount[UnitType_CAVALRY] + nation->prodCount[UnitType_CAVALRY] > knownEnemies;
-        goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] + nation->prodCount[UnitType_INFANTRY] > knownEnemies;
-		*/
+    goap->variables[HAS_CAVALRY] = nation->unitCount[UnitType_CAVALRY] > knownEnemies;
+    goap->variables[HAS_INFANTRY] = nation->unitCount[UnitType_INFANTRY] > knownEnemies;
+	*/
+
     if (Apricot_Keys[SDL_SCANCODE_LSHIFT]) {
         City* capitalCity = (City*)Scene_GetComponent(scene, nation->capital, CITY_COMPONENT_ID);
-        printf("%s metal:%d ore:%d coal:%d\n", capitalCity->name, goap->variables[HAS_METAL], goap->variables[HAS_ORE], goap->variables[HAS_COAL]);
+        printf("%s avail fact:%d\n", capitalCity->name, goap->variables[HAS_POWER]);
     }
 }
 
@@ -570,17 +567,6 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
                 target->tar = Vector_Add(closestOther, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
                 target->lookat = target->tar;
             }
-        } else { // An alerted space could not be found, set unit's target randomly
-            unit->engagedLevel = 100;
-            Vector newTarget = Vector_Add(sprite->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
-            if (Terrain_LineOfSight(terrain, sprite->pos, newTarget, sprite->z)) {
-                if (isPatrol) {
-                    patrol->patrolPoint = newTarget;
-                } else {
-                    target->tar = newTarget;
-                    target->lookat = newTarget;
-                }
-            }
         }
     }
 
@@ -625,7 +611,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
                     Vector newPoint = Vector_Scalar(point, 32);
                     float newDist = Vector_Dist(sprite->pos, newPoint);
                     // If near enough to target, or if new target is closer
-                    if ((dist < 3 || newDist < dist) && Terrain_LineOfSight(terrain, sprite->pos, newPoint, sprite->z)) {
+                    if ((dist < 3 || newDist < dist) && Terrain_LineOfSight(terrain, sprite->pos, newPoint, sprite->z) && Vector_Dist(sprite->nation->capitalPos, sprite->pos) > Vector_Dist(sprite->nation->capitalPos, newPoint) - 64) {
                         closestTile = newPoint;
                         foundEnemy = true; // Breaks out of loop
                     }
@@ -641,12 +627,25 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
             y += dy;
         }
 
+        float randX = (float)(rand()) / (float)RAND_MAX - 0.5f;
+        float randY = (float)(rand()) / (float)RAND_MAX - 0.5f;
         if (foundEnemy) {
             if (isPatrol) {
                 patrol->patrolPoint = closestTile;
             } else {
                 target->tar = closestTile;
                 target->lookat = closestTile;
+            }
+        } else { // An alerted space could not be found, set unit's target randomly
+            unit->engagedLevel = 100;
+            Vector newTarget = Vector_Add(sprite->pos, Vector_Scalar(Vector_Normalize((Vector) { randX, randY }), 64));
+            if (Terrain_LineOfSight(terrain, sprite->pos, newTarget, sprite->z)) {
+                if (isPatrol) {
+                    patrol->patrolPoint = newTarget;
+                } else {
+                    target->tar = newTarget;
+                    target->lookat = newTarget;
+                }
             }
         }
     }
@@ -878,13 +877,37 @@ void AI_BuildAcademy(Scene* scene, Nation* nation)
 void AI_Init(Goap* goap)
 {
     goap->updateVariableSystem = &AI_UpdateVariables;
-    Goap_AddAction(goap, "Win", &AI_TargetEnemyCapital, HAS_WON, 4, HAS_INFANTRY, HAS_CAVALRY, HAS_ATTACKER, SEA_SUPREMACY, 6, 3, 1, 1);
+    Goap_AddAction(goap, "Win", &AI_TargetEnemyCapital, HAS_WON, 8,
+        HAS_METAL,
+        HAS_POWER,
+        HAS_COAL,
+        HAS_ENGINEER,
+        HAS_CAVALRY,
+        HAS_INFANTRY,
+        HAS_ATTACKER,
+        SEA_SUPREMACY,
+        6, 2, 2, 2, 2, 6, 2, 2);
+
     // Order ground units
-    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 4, HAS_ENGINEER, AFFORD_INFANTRY_COINS, HAS_AVAILABLE_ACADEMY,
-        HAS_COINS, HAS_FOOD, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 4, AFFORD_CAVALRY_COINS, AFFORD_CAVALRY_METAL, HAS_AVAILABLE_FACTORY,
-        HAS_COINS, HAS_FOOD, 1, 1, 1, 1, 1);
-    Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3, AFFORD_ENGINEER_COINS, HAS_AVAILABLE_ACADEMY, HAS_FOOD, 1, 1, 1);
+    Goap_AddAction(goap, "Order infantry", &AI_OrderInfantry, HAS_INFANTRY, 5,
+        HAS_ENGINEER,
+        AFFORD_INFANTRY_COINS,
+        HAS_AVAILABLE_ACADEMY,
+        HAS_COINS,
+        HAS_FOOD,
+        1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order cavalry", &AI_OrderCavalry, HAS_CAVALRY, 5,
+        AFFORD_CAVALRY_COINS,
+        AFFORD_CAVALRY_METAL,
+        HAS_AVAILABLE_FACTORY,
+        HAS_COINS,
+        HAS_FOOD,
+        1, 1, 1, 1, 1);
+    Goap_AddAction(goap, "Order engineer", &AI_OrderEngineer, HAS_ENGINEER, 3,
+        AFFORD_ENGINEER_COINS,
+        HAS_AVAILABLE_ACADEMY,
+        HAS_FOOD,
+        1, 1, 1);
 
     // Order ships
     Goap_AddAction(goap, "Order destroyer", &AI_OrderDestroyer, SEA_SUPREMACY, 4, HAS_AVAILABLE_PORT, AFFORD_DESTROYER_COINS, AFFORD_DESTROYER_METAL, HAS_FOOD, 1, 1, 1, 1);
@@ -967,8 +990,8 @@ void AI_Init(Goap* goap)
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
-        AFFORD_FOUNDRY_COINS,
-        AFFORD_FOUNDRY_TIMBER,
+        AFFORD_POWERPLANT_COINS,
+        AFFORD_POWERPLANT_TIMBER,
         HAS_FOOD,
         HAS_COAL,
         HAS_TIMBER,
@@ -1003,18 +1026,17 @@ void AI_Init(Goap* goap)
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
     // Build factory
-    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 10,
+    Goap_AddAction(goap, "fact", &AI_BuildFactory, HAS_AVAILABLE_FACTORY, 9,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,
         SPACE_FOR_EXPANSION,
         AFFORD_FACTORY_COINS,
         AFFORD_FACTORY_TIMBER,
         HAS_COINS,
-        HAS_METAL,
         HAS_FOOD,
         HAS_POWER,
         HAS_TIMBER,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+        1, 1, 1, 1, 1, 1, 1, 1, 1);
     Goap_AddAction(goap, "fact 4 airf", &AI_BuildFactoryForAirfield, HAS_AVAILABLE_AIRFIELD, 10,
         HAS_ENGINEER,
         ENGINEER_ISNT_BUSY,

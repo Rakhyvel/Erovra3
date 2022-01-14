@@ -49,7 +49,7 @@ void Noise_BicosineInterpolation(float* map, int mapSize, int cellSize, int x0, 
 
 // Height map generators
 void Noise_GenerateOctave(float* map, int mapSize, int cellSize, float amplitude, unsigned int seed, enum PerlinInterpolation interpolation);
-float* Noise_Generate(int mapSize, int cellSize, unsigned int seed, int* status);
+float* Noise_Generate(int mapSize, float amplitude, unsigned int seed, int* status);
 int noise2(int x, int y, int seed);
 float perlin2d(float x, float y, float freq, int depth, int seed);
 

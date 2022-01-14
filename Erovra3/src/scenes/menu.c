@@ -131,10 +131,11 @@ static int generatePreview(void* ptr)
     Scene* scene = (Scene*)ptr;
     free(map);
     free(trees);
+    free(ore);
 
     // Generate terrain
     status = 0;
-    map = Noise_Generate(size, 1, getSeed(scene), &status);
+    map = Noise_Generate(size, 2.0f / size, getSeed(scene), &status);
     Slider* seaLevel = (Slider*)Scene_GetComponent(scene, seaLevelSlider, GUI_SLIDER_COMPONENT_ID);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
@@ -148,15 +149,34 @@ static int generatePreview(void* ptr)
     status = 0;
     Noise_Erode(map, size, erosion->value, &status);
 
+    RadioButtons* mapSize = (RadioButtons*)Scene_GetComponent(scene, mapSizeRadioButtons, GUI_RADIO_BUTTONS_COMPONENT_ID);
+    int fullMapSize = 8 * (int)pow(2, mapSize->selection) * 64;
+    int tileSize = fullMapSize / 64;
+
     // Generate trees
-    trees = Noise_Generate(size, 4 / size, getSeed(scene), &status);
+    trees = Noise_Generate(size, 0.25f * (float)tileSize / (float)size, getSeed(scene), &status);
+    ore = Noise_Generate(size, 0.25f * (float)tileSize / (float)size, getSeed(scene) + 1, &status);
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
+            if (ore[x + y * size] > 0.5) {
+                ore[x + y * size] = 1.0f - powf(cosf(M_PI * 0.5f * (2 * ore[x + y * size] - 1)), 4);
+            } else {
+                ore[x + y * size] = powf(cosf(-M_PI * 0.5f * (2 * ore[x + y * size] - 1)), 4) - 1.0f;
+            }
             trees[x + y * size] = powf(trees[x + y * size], 1.5);
+
             if (trees[x + y * size] > 0.5) {
                 trees[x + y * size] = 1;
             } else {
                 trees[x + y * size] = 0;
+            }
+
+            if (ore[x + y * size] > 0.5) {
+                ore[x + y * size] = 1;
+            } else if (ore[x + y * size] < -0.5) {
+                ore[x + y * size] = -1;
+            } else {
+                ore[x + y * size] = 0;
             }
         }
     }
@@ -182,18 +202,19 @@ static int generateFullTerrain(void* ptr)
     /* Generate map */
     free(map);
     free(trees);
+    free(ore);
     status = 0;
     state = GENERATING;
     // pass status integer, is incremented by Terrain_Perlin(). Used by update function for progress bar
-    map = Noise_Generate(fullMapSize, 1, getSeed(scene), &status);
+    map = Noise_Generate(fullMapSize, 2.0f / fullMapSize, getSeed(scene), &status);
     for (int y = 0; y < fullMapSize; y++) {
         for (int x = 0; x < fullMapSize; x++) {
             map[x + y * fullMapSize] = (1.5f - seaLevel->value) / 3.33f * powf(map[x + y * fullMapSize], 2) + 0.55f * (1.0f - seaLevel->value) + 0.5 * seaLevel->value * map[x + y * fullMapSize];
         }
     }
     // Generate trees
-    trees = Noise_Generate(tileSize * 2, 4, getSeed(scene), &status);
-    ore = Noise_Generate(tileSize * 2, 8, (unsigned)time(0), &status);
+    trees = Noise_Generate(tileSize * 2, 0.125f, getSeed(scene), &status);
+    ore = Noise_Generate(tileSize * 2, 0.125f, getSeed(scene) + 1, &status);
     Noise_Normalize(ore, tileSize * 2);
     for (int y = 0; y < tileSize * 2; y++) {
         for (int x = 0; x < tileSize * 2; x++) {
@@ -331,7 +352,14 @@ void Menu_Exit(Scene* scene, EntityID id)
 
 SDL_Color Menu_PaintTrees(float* treesMap, int mapSize, int x, int y, float i)
 {
-    if (treesMap[x + y * mapSize] > 0.5f && map[x + y * size] > 0.5f) {
+    if ((x + y) % 3 == 0) {
+        return (SDL_Color) { 0, 0, 0, 0 };
+    }
+    if (ore[x + y * mapSize] > 0.5f && map[x + y * size] > 0.5f) {
+        return (SDL_Color) { 113, 102, 97, 140 };
+    } else if (ore[x + y * mapSize] < -0.5f && map[x + y * size] > 0.5f) {
+        return (SDL_Color) { 20, 20, 20, 140 };
+    } else if (treesMap[x + y * mapSize] > 0.5f && map[x + y * size] > 0.5f) {
         return (SDL_Color) { 22, 50, 22, 100 };
     } else {
         return (SDL_Color) { 0, 0, 0, 0 };
@@ -479,7 +507,7 @@ Scene* Menu_Init()
     logoSpacerVel = 0;
     logoSpacerAcc = -20;
 
-    mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
+    mapSizeRadioButtons = GUI_CreateRadioButtons(scene, (Vector) { 0, 0 }, "Map size", 1, &Menu_ReconstructMap, 4, "Small (8x8)", "Medium (16x16)", "Large (32x32)", "Huge (64x64)");
     seaLevelSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Sea level", 0.33f, 0, 0, &Menu_ReconstructMap);
     erosionSlider = GUI_CreateSlider(scene, (Vector) { 0, 0 }, 280, "Erosion", 0.33f, 0, 0, &Menu_ReconstructMap);
     nationNameTextBox = GUI_CreateTextBox(scene, (Vector) { 0, 0 }, 280, "Nation name", "", NULL);

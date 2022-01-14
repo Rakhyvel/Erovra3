@@ -24,7 +24,11 @@ Strategy and logistics:
 	Set up and plan invasions
 	Maybe a supply line that you'd have to maintain? That'd be hard tho
 
-A complex system that slowly comes to an equilibrium with one nation remaining. Goal is to be that nation remaining
+Statecraft
+	Incite revolts in rival nations to take over the left overs
+	Manage food and public relations to make sure your nation doesn't crumble to its own people
+	Trade with other nations to benefit each other
+	Its fun to watch AI nations pop up and be recycled, day after day
 */
 
 #include "./main.h"
@@ -42,7 +46,7 @@ A complex system that slowly comes to an equilibrium with one nation remaining. 
 #include <string.h>
 
 //#define CREATE_LEXICON
-#define CREATE_TEXTURES
+//#define CREATE_TEXTURES
 
 /*
 	Entry point of program. Inits the game, then starts the game loop */
@@ -52,7 +56,7 @@ int SDL_main(int argc, char** argv)
     int status;
     Lexicon_Create("res/countryNames.txt", "res/countryNames.lex", &status);
 #endif
-    Apricot_Init("Erovra 3.10.2", 1280, 720);
+    Apricot_Init("Erovra 3.10.3", 1280, 720);
 #ifdef CREATE_TEXTURES
     Textures_Draw();
 #endif

@@ -334,7 +334,7 @@ x More than one nation (Maybe an array of enemy nations)
 	x fix ordinal for airfield, academy, city
 	x create and read in lexicon
 	x AI moves player units >:(
-- Resources change
+x Resources change
 	x Farms produce food just like a resource producer
 		x Is consumed by units
 		x Change in morale = amount of food + consumer goods
@@ -350,16 +350,12 @@ x More than one nation (Maybe an array of enemy nations)
 		x Used to build buildings
 		x AI know about timber
 		x LIMITED!
-	- New units in this order
+	x New units in this order
 		x Timberland
 		x Foundry
 			x Coal + ore = metal
 		x Power plant
 			x Coal = electricity
-		- Oil drill
-			- Electricity = crude oil
-		- Refinery
-			- electricity + crude oil = gas
 	x Coal is burned to produce energy
 		x Mined in mines depending on the coal content (coal = -1, ore = 1, stone = 0)
 			x In order to save space, coal ranges from [-1, 0], ore ranges from [0, 1]
@@ -384,7 +380,7 @@ x More than one nation (Maybe an array of enemy nations)
 		x LIMITED!
 	x Metal
 		x Used to make all units, replaces ore
-	! Make real icons for everything new
+	x Make real icons for everything new
 		x Coal
 		x Ore
 		x Food
@@ -393,29 +389,47 @@ x More than one nation (Maybe an array of enemy nations)
 		x Metal
 		x Powerplant
 		x Timberland
-		- Foundry
-		- Revert all particles to be player nation only
+		x Foundry
+		x Revert all particles to be player nation only
 	x Mines choose based on which is bigger, not if ore > 0
-	! Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
-	! Balance
-	- Do building prices decrease correctly when a building is destroyed?
-	? Storage units that accept particles, reemit them, have a lower priority distance multiplier (512)
-	- Ammo & shells & bombs as ingredients to make units
-	- Oil for planes, drains and needs to be replenished or else they fall from the sky
-		- Same thing as food, produced by other units, drained by each unit
-		- Crude oil is pumped out of the ground
-		- Turned into gasoline by a refinery, which is what planes actually use
+	x Make it so that ore and coal and timber are at least accurately depicted in map creation, even if they can't be changed yet
+	x Make it so that if a COMBATANT has deserted twice, it just dies
+	x Do building prices decrease correctly when a building is destroyed?
+	x fix '0th' ordinals
+	x Do AI ground units actually go to unvisited spaces?
+	x Revolutionaries start with their nation's position at the top-left corner, so they go there to get resources
+x It's just boring. Once you get your base setup and once you get a big enough army you can just tell them "go attack the enemy" and then you win. No struggle, no stakes, just boring.
+x Make alerts show on the second half of the minute, have countdown timers for all resources for accepters
 
-3.11.x- Misc.
-- Upgrade buildings
+3.11.x- AI and units
 - TRANSPORT BOATS!!!!!! (cmon mane)
-	- An other boats, this may expand to a boat update
+	- Can tell a unit to go inside a transport boat
+		- Needs to be close enough to each other
+		- Would be nice if it happened at a port
+	- Units hovered near ports have a "board" button that is only active if the unit is in a port tile
+		- When in a port tile:
+		- Hover the unit
+		- Click the button
+			- There is a "board mode" boolean
+			- Clicking the button sets this mode to true
+			- Esc or closing the focus GUI sets this to false
+		- Click a transport in the same port tile. Unit will then be childed to the transport
+			- Maybe other units will darken so that you know which units you can select, or that a selection is even happening
+			- No other units hover while in board mode
+			- Would then hide the GUI of course
+	- When the transport lands, the units will be removed from the transport
+		- Implies transport boat has knowledge of its children, maybe an arraylist?
 - Defensive armament for bombers
+	- AI knows about bombers
 	- Destroyers get torpedos
 	- Cruisers get torpedos and AA
 	- Battleships get artillery (which can attack surface) and AA
 	- AirToGroundBullet for attackers, descends from the ground
 	- Attackers can attack ships
+- AI Build walls 3 tile radius around capital
+- AI engineers shouldn't go to warzones
+
+3.12.x- GUI
 - Cheats menu
 	- Show fps instead of printing it (maybe always do this)
 	- toggle Show AI goals above the capital
@@ -424,13 +438,7 @@ x More than one nation (Maybe an array of enemy nations)
 	- toggle if a nation is AI controlled
 	- toggle if you can focus enemy units
 	- Can give spawn any resource particles! Or any units!
-- AI Build walls 3 tile radius around capital
 - Check if capitals are all on the same continent first, to make it faster
-- A box in the minimap that shows where the camera is
-	- Can click on minimap to pan camera there
-- Camera shouldn't go out of bounds
-- Different shapes for the units on mini map
-	- ESPECIALLY for walls
 - Premade maps
 - Tabs for map creation
 	- Save map settings into a sharable string
@@ -438,26 +446,39 @@ x More than one nation (Maybe an array of enemy nations)
 - Randomize buttons next to things people might want to randomize, instead of just one
 - Slider for center bias in map maker
 - Settings where you can turn down the volume!
+- Can adjust key bindings for things
 - Redo the loading circle with correct color and better transparency, also make sure it's anti aliased
 - Error messages are clipped
 - Scroll for containers
+- A box in the minimap that shows where the camera is
+	- Can click on minimap to pan camera there
+- Resizable minimap
+- Camera shouldn't go out of bounds
+- Different shapes for the units on mini map
+	- ESPECIALLY for walls
 - more hints, hints.txt file
-- Better OOBE:
-	- Actual real speech box hints when you first start playing about what to do
-	- Time how long it takes to play, make sure the first 20% makes sense
-	- Alert icon about low morale
+
+3.13.x- OOBE
+- Actual real speech box hints when you first start playing about what to do
+- Time how long it takes to play, make sure the first 20% makes sense
+- Alert about low food
+- Crash message boxes instead of console
+- If too close to another city / building, show that city/building
+- A message that you can't build planes without airfield
 - In game hints that uses the AI to give hints
-- Warnings about food and low morale
-	- Difficulty settings, can be turned off before game is created
+- An indication of where you can build ports and expanions and cities
+
+3.14.x- Controls
 - A way to select to snap to a grid
 - Arrow spines should be curved back a bit
 	- Bezier curve, like the inverse of the axe blade
 - Arrows should begin slightly after units (make it happen)
 - Arrows should not overlap at the tip
 - Scrolling while giving arrow orders should scroll the offset for units
+	- Holding shift while scrolling rotates the end formation
 - Tooltips?
 
-3.12.x- Multiplayer
+3.15.x- Multiplayer
 - Order particles
 	- Originate from nation's capital
 	- Send messages to units to change their position, orders, etc (this ties into my plans for multiplayer!)
@@ -489,3 +510,14 @@ misc.
 - Planes should originate from airfields, airfield should protect
 - Can't stack units?
 - Modding API
+- Wells for water, maybe used for powerplants?
+- Oil for planes, tanks, ships, drains and needs to be replenished when they move or else they fall from the sky
+	- Same thing as food, produced by other units, drained by each unit
+	- Crude oil is pumped out of the ground
+	- Turned into gasoline by a refinery, which is what planes actually use	
+		- Oil drill
+			- Electricity = crude oil
+		- Refinery
+			- electricity + crude oil = gas
+? Storage units that accept particles, reemit them, have a lower priority distance multiplier (512)
+? Ammo & shells & bombs as ingredients to make units

@@ -53,11 +53,6 @@ EntityID Artillery_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, artilleryID, UNIT_COMPONENT_ID, &type);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, artilleryID, MORALE_COMPONENT_ID, &morale);
-
     Combatant combatant = {
         1.6f, 
 		100.0f, 

@@ -38,7 +38,7 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
         false,
         UnitType_FARM,
-        0.04f,
+        0.0005f, // Defense
         nation->unitCount[UnitType_FARM],
         0,
         100,
@@ -47,14 +47,6 @@ EntityID Farm_Create(struct scene* scene, Vector pos, Nation* nation, EntityID h
         UNIT_FOCUSED_GUI
     };
     Scene_Assign(scene, farmID, UNIT_COMPONENT_ID, &type);
-
-    ResourceProducer resourceProducer = {
-        ResourceType_FOOD,
-        0,
-        ticksPerLabor * 0.1f,
-        &Food_Create
-    };
-    Scene_Assign(scene, farmID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 
     Expansion expansion = {
         homeCity,

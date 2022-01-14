@@ -54,11 +54,6 @@ EntityID Engineer_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, engineerID, UNIT_COMPONENT_ID, &type);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, engineerID, MORALE_COMPONENT_ID, &morale);
-
     Scene_Assign(scene, engineerID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, engineerID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);

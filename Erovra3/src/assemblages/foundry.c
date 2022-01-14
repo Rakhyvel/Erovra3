@@ -58,8 +58,7 @@ EntityID Foundry_Create(struct scene* scene, Vector pos, Nation* nation, EntityI
         ResourceType_METAL,
         -1, // Start at -1 so that it doesn't automatically create metal (only creates on 0)
         480,
-        &Metal_Create,
-        720
+        &Metal_Create
     };
     Scene_Assign(scene, foundryID, RESOURCE_PRODUCER_COMPONENT_ID, &resourceProducer);
 

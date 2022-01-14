@@ -86,6 +86,7 @@ void Textures_Init()
     ARROW_TEXTURE_ID = Texture_Load("res/arrow.png");
     ARROW_SHADOW_TEXTURE_ID = Texture_Load("res/arrow_shadow.png");
     NO_POWER_WARNING_TEXTURE_ID = Texture_Load("res/no_power.png");
+    NO_COAL_WARNING_TEXTURE_ID = Texture_Load("res/no_coal.png");
     TIMBER_INDICATOR_TEXTURE_ID = Texture_Load("res/timber_indicator.png");
     ORE_INDICATOR_TEXTURE_ID = Texture_Load("res/ore_indicator.png");
     COAL_INDICATOR_TEXTURE_ID = Texture_Load("res/coal_indicator.png");

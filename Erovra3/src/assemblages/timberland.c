@@ -37,7 +37,7 @@ EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation)
         Scene_CreateMask(scene, 3, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID, BOMB_COMPONENT_ID),
         false,
         UnitType_TIMBERLAND,
-        0.04f,
+        0.04f, // Defense
         nation->unitCount[UnitType_TIMBERLAND],
         0,
         100,

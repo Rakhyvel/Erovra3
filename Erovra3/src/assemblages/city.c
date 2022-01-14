@@ -39,7 +39,7 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
         Scene_CreateMask(scene, 2, BULLET_COMPONENT_ID, SHELL_COMPONENT_ID),
         false,
         UnitType_CITY,
-        1.0f,
+        1.0f, // defense
         0,
         0,
         100,
@@ -65,11 +65,6 @@ EntityID City_Create(struct scene* scene, Vector pos, Nation* nation, char* name
     }
     city.captureNation = NULL;
     Scene_Assign(scene, cityID, CITY_COMPONENT_ID, &city);
-
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, cityID, MORALE_COMPONENT_ID, &morale);
 
     Scene_Assign(scene, cityID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cityID, BUILDING_FLAG_COMPONENT_ID, NULL);

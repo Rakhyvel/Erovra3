@@ -25,7 +25,7 @@ void GUI_Destroy(Scene* scene);
 EntityID GUI_CreateButton(Scene* scene, Vector pos, int width, int height, char* text, int meta, GUICallback);
 EntityID GUI_CreateLabel(Scene* scene, Vector pos, char* text);
 EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value, GUICallback);
-EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...);
+EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, GUICallback, int nSelections, char* options, ...);
 EntityID GUI_CreateSlider(Scene* scene, Vector pos, int width, char* label, float defaultValue, int min, int max, GUICallback);
 EntityID GUI_CreateTextBox(Scene* scene, Vector pos, int width, char* label, char* defaultText, GUICallback onupdate);
 EntityID GUI_CreateCheckBox(Scene* scene, Vector pos, char* label, bool defaultValue);
@@ -84,6 +84,7 @@ typedef struct rockerSwitch {
 ComponentKey GUI_ROCKER_SWITCH_COMPONENT_ID;
 
 typedef struct radioButtons {
+    GUICallback onchange;
     int selection;
     int nSelections; // Should be around 3-8.
     char groupLabel[32];

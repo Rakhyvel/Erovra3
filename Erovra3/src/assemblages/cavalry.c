@@ -65,11 +65,6 @@ EntityID Cavalry_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, cavalryID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, cavalryID, MORALE_COMPONENT_ID, &morale);
-
     Scene_Assign(scene, cavalryID, LAND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, GROUND_UNIT_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cavalryID, BULLET_ATTACK_FLAG_COMPONENT_ID, NULL);

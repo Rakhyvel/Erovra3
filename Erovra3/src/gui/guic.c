@@ -194,7 +194,7 @@ EntityID GUI_CreateRockerSwitch(Scene* scene, Vector pos, char* text, bool value
     return rockerSwitchID;
 }
 
-EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, int nSelections, char* options, ...)
+EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int defaultSelection, GUICallback onchange, int nSelections, char* options, ...)
 {
     EntityID id = Scene_NewEntity(scene);
 
@@ -214,6 +214,7 @@ EntityID GUI_CreateRadioButtons(Scene* scene, Vector pos, char* groupLabel, int 
     Scene_Assign(scene, id, GUI_COMPONENT_ID, &gui);
 
     RadioButtons radioButtons = {
+        onchange,
         defaultSelection,
         nSelections
     };
@@ -798,6 +799,9 @@ void updateRadioButtons(Scene* scene)
                 radioButtons->selection = radioButtons->selectionHovered;
                 if (gui->active) {
                     Sound_Play(CLICK_SOUND);
+                }
+                if (radioButtons->onchange) {
+                    radioButtons->onchange(scene, id);
                 }
             }
             gui->clickedIn = false;

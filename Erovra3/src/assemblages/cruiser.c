@@ -64,11 +64,6 @@ EntityID Cruiser_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, cruiserID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, cruiserID, MORALE_COMPONENT_ID, &morale);
-
     Scene_Assign(scene, cruiserID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cruiserID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, cruiserID, nation->controlFlag, NULL);

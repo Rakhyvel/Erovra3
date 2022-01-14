@@ -38,9 +38,6 @@ EntityID orderLabel;
 EntityID timeLabel;
 EntityID autoReOrderRockerSwitch;
 
-// Morale GUI elements
-EntityID moraleLabel;
-
 Arraylist* /*<Message>*/ messages;
 
 // Used by hover, select, and drawBoxSelect for box select
@@ -53,10 +50,7 @@ bool escFocus = false;
 bool instantDefocus = false;
 static EntityID currShownEntity = INVALID_ENTITY_INDEX;
 
-static const int cityPop = 4;
-static const float taxRate = 0.25f;
 const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
-bool buildPorts = false;
 
 Arraylist* /*<Nation>*/ nations;
 
@@ -208,9 +202,6 @@ enum ResourceType Match_CheckResources(Nation* nation, UnitType type)
 {
     // Check resource amounts
     for (int i = 0; i < _ResourceType_Length; i++) {
-        if (i == ResourceType_FOOD) {
-            continue;
-        }
         if (nation->resources[i] < nation->costs[i][type]) {
             return i;
         }
@@ -315,7 +306,10 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vect
     Match_CopyUnitName(type, name);
     enum ResourceType missingResource = Match_CheckResources(nation, type);
     EntityID homeCity = Terrain_AdjacentMask(scene, CITY_COMPONENT_ID, terrain, (int)pos.x, (int)pos.y);
-    if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
+    if (type != UnitType_FARM && nation->resources[ResourceType_POPULATION] - (nation->unitCount[UnitType_FARM] + nation->unitCount[UnitType_CITY]) >= 5 * nation->unitCount[UnitType_FARM]) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
+            Match_AddMessage(errorColor, "Not enough food");
+    } else if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
         if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build %s on a water tile", name);
     } else if (type == UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5) {
@@ -383,7 +377,10 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
     memset(name, 0, 32);
     Match_CopyUnitName(type, name);
     enum ResourceType missingResource = Match_CheckResources(nation, type);
-    if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
+    if (nation->resources[ResourceType_POPULATION] - (nation->unitCount[UnitType_FARM] + nation->unitCount[UnitType_CITY]) >= 5 * nation->unitCount[UnitType_FARM]) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
+            Match_AddMessage(errorColor, "Not enough food");
+    } else if (type != UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) <= 0.5) {
         if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Cannot build %s on a water tile", name);
     } else if (type == UnitType_PORT && Terrain_GetHeightForBuilding(terrain, (int)pos.x, (int)pos.y) > 0.5) {
@@ -396,6 +393,8 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
         if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID)
             Match_AddMessage(errorColor, "Not enough resources for a %s", name);
     } else {
+        nation->unitCount[type]++;
+        nation->resources[ResourceType_POPULATION]++;
         EntityID building = INVALID_ENTITY_INDEX;
         switch (type) {
         case UnitType_TIMBERLAND:
@@ -409,9 +408,10 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
         }
         Terrain_SetBuildingAt(terrain, building, (int)pos.x, (int)pos.y);
         Match_DeductResources(scene, nation, type);
-        nation->unitCount[type]++;
-        nation->resources[ResourceType_POPULATION]++;
         nation->costs[ResourceType_COIN][type] *= 2;
+        if (type != UnitType_TIMBERLAND) {
+            nation->costs[ResourceType_TIMBER][type] += 5 * nation->unitCount[type];
+        }
         return true;
     }
     return false;
@@ -515,6 +515,11 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
     Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
     Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
+    if (unit->type != UnitType_TIMBERLAND) {
+        nation->costs[ResourceType_TIMBER][unit->type] -= 5 * nation->unitCount[unit->type];
+    }
+    nation->costs[ResourceType_COIN][unit->type] /= 2;
+
     nation->unitCount[unit->type]--;
     newNation->unitCount[unit->type]++;
 
@@ -522,7 +527,6 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
     if (unit->type == UnitType_FARM) {
         unit->isDead = true;
     }
-    nation->costs[ResourceType_COIN][unit->type] /= 2;
 
     if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
@@ -560,10 +564,6 @@ void Match_SwapAllegiance(Scene* scene, Nation* nation, Nation* newNation, Entit
             sprite->spriteOutline = CITY_OUTLINE_TEXTURE_ID;
         }
     }
-    if (Scene_EntityHasComponents(scene, id, MORALE_COMPONENT_ID)) {
-        Morale* morale = (Morale*)Scene_GetComponent(scene, id, MORALE_COMPONENT_ID);
-        morale->morale = 0.5f;
-    }
 
     if (unit->focused) {
         GUI_SetShown(scene, unit->focused, false);
@@ -583,6 +583,7 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
     Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
     accepter->transit[resourceType]--;
     accepter->storage[resourceType]++;
+    accepter->ticksSinceLastAccept[resourceType] = 0;
 
     switch (unit->type) {
     case UnitType_CITY:
@@ -593,9 +594,6 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
         if (accepter->storage[ResourceType_ORE] >= 1 && accepter->storage[ResourceType_COAL] >= 1 && resourceProducer->resourceTicksRemaining == -1) {
             resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
         }
-        if (resourceType == ResourceType_POWER) {
-            resourceProducer->ticksSinceLastPowered = 0;
-        }
         break;
     }
     case UnitType_POWERPLANT: {
@@ -604,13 +602,6 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
             resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
             resourceProducer->resourceTicksRemaining = resourceProducer->resourceTicksTotal;
         }
-        break;
-    }
-    case UnitType_FACTORY:
-    case UnitType_PORT:
-    case UnitType_ACADEMY: {
-        Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-        producer->ticksSinceLastPowered = 0;
         break;
     }
     }
@@ -661,7 +652,6 @@ void Match_Unit(struct scene* scene)
             if (unit->deathTicks < 16) {
                 unit->deathTicks += 1;
             } else {
-                // Cities don't get destroyed, they're captured
                 City* homeCity = NULL;
                 if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
                     Scene_MarkPurged(scene, id);
@@ -669,10 +659,19 @@ void Match_Unit(struct scene* scene)
                 } else {
                     City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
                     Nation* otherNation = city->captureNation;
-                    if (otherNation != NULL) {
+                    if (otherNation != NULL && rand() % 2 == 0) {
                         Match_SwapAllegiance(scene, nation, otherNation, id);
                     } else {
                         Scene_MarkPurged(scene, id);
+                        Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)sprite->pos.x, (int)sprite->pos.y);
+                        for (int i = 0; i < 4; i++) {
+                            EntityID expansionID = city->expansions[i];
+                            if (expansionID == INVALID_ENTITY_INDEX) {
+                                continue;
+                            }
+                            Unit* expansion = (Unit*)Scene_GetComponent(scene, expansionID, UNIT_COMPONENT_ID);
+                            expansion->isDead = true;
+                        }
                     }
                 }
 
@@ -686,6 +685,9 @@ void Match_Unit(struct scene* scene)
                 if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID)) {
                     Terrain_SetBuildingAt(terrain, INVALID_ENTITY_INDEX, (int)sprite->pos.x, (int)sprite->pos.y);
                     nation->costs[ResourceType_COIN][unit->type] /= 2;
+                    if (unit->type != UnitType_TIMBERLAND) {
+                        nation->costs[ResourceType_TIMBER][unit->type] -= 5 * nation->unitCount[unit->type];
+                    }
                 }
 
                 if (Scene_EntityHasComponents(scene, id, UNIT_COMPONENT_ID)) {
@@ -736,12 +738,7 @@ void Match_Unit(struct scene* scene)
                     } else {
                         splashDamageModifier = 1.0f - dist / projectile->splash; // The farther away from splash damage, the less damage it does
                     }
-                    if (Scene_EntityHasComponents(scene, id, MORALE_COMPONENT_ID)) {
-                        Morale* morale = (Morale*)Scene_GetComponent(scene, id, MORALE_COMPONENT_ID);
-                        unit->health -= projectile->attack * splashDamageModifier / (unit->defense * morale->morale);
-                    } else {
-                        unit->health -= projectile->attack * splashDamageModifier / unit->defense;
-                    }
+                    unit->health -= projectile->attack * splashDamageModifier / unit->defense;
                     // Building set engaged ticks, visited spaces (building defense should be top priority)
                     if (Scene_EntityHasComponents(scene, id, BUILDING_FLAG_COMPONENT_ID) || Scene_EntityHasComponents(scene, id, WALL_FLAG_COMPONENT_ID)) {
                         Match_SetAlertedTile(nation, sprite->pos.x, sprite->pos.y, -10);
@@ -768,81 +765,6 @@ void Match_Unit(struct scene* scene)
                         break;
                     }
                 }
-            }
-        }
-    }
-}
-
-void Match_Morale(Scene* scene)
-{
-    system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, MORALE_COMPONENT_ID)
-    {
-        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
-        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-        Morale* morale = (Morale*)Scene_GetComponent(scene, id, MORALE_COMPONENT_ID);
-        Nation* nation = sprite->nation;
-        if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
-            City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
-            if (city->isCapital) {
-                continue;
-            }
-        }
-        // Eat food
-        int ticks = (int)(ticksPerLabor * 0.6f);
-        if (unit->aliveTicks % ticks == 0) {
-            if (nation->resources[ResourceType_FOOD] > 0 && nation->capital != INVALID_ENTITY_INDEX) {
-                ResourceAccepter* capitalAccepter = (ResourceAccepter*)Scene_GetComponent(scene, nation->capital, RESOURCE_ACCEPTER_COMPONENT_ID);
-                if (Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
-                    City* city = (City*)Scene_GetComponent(scene, id, CITY_COMPONENT_ID);
-                    for (int i = 0; i < 4; i++) {
-                        if (city->expansions[i] != INVALID_ENTITY_INDEX) {
-                            nation->resources[ResourceType_FOOD]--;
-                            capitalAccepter->storage[ResourceType_FOOD]--;
-                        }
-                    }
-                }
-                nation->resources[ResourceType_FOOD]--;
-                capitalAccepter->storage[ResourceType_FOOD]--;
-                morale->morale += (2.0f - morale->morale) / 50.0f; // Regains morale from 0 logistically in 4 hungry ticks
-            } else {
-                morale->morale -= 0.05;
-                printf("Hungry! %f\n", morale->morale);
-            }
-            if (morale->morale <= 0) {
-                printf("Ah screw this!\n");
-                Nation* chosen = NULL;
-                float closestDist = 7 * 64;
-                for (int i = 0; i < nations->size; i++) {
-                    Nation* nation2 = (Nation*)Arraylist_Get(nations, i);
-                    if (nation2 == sprite->nation) {
-                        continue;
-                    }
-                    if (nation2->capital != INVALID_ENTITY_INDEX) {
-                        float dist = Vector_Dist(nation2->capitalPos, sprite->pos);
-                        if (dist < closestDist) {
-                            closestDist = dist;
-                            chosen = nation2;
-                        }
-                    }
-                }
-                if (chosen == NULL) {
-                    for (int i = 0; i < nations->size; i++) {
-                        Nation* nation2 = (Nation*)Arraylist_Get(nations, i);
-                        if (nation2 == sprite->nation) {
-                            continue;
-                        }
-                        if (nation2->capital == INVALID_ENTITY_INDEX) {
-                            chosen = nation2;
-                            break;
-                        }
-                    }
-                } // no else on purpose
-
-                if (chosen != NULL) {
-                    Match_SwapAllegiance(scene, sprite->nation, chosen, id);
-                }
-                morale->morale = 2.0f;
-                continue;
             }
         }
     }
@@ -1639,8 +1561,6 @@ void Match_ProduceResources(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         ResourceProducer* resourceProducer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
 
-        resourceProducer->ticksSinceLastPowered++;
-
         if (resourceProducer->resourceTicksRemaining == 0) {
             EntityID accepter = INVALID_ENTITY_INDEX;
             float closestDist = FLT_MAX;
@@ -1698,7 +1618,7 @@ void Match_ProduceResources(struct scene* scene)
         } else if (resourceProducer->resourceTicksRemaining > 0) {
             if (unit->type == UnitType_FOUNDRY) {
                 ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
-                if (resourceProducer->ticksSinceLastPowered < 3 * ticksPerLabor) {
+                if (resourceAccepter->ticksSinceLastAccept[ResourceType_POWER] < 3 * ticksPerLabor) {
                     resourceProducer->resourceTicksRemaining--;
                     resourceAccepter->storage[ResourceType_POWER] = 1; // no need to take power if not producing anything
                 } else {
@@ -1732,19 +1652,25 @@ void Match_ProduceUnits(struct scene* scene)
         City* city = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
         ResourceAccepter* resourceAccepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
 
-        producer->ticksSinceLastPowered++;
-
-        if (producer->order != -1) {
-            if (producer->ticksSinceLastPowered < 3 * ticksPerLabor) {
+        bool hasFood = sprite->nation->resources[ResourceType_POPULATION] - (sprite->nation->unitCount[UnitType_FARM] + sprite->nation->unitCount[UnitType_CITY]) < 5 * sprite->nation->unitCount[UnitType_FARM];
+        if (producer->order != -1 && hasFood) {
+            if (resourceAccepter->ticksSinceLastAccept[ResourceType_POWER] < 3 * ticksPerLabor) {
                 producer->orderTicksRemaining--;
             } else {
                 resourceAccepter->storage[ResourceType_POWER] = 0;
             }
         } else {
-            producer->orderTicksRemaining--;
+            if (hasFood) {
+                producer->orderTicksRemaining--;
+            }
             resourceAccepter->storage[ResourceType_POWER] = 1; // no need to take power if not producing anything
         }
-        if (producer->orderTicksRemaining == 0) {
+
+        if (producer->order != -1 && producer->orderTicksRemaining == 0) {
+            sprite->nation->prodCount[producer->order]--;
+            sprite->nation->unitCount[producer->order]++;
+            sprite->nation->resources[ResourceType_POPULATION]++;
+
             if (producer->order == UnitType_INFANTRY) {
                 Infantry_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ENGINEER) {
@@ -1766,11 +1692,8 @@ void Match_ProduceUnits(struct scene* scene)
             } else if (producer->order == UnitType_BOMBER) {
                 Bomber_Create(scene, sprite->pos, sprite->nation);
             } else {
-                PANIC("Producer's can't build that UnitType");
+                PANIC("Producer's can't build that UnitType: %d", producer->order);
             }
-            sprite->nation->prodCount[producer->order]--;
-            sprite->nation->unitCount[producer->order]++;
-            sprite->nation->resources[ResourceType_POPULATION]++;
 
             if (sprite->nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
                 char buffer[32];
@@ -1790,6 +1713,20 @@ void Match_ProduceUnits(struct scene* scene)
                 producer->repeat = false;
                 unit->guiContainer = producer->readyGUIContainer;
                 guiChange = true;
+            }
+        }
+    }
+}
+
+void Match_UpdateResourceAccepterTicks(Scene* scene)
+{
+    system(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID)
+    {
+        ResourceAccepter* accepter = (ResourceAccepter*)Scene_GetComponent(scene, id, RESOURCE_ACCEPTER_COMPONENT_ID);
+
+        for (int i = 0; i < _ResourceType_Length; i++) {
+            if (accepter->storage[i] + accepter->transit[i] < accepter->capacity[i]) {
+                accepter->ticksSinceLastAccept[i]++;
             }
         }
     }
@@ -2072,18 +2009,6 @@ void Match_UpdateGUIElements(struct scene* scene)
             }
             GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
         }
-        if (Scene_EntityHasComponents(scene, currShownEntity, MORALE_COMPONENT_ID)) {
-            Morale* morale = (Morale*)Scene_GetComponent(scene, currShownEntity, MORALE_COMPONENT_ID);
-            if (morale->morale <= 0.5f) {
-                GUI_SetLabelText(scene, moraleLabel, "Morale: Low");
-            } else if (morale->morale <= 1.0f) {
-                GUI_SetLabelText(scene, moraleLabel, "Morale: Medium");
-            } else {
-                GUI_SetLabelText(scene, moraleLabel, "Morale: High");
-            }
-        } else {
-            GUI_SetLabelText(scene, moraleLabel, "");
-        }
     }
 }
 
@@ -2242,7 +2167,7 @@ void Match_RenderNationInfo(Scene* scene)
     Texture_Draw(COIN_TEXTURE_ID, 8, 8, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 6, "%d", nation->resources[ResourceType_COIN]);
     Texture_Draw(FOOD_TEXTURE_ID, 8, 32, 20, 20, 0);
-    FC_Draw(font, Apricot_Renderer, 36, 30, "%d%%", min(100, (int)(100.0f * (nation->resources[ResourceType_FOOD]) / 100.0f) + 1));
+    FC_Draw(font, Apricot_Renderer, 36, 30, "%d / %d", nation->resources[ResourceType_POPULATION] - (nation->unitCount[UnitType_FARM] + nation->unitCount[UnitType_CITY]), 5 * nation->unitCount[UnitType_FARM]);
     Texture_Draw(TIMBER_TEXTURE_ID, 8, 56, 20, 20, 0);
     FC_Draw(font, Apricot_Renderer, 36, 54, "%d", nation->resources[ResourceType_TIMBER]);
     Texture_Draw(METAL_TEXTURE_ID, 8, 80, 20, 20, 0);
@@ -2335,7 +2260,7 @@ static void Match_RenderBar(Vector pos, int remaining, int total, SDL_Color colo
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID , PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
@@ -2344,7 +2269,7 @@ void Match_RenderProducerBars(Scene* scene)
             Match_RenderBar(sprite->pos, producer->orderTicksRemaining, producer->orderTicksTotal, sprite->nation->color);
         }
     }
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID , PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         ResourceProducer* producer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
@@ -2357,7 +2282,7 @@ void Match_RenderProducerBars(Scene* scene)
 
 void Match_NoPowerSymbols(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_ACCEPTER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_ACCEPTER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -2365,24 +2290,13 @@ void Match_NoPowerSymbols(Scene* scene)
 
         SDL_Rect rect = { 0, 0, 0, 0 };
 
-        if (unit->aliveTicks % 60 < 30) {
-            if (accepter->storage[ResourceType_POWER] + accepter->transit[ResourceType_POWER] < accepter->capacity[ResourceType_POWER]) {
-                int ticksSinceLastPowered = 0;
-                if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
-                    Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
-                    ticksSinceLastPowered = producer->ticksSinceLastPowered;
-                } else if (Scene_EntityHasComponents(scene, id, RESOURCE_PRODUCER_COMPONENT_ID)) {
-                    ResourceProducer* producer = (ResourceProducer*)Scene_GetComponent(scene, id, RESOURCE_PRODUCER_COMPONENT_ID);
-                    ticksSinceLastPowered = producer->ticksSinceLastPowered;
-                }
-                if (ticksSinceLastPowered >= 3 * ticksPerLabor) {
-                    Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
-                    Texture_Draw(NO_POWER_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
-                }
-            } else if (accepter->storage[ResourceType_COAL] + accepter->transit[ResourceType_COAL] < accepter->capacity[ResourceType_COAL]) {
-                Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
-                Texture_Draw(NO_COAL_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
-            }
+        if (accepter->ticksSinceLastAccept[ResourceType_POWER] % 60 > 30) {
+            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
+            Texture_Draw(NO_POWER_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
+
+        } else if (accepter->ticksSinceLastAccept[ResourceType_COAL] % 60 > 30) {
+            Terrain_Translate(&rect, sprite->pos.x, sprite->pos.y, 24, 24);
+            Texture_Draw(NO_COAL_WARNING_TEXTURE_ID, rect.x, rect.y, (float)rect.w, (float)rect.h, 0);
         }
     }
 }
@@ -2397,7 +2311,6 @@ void Match_Update(Scene* match)
     Match_SetVisitedSpace(match);
 
     Match_Unit(match);
-    Match_Morale(match);
 
     Match_Hover(match);
     Match_Select(match);
@@ -2412,6 +2325,7 @@ void Match_Update(Scene* match)
     Match_AirplaneAttack(match);
     Match_AirplaneScout(match);
 
+    Match_UpdateResourceAccepterTicks(match);
     Match_ProduceResources(match);
     Match_ProduceUnits(match);
     Match_UpdateExpansionAllegiance(match);
@@ -2687,8 +2601,6 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     unitNameLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "Lol!");
     unitHealthBar = GUI_CreateProgressBar(match, (Vector) { 0, 0 }, 168, 1.0f);
 
-    moraleLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "Morale: Cringe");
-
     focusedGUIContainer = GUI_CreateContainer(match, (Vector) { 251, 389 }, 140, 202);
     GUI_SetBackgroundColor(match, focusedGUIContainer, (SDL_Color) { 19, 20, 23, 180 });
     GUI_SetBorder(match, focusedGUIContainer, 2);
@@ -2696,7 +2608,6 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     GUI_SetMargin(match, focusedGUIContainer, -5);
     GUI_ContainerAdd(match, focusedGUIContainer, unitNameLabel);
     GUI_ContainerAdd(match, focusedGUIContainer, unitHealthBar);
-    GUI_ContainerAdd(match, focusedGUIContainer, moraleLabel);
     GUI_ContainerAdd(match, focusedGUIContainer, orderLabel);
     GUI_ContainerAdd(match, focusedGUIContainer, autoReOrderRockerSwitch);
     GUI_ContainerAdd(match, focusedGUIContainer, timeLabel);
@@ -2706,9 +2617,9 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     ENGINEER_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 251, 389 }, 140, 190);
     GUI_ContainerAdd(match, focusedGUIContainer, ENGINEER_FOCUSED_GUI);
     GUI_SetPadding(match, ENGINEER_FOCUSED_GUI, 2);
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build City", CITY_TEXTURE_ID, UnitType_CITY, &Match_EngineerAddCity));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Farm", FARM_TEXTURE_ID, UnitType_FARM, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Timberland", TIMBERLAND_TEXTURE_ID, UnitType_TIMBERLAND, &Match_EngineerAddBuilding));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build City", CITY_TEXTURE_ID, UnitType_CITY, &Match_EngineerAddCity));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Mine", MINE_TEXTURE_ID, UnitType_MINE, &Match_EngineerAddBuilding));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Power Plant", POWERPLANT_TEXTURE_ID, UnitType_POWERPLANT, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Foundry", FOUNDRY_TEXTURE_ID, UnitType_FOUNDRY, &Match_EngineerAddExpansion));

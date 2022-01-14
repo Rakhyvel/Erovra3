@@ -55,13 +55,12 @@ typedef enum resourceType {
     ResourceType_COAL,
     ResourceType_METAL,
     ResourceType_POWER,
-    ResourceType_POPULATION,
-    ResourceType_FOOD,
+    ResourceType_POPULATION, // Represents the theoretical "man power" resource a nation has, supported by farms
     _ResourceType_Length
 } ResourceType;
 
 typedef enum cardinalDir {
-    N, // North
+    N, // North (duh)
     E, // East
     S, // South
     W // West
@@ -174,11 +173,6 @@ ComponentKey SHIP_FLAG_COMPONENT_ID;
 
 ComponentKey AIRCRAFT_FLAG_COMPONENT_ID;
 
-typedef struct morale {
-    float morale;
-} Morale;
-ComponentKey MORALE_COMPONENT_ID;
-
 // TODO: Add "origin" vector for projectiles, so that units can mark those areas as hostile
 /* For projectile entities, which move and inflict damage on enemies
 */
@@ -236,7 +230,6 @@ typedef struct producer {
     bool repeat; // Whether or not to repeat the order after it is completed
     const EntityID readyGUIContainer; // GUI container for when producer is not producing. Constant value to copy from for the focusable component
     const EntityID busyGUIContainer; // GUI container for when producer is producing. Constant value to copy from for the focusable component
-    int ticksSinceLastPowered;
     int orderTicksTotal; // Total number of ticks the order will take
 } Producer;
 ComponentKey PRODUCER_COMPONENT_ID;
@@ -249,7 +242,6 @@ typedef struct resourceProducer {
     int resourceTicksRemaining;
     int resourceTicksTotal;
     void (*particleConstructor)(struct scene* scene, Vector pos, Nation* nation, EntityID accepter); // Resource particle constructor
-    int ticksSinceLastPowered;
 } ResourceProducer;
 ComponentKey RESOURCE_PRODUCER_COMPONENT_ID;
 
@@ -276,6 +268,7 @@ typedef struct resourceAccepter {
     int transit[_ResourceType_Length]; // How many particles are on their way to accepter
     int storage[_ResourceType_Length]; // How many particles are inside accepter
     int capacity[_ResourceType_Length]; // How many particles the accepter can hold
+    int ticksSinceLastAccept[_ResourceType_Length];
 } ResourceAccepter;
 ComponentKey RESOURCE_ACCEPTER_COMPONENT_ID;
 

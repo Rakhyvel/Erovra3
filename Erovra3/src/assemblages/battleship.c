@@ -63,11 +63,6 @@ EntityID Battleship_Create(Scene* scene, Vector pos, Nation* nation)
     };
     Scene_Assign(scene, battleshipID, COMBATANT_COMPONENT_ID, &combatant);
 
-    Morale morale = {
-        1.0f
-    };
-    Scene_Assign(scene, battleshipID, MORALE_COMPONENT_ID, &morale);
-
     Scene_Assign(scene, battleshipID, SHIP_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, battleshipID, SHELL_ATTACK_FLAG_COMPONENT_ID, NULL);
     Scene_Assign(scene, battleshipID, nation->controlFlag, NULL);

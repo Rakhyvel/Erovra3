@@ -23,7 +23,6 @@ void Components_Init()
     SHELL_ATTACK_FLAG_COMPONENT_ID = rand();
     SHIP_FLAG_COMPONENT_ID = rand();
     AIRCRAFT_FLAG_COMPONENT_ID = rand();
-    MORALE_COMPONENT_ID = rand();
 
     PROJECTILE_COMPONENT_ID = rand();
     BULLET_COMPONENT_ID = rand();
@@ -59,7 +58,6 @@ void Components_Register(struct scene* scene)
 
     Scene_RegisterComponent(scene, UNIT_COMPONENT_ID, sizeof(Unit));
     Scene_RegisterComponent(scene, COMBATANT_COMPONENT_ID, sizeof(Combatant));
-    Scene_RegisterComponent(scene, MORALE_COMPONENT_ID, sizeof(Morale));
     Scene_RegisterComponent(scene, GROUND_UNIT_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, LAND_UNIT_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, ENGINEER_UNIT_FLAG_COMPONENT_ID, 0);
