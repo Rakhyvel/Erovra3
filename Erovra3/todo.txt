@@ -407,18 +407,24 @@ x Make alerts show on the second half of the minute, have countdown timers for a
 		- Needs to be close enough to each other
 		- Would be nice if it happened at a port
 	- Units hovered near ports have a "board" button that is only active if the unit is in a port tile
-		- When in a port tile:
-		- Hover the unit
-		- Click the button
-			- There is a "board mode" boolean
-			- Clicking the button sets this mode to true
-			- Esc or closing the focus GUI sets this to false
-		- Click a transport in the same port tile. Unit will then be childed to the transport
-			- Maybe other units will darken so that you know which units you can select, or that a selection is even happening
-			- No other units hover while in board mode
-			- Would then hide the GUI of course
-	- When the transport lands, the units will be removed from the transport
-		- Implies transport boat has knowledge of its children, maybe an arraylist?
+		x "Board" button
+			x The button is inactive unless the unit is in a port tile
+			x There is a "board mode" boolean
+			x Clicking the button sets this mode to true
+			x Esc or closing the focus GUI sets this to false
+		x Click a transport in the same port tile. Unit will then be childed to the transport
+			x Maybe other units will darken so that you know which units you can select, or that a selection is even happening
+			x No other units hover while in board mode
+			x Would then hide the GUI of course
+			x Boarded units should not do move, shoot, take damage, etc
+	- Transport GUI
+		x Can carry 3 units
+		- For each unit, should show the unit's icon, it's name and ordinal, and it's health
+		- Empty slots should just say "empty" or something
+		- Cannot destroy transport with units inside
+			- If the transport dies, all units inside should die as well
+		- Create an icon for transports
+	- When the transport lands, the units will be removed from the transport. Don't destroy the transport like in Java
 - Defensive armament for bombers
 	- AI knows about bombers
 	- Destroyers get torpedos

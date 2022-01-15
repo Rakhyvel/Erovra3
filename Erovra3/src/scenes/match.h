@@ -23,6 +23,8 @@ EntityID UNIT_FOCUSED_GUI;
 
 EntityID CITY_FOCUSED_GUI;
 
+EntityID TRANSPORT_FOCUSED_GUI;
+
 EntityID FACTORY_READY_FOCUSED_GUI;
 EntityID FACTORY_BUSY_FOCUSED_GUI;
 
@@ -31,6 +33,7 @@ EntityID PORT_BUSY_FOCUSED_GUI;
 
 EntityID ACADEMY_READY_FOCUSED_GUI;
 EntityID ACADEMY_BUSY_FOCUSED_GUI;
+
 
 bool Match_CityHasType(Scene* scene, City* city, UnitType type);
 bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansion* expansion, UnitType type);

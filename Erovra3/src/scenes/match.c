@@ -33,6 +33,9 @@ EntityID focusedGUIContainer;
 EntityID unitNameLabel;
 EntityID unitHealthBar;
 
+EntityID boardButtonID;
+EntityID cancelBoardButtonID;
+
 // Factory GUI elements
 EntityID orderLabel;
 EntityID timeLabel;
@@ -45,10 +48,15 @@ Vector boxTL = { -1, -1 };
 Vector boxBR = { -1, -1 };
 bool selectBox = false;
 
+// Focus GUI flags
 bool guiChange = false;
 bool escFocus = false;
-bool instantDefocus = false;
-static EntityID currShownEntity = INVALID_ENTITY_INDEX;
+bool instantDefocus = false; // Set to true when a focused unit dies
+static EntityID currShownEntity = INVALID_ENTITY_INDEX; // The entity who has it's focused GUI shown currently. Not necesarily the focused unit currently (fade up/fade down)
+
+// Boarding flags
+bool boardMode = false;
+EntityID boardUnitID = INVALID_ENTITY_INDEX;
 
 const int ticksPerLabor = 240; // 400 = standard; 240 = unit/min
 
@@ -227,6 +235,9 @@ bool Match_PlaceOrder(Scene* scene, Nation* nation, Producer* producer, Expansio
     if (type == UnitType_FIGHTER || type == UnitType_ATTACKER || type == UnitType_BOMBER) {
         City* homeCity = (City*)Scene_GetComponent(scene, expansion->homeCity, CITY_COMPONENT_ID);
         if (!Match_CityHasType(scene, homeCity, UnitType_AIRFIELD)) {
+            if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+                Match_AddMessage(errorColor, "Factory's city must have an airfield to build airplanes");
+            }
             return false;
         }
     }
@@ -295,7 +306,6 @@ bool Match_BuyCity(struct scene* scene, Nation* nation, Vector pos)
     return false;
 }
 
-// [Called by AI]
 bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vector pos)
 {
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
@@ -367,7 +377,6 @@ bool Match_BuyExpansion(struct scene* scene, UnitType type, Nation* nation, Vect
     return false;
 }
 
-// [Called by AI]
 void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vector pos)
 {
     pos.x = (float)floor(pos.x / 64) * 64 + 32;
@@ -419,46 +428,63 @@ void Match_BuyBuilding(struct scene* scene, UnitType type, Nation* nation, Vecto
 
 bool Match_BuyWall(struct scene* scene, Nation* nation, Vector pos, float angle)
 {
-    Vector cellMidPoint = { 64 * (float)floor(pos.x / 64) + 32, 64 * (float)floor(pos.y / 64) + 32 };
+    Vector cellMidPoint = { 64.0f * (int)(pos.x / 64) + 32.0f, 64.0f * (int)(pos.y / 64) + 32.0f };
     float xOffset = cellMidPoint.x - pos.x;
     float yOffset = cellMidPoint.y - pos.y;
-    // Central wall, with units orientation
+    enum ResourceType missingResource = Match_CheckResources(nation, UnitType_WALL);
+    bool centralWall = false;
+
+    // Check if central wall, with given angle
     if (xOffset * xOffset + yOffset * yOffset < 15 * 15) {
         if ((angle < M_PI / 4 && angle > 0) || angle > 7 * M_PI / 4 || (angle > 3 * M_PI / 4 && angle < 5 * M_PI / 4)) {
             angle = 0;
         } else {
             angle = (float)M_PI / 2;
         }
-        if (Terrain_GetBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
-            return false;
-        }
-    }
-    // Upward orientation
-    else if (abs((int)xOffset) > abs((int)yOffset)) {
-        if (xOffset > 0) {
-            cellMidPoint.x -= 32;
-        } else {
-            cellMidPoint.x += 32;
-        }
-        angle = 3.1415926f / 2;
-    }
-    // Sideways orientation
-    else {
-        if (yOffset > 0) {
-            cellMidPoint.y -= 32;
-        } else {
-            cellMidPoint.y += 32;
-        }
-        angle = 0;
+        centralWall = true;
     }
 
-    if (nation->resources[ResourceType_COIN] >= 15 && Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
-        EntityID wall = Wall_Create(scene, cellMidPoint, angle, nation);
-        Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
-        nation->resources[ResourceType_COIN] -= 15;
-        return true;
-    } else {
+    if (centralWall && Terrain_GetBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+            Match_AddMessage(errorColor, "Cannot build a wall on top of a building");
+        }
         return false;
+    } else if (Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+            Match_AddMessage(errorColor, "Cannot build a wall on top of another wall");
+        }
+        return false;
+    } else if (missingResource != -1) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+            Match_AddMessage(errorColor, "Not enough resources for a wall");
+        }
+        return false;
+    } else {
+        // Upward orientation
+        if (!centralWall) {
+            if (fabs(xOffset) > fabs(yOffset)) {
+                if (xOffset > 0) {
+                    cellMidPoint.x -= 32;
+                } else {
+                    cellMidPoint.x += 32;
+                }
+                angle = (float)M_PI / 2;
+            }
+            // Sideways orientation
+            else {
+                if (yOffset > 0) {
+                    cellMidPoint.y -= 32;
+                } else {
+                    cellMidPoint.y += 32;
+                }
+                angle = 0;
+            }
+        }
+
+        EntityID wallID = Wall_Create(scene, cellMidPoint, angle, nation);
+        Terrain_SetWallAt(terrain, wallID, (int)cellMidPoint.x, (int)cellMidPoint.y);
+        Match_DeductResources(scene, nation, UnitType_WALL);
+        return true;
     }
 }
 
@@ -607,6 +633,37 @@ static void Match_AcceptParticle(Scene* scene, enum ResuourceType resourceType, 
     }
 }
 
+bool Match_Board(Scene* scene, Nation* nation, EntityID boardableID)
+{
+    Boardable* boardable = (Boardable*)Scene_GetComponent(scene, boardableID, BOARDABLE_COMPONENT_ID);
+    if (boardable->size >= 4) {
+        if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+            Match_AddMessage(errorColor, "Full, cannot board");
+        }
+        return false;
+    } else {
+        boardable->children[boardable->size] = boardUnitID;
+        boardable->size++;
+        Sprite* boardingSprite = (Sprite*)Scene_GetComponent(scene, boardUnitID, SPRITE_COMPONENT_ID);
+        Target* boardingTarget = (Target*)Scene_GetComponent(scene, boardUnitID, TARGET_COMPONENT_ID);
+        Unit* boardingUnit = (Unit*)Scene_GetComponent(scene, boardUnitID, UNIT_COMPONENT_ID);
+        if (boardingUnit->isDead) {
+            if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
+                Match_AddMessage(errorColor, "Unit is dead");
+            }
+            return false;
+        }
+        boardingSprite->hidden = true;
+        boardingUnit->boarded = true;
+        boardingTarget->tar = boardingSprite->pos;
+
+        boardUnitID = INVALID_ENTITY_INDEX;
+        boardMode = false;
+        instantDefocus = true; // Defoucs boarding unit's GUI
+        return true;
+    }
+}
+
 // SYSTEMS
 
 void Match_AIUpdateVisitedSpaces(struct scene* scene)
@@ -650,7 +707,7 @@ void Match_Unit(struct scene* scene)
 
         if (unit->isDead) {
             if (unit->deathTicks < 16) {
-                unit->deathTicks += 1;
+                unit->deathTicks++;
             } else {
                 City* homeCity = NULL;
                 if (!Scene_EntityHasComponents(scene, id, CITY_COMPONENT_ID)) {
@@ -709,9 +766,21 @@ void Match_Unit(struct scene* scene)
                 }
                 nation->unitCount[unit->type]--;
             }
-        } else {
+        } else if (!unit->boarded) {
             if (sprite->hitTicks > 0) {
                 sprite->hitTicks--;
+            }
+            if (boardMode && boardUnitID != INVALID_ENTITY_INDEX) {
+                Sprite* boardSprite = (Sprite*)Scene_GetComponent(scene, boardUnitID, SPRITE_COMPONENT_ID);
+                int boardTile = (int)(boardSprite->pos.x / 64) + (int)(boardSprite->pos.y / 64) * terrain->tileSize;
+                int unitTile = (int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize;
+                if (boardTile != unitTile || !Scene_EntityHasComponents(scene, id, BOARDABLE_COMPONENT_ID)) {
+                    unit->deathTicks = 8;
+                } else {
+                    unit->deathTicks = 0;
+                }
+            } else {
+                unit->deathTicks = 0;
             }
             unit->aliveTicks++;
 
@@ -840,7 +909,7 @@ void Match_SetVisitedSpace(struct scene* scene)
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Nation* nation = sprite->nation;
 
-        if (!unit->engaged && sprite->speed > 0) {
+        if (!unit->engaged && sprite->speed > 0 && !unit->boarded) {
             Match_ClearVisitedSpace(nation, sprite->pos.x, sprite->pos.y, combatant->attackDist);
         }
     }
@@ -1039,6 +1108,9 @@ void Match_Hover(struct scene* scene)
 
         unit->isHovered = false;
         sprite->showOutline = false;
+        if (unit->boarded) {
+            continue;
+        }
 
         if (selectBox) {
             unit->isHovered = sprite->pos.x > boxTL.x && sprite->pos.x < boxBR.x && sprite->pos.y > boxTL.y && sprite->pos.y < boxBR.y;
@@ -1051,16 +1123,24 @@ void Match_Hover(struct scene* scene)
 
             bool checkLR = fabs(sin * dx + cos * dy) <= sprite->height / 2;
             bool checkTB = fabs(cos * dx - sin * dy) <= sprite->width / 2;
+            bool checkBoard = true;
 
-            if (checkLR && checkTB) {
+            if (boardMode) {
+                Sprite* boardSprite = (Sprite*)Scene_GetComponent(scene, boardUnitID, SPRITE_COMPONENT_ID);
+                int boardTile = (int)(boardSprite->pos.x / 64) + (int)(boardSprite->pos.y / 64) * terrain->tileSize;
+                int unitTile = (int)(sprite->pos.x / 64) + (int)(sprite->pos.y / 64) * terrain->tileSize;
+                checkBoard = (boardTile == unitTile && Scene_EntityHasComponents(scene, id, BOARDABLE_COMPONENT_ID));
+            }
+
+            if (checkLR && checkTB && checkBoard) {
                 hoveredID = id;
                 priority = sprite->priority;
             }
         }
     }
     if (hoveredID != INVALID_ENTITY_INDEX) {
-        Unit* unit = (Unit*)Scene_GetComponent(scene, hoveredID, UNIT_COMPONENT_ID);
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, hoveredID, SPRITE_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, hoveredID, UNIT_COMPONENT_ID);
         unit->isHovered = true;
         sprite->showOutline = !anySelected || Apricot_Keys[SDL_SCANCODE_LCTRL];
     }
@@ -1074,25 +1154,29 @@ void Match_EscapePressed(struct scene* scene)
     static bool escDown = false;
     if (Apricot_Keys[SDL_SCANCODE_ESCAPE]) {
         if (!escDown) {
-            bool anyFlag = false;
+            if (boardMode) {
+                boardMode = false;
+            } else {
+                bool anyFlag = false;
 
-            system(scene, id, TARGET_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
-            {
-                Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
-                anyFlag |= target->selected;
-                target->selected = false;
-            }
+                system(scene, id, TARGET_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+                {
+                    Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+                    anyFlag |= target->selected;
+                    target->selected = false;
+                }
 
-            system(scene, id, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
-            {
-                Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
-                anyFlag |= unit->focused;
-                unit->focused = false;
-                escFocus = true;
-            }
+                system(scene, id, UNIT_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
+                {
+                    Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+                    anyFlag |= unit->focused;
+                    unit->focused = false;
+                    escFocus = true;
+                }
 
-            if (!anyFlag) {
-                Pause_Init(scene, PAUSE);
+                if (!anyFlag) {
+                    Pause_Init(scene, PAUSE);
+                }
             }
         }
         escDown = true;
@@ -1167,9 +1251,15 @@ void Match_Select(struct scene* scene)
                 sprite->showOutline = 2;
             }
             if (unit->isHovered && Apricot_MouseLeftUp) {
-                target->selected = !target->selected;
-                if (!selectBox) { // Only select multiple units if box-selecting
-                    break;
+                if (boardMode && Scene_EntityHasComponents(scene, id, BOARDABLE_COMPONENT_ID)) {
+                    if (Match_Board(scene, sprite->nation, id)) {
+                        break;
+                    }
+                } else {
+                    target->selected = !target->selected;
+                    if (!selectBox) { // Only select multiple units if box-selecting
+                        break;
+                    }
                 }
             }
         }
@@ -1178,39 +1268,37 @@ void Match_Select(struct scene* scene)
 
 /*
 	When the right mouse button is released, finds the unit entity that
-	is hovered, and shows its GUI. */
+	is focused, and shows its GUI. */
 void Match_Focus(struct scene* scene)
 {
-    static bool disappear = false;
-    static EntityID currShown = INVALID_ENTITY_INDEX;
-    static EntityID currFocused;
-    static EntityID currFocusedEntity;
+    static bool disappear = false; // Whether or not the current GUI should disappear
+    static EntityID currShownGUI = INVALID_ENTITY_INDEX;
+    static EntityID currFocusedGUI = INVALID_ENTITY_INDEX;
+    static EntityID currFocusedEntity = INVALID_ENTITY_INDEX; // The ONLY entity that is currently focused, or none
     static bool focusedIsProducer = false;
     static UnitType type;
     static int x = 0;
 
-    if (Apricot_MouseRightUp || escFocus || instantDefocus) {
+    if (Apricot_MouseRightUp) {
         guiChange = false;
         Unit* unitComp = NULL;
-        currFocused = INVALID_ENTITY_INDEX;
+        currFocusedGUI = INVALID_ENTITY_INDEX;
         currFocusedEntity = INVALID_ENTITY_INDEX;
         enum RenderPriority priority = RenderPriorirty_BUILDING_LAYER;
-        // Search all unit entities
+
+        // Find the unit that is hovered with the highest priority
         system(scene, id, UNIT_COMPONENT_ID, SPRITE_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
         {
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
             unit->focused = false;
             if (unit->isHovered && sprite->priority >= priority) {
-                currFocused = unit->guiContainer;
+                currFocusedGUI = unit->guiContainer;
                 currFocusedEntity = id;
                 unitComp = unit;
                 type = unit->type;
                 priority = sprite->priority;
             }
-        }
-        if (currFocusedEntity != currShownEntity || instantDefocus) {
-            disappear = true;
         }
         if (unitComp != NULL) {
             unitComp->focused = true;
@@ -1227,26 +1315,34 @@ void Match_Focus(struct scene* scene)
         {
             Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
             if (unit->focused) {
-                currFocused = unit->guiContainer;
+                currFocusedGUI = unit->guiContainer;
                 if (Scene_EntityHasComponents(scene, id, PRODUCER_COMPONENT_ID)) {
                     focusedIsProducer = true;
                 }
             }
         }
     }
+    if (instantDefocus || escFocus) {
+        currFocusedGUI = INVALID_ENTITY_INDEX;
+        currFocusedEntity = INVALID_ENTITY_INDEX;
+    }
+    if ((Apricot_MouseRightUp && currFocusedEntity != currShownEntity) || instantDefocus || escFocus) {
+        disappear = true;
+        boardMode = false;
+    }
 
     // Fade down/maintain down
     if (disappear) {
-        if (x == 0 || instantDefocus) {
+        if (x == 0) {
             disappear = false;
             instantDefocus = false;
-            if (currShown != INVALID_ENTITY_INDEX) {
-                GUI_SetShown(scene, currShown, false);
+            if (currShownGUI != INVALID_ENTITY_INDEX) {
+                GUI_SetShown(scene, currShownGUI, false);
             }
-            if (currFocused != INVALID_ENTITY_INDEX) {
-                GUI_SetShown(scene, currFocused, true);
+            if (currFocusedGUI != INVALID_ENTITY_INDEX) {
+                GUI_SetShown(scene, currFocusedGUI, true);
             }
-            currShown = currFocused;
+            currShownGUI = currFocusedGUI;
             currShownEntity = currFocusedEntity;
 
             GUI_SetShown(scene, orderLabel, focusedIsProducer);
@@ -1257,17 +1353,18 @@ void Match_Focus(struct scene* scene)
         }
     }
     // Fade up/maintain up
-    else if (currShown != INVALID_ENTITY_INDEX) {
+    else if (currShownGUI != INVALID_ENTITY_INDEX) {
         if (x < 12) {
             x++;
         }
-        if (currShown != currFocused) {
-            GUI_SetShown(scene, currShown, false);
-            GUI_SetShown(scene, currFocused, true);
-            currShown = currFocused;
+        if (currShownGUI != currFocusedGUI) {
+            GUI_SetShown(scene, currShownGUI, false);
+            GUI_SetShown(scene, currFocusedGUI, true);
+            currShownGUI = currFocusedGUI;
         }
     }
-    if (currShown != INVALID_ENTITY_INDEX) {
+
+    if (currShownGUI != INVALID_ENTITY_INDEX) {
         Container* gui = (Container*)Scene_GetComponent(scene, focusedGUIContainer, GUI_CONTAINER_COMPONENT_ID);
         gui->maxWidth = Apricot_Width - 250;
         GUI_UpdateLayout(scene, focusedGUIContainer, miniMapSize + 2, Apricot_Height - 198 + 200.0f * pow((12 - x) / 12.0f, 2));
@@ -1304,7 +1401,7 @@ void Match_CombatantAttack(struct scene* scene)
         Combatant* combatant = (Combatant*)Scene_GetComponent(scene, id, COMBATANT_COMPONENT_ID);
         Nation* nation = sprite->nation;
 
-        if (unit->isDead) {
+        if (unit->isDead || unit->boarded) {
             continue;
         }
 
@@ -1326,7 +1423,7 @@ void Match_CombatantAttack(struct scene* scene)
                 continue;
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
-            if (otherUnit->isDead) {
+            if (otherUnit->isDead || otherUnit->boarded) {
                 continue;
             }
             float dist = Vector_Dist(otherSprite->pos, sprite->pos);
@@ -1421,6 +1518,10 @@ void Match_AirplaneAttack(Scene* scene)
         Nation* nation = sprite->nation;
         Nation* otherNation = NULL;
 
+        if (unit->isDead || unit->boarded) {
+            continue;
+        }
+
         // Find closest enemy ground unit
         float closestDist = combatant->attackDist + 100.0f;
         EntityID closest = INVALID_ENTITY_INDEX;
@@ -1435,6 +1536,10 @@ void Match_AirplaneAttack(Scene* scene)
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
             float patrolDist = Vector_Dist(otherSprite->pos, patrol->patrolPoint);
+
+            if (otherUnit->isDead || otherUnit->boarded) {
+                continue;
+            }
 
             float dist = Vector_Dist(otherSprite->pos, sprite->pos);
             Vector innerCircle = Vector_Normalize(Vector_Sub(otherSprite->pos, sprite->pos)); // Points from pos to patrol
@@ -1498,6 +1603,10 @@ void Match_AirplaneScout(struct scene* scene)
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         Nation* nation = sprite->nation;
 
+        if (unit->isDead || unit->boarded) {
+            continue;
+        }
+
         system(scene, otherID, UNIT_COMPONENT_ID)
         {
             Sprite* otherSprite = (Sprite*)Scene_GetComponent(scene, otherID, SPRITE_COMPONENT_ID);
@@ -1505,6 +1614,9 @@ void Match_AirplaneScout(struct scene* scene)
                 continue;
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+            if (otherUnit->isDead || otherUnit->boarded) {
+                continue;
+            }
             Nation* otherNation = otherSprite->nation;
             if (Vector_Dist(sprite->pos, otherSprite->pos) < 128) {
                 if (nation->controlFlag == PLAYER_FLAG_COMPONENT_ID || otherNation->controlFlag == PLAYER_FLAG_COMPONENT_ID) {
@@ -1679,6 +1791,8 @@ void Match_ProduceUnits(struct scene* scene)
                 Cavalry_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_ARTILLERY) {
                 Artillery_Create(scene, sprite->pos, sprite->nation);
+            } else if (producer->order == UnitType_TRANSPORT) {
+                Transport_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_DESTROYER) {
                 Destroyer_Create(scene, sprite->pos, sprite->nation);
             } else if (producer->order == UnitType_CRUISER) {
@@ -1818,7 +1932,7 @@ void Match_SpriteRender(struct scene* scene, ComponentKey layer)
     }
 }
 
-void Match_RenderResources(Scene* scene)
+void Match_RenderResourceIndicators(Scene* scene)
 {
     SDL_Rect rect = { 0, 0, 0, 0 };
     for (int x = 16; x < terrain->size; x += 32) {
@@ -1965,13 +2079,10 @@ void Match_DrawSelectionArrows(Scene* scene)
     }
 }
 
-/*
-	Called every tick. Sets the text of labels to reflect the game state 
-	
-	Updates produce GUI to reflect the time, order, and auto-order */
 void Match_UpdateGUIElements(struct scene* scene)
 {
     if (currShownEntity != INVALID_ENTITY_INDEX) {
+        Sprite* sprite = (Sprite*)Scene_GetComponent(scene, currShownEntity, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, currShownEntity, UNIT_COMPONENT_ID);
 
         char buffer[32];
@@ -2008,6 +2119,20 @@ void Match_UpdateGUIElements(struct scene* scene)
                 GUI_SetLabelText(scene, timeLabel, "");
             }
             GUI_SetRockerSwitchValue(scene, autoReOrderRockerSwitch, producer->repeat);
+        }
+
+        GUIComponent* boardButton = (GUIComponent*)Scene_GetComponent(scene, boardButtonID, GUI_COMPONENT_ID);
+        GUIComponent* cancelBoardButton = (GUIComponent*)Scene_GetComponent(scene, cancelBoardButtonID, GUI_COMPONENT_ID);
+        boardButton->shown = !boardMode;
+        cancelBoardButton->shown = boardMode;
+
+        // Check the building tile for the currently shown entity, if it's an ID for a port, set active to true
+        EntityID buildingTile = Terrain_GetBuildingAt(terrain, sprite->pos.x, sprite->pos.y);
+        if (!boardMode && buildingTile != INVALID_ENTITY_INDEX) {
+            Unit* buildingUnit = (Unit*)Scene_GetComponent(scene, buildingTile, UNIT_COMPONENT_ID);
+            boardButton->active = buildingUnit->type == UnitType_PORT;
+        } else {
+            boardButton->active = false;
         }
     }
 }
@@ -2058,9 +2183,6 @@ void Match_DrawBoxSelect(Scene* scene)
     }
 }
 
-/*
-	Goes through each unit AI entity unit. Updates engaged ticks. 
-	Units are hidden when their engaged ticks are less than 0. */
 void Match_UpdateFogOfWar(struct scene* scene)
 {
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, AI_COMPONENT_ID)
@@ -2154,6 +2276,37 @@ void Match_RenderOrderButtons(Scene* scene)
         }
     }
     FC_SetDefaultColor(font, (SDL_Color) { 255, 255, 255, 255 });
+}
+
+void Match_RenderUnitLists(Scene* scene)
+{
+    if (!Scene_EntityHasComponents(scene, currShownEntity, BOARDABLE_COMPONENT_ID)) {
+        return;
+    }
+
+    bool shown = false;
+    system(scene, id, UNIT_LIST_COMPONENT_ID, GUI_COMPONENT_ID)
+    {
+        GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
+        if (!gui->shown) {
+            continue;
+        }
+
+        Unit* unit = (Unit*)Scene_GetComponent(scene, currShownEntity, UNIT_COMPONENT_ID);
+        Boardable* boardable = (Boardable*)Scene_GetComponent(scene, currShownEntity, BOARDABLE_COMPONENT_ID);
+        if (unit->focused) {
+            SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
+
+            FC_SetDefaultColor(font, (SDL_Color) { 255, 255, 255, 255 });
+            FC_Draw(font, Apricot_Renderer, gui->pos.x, gui->pos.y, "%d", boardable->size);
+            shown = true;
+            break;
+        }
+
+        if (shown) {
+            break;
+        }
+    }
 }
 
 void Match_RenderNationInfo(Scene* scene)
@@ -2260,7 +2413,7 @@ static void Match_RenderBar(Vector pos, int remaining, int total, SDL_Color colo
 
 void Match_RenderProducerBars(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
+    system(scene, id, SPRITE_COMPONENT_ID, PRODUCER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Producer* producer = (Producer*)Scene_GetComponent(scene, id, PRODUCER_COMPONENT_ID);
@@ -2282,7 +2435,7 @@ void Match_RenderProducerBars(Scene* scene)
 
 void Match_NoPowerSymbols(Scene* scene)
 {
-    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_ACCEPTER_COMPONENT_ID /*, PLAYER_FLAG_COMPONENT_ID*/)
+    system(scene, id, SPRITE_COMPONENT_ID, RESOURCE_ACCEPTER_COMPONENT_ID, PLAYER_FLAG_COMPONENT_ID)
     {
         Sprite* sprite = (Sprite*)Scene_GetComponent(scene, id, SPRITE_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
@@ -2336,6 +2489,10 @@ void Match_Update(Scene* match)
 #endif
 
     Match_UpdateMessageContainer(match);
+    if (doFogOfWar) { // Determined by a switch in the match creation menu
+        Match_UpdateFogOfWar(match);
+    }
+    Match_UpdateGUIElements(match);
     GUI_Update(match);
 
     static bool lt = false;
@@ -2352,11 +2509,6 @@ void Match_Update(Scene* match)
     lt = Apricot_Keys[SDL_SCANCODE_COMMA];
     gt = Apricot_Keys[SDL_SCANCODE_PERIOD];
 
-    if (Apricot_MouseRightDown) {
-        Vector m = Terrain_MousePos();
-        printf("%f %f %f\n", Terrain_GetTimber(terrain, m.x, m.y), Terrain_GetCoal(terrain, m.x, m.y), Terrain_GetOre(terrain, m.x, m.y));
-    }
-
     // Placed at end because they pop game scene
     Match_CheckWin(match);
     Match_EscapePressed(match);
@@ -2367,32 +2519,32 @@ void Match_Update(Scene* match)
 void Match_Render(Scene* match)
 {
     Terrain_Render(terrain);
-    //Match_DrawVisitedSquares(match);
-    if (doFogOfWar) { // Determined by a switch in the match creation menu
-        Match_UpdateFogOfWar(match);
-    }
-    Match_RenderResources(match);
+    Match_RenderResourceIndicators(match);
+
     Match_SpriteRender(match, BUILDING_LAYER_COMPONENT_ID);
     Match_NoPowerSymbols(match);
     Match_RenderProducerBars(match);
     Match_RenderCityName(match);
+
     Match_DrawSelectionArrows(match);
+
     Match_SpriteRender(match, SURFACE_LAYER_COMPONENT_ID);
     Match_SpriteRender(match, AIR_LAYER_COMPONENT_ID);
     Match_SpriteRender(match, PLANE_LAYER_COMPONENT_ID);
     Match_SpriteRender(match, PARTICLE_LAYER_COMPONENT_ID);
-    Match_UpdateGUIElements(match);
+
+    //Match_DrawVisitedSquares(match);
     //Match_DrawPortTiles(match);
+
     Match_DrawBoxSelect(match);
     Match_DrawMiniMap(match);
     Match_RenderMessageContainer(match);
     GUI_Render(match);
     Match_RenderOrderButtons(match);
+    Match_RenderUnitLists(match);
     Match_RenderNationInfo(match);
 }
 
-/*
-	Called when engineer build city button is pressed. Builds a city */
 void Match_EngineerAddCity(Scene* scene, EntityID guiID)
 {
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
@@ -2406,8 +2558,6 @@ void Match_EngineerAddCity(Scene* scene, EntityID guiID)
     }
 }
 
-/*
-	Builds an expansion */
 void Match_EngineerAddExpansion(Scene* scene, EntityID guiID)
 {
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, guiID, GUI_CLICKABLE_COMPONENT_ID))->meta;
@@ -2438,10 +2588,6 @@ void Match_EngineerAddBuilding(Scene* scene, EntityID guiID)
     }
 }
 
-/*
-	Called by the engineer's "Build Wall" button. Builds a wall on the gridline 
-	segment that the infantry is closest to. Doesn't add a wall if there is 
-	already a wall in place. */
 void Match_EngineerAddWall(Scene* scene, EntityID guiID)
 {
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID)
@@ -2450,56 +2596,14 @@ void Match_EngineerAddWall(Scene* scene, EntityID guiID)
         Nation* nation = sprite->nation;
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
         if (unit->focused && nation->resources[ResourceType_COIN] >= nation->costs[ResourceType_COIN][UnitType_WALL]) {
-            Vector cellMidPoint = { 64.0f * (int)(sprite->pos.x / 64) + 32.0f, 64.0f * (int)(sprite->pos.y / 64) + 32.0f };
-            float angle;
-            float xOffset = cellMidPoint.x - sprite->pos.x;
-            float yOffset = cellMidPoint.y - sprite->pos.y;
-            // Central wall, with units orientation
-            if (xOffset * xOffset + yOffset * yOffset < 15 * 15) {
-                if ((sprite->angle < M_PI / 4 && sprite->angle > 0) || sprite->angle > 7 * M_PI / 4 || (sprite->angle > 3 * M_PI / 4 && sprite->angle < 5 * M_PI / 4)) {
-                    angle = 0;
-                } else {
-                    angle = (float)M_PI / 2;
-                }
-                if (Terrain_GetBuildingAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) != INVALID_ENTITY_INDEX) {
-                    continue;
-                }
-            }
-            // Upward orientation
-            else if (fabs(xOffset) > fabs(yOffset)) {
-                if (xOffset > 0) {
-                    cellMidPoint.x -= 32;
-                } else {
-                    cellMidPoint.x += 32;
-                }
-                angle = (float)M_PI / 2;
-            }
-            // Sideways orientation
-            else {
-                if (yOffset > 0) {
-                    cellMidPoint.y -= 32;
-                } else {
-                    cellMidPoint.y += 32;
-                }
-                angle = 0;
-            }
-
-            if (Terrain_GetWallAt(terrain, (int)cellMidPoint.x, (int)cellMidPoint.y) == INVALID_ENTITY_INDEX) {
-                EntityID wall = Wall_Create(scene, cellMidPoint, angle, sprite->nation);
-                Terrain_SetWallAt(terrain, wall, (int)cellMidPoint.x, (int)cellMidPoint.y);
-                nation->resources[ResourceType_COIN] -= nation->costs[ResourceType_COIN][UnitType_WALL];
-            }
+            Match_BuyWall(scene, nation, sprite->pos, sprite->angle);
         }
     }
 }
 
-/*	Callback for factory and port GUI buttons. GUI buttons should have UnitType
-	stored in their meta data. 
-	
-	@param scene	Scene that click took place in
-	@param buttonID	ID of button that was clicked */
 void Match_ProducerOrder(Scene* scene, EntityID buttonID)
 {
+    // Buttons have the type stored in their meta data
     UnitType type = (UnitType)((Clickable*)Scene_GetComponent(scene, buttonID, GUI_CLICKABLE_COMPONENT_ID))->meta;
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
     {
@@ -2512,8 +2616,31 @@ void Match_ProducerOrder(Scene* scene, EntityID buttonID)
         if (unit->focused && Match_PlaceOrder(scene, nation, producer, expansion, type)) {
             unit->guiContainer = producer->busyGUIContainer;
             guiChange = true;
+            break;
         }
     }
+}
+
+void Match_BoardUnit(Scene* scene, EntityID buttonID)
+{
+    boardMode = true;
+    system(scene, id, TARGET_COMPONENT_ID, UNIT_COMPONENT_ID)
+    {
+        Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
+        Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
+
+        if (unit->focused) {
+            boardUnitID = id;
+            target->selected = false;
+            break;
+        }
+    }
+}
+
+void Match_CancelBoardUnit(Scene* scene, EntityID buttonID)
+{
+    boardMode = false;
+    boardUnitID = INVALID_ENTITY_INDEX;
 }
 
 void Match_DestroyUnit(Scene* scene, EntityID buttonID)
@@ -2524,12 +2651,11 @@ void Match_DestroyUnit(Scene* scene, EntityID buttonID)
 
         if (unit->focused) {
             unit->isDead = true;
+            break;
         }
     }
 }
 
-/*
-	Called from producer's "Cancel Order" button. Cancels the order of the Producer that is focused */
 void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
 {
     system(scene, id, SPRITE_COMPONENT_ID, UNIT_COMPONENT_ID, PRODUCER_COMPONENT_ID)
@@ -2549,9 +2675,6 @@ void Match_ProducerCancelOrder(Scene* scene, EntityID guiID)
     }
 }
 
-/*
-	RockerSwitch callback that updates the repeat value of a producer based on the
-	value of the rocker switch */
 void Match_ProducerReOrder(Scene* scene, EntityID rockerID)
 {
     RockerSwitch* rockerSwitch = (RockerSwitch*)Scene_GetComponent(scene, rockerID, GUI_ROCKER_SWITCH_COMPONENT_ID);
@@ -2580,8 +2703,6 @@ void Match_Destroy(Scene* scene)
     Arraylist_Destroy(nations);
 }
 
-/*
-	Creates a new scene, adds in two nations, capitals for those nations, and infantries for those nation */
 Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool AIControlled, bool fogOfWar, int nNations)
 {
     terrain = _terrain;
@@ -2597,6 +2718,8 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     orderLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     timeLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "");
     autoReOrderRockerSwitch = GUI_CreateRockerSwitch(match, (Vector) { 100, 100 }, "Auto Re-order", false, &Match_ProducerReOrder);
+    boardButtonID = GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Board", 0, &Match_BoardUnit);
+    cancelBoardButtonID = GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Cancel Boarding", 0, &Match_CancelBoardUnit);
 
     unitNameLabel = GUI_CreateLabel(match, (Vector) { 0, 0 }, "Lol!");
     unitHealthBar = GUI_CreateProgressBar(match, (Vector) { 0, 0 }, 168, 1.0f);
@@ -2628,7 +2751,9 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Port", PORT_TEXTURE_ID, UnitType_PORT, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Airfield", AIRFIELD_TEXTURE_ID, UnitType_AIRFIELD, &Match_EngineerAddExpansion));
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, OrderButton_Create(match, "Build Wall", WALL_TEXTURE_ID, UnitType_WALL, &Match_EngineerAddWall));
-    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 204, 48));
+    //GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateSpacer(match, (Vector) { 0, 0 }, 204, 48));
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, boardButtonID);
+    GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, cancelBoardButtonID);
     GUI_ContainerAdd(match, ENGINEER_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 0, 0 }, 204, 48, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, ENGINEER_FOCUSED_GUI, false);
 
@@ -2642,6 +2767,12 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     GUI_SetPadding(match, UNIT_FOCUSED_GUI, 2);
     GUI_ContainerAdd(match, UNIT_FOCUSED_GUI, GUI_CreateButton(match, (Vector) { 100, 100 }, 204, 48, "Destroy", 0, &Match_DestroyUnit));
     GUI_SetShown(match, UNIT_FOCUSED_GUI, false);
+
+    TRANSPORT_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 190);
+    GUI_ContainerAdd(match, focusedGUIContainer, TRANSPORT_FOCUSED_GUI);
+    GUI_SetPadding(match, TRANSPORT_FOCUSED_GUI, 2);
+    GUI_ContainerAdd(match, TRANSPORT_FOCUSED_GUI, UnitList_Create(match));
+    GUI_SetShown(match, TRANSPORT_FOCUSED_GUI, false);
 
     ACADEMY_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 190);
     GUI_ContainerAdd(match, focusedGUIContainer, ACADEMY_READY_FOCUSED_GUI);
@@ -2677,6 +2808,7 @@ Scene* Match_Init(Terrain* _terrain, char* capitalName, Lexicon* lexicon, bool A
     PORT_READY_FOCUSED_GUI = GUI_CreateContainer(match, (Vector) { 0, 0 }, 140, 190);
     GUI_ContainerAdd(match, focusedGUIContainer, PORT_READY_FOCUSED_GUI);
     GUI_SetPadding(match, PORT_READY_FOCUSED_GUI, 2);
+    GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, OrderButton_Create(match, "Build Transport", DESTROYER_TEXTURE_ID, UnitType_TRANSPORT, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, OrderButton_Create(match, "Build Destroyer", DESTROYER_TEXTURE_ID, UnitType_DESTROYER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, OrderButton_Create(match, "Build Cruiser", CRUISER_TEXTURE_ID, UnitType_CRUISER, &Match_ProducerOrder));
     GUI_ContainerAdd(match, PORT_READY_FOCUSED_GUI, OrderButton_Create(match, "Build Battleship", BATTLESHIP_TEXTURE_ID, UnitType_BATTLESHIP, &Match_ProducerOrder));

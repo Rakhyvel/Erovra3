@@ -37,6 +37,7 @@ typedef enum unitType {
     UnitType_FARM,
     UnitType_ACADEMY,
     UnitType_WALL,
+	UnitType_TRANSPORT,
     UnitType_DESTROYER,
     UnitType_CRUISER,
     UnitType_BATTLESHIP,
@@ -144,8 +145,15 @@ typedef struct unit {
     EntityID guiContainer; // The GUI container to show when focused
     bool engaged; // Whether the unit is engaged and cannot receive orders
     bool knownByEnemy; // Whether or not this unit has once been shown to the enemy
+    bool boarded; // Whether the unit is boarded, deactivate the unit
 } Unit;
 ComponentKey UNIT_COMPONENT_ID;
+
+typedef struct boardable {
+    int size;
+    EntityID children[3];
+} Boardable;
+ComponentKey BOARDABLE_COMPONENT_ID;
 
 /* Units that create projectiles and can attack other units
 */
@@ -279,3 +287,5 @@ typedef struct orderButton {
     UnitType type; // Type of unit to build, this retrieves the resource cost information for the button
 } OrderButton;
 ComponentKey ORDER_BUTTON_COMPONENT_ID;
+
+ComponentKey UNIT_LIST_COMPONENT_ID;

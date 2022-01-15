@@ -13,6 +13,7 @@ void Components_Init()
     PARTICLE_LAYER_COMPONENT_ID = rand();
 
     UNIT_COMPONENT_ID = rand();
+    BOARDABLE_COMPONENT_ID = rand();
     COMBATANT_COMPONENT_ID = rand();
     GROUND_UNIT_FLAG_COMPONENT_ID = rand();
     LAND_UNIT_FLAG_COMPONENT_ID = rand();
@@ -42,6 +43,7 @@ void Components_Init()
     AI_COMPONENT_ID = rand();
 
     ORDER_BUTTON_COMPONENT_ID = rand();
+    UNIT_LIST_COMPONENT_ID = rand();
 }
 
 void Components_Register(struct scene* scene)
@@ -57,6 +59,7 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, PARTICLE_LAYER_COMPONENT_ID, 0);
 
     Scene_RegisterComponent(scene, UNIT_COMPONENT_ID, sizeof(Unit));
+    Scene_RegisterComponent(scene, BOARDABLE_COMPONENT_ID, sizeof(Boardable));
     Scene_RegisterComponent(scene, COMBATANT_COMPONENT_ID, sizeof(Combatant));
     Scene_RegisterComponent(scene, GROUND_UNIT_FLAG_COMPONENT_ID, 0);
     Scene_RegisterComponent(scene, LAND_UNIT_FLAG_COMPONENT_ID, 0);
@@ -86,4 +89,5 @@ void Components_Register(struct scene* scene)
     Scene_RegisterComponent(scene, AI_COMPONENT_ID, 0);
 
     Scene_RegisterComponent(scene, ORDER_BUTTON_COMPONENT_ID, sizeof(OrderButton));
+    Scene_RegisterComponent(scene, UNIT_LIST_COMPONENT_ID, 0);
 }

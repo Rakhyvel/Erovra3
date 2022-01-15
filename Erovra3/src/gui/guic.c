@@ -711,7 +711,7 @@ static void updateClickable(Scene* scene)
         GUIComponent* gui = (GUIComponent*)Scene_GetComponent(scene, id, GUI_COMPONENT_ID);
         Clickable* clickable = (Clickable*)Scene_GetComponent(scene, id, GUI_CLICKABLE_COMPONENT_ID);
         bool prevIsHovered = gui->isHovered;
-        gui->isHovered = gui->shown && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
+        gui->isHovered = gui->shown && gui->active && Apricot_MousePos.x > gui->pos.x && Apricot_MousePos.x < gui->pos.x + gui->width && Apricot_MousePos.y > gui->pos.y && Apricot_MousePos.y < gui->pos.y + gui->height;
         if (!prevIsHovered && gui->isHovered && gui->active) {
             Sound_Play(HOVER_SOUND);
         }
@@ -977,14 +977,21 @@ static void renderButton(Scene* scene)
             continue;
         }
         Clickable* clickable = (Clickable*)Scene_GetComponent(scene, id, GUI_CLICKABLE_COMPONENT_ID);
-        SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        if (gui->active) {
+            SDL_SetRenderDrawColor(Apricot_Renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+        } else {
+            SDL_SetRenderDrawColor(Apricot_Renderer, inactiveBackgroundColor.r, inactiveBackgroundColor.g, inactiveBackgroundColor.b, inactiveBackgroundColor.a);
+        }
         SDL_Rect rect = { gui->pos.x, gui->pos.y, gui->width, gui->height };
         SDL_RenderFillRect(Apricot_Renderer, &rect);
-        SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         if (gui->isHovered) {
             SDL_SetRenderDrawColor(Apricot_Renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
             SDL_RenderFillRect(Apricot_Renderer, &rect);
-            SDL_SetRenderDrawColor(Apricot_Renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+        }
+        if (gui->active) {
+            FC_SetDefaultColor(font, (SDL_Color) { 255, 255, 255, 255 });
+        } else {
+            FC_SetDefaultColor(font, (SDL_Color) { inactiveTextColor.r, inactiveTextColor.g, inactiveTextColor.b, inactiveTextColor.a });
         }
         FC_Draw(font, Apricot_Renderer, gui->pos.x + (gui->width - FC_GetWidth(font, clickable->text)) / 2, gui->pos.y + gui->height / 2 - 12, clickable->text);
     }

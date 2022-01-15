@@ -291,6 +291,10 @@ EntityID Timber_Create(struct scene* scene, Vector pos, Nation* nation, EntityID
 
 EntityID Timberland_Create(struct scene* scene, Vector pos, Nation* nation);
 
+EntityID Transport_Create(struct scene* scene, Vector pos, Nation* nation);
+
+EntityID UnitList_Create(struct scene* scene);
+
 /*	Creates a wall entity with components assigned
 * 
 *	@param scene	Pointer to the match scene

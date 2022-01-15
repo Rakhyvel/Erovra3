@@ -493,7 +493,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        if (unit->engaged) {
+        if (unit->engaged || unit->isDead || unit->boarded) {
             continue;
         }
 
@@ -545,6 +545,9 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
                 continue;
             }
             Unit* otherUnit = (Unit*)Scene_GetComponent(scene, otherID, UNIT_COMPONENT_ID);
+            if (otherUnit->isDead || otherUnit->boarded) {
+                continue;
+            }
             if (otherUnit->engagedLevel || (otherUnit->engagedLevel >= unit->engagedLevel))
                 continue;
             if (Vector_Dist(sprite->pos, otherSprite->pos) > minDist)
@@ -577,7 +580,7 @@ void AI_TargetGroundUnitsRandomly(Scene* scene)
         Target* target = (Target*)Scene_GetComponent(scene, id, TARGET_COMPONENT_ID);
         Unit* unit = (Unit*)Scene_GetComponent(scene, id, UNIT_COMPONENT_ID);
 
-        if (unit->engaged) {
+        if (unit->engaged || unit->boarded) {
             continue;
         }
 

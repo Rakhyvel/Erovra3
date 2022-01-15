@@ -32,7 +32,7 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
     // Initial resources
     nation->resources[ResourceType_POPULATION] = 1;
     nation->resources[ResourceType_COIN] = 25;
-    nation->resources[ResourceType_TIMBER] = 4;
+    nation->resources[ResourceType_TIMBER] = 10;
 
     // Coin costs
     nation->costs[ResourceType_COIN][UnitType_CITY] = 5;
@@ -50,6 +50,7 @@ void Nation_ResetResources(Scene* scene, Nation* nation)
     nation->costs[ResourceType_COIN][UnitType_ENGINEER] = 15;
     nation->costs[ResourceType_COIN][UnitType_CAVALRY] = 15;
     nation->costs[ResourceType_COIN][UnitType_ARTILLERY] = 15;
+    nation->costs[ResourceType_COIN][UnitType_TRANSPORT] = 10;
     nation->costs[ResourceType_COIN][UnitType_DESTROYER] = 15;
     nation->costs[ResourceType_COIN][UnitType_CRUISER] = 30;
     nation->costs[ResourceType_COIN][UnitType_BATTLESHIP] = 60;
